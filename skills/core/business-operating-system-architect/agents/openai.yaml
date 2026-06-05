@@ -1,0 +1,4 @@
+interface:
+  display_name: "Business Operating System Architect"
+  short_description: "Coordinate Growth, CRM, AI, Data, UX, and verticals."
+  default_prompt: "Use $business-operating-system-architect to coordinate the full NextShift business operating system."

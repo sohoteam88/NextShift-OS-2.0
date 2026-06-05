@@ -1,0 +1,4 @@
+interface:
+  display_name: "Herbalife Retail System"
+  short_description: "Create retail, follow-up, and customer growth systems."
+  default_prompt: "Use $herbalife-retail-system to help me build this part of my NextShift business system."

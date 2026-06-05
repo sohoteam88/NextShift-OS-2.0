@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Lead Scoring"
+  short_description: "Score leads with AI signals and rules."
+  default_prompt: "Use $ai-lead-scoring to design this CRM part of NextShift."

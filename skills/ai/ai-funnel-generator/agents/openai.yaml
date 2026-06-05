@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Funnel Generator"
+  short_description: "Generate AI-assisted funnel assets."
+  default_prompt: "Use $ai-funnel-generator to design this AI workflow for NextShift."

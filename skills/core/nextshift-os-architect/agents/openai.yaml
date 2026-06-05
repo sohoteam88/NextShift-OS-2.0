@@ -1,0 +1,4 @@
+interface:
+  display_name: "NextShift OS Architect"
+  short_description: "Architect SaaS MVPs for coding agents."
+  default_prompt: "Use $nextshift-os-architect to create a CTO-level SaaS architecture, database, API, dashboard, admin panel, AI agent flow, and MVP roadmap."

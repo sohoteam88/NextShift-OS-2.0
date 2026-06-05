@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pipeline Management"
+  short_description: "Design sales pipeline stages and actions."
+  default_prompt: "Use $pipeline-management to design this CRM part of NextShift."

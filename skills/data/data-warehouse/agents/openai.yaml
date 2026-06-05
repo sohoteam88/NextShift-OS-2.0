@@ -1,0 +1,4 @@
+interface:
+  display_name: "Data Warehouse"
+  short_description: "Design warehouse models and data marts."
+  default_prompt: "Use $data-warehouse to design this data layer for NextShift."

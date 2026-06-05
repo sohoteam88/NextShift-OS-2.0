@@ -1,0 +1,4 @@
+interface:
+  display_name: "Distributor Management"
+  short_description: "Manage distributors and downline activity."
+  default_prompt: "Use $distributor-management to design this CRM part of NextShift."

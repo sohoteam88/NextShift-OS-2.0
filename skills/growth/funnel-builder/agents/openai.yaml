@@ -1,0 +1,4 @@
+interface:
+  display_name: "Funnel Builder"
+  short_description: "Build Russell + Todd Brown style funnels."
+  default_prompt: "Use $funnel-builder to build a complete Russell + Todd Brown style funnel from lead magnet to sales call."

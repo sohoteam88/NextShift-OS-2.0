@@ -1,0 +1,4 @@
+interface:
+  display_name: "Health Funnel Builder"
+  short_description: "Build generic health quiz and consultation funnels."
+  default_prompt: "Use $health-funnel-builder to create a health quiz, weight loss assessment, landing page, WhatsApp follow-up, and consultation flow."

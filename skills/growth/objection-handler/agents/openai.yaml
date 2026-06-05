@@ -1,0 +1,4 @@
+interface:
+  display_name: "Objection Handler"
+  short_description: "Handle buyer objections with trust and clarity."
+  default_prompt: "Use $objection-handler to help me build this part of my NextShift business system."

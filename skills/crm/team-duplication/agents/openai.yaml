@@ -1,0 +1,4 @@
+interface:
+  display_name: "Team Duplication"
+  short_description: "Create repeatable team duplication systems."
+  default_prompt: "Use $team-duplication to design this CRM part of NextShift."

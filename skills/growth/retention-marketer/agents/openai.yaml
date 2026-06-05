@@ -1,0 +1,4 @@
+interface:
+  display_name: "Retention Marketer"
+  short_description: "Build retention, reactivation, and referral systems."
+  default_prompt: "Use $retention-marketer to create a retention, reactivation, and referral marketing system."

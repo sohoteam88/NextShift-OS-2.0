@@ -1,0 +1,4 @@
+interface:
+  display_name: "Personal Brand Audit"
+  short_description: "Audit profiles, positioning, content, and authority."
+  default_prompt: "Use $personal-brand-audit to help me build this part of my NextShift business system."

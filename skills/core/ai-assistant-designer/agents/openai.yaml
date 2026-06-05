@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Assistant Designer"
+  short_description: "Design proactive AI Coach workflows."
+  default_prompt: "Use $ai-assistant-designer to design a proactive NextShift AI Coach card and guided workflow."

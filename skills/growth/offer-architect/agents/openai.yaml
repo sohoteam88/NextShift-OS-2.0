@@ -1,0 +1,4 @@
+interface:
+  display_name: "Offer Architect"
+  short_description: "Create irresistible Hormozi-style offers."
+  default_prompt: "Use $offer-architect to design an irresistible offer using the Hormozi value framework."

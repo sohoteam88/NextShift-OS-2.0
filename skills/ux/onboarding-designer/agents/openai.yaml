@@ -1,0 +1,4 @@
+interface:
+  display_name: "Onboarding Designer"
+  short_description: "Design 5-minute activation onboarding."
+  default_prompt: "Use $onboarding-designer to create a 5-minute onboarding flow from Welcome to Launch."

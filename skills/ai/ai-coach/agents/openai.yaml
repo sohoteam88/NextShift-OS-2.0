@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Coach"
+  short_description: "Design proactive AI coaching experiences."
+  default_prompt: "Use $ai-coach to design this AI workflow for NextShift."

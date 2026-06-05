@@ -1,0 +1,4 @@
+interface:
+  display_name: "Visual Hierarchy Expert"
+  short_description: "Enforce one primary action hierarchy."
+  default_prompt: "Use $visual-hierarchy-expert to simplify this screen to 1 primary action, 3 secondary actions, and hidden advanced actions."

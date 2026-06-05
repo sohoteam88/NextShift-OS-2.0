@@ -1,0 +1,4 @@
+interface:
+  display_name: "CRM Database"
+  short_description: "Design CRM database schemas and relationships."
+  default_prompt: "Use $crm-database to design this data layer for NextShift."

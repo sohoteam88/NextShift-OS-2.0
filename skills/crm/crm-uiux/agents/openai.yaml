@@ -1,0 +1,4 @@
+interface:
+  display_name: "CRM UIUX"
+  short_description: "Design simple CRM UI and UX flows."
+  default_prompt: "Use $crm-uiux to design this CRM part of NextShift."

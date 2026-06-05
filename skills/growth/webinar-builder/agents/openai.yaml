@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webinar Builder"
+  short_description: "Design persuasive webinars and workshop flows."
+  default_prompt: "Use $webinar-builder to help me build this part of my NextShift business system."

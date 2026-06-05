@@ -1,0 +1,4 @@
+interface:
+  display_name: "Conversion Optimizer"
+  short_description: "Score and optimize funnel conversion."
+  default_prompt: "Use $conversion-optimizer to audit this funnel and produce a 0-100 Conversion Score."

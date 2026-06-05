@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mobile First Designer"
+  short_description: "Design thumb-friendly mobile-first UX."
+  default_prompt: "Use $mobile-first-designer to design a mobile-first NextShift screen with thumb-zone optimization and a bottom sticky CTA."

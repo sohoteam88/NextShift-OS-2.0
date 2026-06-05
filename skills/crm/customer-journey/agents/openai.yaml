@@ -1,0 +1,4 @@
+interface:
+  display_name: "Customer Journey"
+  short_description: "Map lead and customer lifecycle journeys."
+  default_prompt: "Use $customer-journey to design this CRM part of NextShift."

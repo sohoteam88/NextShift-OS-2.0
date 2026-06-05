@@ -1,0 +1,4 @@
+interface:
+  display_name: "Identity Builder"
+  short_description: "Clarify personal brand positioning and niche."
+  default_prompt: "Use $identity-builder to help me build this part of my NextShift business system."

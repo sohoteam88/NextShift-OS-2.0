@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Video Script Generator"
+  short_description: "Generate AI video scripts and prompts."
+  default_prompt: "Use $ai-video-script-generator to design this AI workflow for NextShift."

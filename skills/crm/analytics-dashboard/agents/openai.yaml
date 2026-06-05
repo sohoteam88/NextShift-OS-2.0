@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analytics Dashboard"
+  short_description: "Design CRM analytics and reporting dashboards."
+  default_prompt: "Use $analytics-dashboard to design this CRM part of NextShift."

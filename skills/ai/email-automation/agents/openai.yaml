@@ -1,0 +1,4 @@
+interface:
+  display_name: "Email Automation"
+  short_description: "Design AI email automation sequences."
+  default_prompt: "Use $email-automation to design this AI workflow for NextShift."

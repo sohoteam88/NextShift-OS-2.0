@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Agent Orchestrator"
+  short_description: "Design multi-agent AI workflows."
+  default_prompt: "Use $ai-agent-orchestrator to design this AI workflow for NextShift."

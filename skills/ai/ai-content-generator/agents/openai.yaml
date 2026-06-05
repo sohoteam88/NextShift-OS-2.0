@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Content Generator"
+  short_description: "Generate AI-assisted content systems."
+  default_prompt: "Use $ai-content-generator to design this AI workflow for NextShift."

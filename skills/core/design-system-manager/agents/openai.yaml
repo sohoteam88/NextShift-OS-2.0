@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design System Manager"
+  short_description: "Create and maintain design systems."
+  default_prompt: "Use $design-system-manager to design this part of the NextShift UI/UX system."

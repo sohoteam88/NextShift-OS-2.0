@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lead Management"
+  short_description: "Manage leads from capture to qualified action."
+  default_prompt: "Use $lead-management to design this CRM part of NextShift."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reporting Engine"
+  short_description: "Build reporting logic and report specs."
+  default_prompt: "Use $reporting-engine to design this data layer for NextShift."

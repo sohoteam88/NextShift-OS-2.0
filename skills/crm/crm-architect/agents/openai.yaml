@@ -1,0 +1,4 @@
+interface:
+  display_name: "CRM Architect"
+  short_description: "Architect CRM data, workflows, and modules."
+  default_prompt: "Use $crm-architect to design this CRM part of NextShift."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Accessibility Auditor"
+  short_description: "Audit accessibility and inclusive UX."
+  default_prompt: "Use $accessibility-auditor to design this part of the NextShift UI/UX system."

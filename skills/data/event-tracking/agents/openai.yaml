@@ -1,0 +1,4 @@
+interface:
+  display_name: "Event Tracking"
+  short_description: "Define product and funnel tracking events."
+  default_prompt: "Use $event-tracking to design this data layer for NextShift."

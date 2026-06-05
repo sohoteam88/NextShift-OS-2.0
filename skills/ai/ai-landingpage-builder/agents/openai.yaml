@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Landingpage Builder"
+  short_description: "Generate landing page copy and specs."
+  default_prompt: "Use $ai-landingpage-builder to design this AI workflow for NextShift."

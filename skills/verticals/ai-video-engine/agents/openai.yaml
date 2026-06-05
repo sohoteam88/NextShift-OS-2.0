@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Video Engine"
+  short_description: "Generate AI video scripts and prompts."
+  default_prompt: "Use $ai-video-engine to create a video package from my offer, audience, and goal."

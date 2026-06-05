@@ -1,0 +1,4 @@
+interface:
+  display_name: "Content Engine"
+  short_description: "Generate 90-day multi-platform content plans."
+  default_prompt: "Use $content-engine to create a 90 Day Content Plan for Facebook, Instagram, TikTok, and 小红书."

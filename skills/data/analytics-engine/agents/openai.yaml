@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analytics Engine"
+  short_description: "Design analytics metrics and event logic."
+  default_prompt: "Use $analytics-engine to design this data layer for NextShift."

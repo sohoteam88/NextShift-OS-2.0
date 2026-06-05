@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dashboard UX Designer"
+  short_description: "Design simple mission-first dashboards."
+  default_prompt: "Use $dashboard-ux-designer to create a NextShift dashboard with Today's Mission, progress, leads, AI Coach, and Continue."

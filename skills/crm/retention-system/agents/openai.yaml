@@ -1,0 +1,4 @@
+interface:
+  display_name: "Retention System"
+  short_description: "Build CRM retention and reactivation workflows."
+  default_prompt: "Use $retention-system to design this CRM part of NextShift."

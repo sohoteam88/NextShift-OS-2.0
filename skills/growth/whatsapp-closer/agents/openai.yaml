@@ -1,0 +1,4 @@
+interface:
+  display_name: "WhatsApp Closer"
+  short_description: "Generate trust-based WhatsApp closing scripts."
+  default_prompt: "Use $whatsapp-closer to create a WhatsApp flow from trust to decision, including follow-up and objection handling."

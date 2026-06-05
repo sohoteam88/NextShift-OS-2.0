@@ -1,0 +1,4 @@
+interface:
+  display_name: "WhatsApp Automation"
+  short_description: "Design AI WhatsApp automation flows."
+  default_prompt: "Use $whatsapp-automation to design this AI workflow for NextShift."
