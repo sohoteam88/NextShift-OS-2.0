@@ -22,3 +22,7 @@ nextshift/
 ```
 
 See `AGENTS.md` for project instructions and skill usage policy.
+
+## Documentation
+
+Architecture and system reference documents are stored in [`docs/`](docs/README.md).
