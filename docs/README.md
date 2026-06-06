@@ -6,6 +6,7 @@ This folder contains the architecture and source reference documents for NextShi
 
 - [System Architecture README](source/README.md)
 - [AI Coworker Operating Rules](source/AGENTS.md)
+- [Supabase Setup](SUPABASE_SETUP.md)
 - [00 - System Overview](architecture/00_SYSTEM_OVERVIEW.md)
 - [01 - Product Vision](architecture/01_PRODUCT_VISION.md)
 - [02 - System Context](architecture/02_SYSTEM_CONTEXT.md)
