@@ -1,11 +1,8 @@
-# Ux Flow Architect Checklist
+# UX Flow Architect Checklist
 
-Before finishing a `ux-flow-architect` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] Every screen has one primary action
+- [ ] Dead ends have recovery paths
+- [ ] User always knows the next step
+- [ ] Decision fatigue minimized (AI suggests, user confirms)
+- [ ] Mobile flow tested (375px)
+- [ ] States cover: success, error, empty, loading

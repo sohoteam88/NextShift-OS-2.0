@@ -1,11 +1,10 @@
-# Ai Video Engine Checklist
+# AI Video Engine Checklist
 
-Before finishing a `ai-video-engine` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] Hook in first 3 seconds
+- [ ] Video length matches platform (15-60s)
+- [ ] All required outputs: Hook, Storyboard, Dialogue, Image Prompt, Video Prompt, Voice Prompt, CTA
+- [ ] CTA is clear and platform-appropriate
+- [ ] Tone matches audience and brand
+- [ ] No copyrighted music/content specified
+- [ ] Image/video prompts are specific enough for AI generation
+- [ ] Faceless alternative provided if requested

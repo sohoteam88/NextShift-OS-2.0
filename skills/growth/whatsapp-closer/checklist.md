@@ -1,11 +1,10 @@
-# Whatsapp Closer Checklist
+# WhatsApp Closer Checklist
 
-Before finishing a `whatsapp-closer` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] Follows Trust → Pain → Future Vision → Offer → Decision sequence
+- [ ] Messages are WhatsApp-length (short paragraphs, not essays)
+- [ ] Each message has a clear purpose and soft/hard CTA
+- [ ] Objection responses acknowledge before reframing
+- [ ] No pressure tactics or manipulative urgency
+- [ ] Includes opt-out/decline path
+- [ ] Written in user's language (Chinese/English/BM as needed)
+- [ ] Timing between messages is realistic (not all in one day)

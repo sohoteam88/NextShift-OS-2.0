@@ -1,11 +1,11 @@
 # Content Engine Checklist
 
-Before finishing a `content-engine` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] Content ratio maintained: 40% Education, 20% Story, 20% Authority, 10% Offer, 10% Community
+- [ ] All 4 platforms covered: Facebook, Instagram, TikTok, 小红书
+- [ ] Each content piece has: type, core idea, hook, platform versions, CTA
+- [ ] CTA variety across plan (comment, DM, save, share, download, register, WhatsApp)
+- [ ] Content tied to user's audience, positioning, and offer (not generic)
+- [ ] Repurposing workflow included
+- [ ] Written in user's language
+- [ ] No income claims or exaggerated promises
+- [ ] Hook bank and CTA library provided

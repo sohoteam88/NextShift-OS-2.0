@@ -1,13 +1,18 @@
-# Whatsapp Closer Examples
+# WhatsApp Closer Examples
 
-Use this skill when the user asks for work related to `whatsapp-closer`.
+## Example 1: Health Consultation Follow-up
 
-## Example Prompts
+**Input:** "A lead downloaded my meal prep guide. Write a WhatsApp follow-up sequence to book a free consultation."
 
-- Use `$whatsapp-closer` to help me design this part of NextShift.
-- Use `$whatsapp-closer` to review my current idea and suggest the next step.
-- Use `$whatsapp-closer` to generate an implementation-ready plan.
+**Expected output:** 5-message sequence over 7 days: Day 0 (delivery + question), Day 1 (value tip), Day 3 (story/proof), Day 5 (soft pitch), Day 7 (last chance + CTA). Each message in Chinese with WhatsApp-friendly formatting.
 
-## Expected Output
+## Example 2: Objection Handling
 
-Follow the output format in `SKILL.md`. Keep the result specific, practical, and ready for Claude Code or Codex to use.
+**Input:** "My lead said '太贵了，我负担不起'. How do I respond?"
+
+**Expected output:** Objection classification (price), acknowledgment response, reframe around cost of inaction vs investment, clarifying question ("Is it the total amount or the timing?"), lower-commitment next step option.
+
+## When NOT to Use This Skill
+
+- User needs **automated WhatsApp flows** (bot) → use `ai/whatsapp-automation`
+- User needs a **full funnel** → use `growth/funnel-builder`

@@ -1,10 +1,12 @@
 # WhatsApp Automation Checklist
 
-Before finishing a `whatsapp-automation` task, check:
-
-- The AI workflow has clear inputs, outputs, and user review points.
-- High-impact actions require confirmation or handoff.
-- Guardrails, permissions, logs, and fallback states are included where relevant.
-- The output does not duplicate CRM, growth, UX, or data responsibilities unless integration is needed.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when files were edited.
+- [ ] Trigger events clearly defined
+- [ ] Message frequency limited (max 1/day unless user-initiated)
+- [ ] Opt-out handling included ("不需要" / "stop")
+- [ ] Human handoff rules specified (when bot stops, human takes over)
+- [ ] No messages after 9pm local time
+- [ ] WhatsApp template messages pre-approved by Meta (for outbound)
+- [ ] Consent obtained before first automated message
+- [ ] Personalization variables resolved correctly
+- [ ] Branching logic covers edge cases
+- [ ] References `docs/architecture/12_AUTOMATION_ARCHITECTURE.md`

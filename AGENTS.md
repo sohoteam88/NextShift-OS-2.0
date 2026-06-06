@@ -95,7 +95,7 @@ Skill categories:
 - `data`
 - `verticals`
 
-## Core Skills (5)
+## Core Skills (8)
 
 Core is responsible for the overall product, system, UI, AI assistant, and business operating architecture that coordinates all other categories.
 
@@ -104,6 +104,9 @@ Core is responsible for the overall product, system, UI, AI assistant, and busin
 - `ai-model-router` — AI model selection policy
 - `design-system-architect` — visual system + component library + design tokens *(merged from ui-system-architect + design-system-manager)*
 - `ai-assistant-designer` — proactive AI Coach experience design
+- `deployment-engineer` — production deployment, CI/CD, Docker, Nginx, SSL, rollback
+- `i18n-translator` — Chinese, English, and Bahasa Malaysia translation system
+- `security-auditor` — auth, permissions, tenant isolation, and data security review
 
 ## Growth Skills (7)
 
@@ -139,7 +142,7 @@ Lead → Pipeline → Customer → Retention → Team / Analytics
 - `analytics-dashboard`
 - `crm-uiux`
 
-## AI Skills (7)
+## AI Skills (8)
 
 AI is responsible for intelligent generation, automation, scoring, orchestration, and proactive coaching:
 
@@ -154,6 +157,7 @@ Input → AI Reasoning / Generation → Review → Automation / Action → Learn
 - `ai-funnel-generator` — funnel + landing page AI generation *(absorbs ai-landingpage-builder)*
 - `ai-agent-orchestrator`
 - `ai-coach`
+- `voice-profile-designer` — voice capture and AI profile extraction
 
 ## Data Skills (5)
 

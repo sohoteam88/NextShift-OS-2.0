@@ -1,11 +1,11 @@
 # Offer Architect Checklist
 
-Before finishing a `offer-architect` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] Hormozi value equation applied (Dream Outcome × Likelihood / Time × Effort)
+- [ ] Offer stack includes core + 2-3 bonuses + guarantee
+- [ ] Price anchoring used (total value before price)
+- [ ] Scarcity is real (not fabricated)
+- [ ] Urgency has a real deadline
+- [ ] Guarantee reduces perceived risk
+- [ ] Bonuses reduce effort or time delay
+- [ ] Offer is specific to audience (not generic "coaching program")
+- [ ] No exaggerated income or health claims

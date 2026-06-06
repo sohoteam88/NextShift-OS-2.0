@@ -2,12 +2,13 @@
 
 Before finishing a `personal-brand` task, check:
 
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Positioning, niche, USP, story, authority, bios, and audit needs are covered when relevant.
-- Existing profile/content gaps are scored or prioritized when auditing.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] Positioning statement follows "I help [audience] achieve [outcome] through [method]" format
+- [ ] Niche is specific enough for a stranger to understand in one sentence
+- [ ] No expertise, results, or proof was invented
+- [ ] Platform bios are platform-appropriate (character limits, tone)
+- [ ] Story framework has: before state, turning point, lesson, method, transformation
+- [ ] Audit mode includes scorecard with specific scores and deduction reasons
+- [ ] Quick wins are actionable within 1 hour
+- [ ] 2-3 alternate directions offered when positioning is uncertain
+- [ ] Written in user's language
+- [ ] Chinese + English + BM copy provided when serving Malaysia users

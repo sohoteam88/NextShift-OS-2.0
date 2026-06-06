@@ -1,11 +1,10 @@
 # Lead Management Checklist
 
-Before finishing a `lead-management` task, check:
-
-- The output is CRM-specific and does not duplicate a growth, UX, AI, or data skill.
-- Lead, customer, pipeline, team, or retention ownership is clear where relevant.
-- Statuses and next actions are simple enough for new users.
-- Mobile-first and WhatsApp handoff needs are considered when relevant.
-- Required fields, automations, views, or metrics are implementation-ready.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when files were edited.
+- [ ] Required lead fields defined (name, phone, source minimum)
+- [ ] Lead statuses cover full lifecycle (new → converted/lost)
+- [ ] Auto-tagging rules defined for lead sources
+- [ ] Follow-up timing specified (when to contact)
+- [ ] Stale-lead threshold defined (e.g., 7 days no activity)
+- [ ] Next-best-action visible on lead card
+- [ ] Bulk actions available (tag, assign, export)
+- [ ] WhatsApp-friendly (phone/WhatsApp fields present)

@@ -1,13 +1,23 @@
 # Analytics Engine Examples
 
-Use this skill when the user asks for work related to `analytics-engine`.
+## Example 1: Define Conversion Funnel Metrics
 
-## Example Prompts
+**Input:** "Define the metrics for our lead-to-customer conversion funnel."
 
-- Use `$analytics-engine` to design this NextShift data layer.
-- Use `$analytics-engine` to create implementation-ready specs for Supabase/Postgres or analytics.
-- Use `$analytics-engine` to review whether my current data model can support reporting.
+**Expected output:**
 
-## Expected Output
+| Metric | Formula | Grain | Source |
+|--------|---------|-------|--------|
+| Lead Volume | COUNT(leads) WHERE created_at in period | Daily/Weekly/Monthly | leads table |
+| Contact Rate | leads contacted / total leads × 100 | Weekly | leads WHERE stage != 'new' / total |
+| Qualification Rate | leads qualified / leads contacted × 100 | Weekly | leads WHERE stage = 'qualified' / contacted |
+| Conversion Rate | customers / total leads × 100 | Monthly | leads WHERE stage = 'converted' / total |
+| Time to Convert | AVG(converted_at - created_at) | Monthly | leads WHERE converted |
+| Cost per Lead | ad_spend / lead_volume | Monthly | external + leads |
 
-Follow the output format in `SKILL.md`. Keep the result data-specific, implementation-ready, and clear enough for Codex or Claude Code to use.
+North-star metric: Monthly Conversion Rate. Leading indicators: Contact Rate (48h), Qualification Rate.
+
+## When NOT to Use This Skill
+
+- User needs **dashboard UI design** → use `crm/analytics-dashboard` or `ux/dashboard-ux-designer`
+- User needs **event tracking plan** → use `data/event-tracking`

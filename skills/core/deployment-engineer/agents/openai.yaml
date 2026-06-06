@@ -1,0 +1,4 @@
+interface:
+  display_name: "Deployment Engineer"
+  short_description: "Deploy and troubleshoot production infrastructure."
+  default_prompt: "Use $deployment-engineer to design or debug the NextShift production deployment."

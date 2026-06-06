@@ -1,10 +1,12 @@
 # Email Automation Checklist
 
-Before finishing a `email-automation` task, check:
-
-- The AI workflow has clear inputs, outputs, and user review points.
-- High-impact actions require confirmation or handoff.
-- Guardrails, permissions, logs, and fallback states are included where relevant.
-- The output does not duplicate CRM, growth, UX, or data responsibilities unless integration is needed.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when files were edited.
+- [ ] Trigger event clearly defined
+- [ ] Segment/audience specified
+- [ ] Subject lines written (in user's language)
+- [ ] Each email has one clear goal and CTA
+- [ ] Sequence timing is realistic (not too aggressive)
+- [ ] Exit/completion criteria defined
+- [ ] Opt-out/unsubscribe handling included
+- [ ] CRM tags/status updates triggered by email actions
+- [ ] No spam-trigger words or misleading subjects
+- [ ] References `docs/architecture/12_AUTOMATION_ARCHITECTURE.md`

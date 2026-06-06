@@ -1,11 +1,11 @@
-# Ai Assistant Designer Checklist
+# AI Assistant Designer Checklist
 
-Before finishing a `ai-assistant-designer` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] AI Coach card has: greeting, goal, time estimate, CTA
+- [ ] AI recommends next-best-action (not a feature list)
+- [ ] User can decline/postpone without friction
+- [ ] High-impact AI actions require preview before execution
+- [ ] States cover: idle, suggested, started, generating, review, completed, postponed, error
+- [ ] Nudge rules defined (timing, frequency, escalation)
+- [ ] Completion leads to next mission (not dead end)
+- [ ] Copy is short, warm, action-oriented
+- [ ] Tool-use transparency (what data AI accesses, what it will do)

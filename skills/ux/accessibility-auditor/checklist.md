@@ -1,11 +1,11 @@
 # Accessibility Auditor Checklist
 
-Before finishing a `accessibility-auditor` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] All inputs have visible labels (not placeholder-only)
+- [ ] Color contrast ≥ 4.5:1 (text), ≥ 3:1 (large text)
+- [ ] Focus ring visible on all interactive elements
+- [ ] Keyboard navigation works (Tab, Enter, Escape)
+- [ ] ARIA labels on icon-only buttons
+- [ ] Error messages linked via aria-describedby
+- [ ] Heading hierarchy logical (h1 → h2 → h3)
+- [ ] Language attribute set on <html>
+- [ ] Touch targets ≥ 44px on mobile

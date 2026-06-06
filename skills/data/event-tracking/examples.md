@@ -1,13 +1,24 @@
 # Event Tracking Examples
 
-Use this skill when the user asks for work related to `event-tracking`.
+## Example 1: CRM Event Tracking Plan
 
-## Example Prompts
+**Input:** "Define tracking events for the CRM module."
 
-- Use `$event-tracking` to design this NextShift data layer.
-- Use `$event-tracking` to create implementation-ready specs for Supabase/Postgres or analytics.
-- Use `$event-tracking` to review whether my current data model can support reporting.
+**Expected output:**
 
-## Expected Output
+| Event Name | Trigger | Properties | Type |
+|-----------|---------|------------|------|
+| lead.created | New lead added | source, funnel_id, has_phone, has_whatsapp | Conversion |
+| lead.stage_changed | Pipeline drag | from_stage, to_stage, lead_id | Activity |
+| lead.contacted | First message sent | channel (whatsapp/call/email), lead_id | Activity |
+| lead.score_updated | Score recalculated | old_score, new_score, lead_id | System |
+| lead.converted | Becomes customer | time_to_convert_days, lead_id | Conversion |
+| lead.lost | Marked as lost | reason, stage_at_loss, lead_id | Conversion |
+| note.added | Note created | lead_id, word_count | Activity |
 
-Follow the output format in `SKILL.md`. Keep the result data-specific, implementation-ready, and clear enough for Codex or Claude Code to use.
+Naming convention: `{entity}.{past_tense_action}`. All events include: tenant_id, user_id, timestamp (auto).
+
+## When NOT to Use This Skill
+
+- User needs **metric formulas** → use `data/analytics-engine`
+- User needs **database schema** → use `data/crm-database`

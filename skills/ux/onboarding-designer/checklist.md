@@ -1,11 +1,11 @@
 # Onboarding Designer Checklist
 
-Before finishing a `onboarding-designer` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] First success achievable in ≤ 5 minutes
+- [ ] Progress indicator visible throughout
+- [ ] Each step has one clear action
+- [ ] AI does the heavy lifting (user chooses, not creates)
+- [ ] User can skip or come back later
+- [ ] Celebration moment at completion
+- [ ] Next mission suggested after completion
+- [ ] Works on mobile (375px)
+- [ ] Duolingo/Canva-style activation feel

@@ -1,12 +1,11 @@
 # CRM Database Checklist
 
-Before finishing a `crm-database` task, check:
-
-- Entities, events, metrics, or reports are clearly named.
-- Relationships, grain, IDs, ownership, or lifecycle states are explicit where relevant.
-- Access control, privacy, and data quality are considered.
-- Supabase, PostgreSQL, and BigQuery work is routed to the data category unless a narrower skill overrides it.
-- Metrics can be traced back to tables or events.
-- The output does not duplicate CRM, growth, UX, or AI responsibilities unless integration is needed.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when files were edited.
+- [ ] All tables have tenant_id column
+- [ ] RLS enabled on tenant-scoped tables
+- [ ] Indexes on frequently filtered columns
+- [ ] Lifecycle states use explicit enums (not booleans)
+- [ ] created_at and updated_at on all tables
+- [ ] Relationships use foreign keys
+- [ ] Prisma model matches SQL schema
+- [ ] Migration-ready (no breaking changes without migration plan)
+- [ ] Architecture doc `07_DATABASE_ARCHITECTURE.md` flagged for update

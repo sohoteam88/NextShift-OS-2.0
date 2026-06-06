@@ -1,0 +1,4 @@
+interface:
+  display_name: "I18N Translator"
+  short_description: "Manage zh/en/ms translation keys."
+  default_prompt: "Use $i18n-translator to create or audit NextShift translation strings in Chinese, English, and Bahasa Malaysia."

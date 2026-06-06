@@ -1,0 +1,4 @@
+interface:
+  display_name: "Voice Profile Designer"
+  short_description: "Design voice-to-profile AI capture flows."
+  default_prompt: "Use $voice-profile-designer to design a voice capture and AI profile extraction workflow for NextShift."

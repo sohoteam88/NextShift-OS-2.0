@@ -1,13 +1,31 @@
 # Health Funnel Builder Examples
 
-Use this skill when the user asks for work related to `health-funnel-builder`.
+## Example 1: Weight Management Quiz Funnel
 
-## Example Prompts
+**Input:** "Build a health quiz funnel for my weight management consulting in Malaysia. Target: 30-45 year old women."
 
-- Use `$health-funnel-builder` to help me design this part of NextShift.
-- Use `$health-funnel-builder` to review my current idea and suggest the next step.
-- Use `$health-funnel-builder` to generate an implementation-ready plan.
+**Expected output:**
 
-## Expected Output
+Health Quiz: "你的体重管理类型是什么？" — 5 questions about eating habits, exercise, sleep, stress, goals. 3 result types with personalized recommendations.
 
-Follow the output format in `SKILL.md`. Keep the result specific, practical, and ready for Claude Code or Codex to use.
+Landing Page:
+- Hero: "找到适合你的健康方案 — 3 分钟免费测试"
+- Pain: 3 common struggles (tried diets that don't work, no time, rebound)
+- Mechanism: "为什么你需要个性化方案而不是通用减肥法"
+- CTA: "开始免费测试 →"
+
+WhatsApp Follow-up (per result type):
+- Day 0: "你的测试结果是 [类型]。这代表..."
+- Day 2: Relevant health tip
+- Day 4: Success story matching their type
+- Day 6: "想要专属你的健康方案？预约免费 30 分钟咨询 →"
+
+Consultation Flow: pre-consultation form (3 questions), WhatsApp confirmation, prep guide.
+
+Compliance: no medical claims, no guaranteed weight loss numbers, no brand names unless user specifies.
+
+## When NOT to Use This Skill
+
+- User needs a **generic funnel** (not health-specific) → use `growth/funnel-builder`
+- User needs **AI to generate the copy** → use `ai/ai-funnel-generator`
+- User needs **Herbalife-specific** retail system → use `verticals/herbalife-retail-system`

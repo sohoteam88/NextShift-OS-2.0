@@ -1,11 +1,10 @@
 # Herbalife Retail System Checklist
 
-Before finishing a `herbalife-retail-system` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] No income claims or earnings promises
+- [ ] No exaggerated health/weight loss guarantees
+- [ ] Education-focused (correct usage, nutrition knowledge)
+- [ ] Herbalife Nutrition disclosure included where required
+- [ ] Follow-up timing is helpful, not aggressive
+- [ ] Reorder reminders based on actual purchase cycle
+- [ ] Customer can opt out of messages
+- [ ] Compliant with Malaysia Direct Sales Act 1993

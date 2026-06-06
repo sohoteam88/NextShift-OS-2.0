@@ -1,13 +1,23 @@
 # Pipeline Management Examples
 
-Use this skill when the user asks for work related to `pipeline-management`.
+## Example 1: Health Consultation Pipeline
 
-## Example Prompts
+**Input:** "Design pipeline stages for my health consultation business."
 
-- Use `$pipeline-management` to design this CRM workflow for NextShift.
-- Use `$pipeline-management` to turn my current CRM process into a clear system.
-- Use `$pipeline-management` to generate implementation-ready CRM specs.
+**Expected output:**
 
-## Expected Output
+| Stage | Exit Criteria | Next Action |
+|-------|--------------|-------------|
+| 新线索 | Lead responds to first message | Send personalized follow-up |
+| 已联系 | Lead expresses interest in consultation | Ask qualifying questions |
+| 已确认需求 | Lead answers qualification questions | Send consultation booking link |
+| 已预约 | Lead books consultation slot | Send confirmation + prep guide |
+| 已转化 | Lead becomes paying customer | Onboard + add to retention sequence |
+| 已流失 | Lead explicitly declines or 30 days no response | Tag reason, add to reactivation |
 
-Follow the output format in `SKILL.md`. Keep the result practical, CRM-specific, and ready for Codex or Claude Code to use.
+Kanban view with drag-drop. Stalled-deal flag: lead in same stage > 7 days.
+
+## When NOT to Use This Skill
+
+- User needs **lead scoring** → use `ai/ai-lead-scoring`
+- User needs **full CRM architecture** → use `crm/crm-architect`

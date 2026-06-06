@@ -1,0 +1,4 @@
+interface:
+  display_name: "Security Auditor"
+  short_description: "Audit auth, permissions, and tenant safety."
+  default_prompt: "Use $security-auditor to review NextShift security, permissions, tenant isolation, and user data risks."

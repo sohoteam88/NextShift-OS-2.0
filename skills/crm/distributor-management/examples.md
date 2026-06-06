@@ -1,13 +1,18 @@
 # Distributor Management Examples
 
-Use this skill when the user asks for work related to `distributor-management`.
+## Example 1: New Distributor Onboarding Tracking
 
-## Example Prompts
+**Input:** "I have 8 new team members this month. Design how I track their onboarding progress."
 
-- Use `$distributor-management` to design this CRM workflow for NextShift.
-- Use `$distributor-management` to turn my current CRM process into a clear system.
-- Use `$distributor-management` to generate implementation-ready CRM specs.
+**Expected output:**
 
-## Expected Output
+Distributor profile fields: name, join_date, sponsor_id, onboarding_status (pending/in_progress/completed), training_step (1-5), first_post_date, first_lead_date, first_sale_date.
 
-Follow the output format in `SKILL.md`. Keep the result practical, CRM-specific, and ready for Codex or Claude Code to use.
+Onboarding checklist: 1) Complete profile, 2) Watch training video, 3) Set up funnel page, 4) Publish first content, 5) Generate first lead.
+
+Leader dashboard card: "3/8 members completed onboarding. 2 stalled at step 3 (funnel setup)." AI Coach suggests: "发送操作指南给小李和小王？"
+
+## When NOT to Use This Skill
+
+- User needs **team tree visualization** → use `crm/team-duplication`
+- User needs **CRM permissions** → use `crm/crm-architect`

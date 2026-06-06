@@ -1,13 +1,22 @@
 # Reporting Engine Examples
 
-Use this skill when the user asks for work related to `reporting-engine`.
+## Example 1: Weekly Leader Report
 
-## Example Prompts
+**Input:** "Design a weekly report for team leaders showing their team's performance."
 
-- Use `$reporting-engine` to design this NextShift data layer.
-- Use `$reporting-engine` to create implementation-ready specs for Supabase/Postgres or analytics.
-- Use `$reporting-engine` to review whether my current data model can support reporting.
+**Expected output:**
 
-## Expected Output
+Report: "团队周报 — Week of {date}"
+Audience: Leader
+Delivery: Every Monday 9am via email + in-app notification
+Sections:
+1. Summary: total leads, conversions, team active rate
+2. Member breakdown table: name, leads added, follow-ups done, conversions, content published
+3. Highlights: top performer, biggest improvement
+4. Alerts: members inactive 5+ days
+5. AI recommendation: "小李 has 5 hot leads — suggest she focus on closing this week"
 
-Follow the output format in `SKILL.md`. Keep the result data-specific, implementation-ready, and clear enough for Codex or Claude Code to use.
+## When NOT to Use This Skill
+
+- User needs **metric definitions** → use `data/analytics-engine`
+- User needs **dashboard UI** → use `crm/analytics-dashboard`

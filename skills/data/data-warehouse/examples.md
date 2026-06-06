@@ -1,13 +1,20 @@
 # Data Warehouse Examples
 
-Use this skill when the user asks for work related to `data-warehouse`.
+## Example 1: Lead Analytics Mart
 
-## Example Prompts
+**Input:** "Design a data mart for lead conversion analysis."
 
-- Use `$data-warehouse` to design this NextShift data layer.
-- Use `$data-warehouse` to create implementation-ready specs for Supabase/Postgres or analytics.
-- Use `$data-warehouse` to review whether my current data model can support reporting.
+**Expected output:**
 
-## Expected Output
+Fact table: `fct_lead_conversions` (lead_id, tenant_id, created_date, converted_date, days_to_convert, source, funnel_id, final_score, stage_count, touchpoint_count).
 
-Follow the output format in `SKILL.md`. Keep the result data-specific, implementation-ready, and clear enough for Codex or Claude Code to use.
+Dimensions: `dim_source` (source_name, source_type), `dim_funnel` (funnel_name, funnel_type, tenant_id), `dim_date` (date, week, month, quarter).
+
+Refresh: nightly ELT from leads + activities tables. Tool: SQL views in Supabase (Phase 1), dbt + BigQuery (Phase 2+).
+
+Note: This is Phase 2+ architecture. For Phase 1, use direct queries on application tables.
+
+## When NOT to Use This Skill
+
+- User needs **application database tables** → use `data/crm-database`
+- User needs **event definitions** → use `data/event-tracking`

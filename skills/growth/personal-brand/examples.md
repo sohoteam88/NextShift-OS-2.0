@@ -1,13 +1,19 @@
 # Personal Brand Examples
 
-Use this skill when the user asks for work related to `personal-brand`.
+## Example 1: Build Mode — Health Coach from Scratch
 
-## Example Prompts
+**Input:** "I'm a 35-year-old Malaysian mom, lost 15kg with nutrition coaching. I want to build a personal brand on Facebook and Instagram to attract busy moms who want to lose weight healthily."
 
-- Use `$personal-brand` to build my positioning, niche, and bios.
-- Use `$personal-brand` to audit my Instagram profile and content clarity.
-- Use `$personal-brand` to create my Brand DNA, USP, story framework, and 30-day improvement plan.
+**Expected output:** Brand DNA with "busy mom health transformation" niche, positioning statement, before/after story framework, 5 content pillars (education, meal prep, mindset, real results, community), bios in Chinese and English for Facebook/Instagram/TikTok.
 
-## Expected Output
+## Example 2: Audit Mode — Weak Instagram Profile
 
-Follow the output format in `SKILL.md`. Keep the result specific, practical, and ready for Claude Code or Codex to use.
+**Input:** "My Instagram has 2000 followers but no DMs or leads. Here's my bio: 'Health & Wellness 🌿 | Living my best life | DM me'. My last 9 posts are motivational quotes."
+
+**Expected output:** Audit scorecard showing weak clarity (no audience/outcome/CTA in bio), no authority signals, generic content not tied to an offer, 0 conversion path. Bio rewrite with specific audience + outcome + CTA. Content fix: replace quotes with education/story mix. 30-day plan.
+
+## When NOT to Use This Skill
+
+- User needs a **content calendar** → use `growth/content-engine`
+- User needs a **funnel** → use `growth/funnel-builder`
+- User needs **offer design** → use `growth/offer-architect`

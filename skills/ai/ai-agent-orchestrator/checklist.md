@@ -1,10 +1,12 @@
 # AI Agent Orchestrator Checklist
 
-Before finishing a `ai-agent-orchestrator` task, check:
-
-- The AI workflow has clear inputs, outputs, and user review points.
-- High-impact actions require confirmation or handoff.
-- Guardrails, permissions, logs, and fallback states are included where relevant.
-- The output does not duplicate CRM, growth, UX, or data responsibilities unless integration is needed.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when files were edited.
+- [ ] Each agent has defined role, input, output, tools, and boundaries
+- [ ] Orchestration flow is explicit (sequence, parallel, conditional)
+- [ ] Human review points defined for high-impact actions
+- [ ] Guardrails specified (what agents cannot do)
+- [ ] Fallback states defined (what happens on failure)
+- [ ] Retry limits set (max 3 per agent)
+- [ ] All steps logged for observability
+- [ ] Tool permissions scoped per agent
+- [ ] Memory/context passing between agents specified
+- [ ] No API keys or secrets exposed to agents

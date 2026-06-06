@@ -1,13 +1,33 @@
-# Ux Flow Architect Examples
+# UX Flow Architect Examples
 
-Use this skill when the user asks for work related to `ux-flow-architect`.
+## Example 1: Lead-to-Customer Flow
 
-## Example Prompts
+**Input:** "Design the user flow from when a member gets a new lead to when that lead becomes a customer."
 
-- Use `$ux-flow-architect` to help me design this part of NextShift.
-- Use `$ux-flow-architect` to review my current idea and suggest the next step.
-- Use `$ux-flow-architect` to generate an implementation-ready plan.
+**Expected output:**
 
-## Expected Output
+```
+New Lead Notification (push/in-app)
+    → Tap → Lead Detail Screen
+        → Primary CTA: "发送 WhatsApp"
+            → AI suggests message → User edits → Send
+            → Activity logged → Stage: "已联系"
+        → Lead replies (webhook)
+            → Notification → Tap → Chat view
+            → AI suggests reply → Send
+            → If interested → CTA: "预约咨询"
+                → Calendar picker → Book
+                → Stage: "已预约"
+                → Reminder sequence activated
+            → Consultation happens
+                → Member marks: converted or lost
+                → If converted → Stage: "已转化" 🎉
+                → AI Coach: "恭喜！下一步：设定 30 天跟进提醒"
+```
 
-Follow the output format in `SKILL.md`. Keep the result specific, practical, and ready for Claude Code or Codex to use.
+Decision points, dead ends, and recovery paths included. Every screen has one primary action.
+
+## When NOT to Use This Skill
+
+- User needs **first-run onboarding** → use `ux/onboarding-designer`
+- User needs **pipeline stage design** → use `crm/pipeline-management`

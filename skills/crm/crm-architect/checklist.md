@@ -1,11 +1,10 @@
 # CRM Architect Checklist
 
-Before finishing a `crm-architect` task, check:
-
-- The output is CRM-specific and does not duplicate a growth, UX, AI, or data skill.
-- Lead, customer, pipeline, team, or retention ownership is clear where relevant.
-- Statuses and next actions are simple enough for new users.
-- Mobile-first and WhatsApp handoff needs are considered when relevant.
-- Required fields, automations, views, or metrics are implementation-ready.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when files were edited.
+- [ ] Lead lifecycle stages defined with clear exit criteria
+- [ ] Pipeline stages match business process
+- [ ] Permissions defined per role (member/leader/operator)
+- [ ] Tenant isolation enforced (tenant_id on all tables)
+- [ ] Follow-up and stale-lead automation defined
+- [ ] Activity logging captures all lead interactions
+- [ ] Integration with WhatsApp and funnel capture specified
+- [ ] References `docs/architecture/10_CRM_ARCHITECTURE.md`

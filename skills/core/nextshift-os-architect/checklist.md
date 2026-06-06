@@ -1,11 +1,11 @@
-# Nextshift Os Architect Checklist
+# NextShift OS Architect Checklist
 
-Before finishing a `nextshift-os-architect` task, check:
-
-- The request matches this skill and does not duplicate another skill.
-- Missing high-impact context was requested or assumptions were stated.
-- Output follows `SKILL.md`.
-- Recommendations are specific and implementation-ready.
-- Mobile-first UX is considered when interface work is involved.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when code or files were edited.
+- [ ] Read relevant architecture docs before designing
+- [ ] Database tables include tenant_id, created_at, updated_at
+- [ ] API endpoints follow /api/v1/{module}/ pattern
+- [ ] RBAC permissions defined for all roles
+- [ ] Module follows folder convention from `04_MODULE_ARCHITECTURE.md`
+- [ ] Architecture docs flagged for update if schema/API/module changes
+- [ ] MVP scope is buildable within stated timeline
+- [ ] Dependencies between modules explicit
+- [ ] Risks identified with mitigations

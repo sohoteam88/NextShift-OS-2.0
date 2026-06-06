@@ -1,13 +1,21 @@
 # Visual Hierarchy Expert Examples
 
-Use this skill when the user asks for work related to `visual-hierarchy-expert`.
+## Example 1: Dashboard Screen Audit
 
-## Example Prompts
+**Input:** "Audit this dashboard screenshot — everything feels equally important, I don't know where to look."
 
-- Use `$visual-hierarchy-expert` to help me design this part of NextShift.
-- Use `$visual-hierarchy-expert` to review my current idea and suggest the next step.
-- Use `$visual-hierarchy-expert` to generate an implementation-ready plan.
+**Expected output:**
 
-## Expected Output
+Diagnosis: 6 CTAs competing for attention, 8 KPI cards with no hierarchy, sidebar and header both demanding focus.
 
-Follow the output format in `SKILL.md`. Keep the result specific, practical, and ready for Claude Code or Codex to use.
+Fix using 1-3-∞ rule:
+- 1 Primary Action: AI Coach mission card (blue, large, top position)
+- 3 Secondary Actions: "查看线索", "发布内容", "跟进提醒" (gray buttons, smaller)
+- ∞ Hidden Actions: settings, export, filters → move to overflow menu (···)
+
+Reduce KPI cards from 8 to 4. Group remaining metrics under expandable "更多数据" section. Remove sidebar on mobile, use bottom tab bar.
+
+## When NOT to Use This Skill
+
+- User needs **full design system** → use `core/design-system-architect`
+- User needs **accessibility audit** → use `ux/accessibility-auditor`

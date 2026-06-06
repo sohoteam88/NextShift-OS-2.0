@@ -1,10 +1,12 @@
 # AI Funnel Generator Checklist
 
-Before finishing a `ai-funnel-generator` task, check:
-
-- The AI workflow has clear inputs, outputs, and user review points.
-- High-impact actions require confirmation or handoff.
-- Guardrails, permissions, logs, and fallback states are included where relevant.
-- The output does not duplicate CRM, growth, UX, or data responsibilities unless integration is needed.
-- No API keys, secrets, or unsafe private data are exposed.
-- The final response summarizes files changed, what was added, and what still needs improvement when files were edited.
+- [ ] Generated copy aligns with user's offer and audience
+- [ ] No income claims or exaggerated health promises
+- [ ] Every section has a CTA
+- [ ] Headline ≤ 2 lines
+- [ ] Social proof included (or placeholder)
+- [ ] Mobile-first layout assumed
+- [ ] Review step before publishing
+- [ ] User can edit every generated field
+- [ ] AI usage logged and quota checked
+- [ ] References `docs/architecture/09_AI_ARCHITECTURE.md` and `docs/architecture/11_FUNNEL_ARCHITECTURE.md`
