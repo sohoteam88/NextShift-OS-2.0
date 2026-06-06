@@ -96,6 +96,7 @@ Core is responsible for the overall product, system, UI, AI assistant, and busin
 
 - `business-operating-system-architect`
 - `nextshift-os-architect`
+- `ai-model-router`
 - `ui-system-architect`
 - `design-system-manager`
 - `ai-assistant-designer`

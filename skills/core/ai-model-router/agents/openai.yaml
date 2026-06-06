@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Model Router"
+  short_description: "Route tasks to the right AI model tier."
+  default_prompt: "Use $ai-model-router to decide which AI model tier should handle this NextShift task."
