@@ -50,6 +50,32 @@ Expected response:
 }
 ```
 
+## Database Setup
+
+The initial production schema is stored in:
+
+```text
+supabase/migrations/202606060001_initial_nextshift_schema.sql
+```
+
+It creates the first NextShift OS database foundation:
+
+- Tenant and user profile tables
+- CRM lead, tag, note, activity, and pipeline tables
+- Funnel, WhatsApp sequence, scheduled message, and content tables
+- AI prompt template and AI usage log tables
+- Daily action, training progress, voice profile, and analytics event tables
+- Private helper functions under `app_private`
+- Row Level Security policies for tenant isolation
+
+The migration was applied to Supabase project:
+
+```text
+ugyeyjxubahhwdouypjf
+```
+
+All public application tables must keep RLS enabled.
+
 ## MCP Setup
 
 The project includes a project-scoped Supabase MCP configuration:

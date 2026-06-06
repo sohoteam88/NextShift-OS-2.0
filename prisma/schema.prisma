@@ -3,6 +3,383 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Tenant {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  slug              String             @unique
+  plan              String             @default("starter")
+  settings          Json               @default("{}")
+  status            String             @default("active")
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  users             User[]
+  tags              Tag[]
+  pipelineStages    PipelineStage[]
+  leads             Lead[]
+  activities        Activity[]
+  funnelTemplates   FunnelTemplate[]
+  funnels           Funnel[]
+  aiPromptTemplates AIPromptTemplate[]
+  aiUsageLogs       AIUsageLog[]
+  whatsappSequences WhatsAppSequence[]
+  scheduledMessages ScheduledMessage[]
+  dailyActions      DailyAction[]
+  trainingProgress  TrainingProgress[]
+  contents          Content[]
+  voiceProfiles     VoiceProfile[]
+  analyticsEvents   AnalyticsEvent[]
+
+  @@map("tenants")
+}
+
+model User {
+  id                  String             @id @db.Uuid
+  tenantId            String             @map("tenant_id") @db.Uuid
+  email               String
+  name                String
+  phone               String?
+  role                String             @default("member")
+  languagePreference  String             @default("zh") @map("language_preference")
+  status              String             @default("pending")
+  avatarUrl           String?            @map("avatar_url")
+  bio                 String?
+  metadata            Json               @default("{}")
+  onboardingCompleted Boolean            @default(false) @map("onboarding_completed")
+  sponsorId           String?            @map("sponsor_id") @db.Uuid
+  createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt           DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  tenant              Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sponsor             User?              @relation("SponsorTree", fields: [sponsorId], references: [id])
+  downline            User[]             @relation("SponsorTree")
+  leads               Lead[]             @relation("LeadOwner")
+  notes               Note[]
+  activities          Activity[]
+  funnels             Funnel[]
+  aiUsageLogs         AIUsageLog[]
+  scheduledMessages   ScheduledMessage[]
+  dailyActions        DailyAction[]
+  trainingProgress    TrainingProgress[]
+  contents            Content[]
+  voiceProfiles       VoiceProfile[]
+  analyticsEvents     AnalyticsEvent[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([sponsorId])
+  @@map("users")
+}
+
+model Tag {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  name      String
+  color     String    @default("#6366f1")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leads     LeadTag[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("tags")
+}
+
+model PipelineStage {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  name       String
+  stageOrder Int      @map("stage_order")
+  color      String   @default("#6366f1")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+  @@unique([tenantId, stageOrder])
+  @@index([tenantId, stageOrder])
+  @@map("pipeline_stages")
+}
+
+model Lead {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String             @map("tenant_id") @db.Uuid
+  ownerId       String             @map("owner_id") @db.Uuid
+  name          String
+  phone         String?
+  email         String?
+  source        String?
+  pipelineStage String             @default("new") @map("pipeline_stage")
+  score         Int                @default(0)
+  notesText     String?            @map("notes_text")
+  metadata      Json               @default("{}")
+  lastContacted DateTime?          @map("last_contacted") @db.Timestamptz(6)
+  nextFollowup  DateTime?          @map("next_followup") @db.Timestamptz(6)
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime?          @map("deleted_at") @db.Timestamptz(6)
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner         User               @relation("LeadOwner", fields: [ownerId], references: [id])
+  tags          LeadTag[]
+  notes         Note[]
+  activities    Activity[]
+  messages      ScheduledMessage[]
+  events        AnalyticsEvent[]
+
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([tenantId, pipelineStage])
+  @@index([tenantId, score])
+  @@index([nextFollowup])
+  @@map("leads")
+}
+
+model LeadTag {
+  leadId    String   @map("lead_id") @db.Uuid
+  tagId     String   @map("tag_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([leadId, tagId])
+  @@map("lead_tags")
+}
+
+model Note {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  leadId    String   @map("lead_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  content   String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@map("notes")
+}
+
+model Activity {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  leadId      String?  @map("lead_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  type        String
+  description String
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead        Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([leadId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+model FunnelTemplate {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  type      String
+  config    Json     @default("{}")
+  thumbnail String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  funnels   Funnel[]
+
+  @@index([tenantId])
+  @@map("funnel_templates")
+}
+
+model Funnel {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String           @map("tenant_id") @db.Uuid
+  ownerId     String           @map("owner_id") @db.Uuid
+  templateId  String?          @map("template_id") @db.Uuid
+  title       String
+  slug        String           @unique
+  config      Json             @default("{}")
+  status      String           @default("draft")
+  publishedAt DateTime?        @map("published_at") @db.Timestamptz(6)
+  views       Int              @default(0)
+  conversions Int              @default(0)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner       User             @relation(fields: [ownerId], references: [id])
+  template    FunnelTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  events      AnalyticsEvent[]
+
+  @@index([tenantId])
+  @@index([slug])
+  @@map("funnels")
+}
+
+model AIPromptTemplate {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  category  String
+  prompt    String
+  variables Json     @default("[]")
+  language  String   @default("zh")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, category])
+  @@map("ai_prompt_templates")
+}
+
+model AIUsageLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  provider  String
+  model     String
+  category  String
+  tokensIn  Int      @default(0) @map("tokens_in")
+  tokensOut Int      @default(0) @map("tokens_out")
+  costUsd   Decimal  @default(0) @map("cost_usd") @db.Decimal(12, 6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, userId])
+  @@map("ai_usage_logs")
+}
+
+model WhatsAppSequence {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  trigger   String
+  steps     Json     @default("[]")
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("whatsapp_sequences")
+}
+
+model ScheduledMessage {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  leadId      String    @map("lead_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  channel     String    @default("whatsapp")
+  message     String
+  scheduledAt DateTime  @map("scheduled_at") @db.Timestamptz(6)
+  sentAt      DateTime? @map("sent_at") @db.Timestamptz(6)
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lead        Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([status, scheduledAt])
+  @@index([tenantId])
+  @@map("scheduled_messages")
+}
+
+model DailyAction {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  date        DateTime  @db.Date
+  type        String
+  description String
+  completed   Boolean   @default(false)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([tenantId, date])
+  @@map("daily_actions")
+}
+
+model TrainingProgress {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  moduleId    String    @map("module_id")
+  moduleName  String    @map("module_name")
+  status      String    @default("not_started")
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@index([tenantId])
+  @@map("training_progress")
+}
+
+model Content {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  ownerId       String   @map("owner_id") @db.Uuid
+  type          String
+  platform      String?
+  body          String
+  language      String   @default("zh")
+  generatedByAi Boolean  @default(false) @map("generated_by_ai")
+  promptUsed    String?  @map("prompt_used")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner         User     @relation(fields: [ownerId], references: [id])
+
+  @@index([tenantId])
+  @@index([ownerId])
+  @@map("contents")
+}
+
+model VoiceProfile {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  audioUrl      String   @map("audio_url")
+  transcript    String?
+  extractedData Json?    @map("extracted_data")
+  status        String   @default("uploaded")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@map("voice_profiles")
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  leadId     String?  @map("lead_id") @db.Uuid
+  funnelId   String?  @map("funnel_id") @db.Uuid
+  eventName  String   @map("event_name")
+  properties Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lead       Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  funnel     Funnel?  @relation(fields: [funnelId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([eventName, createdAt])
+  @@map("analytics_events")
 }
