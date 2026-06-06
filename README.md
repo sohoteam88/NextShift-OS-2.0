@@ -7,6 +7,13 @@ NextShift OS 2.0 is an AI-guided operating system for personal brand, funnel, co
 ```text
 nextshift/
 ├── AGENTS.md
+├── src/
+│   ├── app/
+│   ├── modules/
+│   ├── components/
+│   ├── lib/
+│   ├── messages/
+│   └── styles/
 ├── skills/
 │   ├── core/
 │   ├── ux/
@@ -16,9 +23,8 @@ nextshift/
 │   ├── data/
 │   └── verticals/
 ├── prompts/
-├── components/
-├── app/
-└── lib/
+├── docs/
+└── prisma/
 ```
 
 See `AGENTS.md` for project instructions and skill usage policy.

@@ -46,20 +46,22 @@ Default behavior:
 
 ## Important Folders
 
-- `/app` = main application pages
-- `/components` = reusable UI
-- `/lib` = helper functions
+- `/src/app` = main application pages, layouts, and API routes
+- `/src/components` = reusable UI
+- `/src/modules` = feature modules and service boundaries
+- `/src/lib` = helper functions
+- `/src/messages` = zh, en, and ms locale messages
 - `/skills` = AI skill instructions
 - `/prompts` = prompt templates
-- `/admin` = admin dashboard logic
+- `/src/app/(auth)/admin` and `/src/modules/admin` = admin dashboard logic
 - `/docs/architecture` = system architecture (source of truth)
 
 ## Test Commands
 
 Before finishing, run:
 
-- `npm run lint`
-- `npm run build`
+- `pnpm lint`
+- `pnpm build`
 
 ## Output Requirement
 
