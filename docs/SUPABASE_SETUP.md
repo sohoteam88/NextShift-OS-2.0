@@ -50,9 +50,45 @@ Expected response:
 }
 ```
 
+## MCP Setup
+
+The project includes a project-scoped Supabase MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=ugyeyjxubahhwdouypjf"
+    }
+  }
+}
+```
+
+Project ref:
+
+```text
+ugyeyjxubahhwdouypjf
+```
+
+To authenticate in Claude Code, open a regular terminal from this project and run:
+
+```bash
+claude /mcp
+```
+
+Then select `supabase` and choose `Authenticate`. Supabase will open a browser OAuth flow. Choose the organization that owns the project.
+
+After authentication, ask the agent to verify access with a read-only command first, for example:
+
+```text
+Use Supabase MCP to list tables for this project.
+```
+
 ## Security Notes
 
 - Enable RLS on every tenant-scoped table.
 - Store authorization data in Supabase `app_metadata`, not user-editable metadata.
 - Use verified `getUser()` results for authorization-sensitive server checks.
 - Keep tenant isolation in both application queries and database policies.
+- Keep MCP manually approved for tool calls. Review SQL before allowing execution.
