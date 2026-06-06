@@ -1,4 +1,0 @@
-interface:
-  display_name: "UI System Architect"
-  short_description: "Define calm SaaS visual system rules."
-  default_prompt: "Use $ui-system-architect to create Typography, Spacing, Grid System, Color System, and Component Rules for a NextShift UI."

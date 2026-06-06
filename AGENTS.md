@@ -24,6 +24,12 @@ Build NextShift as an AI-guided personal brand, funnel, content, and CRM system 
 - Never expose API keys.
 - Do not delete files unless explicitly asked.
 
+## Architecture-First Rule
+
+Before executing any skill, check the `architecture_refs` field in its SKILL.md frontmatter and read those architecture docs first. Architecture docs are the source of truth for database schema, API design, module structure, and technical constraints.
+
+Architecture docs location: `docs/architecture/`
+
 ## Language Policy
 
 NextShift should support three languages by default:
@@ -31,8 +37,6 @@ NextShift should support three languages by default:
 - Chinese
 - English
 - Bahasa Malaysia
-
-For user-facing UI copy, funnels, onboarding, CRM messages, WhatsApp, email, and AI Coach scripts, provide multilingual copy when requested or when serving Malaysia users.
 
 Default behavior:
 
@@ -48,6 +52,7 @@ Default behavior:
 - `/skills` = AI skill instructions
 - `/prompts` = prompt templates
 - `/admin` = admin dashboard logic
+- `/docs/architecture` = system architecture (source of truth)
 
 ## Test Commands
 
@@ -76,9 +81,9 @@ Before creating a new skill, check whether an existing skill can be extended.
 
 Each skill folder must include:
 
-- `SKILL.md`
-- `examples.md`
-- `checklist.md`
+- `SKILL.md` (with `architecture_refs` in frontmatter when applicable)
+- `examples.md` (real input→output examples, not templates)
+- `checklist.md` (skill-specific quality checks)
 
 Skill categories:
 
@@ -90,57 +95,38 @@ Skill categories:
 - `data`
 - `verticals`
 
-Core skills:
+## Core Skills (5)
 
 Core is responsible for the overall product, system, UI, AI assistant, and business operating architecture that coordinates all other categories.
 
-- `business-operating-system-architect`
-- `nextshift-os-architect`
-- `ai-model-router`
-- `ui-system-architect`
-- `design-system-manager`
-- `ai-assistant-designer`
+- `business-operating-system-architect` — cross-functional OS coordination + growth engine
+- `nextshift-os-architect` — CTO-level SaaS architecture
+- `ai-model-router` — AI model selection policy
+- `design-system-architect` — visual system + component library + design tokens *(merged from ui-system-architect + design-system-manager)*
+- `ai-assistant-designer` — proactive AI Coach experience design
 
-Growth skills:
+## Growth Skills (7)
 
 Growth is responsible for the journey before and through initial conversion:
 
 ```text
-Traffic
-↓
-Lead
-↓
-Conversion
+Traffic → Lead → Conversion
 ```
 
-Use growth skills for positioning, content, offers, funnels, lead magnets, webinars, WhatsApp conversion, objection handling, conversion optimization, and retention marketing.
+- `personal-brand` — positioning + niche + bios + brand audit *(merged from identity-builder + personal-brand-audit)*
+- `content-engine` — 90-day content plans, 40/20/20/10/10 ratio
+- `offer-architect` — Hormozi value framework offers
+- `funnel-builder` — complete funnels + lead magnets + webinars *(absorbs lead-magnet-builder + webinar-builder)*
+- `conversion-optimizer` — 0-100 conversion scoring
+- `whatsapp-closer` — WhatsApp sales + objection handling *(absorbs objection-handler)*
+- `retention-marketer` — post-purchase retention marketing
 
-- `identity-builder`
-- `personal-brand-audit`
-- `content-engine`
-- `offer-architect`
-- `funnel-builder`
-- `lead-magnet-builder`
-- `conversion-optimizer`
-- `webinar-builder`
-- `whatsapp-closer`
-- `objection-handler`
-- `retention-marketer`
-
-CRM skills:
+## CRM Skills (9)
 
 CRM is responsible for managing leads, pipeline, customers, teams, follow-up, retention, and reporting after leads enter the system:
 
 ```text
-Lead
-↓
-Pipeline
-↓
-Customer
-↓
-Retention
-↓
-Team / Analytics
+Lead → Pipeline → Customer → Retention → Team / Analytics
 ```
 
 - `crm-architect`
@@ -153,52 +139,59 @@ Team / Analytics
 - `analytics-dashboard`
 - `crm-uiux`
 
-AI skills:
+## AI Skills (7)
 
-AI is responsible for intelligent generation, automation, scoring, orchestration, and proactive coaching across growth, CRM, content, funnel, WhatsApp, email, video, and user guidance:
+AI is responsible for intelligent generation, automation, scoring, orchestration, and proactive coaching:
 
 ```text
-Input
-↓
-AI Reasoning / Generation
-↓
-Review
-↓
-Automation / Action
-↓
-Learning Loop
+Input → AI Reasoning / Generation → Review → Automation / Action → Learning Loop
 ```
 
 - `ai-lead-scoring`
 - `whatsapp-automation`
 - `email-automation`
 - `ai-content-generator`
-- `ai-funnel-generator`
-- `ai-landingpage-builder`
-- `ai-video-script-generator`
+- `ai-funnel-generator` — funnel + landing page AI generation *(absorbs ai-landingpage-builder)*
 - `ai-agent-orchestrator`
 - `ai-coach`
 
-Data skills:
+## Data Skills (5)
 
-Data is responsible for the structures and logic that make CRM, funnels, AI Coach, dashboards, analytics, and reporting measurable:
+Data is responsible for structures and logic that make CRM, funnels, AI Coach, dashboards, analytics, and reporting measurable:
 
 ```text
-Database
-↓
-Events
-↓
-Analytics
-↓
-Reports
-↓
-Warehouse
+Database → Events → Analytics → Reports → Warehouse
 ```
-
-Future database, analytics, and warehouse work belongs here, including Supabase, PostgreSQL, and BigQuery.
 
 - `crm-database`
 - `analytics-engine`
 - `event-tracking`
 - `reporting-engine`
 - `data-warehouse`
+
+## UX Skills (6)
+
+- `dashboard-ux-designer`
+- `mobile-first-designer`
+- `onboarding-designer`
+- `ux-flow-architect`
+- `visual-hierarchy-expert`
+- `accessibility-auditor`
+
+## Verticals Skills (3)
+
+- `health-funnel-builder`
+- `herbalife-retail-system`
+- `ai-video-engine` — AI video creative packages *(replaces ai-video-script-generator)*
+
+## Merge Log
+
+| Merged Into | Absorbed Skills | Date |
+|-------------|----------------|------|
+| core/design-system-architect | core/ui-system-architect + core/design-system-manager | 2026-06-06 |
+| growth/personal-brand | growth/identity-builder + growth/personal-brand-audit | 2026-06-06 |
+| growth/funnel-builder | growth/lead-magnet-builder + growth/webinar-builder | 2026-06-06 |
+| growth/whatsapp-closer | growth/objection-handler | 2026-06-06 |
+| ai/ai-funnel-generator | ai/ai-landingpage-builder | 2026-06-06 |
+| core/business-operating-system-architect | verticals/growth-engine | 2026-06-06 |
+| verticals/ai-video-engine | *(kept; ai/ai-video-script-generator deleted)* | 2026-06-06 |

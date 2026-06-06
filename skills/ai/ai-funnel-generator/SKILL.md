@@ -1,13 +1,19 @@
 ---
 name: ai-funnel-generator
-description: "Design AI funnel generation workflows that create lead magnets, landing pages, emails, WhatsApp flows, webinar outlines, application questions, and sales call assets. Use when a user needs AI-generated funnel systems."
+description: "Design AI funnel and landing page generation workflows that create lead magnets, landing pages, hero sections, pain sections, mechanisms, offers, CTAs, FAQs, forms, emails, WhatsApp flows, webinar outlines, application questions, and sales call assets. Use when a user needs AI-generated funnel systems or AI-generated landing page copy and UI structure."
+architecture_refs:
+  - docs/architecture/09_AI_ARCHITECTURE.md
+  - docs/architecture/11_FUNNEL_ARCHITECTURE.md
+  - docs/architecture/14_UI_UX_ARCHITECTURE.md
 ---
 
 # AI Funnel Generator
 
 ## Mission
 
-Generate complete funnel assets from audience, offer, mechanism, and conversion goal.
+Generate complete funnel and landing page assets from audience, offer, mechanism, and conversion goal.
+
+This skill absorbs the former `ai-landingpage-builder` responsibilities.
 
 ## Operating Principles
 
@@ -30,6 +36,10 @@ Collect:
 - unique mechanism
 - proof
 - conversion goal
+- objections
+- form fields
+- traffic source
+- brand tone
 
 Ask concise questions only for missing high-impact details. If enough context exists, proceed directly and label assumptions.
 
@@ -37,9 +47,11 @@ Ask concise questions only for missing high-impact details. If enough context ex
 
 1. Define funnel path.
 2. Generate funnel strategy and message architecture.
-3. Create assets by stage.
-4. Add review, approval, and regeneration states.
-5. Define implementation handoff.
+3. Generate landing page strategy and section copy.
+4. Create assets by stage.
+5. Apply headline, CTA, proof, form UX, and mobile layout rules.
+6. Add review, approval, and regeneration states.
+7. Define implementation handoff.
 
 ## Step 3: Output
 
@@ -47,6 +59,11 @@ Deliver:
 
 - funnel path
 - message architecture
+- landing page copy
+- section structure
+- CTA plan
+- form UX
+- mobile layout
 - generated assets
 - review flow
 - regeneration logic

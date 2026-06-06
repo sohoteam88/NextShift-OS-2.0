@@ -1,6 +1,9 @@
 ---
 name: whatsapp-closer
 description: "Generate WhatsApp sales conversation flows, follow-ups, objection handling, appointment setting, and closing scripts using a Trust, Pain, Future Vision, Offer, Decision sequence. Use when a user sells through WhatsApp, DMs, chat, voice notes, appointment booking, consultation funnels, product retail, coaching, services, wellness offers, or one-to-one messaging."
+architecture_refs:
+  - docs/architecture/10_CRM_ARCHITECTURE.md
+  - docs/architecture/12_AUTOMATION_ARCHITECTURE.md
 ---
 
 # WhatsApp Closer
@@ -8,6 +11,8 @@ description: "Generate WhatsApp sales conversation flows, follow-ups, objection 
 ## Mission
 
 Create WhatsApp sales conversations that feel natural, trust-based, and decisive: build trust, diagnose pain, create future vision, present the offer, and guide the buyer to a clear decision.
+
+This skill absorbs the former `objection-handler` responsibilities.
 
 ## Conversation Logic
 
@@ -107,12 +112,18 @@ Include responses for:
 - Not sure it will work
 - Send me more info
 - I tried before and failed
+- Comparison shopping
+- Hidden trust gap
+- Confusion about fit, process, or outcome
 
 For each objection, provide:
 
+- Objection diagnosis
 - Short WhatsApp reply
+- Long response, when useful
 - Clarifying question
 - Trust-building reframe
+- Proof needed
 - Next-step CTA
 
 ## Appointment Setting

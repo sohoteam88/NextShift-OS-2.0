@@ -1,4 +1,0 @@
-interface:
-  display_name: "Lead Magnet Builder"
-  short_description: "Create lead magnets that attract qualified buyers."
-  default_prompt: "Use $lead-magnet-builder to help me build this part of my NextShift business system."

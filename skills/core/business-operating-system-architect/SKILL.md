@@ -1,6 +1,10 @@
 ---
 name: business-operating-system-architect
 description: "Coordinate the full NextShift Business Operating System across Growth, CRM, AI, Data, UX, and Verticals. Use when a user needs cross-functional architecture, subsystem routing, workflow orchestration, operating model, implementation roadmap, business OS design, or coordination between marketing, CRM, AI automation, data, product UX, and vertical-specific systems."
+architecture_refs:
+  - docs/architecture/00_SYSTEM_OVERVIEW.md
+  - docs/architecture/04_MODULE_ARCHITECTURE.md
+  - docs/architecture/20_DEVELOPMENT_ROADMAP.md
 ---
 
 # Business Operating System Architect
@@ -11,6 +15,8 @@ Coordinate Growth, CRM, AI, Data, UX, and Verticals into one coherent Business O
 
 This skill does not replace specialist skills. It routes work to the right subsystem, defines dependencies, and creates the operating blueprint that lets all parts work together.
 
+This skill absorbs the former `growth-engine` responsibility for acquisition, activation, retention, referral, revenue, experiments, metrics, and operating cadence.
+
 ## Subsystems
 
 Coordinate:
@@ -20,7 +26,8 @@ Coordinate:
 - **AI**: Input -> AI Reasoning / Generation -> Review -> Automation / Action -> Learning Loop
 - **Data**: Database -> Events -> Analytics -> Reports -> Warehouse
 - **UX**: User Flow -> Onboarding -> Dashboard -> Mobile -> Accessibility
-- **Verticals**: health, retail, AI video, growth strategy, and future industry-specific systems
+- **Verticals**: health, retail, AI video, and future industry-specific systems
+- **Growth Engine**: acquisition, activation, retention, referral, revenue, experiments, metrics, and operating cadence
 
 ## Operating Principles
 
@@ -60,6 +67,7 @@ Ask concise questions only for missing high-impact details. If enough context ex
 5. Define dependencies and build order.
 6. Create an MVP roadmap across subsystems.
 7. Define operating cadence, metrics, and review loops.
+8. Choose 3-5 growth experiments with hypothesis, channel, asset, metric, and timebox when growth strategy is requested.
 
 ## Required Output
 

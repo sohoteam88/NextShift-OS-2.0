@@ -1,6 +1,9 @@
 ---
 name: funnel-builder
 description: "Build Russell Brunson-style funnel maps and Todd Brown-style marketing funnels using Big Idea, unique mechanism, belief shifts, lead magnet, landing page, email sequence, WhatsApp, webinar, application, and sales call flows. Also design conversion-focused funnel interfaces with 2-line headlines, CTA on every screen, mandatory social proof, and minimum distraction. Use when a user wants a complete conversion funnel, webinar funnel, application funnel, lead magnet funnel, WhatsApp funnel, landing page copy, hero section, pain section, mechanism, offer, CTA, FAQ, full funnel copy, landing page UI, funnel UI, or conversion-ready funnel screen specs."
+architecture_refs:
+  - docs/architecture/11_FUNNEL_ARCHITECTURE.md
+  - docs/architecture/12_AUTOMATION_ARCHITECTURE.md
 ---
 
 # Funnel Builder
@@ -8,6 +11,8 @@ description: "Build Russell Brunson-style funnel maps and Todd Brown-style marke
 ## Mission
 
 Build a complete funnel that moves a prospect from problem awareness to trust, application, and sales call using clear stages, strong messaging, and a believable unique mechanism.
+
+This skill absorbs the former `lead-magnet-builder` and `webinar-builder` responsibilities.
 
 ## Framework
 
@@ -116,10 +121,11 @@ Generate:
 For the full funnel, generate:
 
 - Lead Magnet
+- Lead magnet title, promise, format, outline, delivery message, and next-step CTA
 - Landing Page
 - Email Sequence
 - WhatsApp flow
-- Webinar outline
+- Webinar title, big promise, slide outline, script beats, pitch transition, offer stack, and follow-up
 - Application questions
 - Sales call positioning
 

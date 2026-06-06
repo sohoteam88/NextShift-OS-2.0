@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design System Architect"
+  short_description: "Architect visual systems and component libraries."
+  default_prompt: "Use $design-system-architect to create the NextShift visual system, tokens, component rules, and frontend handoff spec."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Personal Brand"
+  short_description: "Build and audit personal brand positioning."
+  default_prompt: "Use $personal-brand to build or audit personal brand positioning, niche, bios, authority, and content clarity."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Growth Engine"
-  short_description: "Build acquisition, activation, and revenue growth systems."
-  default_prompt: "Use $growth-engine to help me build this part of my NextShift business system."
