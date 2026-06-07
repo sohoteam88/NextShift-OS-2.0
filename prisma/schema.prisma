@@ -13,6 +13,8 @@ model Tenant {
   name              String
   slug              String             @unique
   plan              String             @default("starter")
+  maxAiCalls        Int                @default(200) @map("max_ai_calls")
+  maxMembers        Int                @default(10) @map("max_members")
   settings          Json               @default("{}")
   status            String             @default("active")
   createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -33,6 +35,8 @@ model Tenant {
   contents          Content[]
   voiceProfiles     VoiceProfile[]
   analyticsEvents   AnalyticsEvent[]
+  inviteCodes       InviteCode[]
+  auditLogs         AuditLog[]
 
   @@map("tenants")
 }
@@ -68,6 +72,8 @@ model User {
   contents            Content[]
   voiceProfiles       VoiceProfile[]
   analyticsEvents     AnalyticsEvent[]
+  inviteCodes         InviteCode[]       @relation("InviteSponsor")
+  auditLogs           AuditLog[]         @relation("AuditActor")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -115,6 +121,8 @@ model Lead {
   source        String?
   pipelineStage String             @default("new") @map("pipeline_stage")
   score         Int                @default(0)
+  scoreReasons  Json               @default("[]") @map("score_reasons")
+  scoreUpdatedAt DateTime?         @map("score_updated_at") @db.Timestamptz(6)
   notesText     String?            @map("notes_text")
   metadata      Json               @default("{}")
   lastContacted DateTime?          @map("last_contacted") @db.Timestamptz(6)
@@ -223,35 +231,43 @@ model Funnel {
 }
 
 model AIPromptTemplate {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  name      String
-  category  String
-  prompt    String
-  variables Json     @default("[]")
-  language  String   @default("zh")
-  isDefault Boolean  @default(false) @map("is_default")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String   @map("tenant_id") @db.Uuid
+  name                String
+  category            String
+  prompt              String
+  systemPrompt        String   @map("system_prompt")
+  userPromptTemplate  String   @map("user_prompt_template")
+  variables           Json     @default("[]")
+  language            String   @default("zh")
+  modelPreference     String   @default("anthropic") @map("model_preference")
+  isDefault           Boolean  @default(false) @map("is_default")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  usageLogs           AIUsageLog[]
 
   @@index([tenantId, category])
   @@map("ai_prompt_templates")
 }
 
 model AIUsageLog {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  provider  String
-  model     String
-  category  String
-  tokensIn  Int      @default(0) @map("tokens_in")
-  tokensOut Int      @default(0) @map("tokens_out")
-  costUsd   Decimal  @default(0) @map("cost_usd") @db.Decimal(12, 6)
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id])
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String            @map("tenant_id") @db.Uuid
+  userId      String            @map("user_id") @db.Uuid
+  templateId  String?           @map("template_id") @db.Uuid
+  provider    String
+  model       String
+  category    String
+  feature     String
+  tokensIn    Int               @default(0) @map("tokens_in")
+  tokensOut   Int               @default(0) @map("tokens_out")
+  durationMs  Int               @default(0) @map("duration_ms")
+  costUsd     Decimal           @default(0) @map("cost_usd") @db.Decimal(12, 6)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id])
+  template    AIPromptTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, createdAt])
   @@index([tenantId, userId])
@@ -334,10 +350,12 @@ model Content {
   ownerId       String   @map("owner_id") @db.Uuid
   type          String
   platform      String?
+  title         String?
   body          String
   language      String   @default("zh")
   generatedByAi Boolean  @default(false) @map("generated_by_ai")
   promptUsed    String?  @map("prompt_used")
+  status        String   @default("draft")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   owner         User     @relation(fields: [ownerId], references: [id])
@@ -382,4 +400,38 @@ model AnalyticsEvent {
   @@index([tenantId, createdAt])
   @@index([eventName, createdAt])
   @@map("analytics_events")
+}
+
+model InviteCode {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id") @db.Uuid
+  sponsorId  String   @map("sponsor_id") @db.Uuid
+  code       String   @unique
+  used       Boolean  @default(false)
+  usedBy     String?  @map("used_by") @db.Uuid
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sponsor    User     @relation("InviteSponsor", fields: [sponsorId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@index([tenantId])
+  @@map("invite_codes")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String   @map("tenant_id") @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String
+  targetType String?  @map("target_type")
+  targetId   String?  @map("target_id") @db.Uuid
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([actorId])
+  @@map("audit_logs")
 }

@@ -5,11 +5,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: 'hsl(var(--primary))',
-        muted: 'hsl(var(--muted))',
-        border: 'hsl(var(--border))',
+        background: 'var(--color-bg)',
+        foreground: 'var(--color-text)',
+        primary: 'var(--color-primary)',
+        muted: 'var(--color-text-muted)',
+        surface: 'var(--color-surface)',
+        border: 'var(--color-border)',
       },
     },
   },
