@@ -92,7 +92,26 @@ export default function OnboardingFirstFunnelPage() {
     },
     onSuccess: () => {
       toast('success', t('funnelCreated'));
-      router.push('/onboarding/complete');
+      router.replace('/dashboard');
+      router.refresh();
+    },
+  });
+
+  const skipMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/v1/member/onboarding', { method: 'POST' });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error?.message ?? 'Failed to complete onboarding');
+      }
+      return res.json() as Promise<{ data: unknown }>;
+    },
+    onSuccess: () => {
+      router.replace('/dashboard');
+      router.refresh();
+    },
+    onError: (error) => {
+      toast('error', error instanceof Error ? error.message : 'Failed to complete onboarding');
     },
   });
 
@@ -170,11 +189,26 @@ export default function OnboardingFirstFunnelPage() {
             )}
           </div>
 
-          <div className="flex justify-end">
+          {createMutation.isError ? (
+            <p className="text-sm text-[var(--color-danger)]">
+              {createMutation.error instanceof Error ? createMutation.error.message : 'Failed to create funnel'}
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              loading={skipMutation.isPending}
+              disabled={createMutation.isPending}
+              onClick={() => skipMutation.mutate()}
+            >
+              {t('skip')}
+            </Button>
             <Button
               type="button"
               loading={createMutation.isPending}
-              disabled={!selectedTemplateId || whatsapp.trim().length < 6}
+              disabled={skipMutation.isPending || !selectedTemplateId || whatsapp.trim().length < 6}
               onClick={() => createMutation.mutate()}
             >
               {t('createFunnel')}

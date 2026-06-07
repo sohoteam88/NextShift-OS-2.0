@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { onboardingService } from '@/modules/member/services/onboarding-service';
+import { GoDashboardButton } from '@/modules/member/components/GoDashboardButton';
 
 export default async function OnboardingCompletePage() {
   const t = await getTranslations('onboarding');
@@ -29,12 +30,7 @@ export default async function OnboardingCompletePage() {
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href="/dashboard"
-            className="inline-flex h-10 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-sm font-medium text-white shadow-sm hover:bg-[var(--color-primary-hover)]"
-          >
-            {t('goDashboard')}
-          </Link>
+          <GoDashboardButton>{t('goDashboard')}</GoDashboardButton>
           {overview.first_funnel_id ? (
             <Link
               href={`/funnel/${overview.first_funnel_id}/edit`}
