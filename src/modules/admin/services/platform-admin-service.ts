@@ -50,6 +50,11 @@ function decimalToNumber(value: Prisma.Decimal | number | null | undefined) {
 
 function toUserRecord(user: {
   id: string;
+  tenantId?: string;
+  tenant?: {
+    name: string;
+    slug: string;
+  } | null;
   name: string;
   email: string;
   phone: string | null;
@@ -62,6 +67,9 @@ function toUserRecord(user: {
 }): AdminUserRecord {
   return {
     id: user.id,
+    tenantId: user.tenantId ?? '',
+    tenantName: user.tenant?.name,
+    tenantSlug: user.tenant?.slug,
     name: user.name,
     email: user.email,
     phone: user.phone,

@@ -34,6 +34,11 @@ function startOfMonth(date: Date) {
 
 function toUserRecord(user: {
   id: string;
+  tenantId: string;
+  tenant?: {
+    name: string;
+    slug: string;
+  } | null;
   name: string;
   email: string;
   phone: string | null;
@@ -46,6 +51,9 @@ function toUserRecord(user: {
 }): AdminUserRecord {
   return {
     id: user.id,
+    tenantId: user.tenantId,
+    tenantName: user.tenant?.name,
+    tenantSlug: user.tenant?.slug,
     name: user.name,
     email: user.email,
     phone: user.phone,
@@ -205,11 +213,12 @@ export const adminService = {
   async listUsers(
     tenantId: string,
     query: { search?: string; role?: string; status?: string; page?: number; limit?: number },
+    options: { includeAllTenants?: boolean } = {},
   ): Promise<AdminUsersResponse> {
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(Math.max(1, query.limit ?? 10), 50);
     const where: Prisma.UserWhereInput = {
-      tenantId,
+      ...(options.includeAllTenants ? {} : { tenantId }),
       deletedAt: null,
       ...(query.role ? { role: query.role } : {}),
       ...(query.status ? { status: query.status } : {}),
@@ -232,6 +241,13 @@ export const adminService = {
         take: limit,
         select: {
           id: true,
+          tenantId: true,
+          tenant: {
+            select: {
+              name: true,
+              slug: true,
+            },
+          },
           name: true,
           email: true,
           phone: true,
@@ -337,6 +353,7 @@ export const adminService = {
       },
       select: {
         id: true,
+        tenantId: true,
         name: true,
         email: true,
         phone: true,

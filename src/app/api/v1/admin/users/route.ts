@@ -20,6 +20,8 @@ export const GET = apiHandler(async (request: NextRequest) => {
   requireRoleApi(user, ['operator', 'platform_admin']);
 
   const query = QuerySchema.parse(getSearchParams(request));
-  const result = await adminService.listUsers(user.tenantId, query);
+  const result = await adminService.listUsers(user.tenantId, query, {
+    includeAllTenants: user.role === 'platform_admin',
+  });
   return NextResponse.json(result);
 });

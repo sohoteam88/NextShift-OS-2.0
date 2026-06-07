@@ -3,6 +3,9 @@ export type AdminUserStatus = 'active' | 'pending' | 'suspended';
 
 export type AdminUserRecord = {
   id: string;
+  tenantId: string;
+  tenantName?: string;
+  tenantSlug?: string;
   name: string;
   email: string;
   phone: string | null;

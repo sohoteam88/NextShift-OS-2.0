@@ -113,6 +113,9 @@ export function UserManagementPanel({ currentUserId, currentUserRole }: Props) {
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">{t('presence')}</th>
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">{t('name')}</th>
+                {currentUserRole === 'platform_admin' ? (
+                  <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">Tenant</th>
+                ) : null}
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">{t('email')}</th>
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">{t('role')}</th>
                 <th className="px-4 py-3 text-left font-medium text-[var(--color-text-muted)]">{t('status')}</th>
@@ -122,7 +125,7 @@ export function UserManagementPanel({ currentUserId, currentUserRole }: Props) {
             <tbody className="divide-y divide-[var(--color-border)]">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]">
+                  <td colSpan={currentUserRole === 'platform_admin' ? 7 : 6} className="px-4 py-8 text-center text-sm text-[var(--color-text-muted)]">
                     {common('noResults')}
                   </td>
                 </tr>
@@ -133,6 +136,12 @@ export function UserManagementPanel({ currentUserId, currentUserRole }: Props) {
                       <Avatar name={user.name} src={user.avatarUrl} size="sm" />
                     </td>
                     <td className="px-4 py-3 font-medium text-[var(--color-text)]">{user.name}</td>
+                    {currentUserRole === 'platform_admin' ? (
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-[var(--color-text)]">{user.tenantName ?? '—'}</div>
+                        <div className="text-xs text-[var(--color-text-muted)]">{user.tenantSlug ?? user.tenantId}</div>
+                      </td>
+                    ) : null}
                     <td className="px-4 py-3 text-[var(--color-text-muted)]">{user.email}</td>
                     <td className="px-4 py-3">
                       <Badge variant="info">{user.role}</Badge>
