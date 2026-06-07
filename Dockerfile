@@ -1,12 +1,12 @@
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Build
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 RUN corepack enable
 ENV DATABASE_URL="postgresql://user:password@localhost:5432/nextshift_os?schema=public"
@@ -17,7 +17,7 @@ RUN npx prisma generate
 RUN pnpm build
 
 # Stage 3: Production
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 WORKDIR /app
 RUN apk add --no-cache ffmpeg curl
 RUN addgroup --system --gid 1001 nodejs
