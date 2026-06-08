@@ -10,6 +10,7 @@ import {
   Activity,
   BarChart3,
   BookOpenCheck,
+  Calendar,
   ClipboardList,
   Gauge,
   KanbanSquare,
@@ -22,6 +23,7 @@ import {
   Rows3,
   UserCheck,
   Wand2,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -45,8 +47,11 @@ const navItems = [
   { href: '/dashboard', label: 'dashboard', icon: Gauge, minRole: 'member' },
   { href: '/crm', label: 'leads', icon: ClipboardList, minRole: 'member' },
   { href: '/crm/pipeline', label: 'pipeline', icon: KanbanSquare, minRole: 'member' },
+  { href: '/crm/customers', label: 'customers', icon: ClipboardList, minRole: 'member' },
   { href: '/funnel', label: 'funnels', icon: LayoutTemplate, minRole: 'member' },
   { href: '/ai', label: 'aiTools', icon: Wand2, minRole: 'member' },
+  { href: '/ai/funnel-builder', label: 'funnelBuilder', icon: Zap, minRole: 'member' },
+  { href: '/ai/content-plan', label: 'contentPlan', icon: Calendar, minRole: 'member' },
   { href: '/member', label: 'dailyActions', icon: Activity, minRole: 'member' },
   { href: '/member?view=training', label: 'training', icon: ClipboardList, minRole: 'member' },
   { href: '/member/voice', label: 'voiceCapture', icon: Mic, minRole: 'member' },
@@ -125,11 +130,11 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
   return (
     <aside
       className={cn(
-        'h-screen w-[240px] shrink-0 border-r border-[var(--color-border)] bg-white px-3 py-5',
+        'flex h-screen w-[240px] shrink-0 flex-col border-r border-[var(--color-border)] bg-white px-3 py-5',
         className,
       )}
     >
-      <Link href="/dashboard" className="flex h-10 items-center gap-2 px-3 text-base font-semibold text-[var(--color-text)]">
+      <Link href="/dashboard" className="flex h-10 shrink-0 items-center gap-2 px-3 text-base font-semibold text-[var(--color-text)]">
         {tenantLogoUrl ? (
           <span className="relative h-8 w-8 overflow-hidden rounded-[var(--radius-md)]">
             <Image
@@ -148,7 +153,7 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
         )}
         <span className="truncate">{tenantName ?? 'NextShift'}</span>
       </Link>
-      <nav className="mt-6 space-y-1">
+      <nav className="mt-6 flex-1 space-y-1 overflow-y-auto pb-4">
         {navItems.map((item, index) => {
           if (!canView(role, item.minRole)) return null;
 

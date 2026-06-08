@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ChevronRight, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -25,7 +25,6 @@ function getStepIndex(pathname: string) {
 
 export function OnboardingShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const t = useTranslations('onboarding');
   const stepIndex = getStepIndex(pathname);
   const progress = Math.min(5, stepIndex + 1);
@@ -36,8 +35,11 @@ export function OnboardingShell({ children }: { children: React.ReactNode }) {
     setSkipping(true);
     try {
       await fetch('/api/v1/member/onboarding', { method: 'POST' });
-      router.push('/dashboard');
-    } finally {
+      // Use full page reload so the server layout re-reads onboardingCompleted = true.
+      // router.push() causes a client-side nav where AppShell still holds the stale
+      // onboarding.completed = false prop, triggering a redirect loop.
+      window.location.replace('/dashboard');
+    } catch {
       setSkipping(false);
     }
   }

@@ -1,0 +1,79 @@
+interface:
+  display_name: "AI Model Router — Google"
+  short_description: "Google-specific model routing configuration."
+
+models:
+  tier_s:
+    model: "gemini-2.5-pro"
+    max_tokens: 65536
+    temperature: 1.0
+    thinking: true
+    thinking_budget: 32768
+    strengths:
+      - Massive context window (1M+ tokens)
+      - Multimodal reasoning (text, image, video, code)
+      - Deep research and analysis
+      - Complex document understanding
+    cost_per_million_input: 2.50
+    cost_per_million_output: 15.00
+    typical_latency_seconds: 20-90
+    context_window: 1048576
+
+  tier_a:
+    model: "gemini-2.5-flash"
+    max_tokens: 16384
+    temperature: 0.7
+    thinking: true
+    thinking_budget: 8192
+    strengths:
+      - Fast with reasoning capability
+      - Strong code generation
+      - Good multimodal understanding
+      - Cost-efficient for medium complexity
+    cost_per_million_input: 0.15
+    cost_per_million_output: 0.60
+    typical_latency_seconds: 3-15
+    context_window: 1048576
+
+  tier_b:
+    model: "gemini-2.5-flash"
+    max_tokens: 8192
+    temperature: 0.5
+    thinking: false
+    strengths:
+      - Fastest Google model
+      - Very low cost
+      - Good for standard code and copy
+      - Sub-second for simple tasks
+    cost_per_million_input: 0.15
+    cost_per_million_output: 0.60
+    typical_latency_seconds: 1-5
+    context_window: 1048576
+
+  tier_c:
+    model: "gemini-2.5-flash"
+    max_tokens: 4096
+    temperature: 0.3
+    thinking: false
+    strengths:
+      - Minimal cost
+      - Utility formatting and cleanup
+      - Simple classification
+    cost_per_million_input: 0.15
+    cost_per_million_output: 0.60
+    typical_latency_seconds: 0.5-2
+    context_window: 1048576
+
+platform_mapping:
+  claude_code:
+    note: "Google models not natively available in Claude Code — use via API integration"
+  codex:
+    note: "Google models not natively available in Codex — use via custom agent or API"
+  coworker:
+    note: "Google models not natively available in Coworker — use via MCP or API bridge"
+
+special_considerations:
+  - "Gemini 2.5 Pro excels when context window is the bottleneck (>128K tokens)"
+  - "Gemini Flash with thinking enabled is exceptionally cost-efficient for Tier A tasks"
+  - "Google models support native multimodal input — prefer for image/video analysis tasks"
+  - "Grounding with Google Search available for real-time fact checking"

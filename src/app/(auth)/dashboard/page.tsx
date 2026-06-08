@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   }
 
   if (user.role === 'member') {
-    return <MemberDashboard />;
+    return <MemberDashboard userName={user.name} />;
   }
 
   if (user.role === 'leader') {

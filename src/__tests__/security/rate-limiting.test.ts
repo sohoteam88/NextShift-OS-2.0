@@ -32,14 +32,14 @@ describe('Rate Limiting', () => {
 
   it('blocks excessive login attempts', async () => {
     for (let attempt = 0; attempt < 10; attempt += 1) {
-      const response = await postAuth(new Request('http://localhost/api/v1/auth', {
+      const response = await postAuth(new Request('http://127.0.0.1/api/v1/auth', {
         method: 'POST',
         headers: { 'x-forwarded-for': '203.0.113.9' },
       }) as never);
       expect(response.status).toBe(200);
     }
 
-    const blocked = await postAuth(new Request('http://localhost/api/v1/auth', {
+    const blocked = await postAuth(new Request('http://127.0.0.1/api/v1/auth', {
       method: 'POST',
       headers: { 'x-forwarded-for': '203.0.113.9' },
     }) as never);
@@ -59,7 +59,7 @@ describe('Rate Limiting', () => {
     });
     aiMocks.generate.mockResolvedValue({ content: 'ok' });
 
-    const request = new Request('http://localhost/api/v1/ai/generate/content', {
+    const request = new Request('http://127.0.0.1/api/v1/ai/generate/content', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({

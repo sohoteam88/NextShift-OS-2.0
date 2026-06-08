@@ -58,7 +58,10 @@
     "adminSettings": "Sistem",
     "platformAdmin": "Pentadbir Platform",
     "allTenants": "Semua Tenant",
-    "systemHealth": "Kesihatan Sistem"
+    "systemHealth": "Kesihatan Sistem",
+    "customers": "Pelanggan",
+    "funnelBuilder": "Pembina Funnel",
+    "contentPlan": "Rancangan Konten 30 Hari"
   },
   "platformAdmin": {
     "platformAdmin": "Pentadbir Platform",
@@ -620,8 +623,21 @@
     "assignedSeries": "Ditugaskan",
     "emptyTitle": "Tiada data lagi",
     "emptyDescription": "Aktiviti bagi tempoh yang dipilih belum mencukupi untuk membina carta.",
-    "weekdayLabels": ["Ahd", "Isn", "Sel", "Rab", "Kha", "Jum", "Sab"],
-    "blockLabels": ["00-06", "06-12", "12-18", "18-24"]
+    "weekdayLabels": [
+      "Ahd",
+      "Isn",
+      "Sel",
+      "Rab",
+      "Kha",
+      "Jum",
+      "Sab"
+    ],
+    "blockLabels": [
+      "00-06",
+      "06-12",
+      "12-18",
+      "18-24"
+    ]
   },
   "dashboard": {
     "welcome": "Selamat pagi, {name}",

@@ -1,4 +1,92 @@
 interface:
-  display_name: "AI Model Router"
-  short_description: "Route tasks to the right AI model tier."
-  default_prompt: "Use $ai-model-router to decide which AI model tier should handle this NextShift task."
+  display_name: "AI Model Router — OpenAI"
+  short_description: "OpenAI-specific model routing configuration."
+
+models:
+  tier_s:
+    model: "o3"
+    max_tokens: 100000
+    temperature: 1.0
+    reasoning_effort: "high"
+    strengths:
+      - World-class chain-of-thought reasoning
+      - Mathematical and scientific problem solving
+      - Complex code architecture and algorithms
+      - Multi-step logical deduction
+    cost_per_million_input: 10.00
+    cost_per_million_output: 40.00
+    typical_latency_seconds: 30-180
+    context_window: 200000
+
+  tier_a:
+    model: "o4-mini"
+    max_tokens: 16384
+    temperature: 0.7
+    reasoning_effort: "medium"
+    strengths:
+      - Fast reasoning with good accuracy
+      - Strong code generation and debugging
+      - Tool use and function calling
+      - Efficient for most coding tasks
+    cost_per_million_input: 1.10
+    cost_per_million_output: 4.40
+    typical_latency_seconds: 5-30
+    context_window: 200000
+
+  tier_a_alt:
+    model: "gpt-4.1"
+    max_tokens: 32768
+    temperature: 0.7
+    strengths:
+      - Excellent instruction following
+      - Strong at long-context code tasks
+      - Reliable tool/function calling
+      - Good at structured output
+    cost_per_million_input: 2.00
+    cost_per_million_output: 8.00
+    typical_latency_seconds: 3-15
+    context_window: 1048576
+
+  tier_b:
+    model: "gpt-4.1-mini"
+    max_tokens: 8192
+    temperature: 0.5
+    strengths:
+      - Fast and cost-effective
+      - Good for standard coding tasks
+      - Reliable structured output
+      - Strong at classification and extraction
+    cost_per_million_input: 0.40
+    cost_per_million_output: 1.60
+    typical_latency_seconds: 1-5
+    context_window: 1048576
+
+  tier_c:
+    model: "gpt-4.1-nano"
+    max_tokens: 4096
+    temperature: 0.3
+    strengths:
+      - Cheapest OpenAI option
+      - Sub-second responses
+      - Formatting and simple transforms
+      - High-volume utility tasks
+    cost_per_million_input: 0.10
+    cost_per_million_output: 0.40
+    typical_latency_seconds: 0.3-1
+    context_window: 1048576
+
+platform_mapping:
+  claude_code:
+    note: "OpenAI models not natively available — use via API or custom MCP"
+  codex:
+    preferred_tiers: [tier_a, tier_a_alt, tier_b]
+    use_case: "OpenAI Codex platform natively supports these models for async tasks"
+  coworker:
+    note: "OpenAI models not natively in Cowork — use via API bridge"
+
+special_considerations:
+  - "o3 has the highest reasoning capability but also highest latency and cost"
+  - "o4-mini offers excellent reasoning-per-dollar for Tier A tasks"
+  - "gpt-4.1 has 1M context window — prefer for huge context tasks over o3 (200K limit)"
+  - "gpt-4.1-nano is ideal for Codex batch processing at scale"
+  - "OpenAI models support Responses API with built-in tool orchestration"

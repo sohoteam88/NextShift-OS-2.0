@@ -28,23 +28,7 @@ export default function LoginPage() {
       return;
     }
 
-    const meResponse = await fetch('/api/v1/auth/me');
-    if (!meResponse.ok) {
-      await supabase.auth.signOut();
-      setError(t('pendingApproval'));
-      setLoading(false);
-      return;
-    }
-
-    const onboardingResponse = await fetch('/api/v1/member/onboarding');
-    if (onboardingResponse.ok) {
-      const payload = (await onboardingResponse.json()) as {
-        data: { state: { completed: boolean } };
-      };
-      router.push(payload.data.state.completed ? '/dashboard' : '/onboarding');
-    } else {
-      router.push('/dashboard');
-    }
+    router.push('/dashboard');
     router.refresh();
   }
 

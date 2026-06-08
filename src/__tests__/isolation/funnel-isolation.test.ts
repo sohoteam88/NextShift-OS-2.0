@@ -48,7 +48,7 @@ run('Funnel Isolation', () => {
     const beforeCount = await prisma.lead.count({ where: { tenantId: fixture.tenantB.id } });
 
     const response = await SUBMIT_FUNNEL(
-      makeNextRequest(`http://localhost/api/v1/public/funnel/${funnel.slug}/submit`, {
+      makeNextRequest(`http://127.0.0.1/api/v1/public/funnel/${funnel.slug}/submit`, {
         name: 'Public Lead',
         phone: '+60111222333',
         email: 'public@example.test',

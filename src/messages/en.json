@@ -58,7 +58,10 @@
     "adminSettings": "Settings",
     "platformAdmin": "Platform Admin",
     "allTenants": "All Tenants",
-    "systemHealth": "System Health"
+    "systemHealth": "System Health",
+    "customers": "Customers",
+    "funnelBuilder": "Funnel Builder",
+    "contentPlan": "30-Day Content Plan"
   },
   "platformAdmin": {
     "platformAdmin": "Platform Admin",
@@ -620,8 +623,21 @@
     "assignedSeries": "Assigned",
     "emptyTitle": "No analytics data yet",
     "emptyDescription": "There is not enough activity in the selected period to draw a chart.",
-    "weekdayLabels": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    "blockLabels": ["00-06", "06-12", "12-18", "18-24"]
+    "weekdayLabels": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
+    "blockLabels": [
+      "00-06",
+      "06-12",
+      "12-18",
+      "18-24"
+    ]
   },
   "dashboard": {
     "welcome": "Good morning, {name}",

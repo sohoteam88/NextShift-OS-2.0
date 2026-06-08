@@ -64,7 +64,7 @@ run('User Isolation', () => {
     authMocks.createServerSupabaseClient.mockResolvedValue(supabaseClient);
 
     const response = await REGISTER_MEMBER(
-      makeNextRequest('http://localhost/api/v1/member/register', {
+      makeNextRequest('http://127.0.0.1/api/v1/member/register', {
         invite_code: fixture.inviteCodeA,
         name: 'Joined Member',
         phone: '+60123456789',

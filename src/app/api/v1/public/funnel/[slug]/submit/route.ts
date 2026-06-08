@@ -56,42 +56,60 @@ export async function POST(request: NextRequest, context: { params: Promise<Reco
   const config = funnel.config as { sections?: { type: string; whatsapp_redirect?: string }[] };
   const formSection = config.sections?.find(s => s.type === 'form');
 
-  // Create lead
-  const lead = await prisma.lead.create({
-    data: {
+  // Create lead (critical — fail fast if this fails)
+  let lead: Awaited<ReturnType<typeof prisma.lead.create>>;
+  try {
+    lead = await prisma.lead.create({
+      data: {
+        tenantId: funnel.tenantId,
+        ownerId: funnel.ownerId,
+        name: input.name,
+        phone: input.phone ?? null,
+        email: input.email || null,
+        source: `funnel:${funnel.title}`,
+        pipelineStage: 'new',
+        score: 0,
+        metadata: {
+          funnel_id: funnel.id,
+          funnel_slug: slug,
+          ...(input.quiz_result && { quiz_result: input.quiz_result }),
+        } as Prisma.InputJsonValue,
+      },
+    });
+  } catch (err) {
+    console.error('[funnel/submit] lead.create failed:', err);
+    return NextResponse.json({ error: { code: 'DB_ERROR', message: '提交失败，请重试' } }, { status: 500 });
+  }
+
+  // Non-critical: score + activity + analytics — don't block response if these fail
+  try {
+    const { score, reasons } = calculateLeadScore(lead);
+    await prisma.lead.update({
+      where: { id: lead.id },
+      data: { score, scoreReasons: reasons as never, scoreUpdatedAt: new Date() },
+    });
+  } catch (err) {
+    console.error('[funnel/submit] score update failed:', err);
+  }
+
+  try {
+    await logActivity({
       tenantId: funnel.tenantId,
-      ownerId: funnel.ownerId,
-      name: input.name,
-      phone: input.phone ?? null,
-      email: input.email || null,
-      source: `funnel:${funnel.title}`,
-      pipelineStage: 'new',
-      score: 0,
-      metadata: {
-        funnel_id: funnel.id,
-        funnel_slug: slug,
-        ...(input.quiz_result && { quiz_result: input.quiz_result }),
-      } as Prisma.InputJsonValue,
-    },
-  });
-
-  // Score + activity
-  const { score, reasons } = calculateLeadScore(lead);
-  await prisma.lead.update({
-    where: { id: lead.id },
-    data: { score, scoreReasons: reasons as never, scoreUpdatedAt: new Date() },
-  });
-
-  await logActivity({
-    tenantId: funnel.tenantId,
-    leadId: lead.id,
-    userId: funnel.ownerId,
-    type: 'lead_created',
-    description: `从漏斗 "${funnel.title}" 获取的潜在客户`,
-  });
+      leadId: lead.id,
+      userId: funnel.ownerId,
+      type: 'lead_created',
+      description: `从漏斗 "${funnel.title}" 获取的潜在客户`,
+    });
+  } catch (err) {
+    console.error('[funnel/submit] logActivity failed:', err);
+  }
 
   // Increment conversions
-  await prisma.funnel.update({ where: { id: funnel.id }, data: { conversions: { increment: 1 } } });
+  try {
+    await prisma.funnel.update({ where: { id: funnel.id }, data: { conversions: { increment: 1 } } });
+  } catch (err) {
+    console.error('[funnel/submit] conversions increment failed:', err);
+  }
 
   // WhatsApp redirect
   const whatsappPhone = formSection?.whatsapp_redirect ?? funnel.owner.phone;

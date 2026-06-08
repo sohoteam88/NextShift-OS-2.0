@@ -58,7 +58,10 @@
     "adminSettings": "系统",
     "platformAdmin": "平台管理",
     "allTenants": "全部租户",
-    "systemHealth": "系统健康"
+    "systemHealth": "系统健康",
+    "customers": "客户管理",
+    "funnelBuilder": "漏斗生成器",
+    "contentPlan": "30天文案规划"
   },
   "platformAdmin": {
     "platformAdmin": "平台管理",
@@ -620,8 +623,21 @@
     "assignedSeries": "已分配",
     "emptyTitle": "暂无数据",
     "emptyDescription": "所选周期内活跃不足，暂时无法生成图表。",
-    "weekdayLabels": ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
-    "blockLabels": ["00-06", "06-12", "12-18", "18-24"]
+    "weekdayLabels": [
+      "周日",
+      "周一",
+      "周二",
+      "周三",
+      "周四",
+      "周五",
+      "周六"
+    ],
+    "blockLabels": [
+      "00-06",
+      "06-12",
+      "12-18",
+      "18-24"
+    ]
   },
   "dashboard": {
     "welcome": "早安，{name}",

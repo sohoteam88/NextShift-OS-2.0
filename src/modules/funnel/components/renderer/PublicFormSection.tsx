@@ -42,12 +42,21 @@ export function PublicFormSection({ section, theme, funnelSlug, funnelId, quizRe
           ...(quizResult && { quiz_result: quizResult }),
         }),
       });
-      const json = await res.json();
-      if (!res.ok) { setErrorMsg(json.error?.message ?? '提交失败，请重试'); setState('error'); return; }
+
+      // Safely parse response — server may return HTML on 5xx
+      let json: { data?: { whatsapp_redirect?: string }; error?: { message?: string } } = {};
+      try { json = await res.json(); } catch { /* non-JSON response */ }
+
+      if (!res.ok) {
+        setErrorMsg(json.error?.message ?? '提交失败，请重试');
+        setState('error');
+        return;
+      }
+
       setRedirect(json.data?.whatsapp_redirect ?? '');
       setState('success');
     } catch {
-      setErrorMsg('网络错误，请重试');
+      setErrorMsg('网络错误，请检查网络连接后重试');
       setState('error');
     }
   }

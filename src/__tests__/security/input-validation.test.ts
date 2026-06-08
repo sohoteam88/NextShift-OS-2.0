@@ -44,7 +44,7 @@ describe('Input Validation', () => {
   });
 
   it('rejects oversized payloads', () => {
-    const request = new Request('https://localhost/api/v1/crm/leads', {
+    const request = new Request('https://127.0.0.1/api/v1/crm/leads', {
       method: 'POST',
       headers: { 'content-length': '1000001' },
     });

@@ -28,7 +28,7 @@ run('Note & Activity Isolation', () => {
   it('member_a cannot add note to Tenant B lead', async () => {
     authMocks.requireAuthApi.mockResolvedValue(fixture.users.memberA);
     const response = await ADD_NOTE(
-      makeNextRequest('http://localhost/api/v1/crm/leads/example/notes', {
+      makeNextRequest('http://127.0.0.1/api/v1/crm/leads/example/notes', {
         content: 'should fail',
       }),
       { params: Promise.resolve({ id: fixture.leads.tenantB[0].id }) },

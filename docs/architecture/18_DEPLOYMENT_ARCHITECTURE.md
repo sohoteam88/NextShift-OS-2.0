@@ -98,7 +98,7 @@ services:
     depends_on:
       - redis
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -332,9 +332,9 @@ jobs:
 
 | Environment | Purpose | Database | Domain |
 |-------------|---------|----------|--------|
-| local | Development | Local PostgreSQL or Supabase dev project | localhost:3000 |
+| local | Development | Local PostgreSQL or Supabase dev project | 127.0.0.1:3000 |
 | staging | Pre-production testing | Separate Supabase project | staging.nextshift.my |
-| production | Live | Production Supabase project | app.nextshift.my |
+| production | Live | Production Supabase project | nextshiftos.com |
 
 ### 8.1 Environment Variables
 
@@ -345,15 +345,16 @@ DIRECT_URL=
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_KEY=
+NEXT_PUBLIC_APP_URL=https://nextshiftos.com
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 WHATSAPP_API_TOKEN=
 WHATSAPP_PHONE_NUMBER_ID=
 RESEND_API_KEY=
 NEXTAUTH_SECRET=
-NEXTAUTH_URL=https://app.nextshift.my
-N8N_WEBHOOK_URL=http://localhost:5678
-REDIS_URL=redis://localhost:6379
+NEXTAUTH_URL=https://nextshiftos.com
+N8N_WEBHOOK_URL=http://127.0.0.1:5678
+REDIS_URL=redis://127.0.0.1:6379
 ```
 
 ---

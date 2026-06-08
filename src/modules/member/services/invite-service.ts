@@ -7,7 +7,12 @@ const INVITE_EXPIRY_DAYS = 7;
 const INVITE_ROLES = new Set(['leader', 'operator', 'platform_admin']);
 
 function getBaseUrl(baseUrl?: string) {
-  return (baseUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+  return (
+    baseUrl ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.NEXTAUTH_URL ??
+    'https://nextshiftos.com'
+  ).replace(/\/$/, '');
 }
 
 export const inviteService = {

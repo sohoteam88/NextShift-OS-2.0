@@ -27,7 +27,7 @@ run('Lead Isolation', () => {
 
   it('member_a cannot see leads from Tenant B', async () => {
     authMocks.requireAuthApi.mockResolvedValue(fixture.users.memberA);
-    const response = await GET(makeNextRequest('http://localhost/api/v1/crm/leads?page=1&limit=50'));
+    const response = await GET(makeNextRequest('http://127.0.0.1/api/v1/crm/leads?page=1&limit=50'));
     expect(response.status).toBe(200);
 
     const payload = await response.json();
@@ -38,7 +38,7 @@ run('Lead Isolation', () => {
   it('member_a cannot access a specific Tenant B lead by ID', async () => {
     authMocks.requireAuthApi.mockResolvedValue(fixture.users.memberA);
     const response = await GET_LEAD(
-      makeNextRequest('http://localhost/api/v1/crm/leads/example'),
+      makeNextRequest('http://127.0.0.1/api/v1/crm/leads/example'),
       { params: Promise.resolve({ id: fixture.leads.tenantB[0].id }) },
     );
 
@@ -48,7 +48,7 @@ run('Lead Isolation', () => {
   it('member_a cannot create a lead in Tenant B', async () => {
     authMocks.requireAuthApi.mockResolvedValue(fixture.users.memberA);
     const response = await POST(
-      makeNextRequest('http://localhost/api/v1/crm/leads', {
+      makeNextRequest('http://127.0.0.1/api/v1/crm/leads', {
         name: 'Manipulated Lead',
         email: 'manipulated@example.test',
         phone: '+60123456789',
@@ -65,7 +65,7 @@ run('Lead Isolation', () => {
   it('member_a cannot update a Tenant B lead', async () => {
     authMocks.requireAuthApi.mockResolvedValue(fixture.users.memberA);
     const response = await PATCH(
-      makeNextRequest('http://localhost/api/v1/crm/leads/example', {
+      makeNextRequest('http://127.0.0.1/api/v1/crm/leads/example', {
         name: 'Updated',
       }),
       { params: Promise.resolve({ id: fixture.leads.tenantB[0].id }) },
@@ -77,7 +77,7 @@ run('Lead Isolation', () => {
   it('member_a cannot delete a Tenant B lead', async () => {
     authMocks.requireAuthApi.mockResolvedValue(fixture.users.memberA);
     const response = await DELETE(
-      makeNextRequest('http://localhost/api/v1/crm/leads/example', undefined, { method: 'DELETE' }),
+      makeNextRequest('http://127.0.0.1/api/v1/crm/leads/example', undefined, { method: 'DELETE' }),
       { params: Promise.resolve({ id: fixture.leads.tenantB[0].id }) },
     );
 
