@@ -16,10 +16,10 @@ const Schema = z.object({
   enhancePrompt: z.boolean().default(true),
 });
 
-const SIZE_MAP: Record<string, '1024x1024' | '1792x1024' | '1024x1792'> = {
+const SIZE_MAP: Record<string, '1024x1024' | '1536x1024' | '1024x1536'> = {
   square:    '1024x1024',
-  landscape: '1792x1024',
-  portrait:  '1024x1792',
+  landscape: '1536x1024',
+  portrait:  '1024x1536',
 };
 
 const STYLE_SUFFIX: Record<string, string> = {
@@ -44,21 +44,19 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const response = await openai.images.generate({
-    model: 'dall-e-3',
+    model: 'gpt-image-1',
     prompt: finalPrompt,
     n: 1,
     size: SIZE_MAP[platform],
-    quality: 'hd',
+    quality: 'high',
   });
 
   const imageData = response.data?.[0];
-  if (!imageData?.url) {
+  if (!imageData?.b64_json) {
     return NextResponse.json({ error: { message: '图片生成失败，请重试' } }, { status: 500 });
   }
-  const revisedPrompt = imageData.revised_prompt ?? finalPrompt;
-
-  const imageBuffer = await fetch(imageData.url).then((r) => r.arrayBuffer());
-  const imageBase64 = Buffer.from(imageBuffer).toString('base64');
+  const imageBase64 = imageData.b64_json;
+  const revisedPrompt = finalPrompt;
 
   // DALL-E 3 HD pricing: ~$0.080/image (landscape/portrait), ~$0.040 (square)
   const costUsd = platform === 'square' ? 0.04 : 0.08;
