@@ -52,7 +52,10 @@ export const POST = apiHandler(async (request: NextRequest) => {
     response_format: 'b64_json',
   });
 
-  const imageData = response.data[0];
+  const imageData = response.data?.[0];
+  if (!imageData?.b64_json) {
+    return NextResponse.json({ error: { message: '图片生成失败，请重试' } }, { status: 500 });
+  }
   const revisedPrompt = imageData.revised_prompt ?? finalPrompt;
 
   // DALL-E 3 HD pricing: ~$0.080/image (landscape/portrait), ~$0.040 (square)
