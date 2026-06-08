@@ -38,6 +38,18 @@ type SidebarProps = {
   tenantLogoUrl?: string | null;
 };
 
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+};
+
+type NavSection = {
+  title: string;
+  minRole: Role;
+  items: NavItem[];
+};
+
 const roleRank: Record<Role, number> = {
   member: 1,
   leader: 2,
@@ -45,41 +57,78 @@ const roleRank: Record<Role, number> = {
   platform_admin: 4,
 };
 
-const navItems = [
-  { href: '/dashboard', label: 'dashboard', icon: Gauge, minRole: 'member' },
-  { href: '/crm', label: 'leads', icon: ClipboardList, minRole: 'member' },
-  { href: '/crm/pipeline', label: 'pipeline', icon: KanbanSquare, minRole: 'member' },
-  { href: '/crm/customers', label: 'customers', icon: ClipboardList, minRole: 'member' },
-  { href: '/funnel', label: 'funnels', icon: LayoutTemplate, minRole: 'member' },
-  { href: '/ai', label: 'aiTools', icon: Wand2, minRole: 'member' },
-  { href: '/ai/coach', label: 'aiCoach', icon: Brain, minRole: 'member' },
-  { href: '/ai/image', label: 'aiImage', icon: ImageIcon, minRole: 'member' },
-  { href: '/ai/funnel-builder', label: 'funnelBuilder', icon: Zap, minRole: 'member' },
-  { href: '/ai/content-plan', label: 'contentPlan', icon: Calendar, minRole: 'member' },
-  { href: '/member', label: 'dailyActions', icon: Activity, minRole: 'member' },
-  { href: '/member?view=training', label: 'training', icon: ClipboardList, minRole: 'member' },
-  { href: '/member/voice', label: 'voiceCapture', icon: Mic, minRole: 'member' },
-  { type: 'divider', minRole: 'leader' },
-  { href: '/team', label: 'team', icon: Users, minRole: 'leader' },
-  { href: '/team/members', label: 'teamMembers', icon: Rows3, minRole: 'leader' },
-  { href: '/admin/approvals', label: 'approvals', icon: UserCheck, minRole: 'leader' },
-  { href: '/analytics', label: 'analytics', icon: BarChart3, minRole: 'member' },
-  { type: 'divider', minRole: 'member' },
-  { href: '/help', label: 'help', icon: CircleHelp, minRole: 'member' },
-  { href: '/settings', label: 'settings', icon: Settings, minRole: 'member' },
-  { type: 'divider', minRole: 'operator' },
-  { href: '/admin', label: 'admin', icon: Shield, minRole: 'operator' },
-  { href: '/admin/users', label: 'adminUsers', icon: Users, minRole: 'operator' },
-  { href: '/admin/templates', label: 'adminTemplates', icon: LayoutTemplate, minRole: 'operator' },
-  { href: '/admin/daily-actions', label: 'adminDailyActions', icon: ClipboardList, minRole: 'operator' },
-  { href: '/admin/training', label: 'adminTraining', icon: BookOpenCheck, minRole: 'operator' },
-  { href: '/admin/plan', label: 'adminPlan', icon: Gauge, minRole: 'operator' },
-  { href: '/admin/settings', label: 'adminSettings', icon: Settings, minRole: 'operator' },
-] as const;
-
 function canView(role: Role, minRole: Role) {
   return roleRank[role] >= roleRank[minRole];
 }
+
+// ─── Navigation structure ─────────────────────────────────────────────────────
+
+const MEMBER_SECTIONS: NavSection[] = [
+  {
+    title: '赚钱行动',
+    minRole: 'member',
+    items: [
+      { href: '/dashboard', label: 'dashboard', icon: Gauge },
+      { href: '/member', label: 'dailyActions', icon: Activity },
+      { href: '/ai/coach', label: 'aiCoach', icon: Brain },
+    ],
+  },
+  {
+    title: '引流内容',
+    minRole: 'member',
+    items: [
+      { href: '/ai', label: 'aiTools', icon: Wand2 },
+      { href: '/ai/content-plan', label: 'contentPlan', icon: Calendar },
+      { href: '/ai/image', label: 'aiImage', icon: ImageIcon },
+      { href: '/member/voice', label: 'voiceCapture', icon: Mic },
+    ],
+  },
+  {
+    title: '成交系统',
+    minRole: 'member',
+    items: [
+      { href: '/funnel', label: 'funnels', icon: LayoutTemplate },
+      { href: '/ai/funnel-builder', label: 'funnelBuilder', icon: Zap },
+      { href: '/crm', label: 'leads', icon: ClipboardList },
+      { href: '/crm/pipeline', label: 'pipeline', icon: KanbanSquare },
+      { href: '/crm/customers', label: 'customers', icon: UserCheck },
+    ],
+  },
+  {
+    title: '学习成长',
+    minRole: 'member',
+    items: [
+      { href: '/member?view=training', label: 'training', icon: BookOpenCheck },
+    ],
+  },
+  {
+    title: '系统',
+    minRole: 'member',
+    items: [
+      { href: '/analytics', label: 'analytics', icon: BarChart3 },
+      { href: '/settings', label: 'settings', icon: Settings },
+      { href: '/help', label: 'help', icon: CircleHelp },
+    ],
+  },
+];
+
+const LEADER_ITEMS: NavItem[] = [
+  { href: '/team', label: 'team', icon: Users },
+  { href: '/team/members', label: 'teamMembers', icon: Rows3 },
+  { href: '/admin/approvals', label: 'approvals', icon: UserCheck },
+];
+
+const ADMIN_ITEMS: NavItem[] = [
+  { href: '/admin', label: 'admin', icon: Shield },
+  { href: '/admin/users', label: 'adminUsers', icon: Users },
+  { href: '/admin/templates', label: 'adminTemplates', icon: LayoutTemplate },
+  { href: '/admin/daily-actions', label: 'adminDailyActions', icon: ClipboardList },
+  { href: '/admin/training', label: 'adminTraining', icon: BookOpenCheck },
+  { href: '/admin/plan', label: 'adminPlan', icon: Gauge },
+  { href: '/admin/settings', label: 'adminSettings', icon: Settings },
+];
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUrl }: SidebarProps) {
   const pathname = usePathname();
@@ -131,6 +180,37 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
     return pathname === itemPath;
   }
 
+  function renderItem(item: NavItem) {
+    const Icon = item.icon;
+    const active = isActiveItem(item.href);
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          'flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
+          active
+            ? 'bg-blue-50 text-[var(--color-primary)]'
+            : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="flex-1 truncate">{t(item.label as Parameters<typeof t>[0])}</span>
+        {item.href === '/crm' && overdueCount > 0 && (
+          <span className="ml-auto rounded-full bg-[var(--color-danger)] px-1.5 py-0.5 text-xs font-bold text-white">
+            {overdueCount}
+          </span>
+        )}
+        {item.href === '/admin/approvals' && pendingCount > 0 && (
+          <span className="ml-auto rounded-full bg-[var(--color-danger)] px-1.5 py-0.5 text-xs font-bold text-white">
+            {pendingCount}
+          </span>
+        )}
+      </Link>
+    );
+  }
+
   return (
     <aside
       className={cn(
@@ -138,7 +218,11 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
         className,
       )}
     >
-      <Link href="/dashboard" className="flex h-10 shrink-0 items-center gap-2 px-3 text-base font-semibold text-[var(--color-text)]">
+      {/* Logo */}
+      <Link
+        href="/dashboard"
+        className="flex h-10 shrink-0 items-center gap-2 px-3 text-base font-semibold text-[var(--color-text)]"
+      >
         {tenantLogoUrl ? (
           <span className="relative h-8 w-8 overflow-hidden rounded-[var(--radius-md)]">
             <Image
@@ -157,75 +241,85 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
         )}
         <span className="truncate">{tenantName ?? 'NextShift'}</span>
       </Link>
-      <nav className="mt-6 flex-1 space-y-1 overflow-y-auto pb-4">
-        {navItems.map((item, index) => {
-          if (!canView(role, item.minRole)) return null;
 
-          if ('type' in item) {
-            return <div key={`${item.type}-${index}`} className="my-3 border-t border-[var(--color-border)]" />;
-          }
+      <nav className="mt-5 flex-1 overflow-y-auto pb-4">
+        {/* Member sections */}
+        <div className="space-y-4">
+          {MEMBER_SECTIONS.map((section) => {
+            if (!canView(role, section.minRole)) return null;
+            return (
+              <div key={section.title}>
+                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+                  {section.title}
+                </p>
+                <div className="space-y-0.5">
+                  {section.items.map((item) => renderItem(item))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
 
-          const Icon = item.icon;
-          const active = isActiveItem(item.href);
+        {/* Leader section */}
+        {canView(role, 'leader') && (
+          <div className="mt-4">
+            <div className="mb-3 border-t border-[var(--color-border)]" />
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+              团队管理
+            </p>
+            <div className="space-y-0.5">
+              {LEADER_ITEMS.map((item) => renderItem(item))}
+            </div>
+          </div>
+        )}
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
-                active
-                  ? 'bg-blue-50 text-[var(--color-primary)]'
-                  : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
-              )}
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              <span className="flex-1">{t(item.label)}</span>
-              {item.href === '/crm' && overdueCount > 0 && (
-                <span className="ml-auto rounded-full bg-[var(--color-danger)] px-1.5 py-0.5 text-xs font-bold text-white">
-                  {overdueCount}
-                </span>
-              )}
-        {item.href === '/admin/approvals' && pendingCount > 0 && (
-                <span className="ml-auto rounded-full bg-[var(--color-danger)] px-1.5 py-0.5 text-xs font-bold text-white">
-                  {pendingCount}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+        {/* Operator/admin section */}
+        {canView(role, 'operator') && (
+          <div className="mt-4">
+            <div className="mb-3 border-t border-[var(--color-border)]" />
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+              管理后台
+            </p>
+            <div className="space-y-0.5">
+              {ADMIN_ITEMS.map((item) => renderItem(item))}
+            </div>
+          </div>
+        )}
 
+        {/* Platform admin */}
         {canView(role, 'platform_admin') && (
-          <>
-            <div className="my-3 border-t border-[var(--color-border)]" />
-            <p className="px-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
+          <div className="mt-4">
+            <div className="mb-3 border-t border-[var(--color-border)]" />
+            <p className="px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
               {t('platformAdmin')}
             </p>
-            <Link
-              href="/platform-admin"
-              className={cn(
-                'mt-1 flex h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
-                pathname === '/platform-admin'
-                  ? 'bg-blue-50 text-[var(--color-primary)]'
-                  : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
-              )}
-            >
-              <Shield className="h-4 w-4" aria-hidden="true" />
-              <span className="flex-1">{t('allTenants')}</span>
-            </Link>
-            <Link
-              href="/platform-admin/health"
-              className={cn(
-                'flex h-10 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
-                pathname === '/platform-admin/health'
-                  ? 'bg-blue-50 text-[var(--color-primary)]'
-                  : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
-              )}
-            >
-              <Gauge className="h-4 w-4" aria-hidden="true" />
-              <span className="flex-1">{t('systemHealth')}</span>
-            </Link>
-          </>
+            <div className="mt-1 space-y-0.5">
+              <Link
+                href="/platform-admin"
+                className={cn(
+                  'flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
+                  pathname === '/platform-admin'
+                    ? 'bg-blue-50 text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
+                )}
+              >
+                <Shield className="h-4 w-4" aria-hidden="true" />
+                <span className="flex-1">{t('allTenants')}</span>
+              </Link>
+              <Link
+                href="/platform-admin/health"
+                className={cn(
+                  'flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
+                  pathname === '/platform-admin/health'
+                    ? 'bg-blue-50 text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
+                )}
+              >
+                <Gauge className="h-4 w-4" aria-hidden="true" />
+                <span className="flex-1">{t('systemHealth')}</span>
+              </Link>
+            </div>
+          </div>
         )}
       </nav>
     </aside>

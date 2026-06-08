@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { Clock, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 type Recommendation = {
@@ -12,6 +13,13 @@ type Recommendation = {
   actionLabel: string;
   actionHref: string;
   urgency: 'high' | 'medium' | 'low';
+};
+
+type DailyProgress = {
+  completedCount: number;
+  totalCount: number;
+  allCompleted: boolean;
+  hasData: boolean;
 };
 
 function useCoachRecommendation() {
@@ -26,81 +34,100 @@ function useCoachRecommendation() {
   });
 }
 
-const URGENCY_STYLES = {
-  high: 'border-red-200 bg-red-50',
-  medium: 'border-blue-200 bg-blue-50',
-  low: 'border-[var(--color-border)] bg-white',
-};
-
-const URGENCY_BADGE = {
-  high: 'bg-red-100 text-red-700',
-  medium: 'bg-blue-100 text-blue-700',
-  low: 'bg-gray-100 text-gray-600',
-};
-
-const URGENCY_LABEL = {
-  high: '紧急',
-  medium: '今日',
-  low: '建议',
-};
+function useDailyActions() {
+  return useQuery({
+    queryKey: ['daily-actions-today'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/member/daily-actions');
+      if (!res.ok) throw new Error('Failed');
+      return res.json() as Promise<{ data: DailyProgress }>;
+    },
+    staleTime: 60_000,
+  });
+}
 
 export function AICoachCard({ userName }: { userName: string }) {
-  const { data, isLoading, error } = useCoachRecommendation();
-  const rec = data?.data;
+  const { data: recData, isLoading: recLoading, error } = useCoachRecommendation();
+  const { data: dailyData, isLoading: dailyLoading } = useDailyActions();
 
   if (error) return null;
 
-  if (isLoading) {
-    return (
-      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-        <Skeleton className="mb-3 h-4 w-24" />
-        <Skeleton className="mb-2 h-6 w-3/4" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="mt-4 h-10 w-28" />
-      </div>
-    );
-  }
+  const rec = recData?.data;
+  const daily = dailyData?.data;
+  const remaining = (daily?.totalCount ?? 0) - (daily?.completedCount ?? 0);
+  const isLoading = recLoading || dailyLoading;
 
-  if (!rec) return null;
+  const recommendedActions = [
+    rec ? { label: rec.actionLabel, href: rec.actionHref, time: rec.estimatedMinutes } : null,
+    { label: '跟进潜在客户', href: '/crm', time: 10 },
+    { label: '发布一条内容', href: '/ai', time: 5 },
+  ].filter(Boolean) as { label: string; href: string; time: number }[];
 
   return (
-    <div
-      className={`rounded-[var(--radius-lg)] border p-5 shadow-[var(--shadow-sm)] ${URGENCY_STYLES[rec.urgency]}`}
-    >
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-medium text-[var(--color-text-muted)]">
-          AI Coach · {userName}
-        </span>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${URGENCY_BADGE[rec.urgency]}`}
-        >
-          {URGENCY_LABEL[rec.urgency]}
-        </span>
+    <div className="rounded-[var(--radius-lg)] border border-blue-200 bg-blue-50 p-5 shadow-[var(--shadow-sm)]">
+      {/* Header */}
+      <div className="mb-3 flex items-center gap-2">
+        <span className="text-lg leading-none">🤖</span>
+        <span className="font-semibold text-[var(--color-text)]">AI Coach</span>
+        {!isLoading && remaining > 0 && (
+          <span className="ml-auto rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-medium text-white">
+            {remaining} 项待完成
+          </span>
+        )}
       </div>
 
-      <p className="mb-1 text-sm font-medium text-[var(--color-text-muted)]">今天的目标</p>
-      <p className="text-lg font-semibold text-[var(--color-text)]">{rec.goal}</p>
+      {/* Coaching message */}
+      {isLoading ? (
+        <div className="mb-4 space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      ) : (
+        <p className="mb-4 text-sm leading-relaxed text-[var(--color-text)]">
+          {remaining > 0
+            ? `你今天还有 ${remaining} 项任务未完成。完成后，系统会帮你推进内容发布、客户跟进与成交节奏。`
+            : `太棒了，${userName}！今日任务全部完成。继续保持，系统将为你规划明天的重点行动。`}
+        </p>
+      )}
 
-      <p className="mt-1.5 text-sm text-[var(--color-text-muted)]">{rec.reason}</p>
-
-      <div className="mt-1 text-xs text-[var(--color-text-muted)]">
-        预计时间：{rec.estimatedMinutes} 分钟
+      {/* 3 recommended actions */}
+      <div className="mb-4 space-y-2">
+        {recommendedActions.slice(0, 3).map((action) => (
+          <Link
+            key={action.href + action.label}
+            href={action.href}
+            className="flex items-center justify-between rounded-[var(--radius-md)] border border-blue-200 bg-white px-3 py-2.5 text-sm transition-colors hover:border-blue-400 hover:bg-blue-50"
+          >
+            <span className="font-medium text-[var(--color-text)]">{action.label}</span>
+            <span className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
+              <Clock className="h-3 w-3" />
+              {action.time}分
+              <ChevronRight className="ml-0.5 h-3.5 w-3.5 text-[var(--color-primary)]" />
+            </span>
+          </Link>
+        ))}
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
+      {rec && (
+        <p className="mb-3 text-xs text-[var(--color-text-muted)]">
+          预计完成时间：{rec.estimatedMinutes + 15} 分钟
+        </p>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex gap-2">
         <Link
-          href={rec.actionHref}
-          className="inline-flex h-9 items-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-sm font-medium text-white shadow-sm hover:bg-[var(--color-primary-hover)]"
+          href="/member"
+          className="flex-1 rounded-[var(--radius-md)] bg-[var(--color-primary)] py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--color-primary-hover)]"
         >
-          {rec.actionLabel}
+          查看今日任务
         </Link>
-        <button
-          type="button"
-          className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-          onClick={() => {/* postpone — future: update DB state */}}
+        <Link
+          href="/ai/coach"
+          className="flex-1 rounded-[var(--radius-md)] border border-blue-300 bg-white py-2.5 text-center text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
         >
-          稍后再说
-        </button>
+          让 AI 帮我规划
+        </Link>
       </div>
     </div>
   );
