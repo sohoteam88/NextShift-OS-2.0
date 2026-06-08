@@ -10,7 +10,7 @@ const InviteCreateSchema = z.object({
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  const invites = await inviteService.listActiveInvites(user, request.nextUrl.origin);
+  const invites = await inviteService.listActiveInvites(user);
   return NextResponse.json({ data: invites });
 });
 
@@ -19,6 +19,6 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const body = await request.json().catch(() => ({}));
   const input = InviteCreateSchema.parse(body);
 
-  const invite = await inviteService.createInvite(user, input.base_url ?? request.nextUrl.origin);
+  const invite = await inviteService.createInvite(user, input.base_url);
   return NextResponse.json({ data: invite }, { status: 201 });
 });
