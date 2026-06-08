@@ -1,6 +1,7 @@
 'use client';
 
-import { CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/Badge';
 import { Spinner } from '@/components/ui/Spinner';
@@ -17,6 +18,15 @@ const categoryVariant: Record<string, 'success' | 'info' | 'warning'> = {
   learn: 'success',
   content: 'info',
   crm: 'warning',
+};
+
+const ACTION_LINKS: Record<string, string> = {
+  'learn.ai_coach': '/ai/coach',
+  'content.education_post': '/ai',
+  'content.story_post': '/ai',
+  'content.authority_post': '/ai',
+  'crm.follow_up': '/crm',
+  'crm.whatsapp_reply': '/crm',
 };
 
 export function DailyActionList({ actions, loadingIndex, onToggle }: DailyActionListProps) {
@@ -65,6 +75,16 @@ export function DailyActionList({ actions, loadingIndex, onToggle }: DailyAction
                 {action.completedAt ? ` · ${t('completedAt')} ${new Date(action.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
               </p>
             </div>
+
+            {ACTION_LINKS[action.type] && (
+              <Link
+                href={ACTION_LINKS[action.type]}
+                onClick={(e) => e.stopPropagation()}
+                className="ml-2 shrink-0 inline-flex items-center gap-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs font-medium text-[var(--color-text-muted)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                打开 <ExternalLink className="h-3 w-3" />
+              </Link>
+            )}
           </button>
         );
       })}
