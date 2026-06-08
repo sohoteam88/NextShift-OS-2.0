@@ -9,8 +9,6 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 const Schema = z.object({
   prompt: z.string().min(5).max(1000),
   style: z.enum(['realistic', 'professional', 'lifestyle', 'illustration', 'minimal']).default('realistic'),
@@ -42,6 +40,8 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const finalPrompt = enhancePrompt
     ? `${prompt}. Style: ${STYLE_SUFFIX[style]}. For social media use. No text or watermarks.`
     : prompt;
+
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const response = await openai.images.generate({
     model: 'dall-e-3',
