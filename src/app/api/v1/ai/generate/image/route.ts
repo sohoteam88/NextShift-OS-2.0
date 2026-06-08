@@ -49,14 +49,16 @@ export const POST = apiHandler(async (request: NextRequest) => {
     n: 1,
     size: SIZE_MAP[platform],
     quality: 'hd',
-    response_format: 'b64_json',
   });
 
   const imageData = response.data?.[0];
-  if (!imageData?.b64_json) {
+  if (!imageData?.url) {
     return NextResponse.json({ error: { message: '图片生成失败，请重试' } }, { status: 500 });
   }
   const revisedPrompt = imageData.revised_prompt ?? finalPrompt;
+
+  const imageBuffer = await fetch(imageData.url).then((r) => r.arrayBuffer());
+  const imageBase64 = Buffer.from(imageBuffer).toString('base64');
 
   // DALL-E 3 HD pricing: ~$0.080/image (landscape/portrait), ~$0.040 (square)
   const costUsd = platform === 'square' ? 0.04 : 0.08;
@@ -77,7 +79,7 @@ export const POST = apiHandler(async (request: NextRequest) => {
 
   return NextResponse.json({
     data: {
-      imageBase64: imageData.b64_json,
+      imageBase64,
       revisedPrompt,
       platform,
       style,
