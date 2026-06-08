@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { MobileTabBar } from './MobileTabBar';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { AdminSidebar } from './AdminSidebar';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { OnboardingState } from '@/modules/member/types';
 import { TenantBranding } from '@/modules/tenant/components/TenantBranding';
@@ -69,6 +70,25 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
 
   if (isOnboardingPath) {
     return <div className="min-h-screen bg-[var(--color-surface)]">{children}</div>;
+  }
+
+  // Platform admin gets a dedicated admin console shell
+  if (user.role === 'platform_admin' && pathname.startsWith('/platform-admin')) {
+    return (
+      <div className="flex h-screen overflow-hidden">
+        <AdminSidebar userName={user.name} />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-white px-6">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+              NextShift Platform Admin
+            </span>
+          </div>
+          <main className="flex-1 overflow-y-auto bg-[var(--color-surface)] p-6 xl:p-8">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
   }
 
   return (
