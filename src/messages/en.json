@@ -63,7 +63,8 @@
     "aiCoach": "AI Coach Tasks",
     "aiImage": "AI Image",
     "funnelBuilder": "Funnel Builder",
-    "contentPlan": "30-Day Content Plan"
+    "contentPlan": "30-Day Content Plan",
+    "aiModelUsage": "AI Model Usage"
   },
   "platformAdmin": {
     "platformAdmin": "Platform Admin",

@@ -414,6 +414,81 @@ export const platformAdminService = {
       .sort((a, b) => b.costThisMonth - a.costThisMonth || b.callsThisMonth - a.callsThisMonth || a.tenantName.localeCompare(b.tenantName));
   },
 
+  async getAIModelBreakdown() {
+    const monthStart = startOfMonth();
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
+    fourteenDaysAgo.setHours(0, 0, 0, 0);
+
+    const [summary, byModel, byFeature, recentLogs] = await Promise.all([
+      prisma.aIUsageLog.aggregate({
+        where: { createdAt: { gte: monthStart } },
+        _count: { _all: true },
+        _sum: { costUsd: true, tokensIn: true, tokensOut: true },
+      }),
+      prisma.aIUsageLog.groupBy({
+        by: ['model', 'provider'],
+        where: { createdAt: { gte: monthStart } },
+        _count: { _all: true },
+        _sum: { costUsd: true, tokensIn: true, tokensOut: true },
+        orderBy: [{ _sum: { costUsd: 'desc' } }],
+      }),
+      prisma.aIUsageLog.groupBy({
+        by: ['feature', 'category'],
+        where: { createdAt: { gte: monthStart } },
+        _count: { _all: true },
+        _sum: { costUsd: true },
+        orderBy: [{ _sum: { costUsd: 'desc' } }],
+      }),
+      prisma.aIUsageLog.findMany({
+        where: { createdAt: { gte: fourteenDaysAgo } },
+        select: { createdAt: true, costUsd: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const dailyMap = new Map<string, { cost: number; calls: number }>();
+    for (const log of recentLogs) {
+      const day = log.createdAt.toISOString().slice(0, 10);
+      const prev = dailyMap.get(day) ?? { cost: 0, calls: 0 };
+      dailyMap.set(day, { cost: prev.cost + decimalToNumber(log.costUsd), calls: prev.calls + 1 });
+    }
+
+    const daily: { date: string; cost: number; calls: number }[] = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const day = d.toISOString().slice(0, 10);
+      daily.push({ date: day, ...(dailyMap.get(day) ?? { cost: 0, calls: 0 }) });
+    }
+
+    const totalCost = decimalToNumber(summary._sum.costUsd);
+    const totalCalls = summary._count._all;
+
+    return {
+      totalCostThisMonth: totalCost,
+      totalCallsThisMonth: totalCalls,
+      totalTokensIn: summary._sum.tokensIn ?? 0,
+      totalTokensOut: summary._sum.tokensOut ?? 0,
+      avgCostPerCall: totalCalls > 0 ? totalCost / totalCalls : 0,
+      byModel: byModel.map((row) => ({
+        model: row.model,
+        provider: row.provider,
+        calls: row._count._all,
+        costUsd: decimalToNumber(row._sum.costUsd),
+        tokensIn: row._sum.tokensIn ?? 0,
+        tokensOut: row._sum.tokensOut ?? 0,
+      })),
+      byFeature: byFeature.map((row) => ({
+        feature: row.feature,
+        category: row.category,
+        calls: row._count._all,
+        costUsd: decimalToNumber(row._sum.costUsd),
+      })),
+      daily,
+    };
+  },
+
   async suspendTenant(tenantId: string) {
     return tenantService.suspend(tenantId);
   },

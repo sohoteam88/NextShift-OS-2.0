@@ -63,7 +63,8 @@
     "aiCoach": "AI 教练任务",
     "aiImage": "AI 生图",
     "funnelBuilder": "漏斗生成器",
-    "contentPlan": "30天文案规划"
+    "contentPlan": "30天文案规划",
+    "aiModelUsage": "AI 模型用量"
   },
   "platformAdmin": {
     "platformAdmin": "平台管理",

@@ -318,6 +318,18 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
                 <Gauge className="h-4 w-4" aria-hidden="true" />
                 <span className="flex-1">{t('systemHealth')}</span>
               </Link>
+              <Link
+                href="/platform-admin/ai-usage"
+                className={cn(
+                  'flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
+                  pathname === '/platform-admin/ai-usage'
+                    ? 'bg-blue-50 text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
+                )}
+              >
+                <Brain className="h-4 w-4" aria-hidden="true" />
+                <span className="flex-1">{t('aiModelUsage')}</span>
+              </Link>
             </div>
           </div>
         )}
