@@ -27,13 +27,13 @@ export function OperatorDashboard({ user }: Props) {
     queryFn: async () => {
       const res = await fetch('/api/v1/health');
       if (!res.ok) throw new Error('Failed to load health');
-      return res.json() as Promise<{ data: { status: string; database: { status: string } } }>;
+      return res.json() as Promise<{ status: string; services: { database: string } }>;
     },
   });
 
   const stats = dashboard.data?.data.stats;
-  const healthStatus = health.data?.data.status ?? 'unknown';
-  const dbStatus = health.data?.data.database.status ?? 'unknown';
+  const healthStatus = health.data?.status ?? 'unknown';
+  const dbStatus = health.data?.services.database ?? 'unknown';
 
   return (
     <div className="space-y-6">

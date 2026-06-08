@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import prisma from '@/lib/prisma';
+import { withPrismaRetry } from '@/lib/prisma-retry';
 
 export type AuthUser = {
   id: string;
@@ -19,18 +20,20 @@ export async function getAuthUser(): Promise<AuthUser | null> {
 
   if (!user) return null;
 
-  const dbUser = await prisma.user.findFirst({
-    where: { id: user.id, deletedAt: null },
-    select: {
-      id: true,
-      email: true,
-      tenantId: true,
-      role: true,
-      name: true,
-      languagePreference: true,
-      status: true,
-    },
-  });
+  const dbUser = await withPrismaRetry(() =>
+    prisma.user.findFirst({
+      where: { id: user.id, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        tenantId: true,
+        role: true,
+        name: true,
+        languagePreference: true,
+        status: true,
+      },
+    }),
+  );
 
   if (!dbUser) return null;
 
