@@ -1,0 +1,86 @@
+interface:
+  display_name: "AI Model Router — Anthropic"
+  short_description: "Anthropic-specific model routing configuration."
+
+models:
+  tier_s:
+    model: "claude-opus-4-6"
+    max_tokens: 32768
+    temperature: 1.0
+    extended_thinking: true
+    budget_tokens: 16384
+    strengths:
+      - Deep architectural reasoning
+      - Extended thinking for complex multi-step problems
+      - Security and compliance analysis
+      - Cross-module refactoring with full context
+    cost_per_million_input: 15.00
+    cost_per_million_output: 75.00
+    typical_latency_seconds: 30-120
+
+  tier_a:
+    model: "claude-sonnet-4-6"
+    max_tokens: 16384
+    temperature: 0.7
+    extended_thinking: false
+    strengths:
+      - Fast, accurate code generation
+      - Strong instruction following
+      - API integration and feature implementation
+      - Tool use and multi-step execution
+    cost_per_million_input: 3.00
+    cost_per_million_output: 15.00
+    typical_latency_seconds: 5-30
+
+  tier_b:
+    model: "claude-haiku-4-5"
+    max_tokens: 8192
+    temperature: 0.5
+    extended_thinking: false
+    strengths:
+      - Ultra-fast responses
+      - Cost-effective for high-volume tasks
+      - Simple code, copy, and translation
+      - Classification and tagging
+    cost_per_million_input: 0.80
+    cost_per_million_output: 4.00
+    typical_latency_seconds: 1-5
+
+  tier_c:
+    model: "claude-haiku-4-5"
+    max_tokens: 4096
+    temperature: 0.3
+    extended_thinking: false
+    strengths:
+      - Minimal cost for utility tasks
+      - Sub-second for simple formatting
+      - JSON/YAML cleanup
+      - Template expansion
+    cost_per_million_input: 0.80
+    cost_per_million_output: 4.00
+    typical_latency_seconds: 0.5-2
+
+platform_mapping:
+  claude_code:
+    preferred_tiers: [tier_s, tier_a]
+    use_case: "Interactive development, debugging, architecture review"
+  codex:
+    preferred_tiers: [tier_a, tier_b]
+    use_case: "Async batch tasks, bulk operations, CI-like execution"
+  coworker:
+    preferred_tiers: [tier_a, tier_b]
+    use_case: "Knowledge work, document creation, research, multi-tool orchestration"
+
+escalation_chain:
+  - from: tier_c
+    to: tier_b
+    trigger: "Output quality below threshold or task more complex than expected"
+  - from: tier_b
+    to: tier_a
+    trigger: "Code errors, logic failures, or security concerns detected"
+  - from: tier_a
+    to: tier_s
+    trigger: "Architectural conflicts, multi-module impact, or repeated failures"
+  - from: tier_s
+    to: human
+    trigger: "Model output contradicts architecture files or fails quality check after retry"

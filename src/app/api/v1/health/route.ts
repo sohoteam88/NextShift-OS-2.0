@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
+import { apiHandler } from '@/lib/api-handler';
+import prisma from '@/lib/prisma';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export const GET = apiHandler(async () => {
+  let dbStatus = 'ok';
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    dbStatus = 'error';
+  }
+
   return NextResponse.json({
-    status: 'ok',
+    status: dbStatus === 'ok' ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     version: '0.1.0',
+    services: { database: dbStatus },
   });
-}
+});
