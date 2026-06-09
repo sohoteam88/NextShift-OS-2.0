@@ -1,10 +1,21 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Gauge, Brain, Zap, DollarSign, Hash } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart3,
+  Brain,
+  DollarSign,
+  Gauge,
+  Hash,
+  LineChart,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { platformAdminService } from '@/modules/admin/services/platform-admin-service';
 
-function fmt$(value: number) {
+function fmtMoney(value: number) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -23,6 +34,12 @@ function fmtK(n: number) {
   return String(n);
 }
 
+function featureLabel(value: string) {
+  return value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 const PROVIDER_COLOR: Record<string, string> = {
   openai: 'bg-emerald-100 text-emerald-700',
   anthropic: 'bg-orange-100 text-orange-700',
@@ -34,9 +51,13 @@ export default async function AIModelUsagePage() {
   if (!user) redirect('/login');
   if (user.role !== 'platform_admin') redirect('/dashboard');
 
+  const t = await getTranslations('platformAdmin');
   const data = await platformAdminService.getAIModelBreakdown();
 
-  const totalCostAllTime = data.totalCostThisMonth;
+  const totalCostThisMonth = data.totalCostThisMonth;
+  const totalTokens = data.totalTokensIn + data.totalTokensOut;
+  const topModel = data.byModel[0];
+  const topFeature = data.byFeature[0];
   const maxModelCost = Math.max(...data.byModel.map((m) => m.costUsd), 0.001);
   const maxFeatureCost = Math.max(...data.byFeature.map((f) => f.costUsd), 0.001);
   const maxDailyCalls = Math.max(...data.daily.map((d) => d.calls), 1);
@@ -44,75 +65,121 @@ export default async function AIModelUsagePage() {
   const cardClass =
     'rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm';
 
+  const summaryCards = [
+    {
+      label: t('aiMonthlySpend'),
+      value: fmtMoney(totalCostThisMonth),
+      helper: t('aiSpendHelper'),
+      icon: DollarSign,
+    },
+    {
+      label: t('aiMonthlyCalls'),
+      value: fmtNum(data.totalCallsThisMonth),
+      helper: topFeature ? t('aiTopFeature', { feature: featureLabel(topFeature.feature) }) : t('aiNoUsageYet'),
+      icon: Zap,
+    },
+    {
+      label: t('aiTokenVolume'),
+      value: fmtK(totalTokens),
+      helper: `In ${fmtK(data.totalTokensIn)} / Out ${fmtK(data.totalTokensOut)}`,
+      icon: Hash,
+    },
+    {
+      label: t('aiAvgCost'),
+      value: fmtMoney(data.avgCostPerCall),
+      helper: t('aiAvgCostHelper'),
+      icon: Brain,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
-            平台管理
+            {t('platformAdmin')}
           </p>
-          <h1 className="mt-2 text-2xl font-semibold text-[var(--color-text)]">AI 模型用量</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            本月各模型调用次数、Token 消耗与费用明细
+          <h1 className="mt-2 text-2xl font-semibold text-[var(--color-text)]">{t('aiUsageTitle')}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--color-text-muted)]">
+            {t('aiUsageSubtitle')}
           </p>
         </div>
         <Link
           href="/platform-admin"
           className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface)]"
         >
-          <Gauge className="h-4 w-4" />
-          全部租户
+          <Gauge className="h-4 w-4" aria-hidden="true" />
+          {t('allTenants')}
         </Link>
       </div>
 
-      {/* Summary cards */}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className={cardClass}>
-          <div className="mb-3 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-            <DollarSign className="h-4 w-4 text-[var(--color-primary)]" />
-            本月总费用
+      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
+            <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('aiSpendControl')}</p>
           </div>
-          <p className="text-3xl font-semibold text-[var(--color-text)]">{fmt$(totalCostAllTime)}</p>
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-4xl font-semibold tracking-tight text-[var(--color-text)]">
+                {fmtMoney(totalCostThisMonth)}
+              </p>
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">{t('aiSpendControlDescription')}</p>
+            </div>
+            <div className="rounded-[var(--radius-md)] bg-[var(--color-surface)] px-4 py-3">
+              <p className="text-xs text-[var(--color-text-muted)]">{t('aiTopModel')}</p>
+              <p className="mt-1 max-w-[260px] truncate text-sm font-semibold text-[var(--color-text)]">
+                {topModel ? topModel.model : t('aiNoUsageYet')}
+              </p>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                {topModel ? `${fmtNum(topModel.calls)} ${t('calls')} / ${fmtMoney(topModel.costUsd)}` : t('aiWaitingForCalls')}
+              </p>
+            </div>
+          </div>
         </div>
-        <div className={cardClass}>
-          <div className="mb-3 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-            <Zap className="h-4 w-4 text-[var(--color-primary)]" />
-            本月调用次数
+
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-[var(--color-text)]">{t('aiQuickActions')}</h2>
+          <div className="mt-4 space-y-2">
+            {[
+              { href: '/platform-admin/health', label: t('systemHealth'), icon: LineChart },
+              { href: '/platform-admin?tab=tenants', label: t('reviewTenantUsage'), icon: BarChart3 },
+              { href: '/ai', label: t('inspectAiTools'), icon: Brain },
+            ].map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex h-10 items-center justify-between rounded-[var(--radius-md)] px-3 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface)]"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden="true" />
+                  {label}
+                </span>
+                <ArrowRight className="h-4 w-4 text-[var(--color-text-muted)]" aria-hidden="true" />
+              </Link>
+            ))}
           </div>
-          <p className="text-3xl font-semibold text-[var(--color-text)]">
-            {fmtNum(data.totalCallsThisMonth)}
-          </p>
-        </div>
-        <div className={cardClass}>
-          <div className="mb-3 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-            <Hash className="h-4 w-4 text-[var(--color-primary)]" />
-            总 Token 消耗
-          </div>
-          <p className="text-3xl font-semibold text-[var(--color-text)]">
-            {fmtK(data.totalTokensIn + data.totalTokensOut)}
-          </p>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-            In {fmtK(data.totalTokensIn)} · Out {fmtK(data.totalTokensOut)}
-          </p>
-        </div>
-        <div className={cardClass}>
-          <div className="mb-3 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-            <Brain className="h-4 w-4 text-[var(--color-primary)]" />
-            平均成本/次
-          </div>
-          <p className="text-3xl font-semibold text-[var(--color-text)]">
-            {fmt$(data.avgCostPerCall)}
-          </p>
         </div>
       </section>
 
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map(({ label, value, helper, icon: Icon }) => (
+          <div key={label} className={cardClass}>
+            <div className="mb-3 flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+              <Icon className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
+              {label}
+            </div>
+            <p className="text-3xl font-semibold text-[var(--color-text)]">{value}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">{helper}</p>
+          </div>
+        ))}
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-        {/* By Model table */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">按模型分组</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">{t('aiByModel')}</h2>
           {data.byModel.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-muted)]">本月暂无调用记录</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{t('aiNoUsageThisMonth')}</p>
           ) : (
             <div className="space-y-3">
               {data.byModel.map((row) => {
@@ -129,9 +196,9 @@ export default async function AIModelUsagePage() {
                         <span className="font-medium text-[var(--color-text)]">{row.model}</span>
                       </div>
                       <div className="flex shrink-0 items-center gap-4 text-xs text-[var(--color-text-muted)]">
-                        <span>{fmtNum(row.calls)} 次</span>
+                        <span>{fmtNum(row.calls)} {t('calls')}</span>
                         <span>{fmtK(row.tokensIn + row.tokensOut)} tok</span>
-                        <span className="font-semibold text-[var(--color-text)]">{fmt$(row.costUsd)}</span>
+                        <span className="font-semibold text-[var(--color-text)]">{fmtMoney(row.costUsd)}</span>
                       </div>
                     </div>
                     <div className="h-2 rounded-full bg-[var(--color-surface)]">
@@ -147,11 +214,10 @@ export default async function AIModelUsagePage() {
           )}
         </div>
 
-        {/* By Feature */}
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">按功能分组</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">{t('aiByFeature')}</h2>
           {data.byFeature.length === 0 ? (
-            <p className="text-sm text-[var(--color-text-muted)]">本月暂无调用记录</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{t('aiNoUsageThisMonth')}</p>
           ) : (
             <div className="space-y-3">
               {data.byFeature.map((row) => {
@@ -159,9 +225,9 @@ export default async function AIModelUsagePage() {
                 return (
                   <div key={`${row.category}-${row.feature}`} className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="font-medium text-[var(--color-text)]">{row.feature}</span>
+                      <span className="font-medium text-[var(--color-text)]">{featureLabel(row.feature)}</span>
                       <span className="shrink-0 text-xs text-[var(--color-text-muted)]">
-                        {fmtNum(row.calls)} 次 · {fmt$(row.costUsd)}
+                        {fmtNum(row.calls)} {t('calls')} / {fmtMoney(row.costUsd)}
                       </span>
                     </div>
                     <div className="h-2 rounded-full bg-[var(--color-surface)]">
@@ -178,9 +244,11 @@ export default async function AIModelUsagePage() {
         </div>
       </div>
 
-      {/* Daily trend — last 14 days */}
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">近 14 天调用趋势</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">{t('aiDailyTrend')}</h2>
+          <p className="text-xs text-[var(--color-text-muted)]">{t('aiDailyTrendHelper')}</p>
+        </div>
         <div className="flex items-end gap-1" style={{ height: 80 }}>
           {data.daily.map((day) => {
             const heightPct = Math.max(4, Math.round((day.calls / maxDailyCalls) * 100));
@@ -191,7 +259,7 @@ export default async function AIModelUsagePage() {
                 <span className="text-[9px] text-[var(--color-text-muted)]">{label}</span>
                 {/* tooltip */}
                 <div className="pointer-events-none absolute -top-10 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-[var(--radius-md)] bg-gray-800 px-2 py-1 text-[10px] text-white group-hover:block">
-                  {day.calls} 次 · {fmt$(day.cost)}
+                  {day.calls} {t('calls')} / {fmtMoney(day.cost)}
                 </div>
               </div>
             );
@@ -199,15 +267,14 @@ export default async function AIModelUsagePage() {
         </div>
       </div>
 
-      {/* Model detail table */}
       {data.byModel.length > 0 && (
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">模型明细表</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[var(--color-text)]">{t('aiModelDetails')}</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
               <thead>
                 <tr className="text-xs uppercase tracking-wide text-[var(--color-text-muted)]">
-                  {['Provider', 'Model', '调用次数', 'Tokens In', 'Tokens Out', '费用 (USD)', '占比'].map(
+                  {['Provider', 'Model', t('calls'), 'Tokens In', 'Tokens Out', t('costUsd'), t('share')].map(
                     (h) => (
                       <th key={h} className="border-b border-[var(--color-border)] px-3 py-3">
                         {h}
@@ -242,11 +309,11 @@ export default async function AIModelUsagePage() {
                       {fmtK(row.tokensOut)}
                     </td>
                     <td className="border-b border-[var(--color-border)] px-3 py-3 font-semibold">
-                      {fmt$(row.costUsd)}
+                      {fmtMoney(row.costUsd)}
                     </td>
                     <td className="border-b border-[var(--color-border)] px-3 py-3 text-[var(--color-text-muted)]">
-                      {totalCostAllTime > 0
-                        ? `${Math.round((row.costUsd / totalCostAllTime) * 100)}%`
+                      {totalCostThisMonth > 0
+                        ? `${Math.round((row.costUsd / totalCostThisMonth) * 100)}%`
                         : '—'}
                     </td>
                   </tr>
