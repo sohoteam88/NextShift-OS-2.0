@@ -8,7 +8,7 @@ import { cn } from '@/lib/cn';
 type BrandProfile = Record<string, unknown>;
 
 type Props = {
-  interviewId: string;
+  interviewId?: string;
   initialProfile: BrandProfile;
   onComplete: (profile: BrandProfile) => void;
 };
@@ -179,12 +179,21 @@ export function BrandProfileStep({ interviewId, initialProfile, onComplete }: Pr
     setConfirming(true);
     setError(null);
     try {
-      const res = await fetch(`/api/v1/brand-builder/interview/${interviewId}/confirm`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile }),
-      });
-      if (!res.ok) throw new Error('保存失败');
+      if (interviewId) {
+        const res = await fetch(`/api/v1/brand-builder/interview/${interviewId}/confirm`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile }),
+        });
+        if (!res.ok) throw new Error('保存失败');
+      } else {
+        const res = await fetch('/api/v1/brand-builder/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profile),
+        });
+        if (!res.ok) throw new Error('保存失败');
+      }
       onComplete(profile);
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存失败，请重试');
@@ -194,6 +203,7 @@ export function BrandProfileStep({ interviewId, initialProfile, onComplete }: Pr
   }
 
   async function handleReanalyze() {
+    if (!interviewId) return;
     setReanalyzing(true);
     setError(null);
     try {
@@ -308,15 +318,17 @@ export function BrandProfileStep({ interviewId, initialProfile, onComplete }: Pr
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-        <Button
-          variant="secondary"
-          icon={<RefreshCw className="h-4 w-4" />}
-          onClick={() => void handleReanalyze()}
-          loading={reanalyzing}
-          disabled={confirming}
-        >
-          让 AI 重新分析
-        </Button>
+        {interviewId && (
+          <Button
+            variant="secondary"
+            icon={<RefreshCw className="h-4 w-4" />}
+            onClick={() => void handleReanalyze()}
+            loading={reanalyzing}
+            disabled={confirming}
+          >
+            让 AI 重新分析
+          </Button>
+        )}
         <Button
           onClick={() => void handleConfirm()}
           loading={confirming}

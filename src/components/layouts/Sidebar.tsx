@@ -31,6 +31,7 @@ import {
   LineChart,
   Clapperboard,
   MapPin,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -98,6 +99,7 @@ const MEMBER_SECTIONS: NavSection[] = [
     title: '品牌建设',
     minRole: 'member',
     items: [
+      { href: '/brand-builder/profile', label: 'brandProfile', icon: UserCog },
       { href: '/brand-builder/calendar', label: 'contentCalendar', icon: Calendar },
       { href: '/brand-builder/video-script', label: 'videoScript', icon: Clapperboard },
       { href: '/brand-builder/insights', label: 'contentInsights', icon: LineChart },

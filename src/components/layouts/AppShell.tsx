@@ -25,7 +25,7 @@ type AppShellProps = {
   } | null;
 };
 
-const allowedDuringOnboarding = ['/settings', '/member', '/onboarding', '/api/'];
+const allowedDuringOnboarding = ['/settings', '/member', '/onboarding', '/api/', '/brand-builder'];
 
 function isAllowedPath(pathname: string) {
   return allowedDuringOnboarding.some((path) => pathname === path || pathname.startsWith(path));
@@ -55,6 +55,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   const pathname = usePathname();
   const router = useRouter();
   const isOnboardingPath = pathname.startsWith('/onboarding');
+  const isWizardPath = pathname.startsWith('/brand-builder/step');
   const shouldRedirect = !onboarding.completed && !isAllowedPath(pathname);
   const branding = extractBranding(tenant);
 
@@ -68,7 +69,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
     return <div className="min-h-screen bg-[var(--color-surface)]" />;
   }
 
-  if (isOnboardingPath) {
+  if (isOnboardingPath || isWizardPath) {
     return <div className="min-h-screen bg-[var(--color-surface)]">{children}</div>;
   }
 

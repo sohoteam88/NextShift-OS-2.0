@@ -22,6 +22,13 @@ type DailyProgress = {
   hasData: boolean;
 };
 
+type TodayCalendar = {
+  id: string;
+  title: string;
+  platform: string;
+  format: string;
+};
+
 function useCoachRecommendation() {
   return useQuery({
     queryKey: ['ai-coach-recommend'],
@@ -46,9 +53,23 @@ function useDailyActions() {
   });
 }
 
+function useTodayCalendar() {
+  return useQuery({
+    queryKey: ['brand-builder-today'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/brand-builder/calendar/today');
+      if (!res.ok) return null;
+      const j = (await res.json()) as { data: TodayCalendar | null };
+      return j.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function AICoachCard({ userName }: { userName: string }) {
   const { data: recData, isLoading: recLoading, error } = useCoachRecommendation();
   const { data: dailyData, isLoading: dailyLoading } = useDailyActions();
+  const { data: todayContent } = useTodayCalendar();
 
   if (error) return null;
 
@@ -57,8 +78,13 @@ export function AICoachCard({ userName }: { userName: string }) {
   const remaining = (daily?.totalCount ?? 0) - (daily?.completedCount ?? 0);
   const isLoading = recLoading || dailyLoading;
 
+  const calendarAction = todayContent
+    ? { label: `发布今日内容：${todayContent.title.slice(0, 20)}${todayContent.title.length > 20 ? '…' : ''}`, href: '/brand-builder/calendar', time: 15 }
+    : null;
+
   const recommendedActions = [
     rec ? { label: rec.actionLabel, href: rec.actionHref, time: rec.estimatedMinutes } : null,
+    calendarAction,
     { label: '跟进潜在客户', href: '/crm', time: 10 },
     { label: '发布一条内容', href: '/ai', time: 5 },
   ].filter(Boolean) as { label: string; href: string; time: number }[];

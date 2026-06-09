@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { AICoachCard } from './AICoachCard';
+import { BrandBuilderWidget } from './BrandBuilderWidget';
 import { cn } from '@/lib/cn';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -415,7 +416,10 @@ export function MemberDashboard({ userName = 'User' }: Props) {
       {/* 4. AI Coach */}
       <AICoachCard userName={userName} />
 
-      {/* 5. Level Progress */}
+      {/* 5. Brand Builder */}
+      <BrandBuilderWidget />
+
+      {/* 6. Level Progress */}
       <LevelProgressCard daily={daily} stats={stats} />
     </div>
   );
