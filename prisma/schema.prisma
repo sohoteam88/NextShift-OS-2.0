@@ -39,6 +39,7 @@ model Tenant {
   auditLogs         AuditLog[]
   customers         Customer[]
   brandInterviews   BrandInterview[]
+  contentCalendars  ContentCalendar[]
 
   @@map("tenants")
 }
@@ -78,6 +79,7 @@ model User {
   auditLogs           AuditLog[]         @relation("AuditActor")
   customers           Customer[]
   brandInterviews     BrandInterview[]
+  contentCalendars    ContentCalendar[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -485,4 +487,29 @@ model AuditLog {
   @@index([tenantId, createdAt])
   @@index([actorId])
   @@map("audit_logs")
+}
+
+model ContentCalendar {
+  id           String    @id @default(cuid())
+  tenantId     String    @map("tenant_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  date         DateTime  @db.Date
+  pillar       String
+  pillarEmoji  String    @default("") @map("pillar_emoji")
+  title        String
+  hook         String?
+  platform     String
+  format       String
+  status       String    @default("planned")
+  contentId    String?   @map("content_id")
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, date, platform])
+  @@index([tenantId, userId, date])
+  @@index([tenantId, userId, status])
+  @@map("content_calendars")
 }
