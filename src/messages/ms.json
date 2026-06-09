@@ -64,7 +64,11 @@
     "aiImage": "Jana Imej AI",
     "funnelBuilder": "Pembina Funnel",
     "contentPlan": "Rancangan Konten 30 Hari",
-    "aiModelUsage": "Penggunaan Model AI"
+    "aiModelUsage": "Penggunaan Model AI",
+    "contentCalendar": "Kalendar Kandungan",
+    "videoScript": "Skrip Video",
+    "contentInsights": "Analitik Kandungan",
+    "platformGuides": "Panduan Platform"
   },
   "platformAdmin": {
     "platformAdmin": "Pentadbir Platform",

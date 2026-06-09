@@ -64,7 +64,11 @@
     "aiImage": "AI Image",
     "funnelBuilder": "Funnel Builder",
     "contentPlan": "30-Day Content Plan",
-    "aiModelUsage": "AI Model Usage"
+    "aiModelUsage": "AI Model Usage",
+    "contentCalendar": "Content Calendar",
+    "videoScript": "Video Script",
+    "contentInsights": "Content Insights",
+    "platformGuides": "Platform Guides"
   },
   "platformAdmin": {
     "platformAdmin": "Platform Admin",

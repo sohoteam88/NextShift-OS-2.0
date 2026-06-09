@@ -28,6 +28,9 @@ import {
   UserCheck,
   Wand2,
   Zap,
+  LineChart,
+  Clapperboard,
+  MapPin,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -89,6 +92,16 @@ const MEMBER_SECTIONS: NavSection[] = [
       { href: '/ai/image', label: 'aiImage', icon: ImageIcon },
       { href: '/member/voice', label: 'voiceCapture', icon: Mic },
       { href: '/ai/funnel-builder', label: 'funnelBuilder', icon: Zap },
+    ],
+  },
+  {
+    title: '品牌建设',
+    minRole: 'member',
+    items: [
+      { href: '/brand-builder/calendar', label: 'contentCalendar', icon: Calendar },
+      { href: '/brand-builder/video-script', label: 'videoScript', icon: Clapperboard },
+      { href: '/brand-builder/insights', label: 'contentInsights', icon: LineChart },
+      { href: '/brand-builder/guides', label: 'platformGuides', icon: MapPin },
     ],
   },
   {
