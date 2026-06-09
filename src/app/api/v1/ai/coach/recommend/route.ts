@@ -15,6 +15,24 @@ type Recommendation = {
   urgency: 'high' | 'medium' | 'low';
 };
 
+type CoachContext = {
+  overdueFollowups: number;
+  leadsThisWeek: number;
+  contentThisWeek: number;
+  actionsCompleted: number;
+  actionsTotal: number;
+  publishedFunnels: number;
+};
+
+async function safeMetric<T>(label: string, fallback: T, loader: () => Promise<T>) {
+  try {
+    return await loader();
+  } catch (error) {
+    console.error(`AI coach metric failed: ${label}`, error);
+    return fallback;
+  }
+}
+
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
 
@@ -25,40 +43,58 @@ export const GET = apiHandler(async (request: NextRequest) => {
 
   const [overdueFollowups, leadsThisWeek, contentThisWeek, todayActions, publishedFunnels] =
     await Promise.all([
-      prisma.lead.count({
-        where: {
-          tenantId: user.tenantId,
-          ownerId: user.id,
-          deletedAt: null,
-          nextFollowup: { lt: today },
-        },
-      }),
-      prisma.lead.count({
-        where: {
-          tenantId: user.tenantId,
-          ownerId: user.id,
-          deletedAt: null,
-          createdAt: { gte: weekAgo },
-        },
-      }),
-      prisma.content.count({
-        where: {
-          tenantId: user.tenantId,
-          ownerId: user.id,
-          createdAt: { gte: weekAgo },
-        },
-      }),
-      prisma.dailyAction.findMany({
-        where: { tenantId: user.tenantId, userId: user.id, date: today },
-        select: { completed: true },
-      }),
-      prisma.funnel.count({
-        where: { tenantId: user.tenantId, ownerId: user.id, status: 'published' },
-      }),
+      safeMetric('overdueFollowups', 0, () =>
+        prisma.lead.count({
+          where: {
+            tenantId: user.tenantId,
+            ownerId: user.id,
+            deletedAt: null,
+            nextFollowup: { lt: today },
+          },
+        }),
+      ),
+      safeMetric('leadsThisWeek', 0, () =>
+        prisma.lead.count({
+          where: {
+            tenantId: user.tenantId,
+            ownerId: user.id,
+            deletedAt: null,
+            createdAt: { gte: weekAgo },
+          },
+        }),
+      ),
+      safeMetric('contentThisWeek', 0, () =>
+        prisma.content.count({
+          where: {
+            tenantId: user.tenantId,
+            ownerId: user.id,
+            createdAt: { gte: weekAgo },
+          },
+        }),
+      ),
+      safeMetric('todayActions', [] as { completed: boolean }[], () =>
+        prisma.dailyAction.findMany({
+          where: { tenantId: user.tenantId, userId: user.id, date: today },
+          select: { completed: true },
+        }),
+      ),
+      safeMetric('publishedFunnels', 0, () =>
+        prisma.funnel.count({
+          where: { tenantId: user.tenantId, ownerId: user.id, status: 'published' },
+        }),
+      ),
     ]);
 
   const completedActions = todayActions.filter((a) => a.completed).length;
   const totalActions = todayActions.length;
+  const context: CoachContext = {
+    overdueFollowups,
+    leadsThisWeek,
+    contentThisWeek,
+    actionsCompleted: completedActions,
+    actionsTotal: totalActions,
+    publishedFunnels,
+  };
 
   let recommendation: Recommendation;
 
@@ -128,14 +164,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
   return NextResponse.json({
     data: {
       ...recommendation,
-      context: {
-        overdueFollowups,
-        leadsThisWeek,
-        contentThisWeek,
-        actionsCompleted: completedActions,
-        actionsTotal: totalActions,
-        publishedFunnels,
-      },
+      context,
     },
   });
 });
