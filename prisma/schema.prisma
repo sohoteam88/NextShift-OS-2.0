@@ -38,6 +38,7 @@ model Tenant {
   inviteCodes       InviteCode[]
   auditLogs         AuditLog[]
   customers         Customer[]
+  brandInterviews   BrandInterview[]
 
   @@map("tenants")
 }
@@ -76,6 +77,7 @@ model User {
   inviteCodes         InviteCode[]       @relation("InviteSponsor")
   auditLogs           AuditLog[]         @relation("AuditActor")
   customers           Customer[]
+  brandInterviews     BrandInterview[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -447,6 +449,25 @@ model Customer {
   @@index([tenantId, status])
   @@index([nextFollowup])
   @@map("customers")
+}
+
+model BrandInterview {
+  id               String        @id @default(cuid())
+  tenantId         String        @map("tenant_id") @db.Uuid
+  userId           String        @map("user_id") @db.Uuid
+  mode             String
+  voiceProfileId   String?       @map("voice_profile_id") @db.Uuid
+  answers          Json          @default("{}")
+  extractedProfile Json?         @map("extracted_profile")
+  status           String        @default("in_progress")
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant           Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId])
+  @@index([userId])
+  @@map("brand_interviews")
 }
 
 model AuditLog {
