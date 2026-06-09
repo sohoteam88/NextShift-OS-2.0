@@ -850,5 +850,29 @@
     "leadNotesAction": "Tambah nota pertama",
     "leadActivitiesTitle": "Belum ada sejarah aktiviti",
     "leadActivitiesDescription": "Aktiviti akan dipaparkan di sini selepas anda merekodkannya."
+  },
+  "brandBuilder": {
+    "guideTitle": "Sediakan Akaun Sosial Anda",
+    "guideSubtitle": "Lengkapkan persediaan platform langkah demi langkah — boleh berhenti dan sambung semula",
+    "stepOf": "Langkah {current} daripada {total}",
+    "markComplete": "Saya telah menyelesaikan langkah ini",
+    "completed": "Selesai",
+    "prev": "Sebelumnya",
+    "next": "Seterusnya",
+    "openLink": "Buka →",
+    "copy": "Salin",
+    "copied": "Disalin ✓",
+    "tip": "Petua",
+    "platformFacebook": "Facebook Fan Page",
+    "platformInstagram": "Akaun Profesional Instagram",
+    "allDoneTitle": "Akaun sosial anda telah berjaya disediakan!",
+    "allDoneSubtitle": "Seterusnya: Tentukan strategi kandungan anda",
+    "allDoneFacebook": "Facebook Fan Page — Selesai",
+    "allDoneInstagram": "Akaun Profesional Instagram — Selesai",
+    "continueBtn": "Teruskan →",
+    "standaloneTitle": "Panduan Persediaan Akaun",
+    "standaloneSubtitle": "Kembali bila-bila masa untuk melengkapkan atau mengulang kaji langkah persediaan",
+    "noProfile": "Sila lengkapkan soal selidik jenama dahulu",
+    "goToBuilder": "Pergi ke Pembina Jenama"
   }
 }

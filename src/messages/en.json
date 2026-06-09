@@ -850,5 +850,29 @@
     "leadNotesAction": "Add first note",
     "leadActivitiesTitle": "No activity history yet",
     "leadActivitiesDescription": "Activities will appear here after you log them."
+  },
+  "brandBuilder": {
+    "guideTitle": "Set Up Your Social Accounts",
+    "guideSubtitle": "Complete platform setup step by step — pause and resume anytime",
+    "stepOf": "Step {current} of {total}",
+    "markComplete": "I've completed this step",
+    "completed": "Completed",
+    "prev": "Previous",
+    "next": "Next",
+    "openLink": "Open →",
+    "copy": "Copy",
+    "copied": "Copied ✓",
+    "tip": "Tip",
+    "platformFacebook": "Facebook Fan Page",
+    "platformInstagram": "Instagram Professional Account",
+    "allDoneTitle": "Your social accounts are set up!",
+    "allDoneSubtitle": "Next: Define your content strategy",
+    "allDoneFacebook": "Facebook Fan Page — Done",
+    "allDoneInstagram": "Instagram Professional Account — Done",
+    "continueBtn": "Continue →",
+    "standaloneTitle": "Account Setup Guide",
+    "standaloneSubtitle": "Come back anytime to complete or review setup steps",
+    "noProfile": "Please complete the brand interview first",
+    "goToBuilder": "Go to Brand Builder"
   }
 }

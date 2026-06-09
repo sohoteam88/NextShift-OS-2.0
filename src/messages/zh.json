@@ -850,5 +850,29 @@
     "leadNotesAction": "添加第一条备注",
     "leadActivitiesTitle": "暂无活动记录",
     "leadActivitiesDescription": "记录活动后，这里会显示活动历史。"
+  },
+  "brandBuilder": {
+    "guideTitle": "设置你的社交账号",
+    "guideSubtitle": "按步骤完成平台设置，遇到问题随时可以暂停继续",
+    "stepOf": "第 {current} 步，共 {total} 步",
+    "markComplete": "我已完成这一步",
+    "completed": "已完成",
+    "prev": "上一步",
+    "next": "下一步",
+    "openLink": "打开 →",
+    "copy": "复制",
+    "copied": "已复制 ✓",
+    "tip": "提示",
+    "platformFacebook": "Facebook Fan Page",
+    "platformInstagram": "Instagram 专业账号",
+    "allDoneTitle": "你的社交账号设置完成！",
+    "allDoneSubtitle": "下一步：定义你的内容策略",
+    "allDoneFacebook": "Facebook Fan Page — 已设置",
+    "allDoneInstagram": "Instagram 专业账号 — 已设置",
+    "continueBtn": "继续 →",
+    "standaloneTitle": "账号设置引导",
+    "standaloneSubtitle": "随时回来完成或重温设置步骤",
+    "noProfile": "请先完成品牌定位问卷",
+    "goToBuilder": "前往品牌建设"
   }
 }
