@@ -1,8 +1,12 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useMutation } from '@tanstack/react-query';
 import {
+  ArrowRight,
+  BadgeCheck,
+  ClipboardList,
   Loader2, ChevronDown, ChevronRight, Copy, CheckCheck,
   Users, Target, FileText, MessageCircle, Mail, BarChart3, Zap,
 } from 'lucide-react';
@@ -418,6 +422,64 @@ const CLOSING_OPTIONS = ['WhatsApp', 'Zoom Call', 'Direct Purchase', 'Webinar', 
 const TRAFFIC_OPTIONS = ['Facebook Ads', 'TikTok Ads', 'TikTok Organic', 'Instagram', 'Referral', 'Google Ads', 'WhatsApp Blast'];
 const TONE_OPTIONS = ['Warm & Relatable', 'Professional', 'Casual', 'Motivational', 'Educational'];
 
+type InputFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  className?: string;
+};
+
+function InputField({ label, value, onChange, placeholder, required, className }: InputFieldProps) {
+  return (
+    <div className={className}>
+      <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+        {label} {required ? <span className="text-red-500">*</span> : null}
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+      />
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  required,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { label: string; value: string }[] | string[];
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+        {label} {required ? <span className="text-red-500">*</span> : null}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm outline-none transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+      >
+        {options.map((option) => {
+          const opt = typeof option === 'string' ? { label: option, value: option } : option;
+          return <option key={opt.value} value={opt.value}>{opt.label}</option>;
+        })}
+      </select>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function FunnelBuilderPage() {
@@ -459,230 +521,185 @@ export default function FunnelBuilderPage() {
 
   const isValid = form.businessType && form.productOrService && form.targetAudience &&
     form.mainCustomerPain && form.desiredResult && form.funnelGoal && form.closingMethod;
+  const requiredFields = [
+    form.businessType,
+    form.productOrService,
+    form.targetAudience,
+    form.mainCustomerPain,
+    form.desiredResult,
+    form.funnelGoal,
+    form.closingMethod,
+  ];
+  const completedRequired = requiredFields.filter(Boolean).length;
+  const completionPct = Math.round((completedRequired / requiredFields.length) * 100);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">世界级漏斗生成器</h1>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          输入你的业务信息，AI 自动生成完整高转化漏斗系统——包括落地页文案、WhatsApp 成交脚本、广告角度、短视频开头、异议处理等 14 个模块。
-        </p>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-wide text-[var(--color-text-muted)]">AI 工具</p>
+          <h1 className="mt-2 text-2xl font-semibold text-[var(--color-text)]">世界级漏斗生成器</h1>
+          <p className="mt-1 max-w-2xl text-sm text-[var(--color-text-muted)]">
+            输入核心业务信息，一次生成落地页、WhatsApp 成交脚本、广告角度、短视频 hooks、异议处理和优化清单。
+          </p>
+        </div>
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 py-3 shadow-sm">
+          <p className="text-xs text-[var(--color-text-muted)]">表单完成度</p>
+          <div className="mt-2 flex items-center gap-3">
+            <div className="h-2 w-28 rounded-full bg-[var(--color-surface)]">
+              <div className="h-2 rounded-full bg-[var(--color-primary)]" style={{ width: `${completionPct}%` }} />
+            </div>
+            <span className="text-sm font-semibold text-[var(--color-text)]">{completedRequired}/{requiredFields.length}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5">
-        <h2 className="mb-4 text-base font-medium text-[var(--color-text)]">业务信息</h2>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Business Type */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-              业务类型 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.businessType}
-              onChange={(e) => set('businessType', e.target.value)}
-              placeholder="例：副业机会 / 健康产品 / 美容护肤 / 教育课程"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_360px]">
+        <form onSubmit={handleSubmit} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">业务输入</h2>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">越具体，生成出来的 funnel 越能直接使用。</p>
+            </div>
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">30-60 秒</span>
           </div>
 
-          {/* Product / Service */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-              产品 / 服务 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.productOrService}
-              onChange={(e) => set('productOrService', e.target.value)}
-              placeholder="例：AI 副业系统 / 减肥代餐 / 英语口语班"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <InputField label="业务类型" value={form.businessType} onChange={(value) => set('businessType', value)} placeholder="例：副业机会 / 健康产品 / 美容护肤 / 教育课程" required />
+            <InputField label="产品 / 服务" value={form.productOrService} onChange={(value) => set('productOrService', value)} placeholder="例：AI 副业系统 / 减肥代餐 / 英语口语班" required />
+            <InputField className="sm:col-span-2" label="目标受众" value={form.targetAudience} onChange={(value) => set('targetAudience', value)} placeholder="例：马来西亚华人上班族和家庭主妇，25-38岁，对副业感兴趣" required />
+            <InputField label="客户最大痛点" value={form.mainCustomerPain} onChange={(value) => set('mainCustomerPain', value)} placeholder="例：死薪水，每月财务压力大，存不到钱" required />
+            <InputField label="期望结果" value={form.desiredResult} onChange={(value) => set('desiredResult', value)} placeholder="例：每月额外收入，不影响正职" required />
+            <InputField label="漏斗目标" value={form.funnelGoal} onChange={(value) => set('funnelGoal', value)} placeholder="例：收集名单 -> WhatsApp 成交" required />
+            <InputField label="价格区间" value={form.offerPrice ?? ''} onChange={(value) => set('offerPrice', value)} placeholder="例：免费引流 -> 付费课程 RM299" />
+            <InputField label="市场地区" value={form.marketLocation} onChange={(value) => set('marketLocation', value)} placeholder="Malaysia" />
+            <SelectField label="输出语言" value={form.language} onChange={(value) => set('language', value)} options={[{ label: '中文', value: 'zh' }, { label: 'English', value: 'en' }, { label: 'Bahasa Malaysia', value: 'ms' }]} />
+            <SelectField label="流量来源" value={form.trafficSource ?? ''} onChange={(value) => set('trafficSource', value)} options={TRAFFIC_OPTIONS} />
+            <SelectField label="成交方式" value={form.closingMethod} onChange={(value) => set('closingMethod', value)} options={CLOSING_OPTIONS} required />
+            <SelectField label="品牌调性" value={form.brandTone ?? ''} onChange={(value) => set('brandTone', value)} options={TONE_OPTIONS} />
           </div>
 
-          {/* Target Audience */}
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-              目标受众 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.targetAudience}
-              onChange={(e) => set('targetAudience', e.target.value)}
-              placeholder="例：马来西亚华人上班族和家庭主妇，25–38岁，对副业感兴趣"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
+          {mutation.error ? (
+            <p className="mt-4 rounded-[var(--radius-md)] bg-red-50 px-3 py-2 text-sm text-red-600">
+              {(mutation.error as Error).message}
+            </p>
+          ) : null}
 
-          {/* Main Customer Pain */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-              客户最大痛点 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.mainCustomerPain}
-              onChange={(e) => set('mainCustomerPain', e.target.value)}
-              placeholder="例：死薪水，每月财务压力大，存不到钱"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-
-          {/* Desired Result */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-              期望结果 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.desiredResult}
-              onChange={(e) => set('desiredResult', e.target.value)}
-              placeholder="例：每月额外赚 RM1,000–3,000，不影响正职"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-
-          {/* Funnel Goal */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-              漏斗目标 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.funnelGoal}
-              onChange={(e) => set('funnelGoal', e.target.value)}
-              placeholder="例：收集名单 → WhatsApp 成交"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-
-          {/* Offer Price */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">价格区间</label>
-            <input
-              type="text"
-              value={form.offerPrice}
-              onChange={(e) => set('offerPrice', e.target.value)}
-              placeholder="例：免费引流 → 付费课程 RM299"
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-
-          {/* Market Location */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">市场地区</label>
-            <input
-              type="text"
-              value={form.marketLocation}
-              onChange={(e) => set('marketLocation', e.target.value)}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-
-          {/* Language */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">输出语言</label>
-            <select
-              value={form.language}
-              onChange={(e) => set('language', e.target.value)}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-border)] pt-4">
+            <p className="text-xs text-[var(--color-text-muted)]">会消耗 AI 额度。生成后可复制每个模块的文案。</p>
+            <button
+              type="submit"
+              disabled={mutation.isPending || !isValid}
+              className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[var(--color-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <option value="zh">中文</option>
-              <option value="en">English</option>
-              <option value="ms">Bahasa Malaysia</option>
-            </select>
+              {mutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  AI 生成中...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4" />
+                  生成完整漏斗
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+
+        <aside className="space-y-4">
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <BadgeCheck className="h-5 w-5 text-emerald-600" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-[var(--color-text)]">输出内容</h2>
+            </div>
+            <div className="mt-4 space-y-3 text-sm text-[var(--color-text-muted)]">
+              {['落地页完整文案', 'WhatsApp 欢迎与跟进脚本', '5 个引流磁铁方案', '5 封邮件序列', '10 个广告角度', '20 个短视频开头', '异议处理与数据追踪清单'].map((item) => (
+                <div key={item} className="flex items-center gap-2">
+                  <CheckCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Traffic Source */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">流量来源</label>
-            <select
-              value={form.trafficSource}
-              onChange={(e) => set('trafficSource', e.target.value)}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
-            >
-              {TRAFFIC_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5 text-[var(--color-primary)]" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-[var(--color-text)]">生成策略</h2>
+            </div>
+            <div className="mt-4 space-y-3">
+              {[
+                ['1', '先定义客户画像与痛点'],
+                ['2', '再定位 offer 与 lead magnet'],
+                ['3', '最后生成成交与跟进系统'],
+              ].map(([step, label]) => (
+                <div key={step} className="flex gap-3 rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-[var(--color-primary)]">{step}</span>
+                  <p className="text-sm text-[var(--color-text)]">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
+        </aside>
+      </section>
 
-          {/* Closing Method */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">
-              成交方式 <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={form.closingMethod}
-              onChange={(e) => set('closingMethod', e.target.value)}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
-            >
-              {CLOSING_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
-          </div>
-
-          {/* Brand Tone */}
-          <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--color-text)]">品牌调性</label>
-            <select
-              value={form.brandTone}
-              onChange={(e) => set('brandTone', e.target.value)}
-              className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
-            >
-              {TONE_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-            </select>
+      {mutation.isPending ? (
+        <div className="rounded-[var(--radius-lg)] border border-blue-200 bg-blue-50 p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Loader2 className="mt-0.5 h-5 w-5 animate-spin text-[var(--color-primary)]" aria-hidden="true" />
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">正在生成漏斗系统</h2>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                AI 正在组合 landing page、WhatsApp 脚本、广告角度和跟进序列。完成后会自动跳到结果区。
+              </p>
+            </div>
           </div>
         </div>
+      ) : null}
 
-        {mutation.error && (
-          <p className="mt-4 rounded-[var(--radius-md)] bg-red-50 px-3 py-2 text-sm text-red-600">
-            {(mutation.error as Error).message}
-          </p>
-        )}
-
-        <div className="mt-5 flex items-center justify-between">
-          <p className="text-xs text-[var(--color-text-muted)]">
-            生成时间约 30–60 秒，包含 14 个模块
-          </p>
-          <button
-            type="submit"
-            disabled={mutation.isPending || !isValid}
-            className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {mutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                AI 生成中...
-              </>
-            ) : (
-              <>
-                <Zap className="h-4 w-4" />
-                生成完整漏斗系统
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-
-      {/* Result */}
-      {result && (
+      {result ? (
         <div id="funnel-result">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">漏斗系统已生成</h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--color-text)]">漏斗系统已生成</h2>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">先检查漏斗总结和目标客户画像，再复制需要的模块。</p>
+            </div>
             <button
               type="button"
               onClick={() => mutation.mutate(form)}
               disabled={mutation.isPending}
-              className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm font-medium text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface)] disabled:opacity-50"
             >
               <Zap className="h-4 w-4" />
               重新生成
             </button>
           </div>
+          <div className="mb-4 grid gap-3 md:grid-cols-4">
+            {[
+              ['类型', result.funnelSummary.funnelType],
+              ['目标', result.funnelSummary.primaryGoal],
+              ['成交', result.funnelSummary.closingChannel],
+              ['Lead Magnet', result.landingPage.leadMagnet.name],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white p-3 shadow-sm">
+                <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
+                <p className="mt-1 truncate text-sm font-semibold text-[var(--color-text)]">{value}</p>
+              </div>
+            ))}
+          </div>
           <FunnelResult funnel={result} />
+          <div className="mt-4">
+            <Link
+              href="/funnel"
+              className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface)]"
+            >
+              前往漏斗页面管理
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
