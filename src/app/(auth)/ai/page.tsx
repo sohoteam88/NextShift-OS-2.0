@@ -4,16 +4,17 @@ import * as React from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { Bot, MessageCircle, BarChart3, Clock3, Sparkles } from 'lucide-react';
+import { Bot, MessageCircle, BarChart3, Clock3, Sparkles, Video } from 'lucide-react';
 import { ContentGeneratorPanel } from '@/modules/ai/components/ContentGeneratorPanel';
 import { WhatsAppReplyPanel } from '@/modules/ai/components/WhatsAppReplyPanel';
 import { LeadAnalysisPanel } from '@/modules/ai/components/LeadAnalysisPanel';
 import { ContentHistory } from '@/modules/ai/components/ContentHistory';
 import { AIUsageMeter } from '@/modules/ai/components/AIUsageMeter';
 import { SafeSection } from '@/components/molecules/ErrorFallback';
+import { VideoScriptGenerator } from '@/modules/brand-builder/components/VideoScriptGenerator';
 import { cn } from '@/lib/cn';
 
-type Tool = 'content' | 'whatsapp_reply' | 'lead_analysis' | 'history';
+type Tool = 'content' | 'whatsapp_reply' | 'lead_analysis' | 'history' | 'video_script';
 
 function useUsage() {
   return useQuery({
@@ -45,7 +46,7 @@ export default function AiPage() {
 
   React.useEffect(() => {
     const tool = searchParams.get('tool') as Tool | null;
-    if (tool && ['content', 'whatsapp_reply', 'lead_analysis', 'history'].includes(tool)) {
+    if (tool && ['content', 'whatsapp_reply', 'lead_analysis', 'history', 'video_script'].includes(tool)) {
       setActiveTool(tool);
     }
   }, [searchParams]);
@@ -63,6 +64,7 @@ export default function AiPage() {
 
   const tabItems: Array<{ id: Tool; label: string; icon: React.ReactNode; description: string }> = [
     { id: 'content', label: t('contentGenerator'), icon: <Sparkles className="h-4 w-4" />, description: t('contentHelp') },
+    { id: 'video_script', label: t('videoScript'), icon: <Video className="h-4 w-4" />, description: t('videoScriptHelp') },
     { id: 'whatsapp_reply', label: t('whatsappReply'), icon: <MessageCircle className="h-4 w-4" />, description: t('whatsappHelp') },
     { id: 'lead_analysis', label: t('leadAnalysis'), icon: <BarChart3 className="h-4 w-4" />, description: t('analysisHelp') },
     { id: 'history', label: t('contentHistory'), icon: <Clock3 className="h-4 w-4" />, description: t('contentHistoryHelp') },
@@ -124,6 +126,20 @@ export default function AiPage() {
       {activeTool === 'lead_analysis' && (
         <SafeSection>
           <LeadAnalysisPanel leadId={leadId} defaultValues={{ leadId: leadId ?? '' }} />
+        </SafeSection>
+      )}
+      {activeTool === 'video_script' && (
+        <SafeSection>
+          <VideoScriptGenerator
+            defaultTopic={topic}
+            defaultPlatform={
+              (['facebook_reel', 'instagram_reel', 'tiktok', 'story'] as const).includes(
+                platform as 'facebook_reel' | 'instagram_reel' | 'tiktok' | 'story',
+              )
+                ? (platform as 'facebook_reel' | 'instagram_reel' | 'tiktok' | 'story')
+                : 'facebook_reel'
+            }
+          />
         </SafeSection>
       )}
       {activeTool === 'history' && (

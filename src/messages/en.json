@@ -356,7 +356,9 @@
     "markPublished": "Mark as Published",
     "noHistory": "No content history yet",
     "usageHelp": "Monthly AI call limit. It resets automatically next month.",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "videoScript": "Video Script",
+    "videoScriptHelp": "Generate reel/TikTok/story scripts with hook, scenes, and CTA."
   },
   "member": {
     "dailyActions": "Daily Actions",

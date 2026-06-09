@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Calendar,
   List,
@@ -9,14 +10,16 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
-  Plus,
   Trash2,
   CheckCircle2,
   SkipForward,
   Sparkles,
   FileText,
+  Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+
+const VIDEO_FORMATS = new Set(['short_video', 'reel', 'story', 'live']);
 
 type CalendarItem = {
   id: string;
@@ -104,7 +107,20 @@ type ItemActionsProps = {
 };
 
 function ItemActions({ item, onStatusChange, onDelete }: ItemActionsProps) {
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
+  const isVideo = VIDEO_FORMATS.has(item.format);
+
+  function goToScript() {
+    const params = new URLSearchParams({
+      topic: item.title,
+      platform: item.platform,
+      calendarId: item.id,
+    });
+    router.push(`/brand-builder/video-script?${params.toString()}`);
+    setOpen(false);
+  }
+
   return (
     <div className="relative">
       <button
@@ -118,6 +134,16 @@ function ItemActions({ item, onStatusChange, onDelete }: ItemActionsProps) {
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-6 z-20 min-w-[160px] rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white shadow-lg py-1">
+            {isVideo && (
+              <button
+                type="button"
+                onClick={goToScript}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+              >
+                <Clapperboard className="h-4 w-4 text-purple-600" />
+                生成脚本
+              </button>
+            )}
             {item.status !== 'published' && (
               <button
                 type="button"

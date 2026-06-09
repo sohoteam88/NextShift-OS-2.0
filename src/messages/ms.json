@@ -356,7 +356,9 @@
     "markPublished": "Tanda sebagai diterbitkan",
     "noHistory": "Belum ada sejarah kandungan",
     "usageHelp": "Had panggilan AI bulanan. Ia akan diset semula secara automatik bulan depan.",
-    "deleted": "Telah dipadam"
+    "deleted": "Telah dipadam",
+    "videoScript": "Skrip Video",
+    "videoScriptHelp": "Jana skrip reel/TikTok/story dengan hook, adegan, dan CTA."
   },
   "member": {
     "dailyActions": "Tindakan Harian",

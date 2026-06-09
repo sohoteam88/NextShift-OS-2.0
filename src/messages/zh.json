@@ -356,7 +356,9 @@
     "markPublished": "标记为已发布",
     "noHistory": "暂无内容历史",
     "usageHelp": "每月 AI 调用次数上限，次月会自动重置。",
-    "deleted": "已删除"
+    "deleted": "已删除",
+    "videoScript": "视频文案",
+    "videoScriptHelp": "生成 Reel / TikTok / Story 分镜脚本。"
   },
   "member": {
     "dailyActions": "每日行动",
