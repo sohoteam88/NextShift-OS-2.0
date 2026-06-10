@@ -883,6 +883,23 @@
     "standaloneTitle": "Account Setup Guide",
     "standaloneSubtitle": "Come back anytime to complete or review setup steps",
     "noProfile": "Please complete the brand interview first",
-    "goToBuilder": "Go to Brand Builder"
+    "goToBuilder": "Go to Brand Builder",
+    "interview": {
+      "title": "Tell us about you 👋",
+      "subtitle": "No script needed, just chat. I'll listen and ask along the way to shape your direction.",
+      "aiOpening": "Hi, I'm your brand coach 👋 No pressure, let's just chat. What do you usually keep busy with these days?",
+      "inputPlaceholder": "Type, or tap the mic to talk...",
+      "btnVoice": "Talk",
+      "btnSend": "Send",
+      "btnFinish": "That's enough →",
+      "voiceConfirm": "Got it, does this look right?",
+      "voiceRetry": "Re-record",
+      "voiceUse": "Use this",
+      "stuckOk": "No worries, totally normal. Let me ask another way 😄",
+      "softWrap": "We've covered a lot. Shall I tidy it up for you?",
+      "analyzing": "AI is shaping your brand direction...",
+      "dailyLimit": "Up to 3 voice uploads per day",
+      "confidenceTitle": "Brand readiness"
+    }
   }
 }

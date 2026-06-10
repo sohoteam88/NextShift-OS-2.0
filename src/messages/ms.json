@@ -883,6 +883,23 @@
     "standaloneTitle": "Panduan Persediaan Akaun",
     "standaloneSubtitle": "Kembali bila-bila masa untuk melengkapkan atau mengulang kaji langkah persediaan",
     "noProfile": "Sila lengkapkan soal selidik jenama dahulu",
-    "goToBuilder": "Pergi ke Pembina Jenama"
+    "goToBuilder": "Pergi ke Pembina Jenama",
+    "interview": {
+      "title": "Cerita tentang diri anda 👋",
+      "subtitle": "Tak perlu skrip, borak je. Saya dengar dan tanya sambil jalan untuk bentukkan hala tuju anda.",
+      "aiOpening": "Hai, saya coach brand anda 👋 Relax je, kita borak je. Sekarang ni biasanya anda sibuk dengan apa?",
+      "inputPlaceholder": "Taip, atau tekan mic untuk cakap...",
+      "btnVoice": "Cakap",
+      "btnSend": "Hantar",
+      "btnFinish": "Cukup setakat ni →",
+      "voiceConfirm": "Dah dapat, betul macam ni?",
+      "voiceRetry": "Rakam semula",
+      "voiceUse": "Guna yang ni",
+      "stuckOk": "Takpe, normal je. Saya tanya cara lain 😄",
+      "softWrap": "Dah cukup banyak kita borak. Nak saya kemaskan?",
+      "analyzing": "AI sedang bentukkan hala tuju brand anda...",
+      "dailyLimit": "Maksimum 3 muat naik suara sehari",
+      "confidenceTitle": "Kesediaan brand"
+    }
   }
 }

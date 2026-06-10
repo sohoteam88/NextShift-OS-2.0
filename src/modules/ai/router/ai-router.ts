@@ -249,11 +249,11 @@ function parseRouterSettings(settings: Prisma.JsonValue | null | undefined): Par
   };
 }
 
-export async function getRouterForTenant(tenantId: string): Promise<AIRouter> {
+export async function getRouterForTenant(tenantId: string, overrides?: Partial<RouterConfig>): Promise<AIRouter> {
   const tenant = await (await import('@/lib/prisma')).default.tenant.findUnique({
     where: { id: tenantId },
     select: { settings: true },
   });
 
-  return new AIRouter(parseRouterSettings(tenant?.settings));
+  return new AIRouter({ ...parseRouterSettings(tenant?.settings), ...overrides });
 }

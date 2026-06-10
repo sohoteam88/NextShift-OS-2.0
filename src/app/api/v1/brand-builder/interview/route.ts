@@ -8,14 +8,18 @@ export const dynamic = 'force-dynamic';
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  const body = (await request.json()) as { mode?: string };
+  const body = (await request.json()) as { mode?: string; opening?: string };
   const mode = body.mode;
 
-  if (mode !== 'voice' && mode !== 'text') {
-    throw new AppError('VALIDATION_ERROR', 400, "mode must be 'voice' or 'text'");
+  if (mode !== 'voice' && mode !== 'text' && mode !== 'dialogue') {
+    throw new AppError('VALIDATION_ERROR', 400, "mode must be 'voice', 'text', or 'dialogue'");
   }
 
-  const interview = await brandInterviewService.create(user, mode);
+  const interview = await brandInterviewService.create(
+    user,
+    mode,
+    typeof body.opening === 'string' ? body.opening : undefined,
+  );
   return NextResponse.json({ data: interview }, { status: 201 });
 });
 

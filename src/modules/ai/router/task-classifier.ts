@@ -1,5 +1,7 @@
 export type TaskCategory =
   | 'brand_extraction'
+  | 'interview_dialogue'
+  | 'interview_analysis'
   | 'content_generation'
   | 'video_script'
   | 'whatsapp_reply'
@@ -22,6 +24,8 @@ export interface TaskClassification {
 
 const TASK_ROUTING: Record<TaskCategory, { tier: 'S' | 'A' | 'B' | 'C'; reason: string; avgOutputTokens: number }> = {
   brand_extraction: { tier: 'A', reason: 'Structured extraction from unstructured voice/text, needs deep understanding', avgOutputTokens: 800 },
+  interview_dialogue: { tier: 'B', reason: 'Conversational brand discovery with structured slot extraction', avgOutputTokens: 450 },
+  interview_analysis: { tier: 'A', reason: 'Final brand positioning synthesis from full discovery dialogue', avgOutputTokens: 1200 },
   content_generation: { tier: 'B', reason: 'Template-guided creative writing, standard complexity', avgOutputTokens: 500 },
   video_script: { tier: 'B', reason: 'Structured output with clear JSON format', avgOutputTokens: 800 },
   whatsapp_reply: { tier: 'B', reason: 'Short contextual replies, low complexity', avgOutputTokens: 300 },
