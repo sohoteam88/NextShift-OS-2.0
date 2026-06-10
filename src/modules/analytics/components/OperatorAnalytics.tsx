@@ -53,12 +53,35 @@ function useOperatorAnalytics(period: AnalyticsPeriod) {
   });
 }
 
+type RouterStatsResponse = {
+  data: {
+    modelDistribution: { model: string; calls: number; percentage: number; cost: number }[];
+    tierDistribution: { tier: string; calls: number; percentage: number }[];
+    escalationRate: number;
+    costEstimate: { withRouter: number; withoutRouter: number; savings: number; savingsPercent: number };
+  };
+};
+
+function useRouterStats() {
+  return useQuery({
+    queryKey: ['ai-router-stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/ai/router/stats');
+      if (!res.ok) throw new Error('Failed to load AI router stats');
+      return res.json() as Promise<RouterStatsResponse>;
+    },
+    staleTime: 60_000,
+  });
+}
+
 export function OperatorAnalytics({ user, initialPeriod }: Props) {
   const t = useTranslations('analytics');
   const searchParams = useSearchParams();
   const period = normalizePeriod(searchParams.get('period'), initialPeriod);
   const { data, isLoading } = useOperatorAnalytics(period);
+  const { data: routerStats } = useRouterStats();
   const dashboard = data?.data;
+  const routerData = routerStats?.data;
   const avgResponseMinutes = dashboard?.summary.avgResponseMinutes;
   const leadTrendData = React.useMemo(() => {
     const map = new Map<string, { label: string; leads: number; conversions: number }>();
@@ -175,6 +198,60 @@ export function OperatorAnalytics({ user, initialPeriod }: Props) {
           emptyTitle={t('emptyTitle')}
           emptyDescription={t('emptyDescription')}
         />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">AI 路由分析</h2>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">模型使用分布、升级率和成本节省估算。</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-[var(--color-text-muted)]">升级率</p>
+              <p className="text-2xl font-semibold text-[var(--color-text)]">{routerData?.escalationRate ?? 0}%</p>
+            </div>
+          </div>
+          <div className="mt-5 space-y-3">
+            {(routerData?.modelDistribution ?? []).slice(0, 6).map((row) => (
+              <div key={row.model} className="space-y-1">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate font-medium text-[var(--color-text)]">{row.model}</span>
+                  <span className="shrink-0 text-[var(--color-text-muted)]">
+                    {row.percentage}% · {row.calls} 次 · ${row.cost.toFixed(2)}
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-[var(--color-surface)]">
+                  <div className="h-2 rounded-full bg-[var(--color-primary)]" style={{ width: `${Math.max(4, row.percentage)}%` }} />
+                </div>
+              </div>
+            ))}
+            {(!routerData || routerData.modelDistribution.length === 0) && (
+              <p className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-4 text-sm text-[var(--color-text-muted)]">
+                本月还没有 AI 路由记录。
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-[var(--color-text)]">成本对比</h2>
+          <div className="mt-4 space-y-3 text-sm">
+            <div className="flex justify-between rounded-[var(--radius-md)] bg-[var(--color-surface)] px-3 py-2">
+              <span className="text-[var(--color-text-muted)]">无路由</span>
+              <span className="font-semibold text-[var(--color-text)]">${routerData?.costEstimate.withoutRouter ?? 0}</span>
+            </div>
+            <div className="flex justify-between rounded-[var(--radius-md)] bg-[var(--color-surface)] px-3 py-2">
+              <span className="text-[var(--color-text-muted)]">有路由</span>
+              <span className="font-semibold text-[var(--color-text)]">${routerData?.costEstimate.withRouter ?? 0}</span>
+            </div>
+            <div className="flex justify-between rounded-[var(--radius-md)] bg-emerald-50 px-3 py-2 text-emerald-700">
+              <span>节省</span>
+              <span className="font-semibold">
+                ${routerData?.costEstimate.savings ?? 0} ({routerData?.costEstimate.savingsPercent ?? 0}%)
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">

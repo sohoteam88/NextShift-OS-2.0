@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
-import { generateWithFallback } from '../providers/factory';
+import { getRouterForTenant } from '../router';
 import { templateService } from './template-service';
 import { resolveVariables, buildPrompt } from '../prompt/resolver';
 import { validateAIOutput } from '../prompt/validator';
@@ -81,20 +81,21 @@ export const contentService = {
     const userMessage = buildPrompt(template.userPromptTemplate, variables);
     const langInstruction = `\n\nRespond entirely in ${LANGUAGE_LABEL[language]}.`;
 
-    const result = await generateWithFallback(
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
       {
         systemPrompt: systemPrompt + langInstruction,
         userMessage,
         temperature: 0.8,
         maxTokens: 1024,
       },
-      template.modelPreference as 'anthropic' | 'openai' | undefined,
+      'content_generation',
     );
 
     let finalResult = result;
     const validation = validateAIOutput(result.text);
     if (!validation.valid) {
-      const retryResult = await generateWithFallback(
+      const retryResult = await router.generate(
         {
           systemPrompt:
             systemPrompt +
@@ -104,7 +105,7 @@ export const contentService = {
           temperature: 0.5,
           maxTokens: 1024,
         },
-        template.modelPreference as 'anthropic' | 'openai' | undefined,
+        'content_generation',
       );
       finalResult = {
         ...retryResult,
@@ -120,6 +121,7 @@ export const contentService = {
       templateId: template.id,
       feature: 'content_generator',
       result: finalResult,
+      routing: finalResult.routing,
     });
 
     return {

@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { generateWithFallback } from '@/modules/ai/providers/factory';
+import { getRouterForTenant } from '@/modules/ai/router';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 
@@ -103,18 +103,23 @@ Return JSON exactly:
   "equipment_needed": "手机 + 自然光"
 }`;
 
-    const result = await generateWithFallback({
-      systemPrompt,
-      userMessage: `Topic: ${input.topic}`,
-      temperature: 0.8,
-      maxTokens: 1500,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt,
+        userMessage: `Topic: ${input.topic}`,
+        temperature: 0.8,
+        maxTokens: 1500,
+      },
+      'video_script',
+    );
 
     await logAIUsage({
       tenantId: user.tenantId,
       userId: user.id,
       feature: 'video_script_generation',
       result,
+      routing: result.routing,
     });
 
     try {

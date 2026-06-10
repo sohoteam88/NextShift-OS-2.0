@@ -1,4 +1,4 @@
-import { generateWithFallback } from '@/modules/ai/providers/factory';
+import { getRouterForTenant } from '@/modules/ai/router';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
@@ -48,14 +48,18 @@ export const bioService = {
   async generate(user: AuthUser, brandProfile: BrandProfile): Promise<BioSet> {
     await enforceQuota(user.tenantId);
 
-    const result = await generateWithFallback({
-      systemPrompt: ALL_BIOS_SYSTEM_PROMPT,
-      userMessage: `Brand profile:\n${buildProfileMessage(brandProfile)}`,
-      temperature: 0.8,
-      maxTokens: 600,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt: ALL_BIOS_SYSTEM_PROMPT,
+        userMessage: `Brand profile:\n${buildProfileMessage(brandProfile)}`,
+        temperature: 0.8,
+        maxTokens: 600,
+      },
+      'bio_generation',
+    );
 
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'bio_generation', result });
+    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'bio_generation', result, routing: result.routing });
 
     try {
       const jsonStr = result.text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
@@ -80,14 +84,18 @@ Write in Chinese (Malaysian Chinese style). No income claims, no exaggerated hea
 ${instruction ? `User instruction: ${instruction}` : ''}
 Return ONLY the bio text — no JSON, no extra explanation.`;
 
-    const result = await generateWithFallback({
-      systemPrompt,
-      userMessage: `Brand profile:\n${buildProfileMessage(brandProfile)}`,
-      temperature: 0.85,
-      maxTokens: 300,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt,
+        userMessage: `Brand profile:\n${buildProfileMessage(brandProfile)}`,
+        temperature: 0.85,
+        maxTokens: 300,
+      },
+      'bio_generation',
+    );
 
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'bio_generation', result });
+    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'bio_generation', result, routing: result.routing });
 
     return result.text.trim().slice(0, limit * 3);
   },

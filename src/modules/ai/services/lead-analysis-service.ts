@@ -1,7 +1,7 @@
 import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import prisma from '@/lib/prisma';
-import { generateWithFallback } from '../providers/factory';
+import { getRouterForTenant } from '../router';
 import { templateService } from './template-service';
 import { resolveVariables, buildPrompt } from '../prompt/resolver';
 import { validateAIOutput } from '../prompt/validator';
@@ -138,20 +138,21 @@ export const leadAnalysisService = {
     const systemPrompt = buildPrompt(template.systemPrompt, variables);
     const userMessage = `${buildPrompt(template.userPromptTemplate, variables)}\n\nAdditional lead context:\n${buildLeadContext(lead)}\n\nReturn valid JSON only.`;
 
-    const result = await generateWithFallback(
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
       {
         systemPrompt: `${systemPrompt}\n\nRespond entirely in ${languageLabel[language]}.`,
         userMessage,
         temperature: 0.3,
         maxTokens: 1024,
       },
-      template.modelPreference as 'anthropic' | 'openai' | undefined,
+      'lead_analysis',
     );
 
     let analysis = extractJsonObject(result.text);
     const validation = validateAIOutput(result.text);
     if (!validation.valid || !analysis) {
-      const retry = await generateWithFallback(
+      const retry = await router.generate(
         {
           systemPrompt:
             `${systemPrompt}\n\nRespond entirely in ${languageLabel[language]}.` +
@@ -160,7 +161,7 @@ export const leadAnalysisService = {
           temperature: 0.2,
           maxTokens: 1024,
         },
-        template.modelPreference as 'anthropic' | 'openai' | undefined,
+        'lead_analysis',
       );
       analysis = extractJsonObject(retry.text);
       result.text = retry.text;
@@ -179,6 +180,7 @@ export const leadAnalysisService = {
       templateId: template.id,
       feature: 'lead_analysis',
       result,
+      routing: result.routing,
     });
 
     return {

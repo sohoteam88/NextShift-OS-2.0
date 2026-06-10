@@ -1,5 +1,5 @@
 import type { AuthUser } from '@/modules/auth/services/auth-service';
-import { generateWithFallback } from '../providers/factory';
+import { getRouterForTenant } from '../router';
 import { validateAIOutput } from '../prompt/validator';
 import { logAIUsage } from '../usage/tracker';
 import { enforceQuota } from '../usage/quota';
@@ -74,12 +74,16 @@ export const funnelCopyService = {
   async generate(user: AuthUser, input: FunnelCopyInput): Promise<{ copy: FunnelCopyOutput; tokensUsed: number }> {
     await enforceQuota(user.tenantId);
 
-    const result = await generateWithFallback({
-      systemPrompt: SYSTEM_PROMPT,
-      userMessage: buildUserPrompt(input),
-      temperature: 0.8,
-      maxTokens: 2000,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt: SYSTEM_PROMPT,
+        userMessage: buildUserPrompt(input),
+        temperature: 0.8,
+        maxTokens: 2000,
+      },
+      'funnel_copy',
+    );
 
     const validation = validateAIOutput(result.text);
     if (!validation.valid) {
@@ -93,6 +97,7 @@ export const funnelCopyService = {
       userId: user.id,
       feature: 'funnel_copy',
       result,
+      routing: result.routing,
     });
 
     return { copy, tokensUsed: result.tokensIn + result.tokensOut };

@@ -5,7 +5,7 @@ import { apiHandler } from '@/lib/api-handler';
 import { templateService } from '@/modules/ai/services/template-service';
 import { resolveVariables, buildPrompt } from '@/modules/ai/prompt/resolver';
 import { enforceQuota } from '@/modules/ai/usage/quota';
-import { getProvider } from '@/modules/ai/providers/factory';
+import { getRouterForTenant } from '@/modules/ai/router';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 
 const StreamSchema = z.object({
@@ -38,13 +38,6 @@ function pickTemplate(
     templates[0] ??
     null
   );
-}
-
-function resolveModelName(modelPreference: string | null | undefined, providerName: string) {
-  if (providerName === 'openai') return 'gpt-4o';
-  if (providerName === 'anthropic') return 'claude-sonnet-4-20250514';
-  if (modelPreference === 'openai') return 'gpt-4o';
-  return 'claude-sonnet-4-20250514';
 }
 
 export const POST = apiHandler(async (request: NextRequest) => {
@@ -83,7 +76,14 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const systemPrompt = buildPrompt(template.systemPrompt, variables);
   const userMessage = buildPrompt(template.userPromptTemplate, variables);
   const langInstruction = `\n\nRespond entirely in ${LANGUAGE_LABEL[language]}.`;
-  const provider = getProvider(template.modelPreference as 'anthropic' | 'openai' | undefined);
+  const router = await getRouterForTenant(user.tenantId);
+  const params = {
+    systemPrompt: systemPrompt + langInstruction,
+    userMessage,
+    temperature: 0.8,
+    maxTokens: 1024,
+  };
+  const { routing } = router.createDecision(params, 'content_generation');
   const startedAt = Date.now();
   const chunks: string[] = [];
 
@@ -92,12 +92,7 @@ export const POST = apiHandler(async (request: NextRequest) => {
       const encoder = new TextEncoder();
 
       try {
-        const generator = provider.generateStream({
-          systemPrompt: systemPrompt + langInstruction,
-          userMessage,
-          temperature: 0.8,
-          maxTokens: 1024,
-        });
+        const generator = router.generateStream(params, 'content_generation');
 
         for await (const chunk of generator) {
           chunks.push(chunk.text);
@@ -116,10 +111,11 @@ export const POST = apiHandler(async (request: NextRequest) => {
             text,
             tokensIn,
             tokensOut,
-            model: resolveModelName(template.modelPreference, provider.name),
-            provider: provider.name,
+            model: routing.selectedModel,
+            provider: routing.provider,
             durationMs: Date.now() - startedAt,
           },
+          routing,
         });
 
         controller.close();

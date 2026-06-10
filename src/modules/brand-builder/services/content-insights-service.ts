@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { generateWithFallback } from '@/modules/ai/providers/factory';
+import { getRouterForTenant } from '@/modules/ai/router';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 import { postPerformanceService } from './post-performance-service';
@@ -88,18 +88,23 @@ By platform: ${JSON.stringify(stats.byPlatform)}
 
 Current content pillars: ${JSON.stringify(brandProfile?.contentPillars ?? [])}`;
 
-    const result = await generateWithFallback({
-      systemPrompt,
-      userMessage,
-      temperature: 0.4,
-      maxTokens: 1500,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt,
+        userMessage,
+        temperature: 0.4,
+        maxTokens: 1500,
+      },
+      'content_insights',
+    );
 
     await logAIUsage({
       tenantId: user.tenantId,
       userId: user.id,
       feature: 'content_insights',
       result,
+      routing: result.routing,
     });
 
     try {

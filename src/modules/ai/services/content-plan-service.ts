@@ -1,5 +1,5 @@
 import type { AuthUser } from '@/modules/auth/services/auth-service';
-import { generateWithFallback } from '../providers/factory';
+import { getRouterForTenant } from '../router';
 import { validateAIOutput } from '../prompt/validator';
 import { logAIUsage } from '../usage/tracker';
 import { enforceQuota } from '../usage/quota';
@@ -179,23 +179,30 @@ export const contentPlanService = {
   ): Promise<{ plan: ContentPlanOutput; tokensUsed: number; provider: string; model: string }> {
     await enforceQuota(user.tenantId);
 
-    const result = await generateWithFallback({
-      systemPrompt: SYSTEM_PROMPT,
-      userMessage: buildPrompt(input),
-      temperature: 0.8,
-      maxTokens: 6000,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt: SYSTEM_PROMPT,
+        userMessage: buildPrompt(input),
+        temperature: 0.8,
+        maxTokens: 6000,
+      },
+      'content_calendar',
+    );
 
     const validation = validateAIOutput(result.text);
     let finalResult = result;
 
     if (!validation.valid) {
-      const retry = await generateWithFallback({
-        systemPrompt: SYSTEM_PROMPT + '\n\nIMPORTANT: Do NOT mention specific income amounts or medical cures. Return only valid JSON.',
-        userMessage: buildPrompt(input),
-        temperature: 0.6,
-        maxTokens: 6000,
-      });
+      const retry = await router.generate(
+        {
+          systemPrompt: SYSTEM_PROMPT + '\n\nIMPORTANT: Do NOT mention specific income amounts or medical cures. Return only valid JSON.',
+          userMessage: buildPrompt(input),
+          temperature: 0.6,
+          maxTokens: 6000,
+        },
+        'content_calendar',
+      );
       finalResult = {
         ...retry,
         tokensIn: result.tokensIn + retry.tokensIn,
@@ -211,6 +218,7 @@ export const contentPlanService = {
       userId: user.id,
       feature: 'content_plan_30day',
       result: finalResult,
+      routing: finalResult.routing,
     });
 
     return {

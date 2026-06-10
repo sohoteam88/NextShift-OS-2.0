@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { generateWithFallback } from '@/modules/ai/providers/factory';
+import { getRouterForTenant } from '@/modules/ai/router';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 
@@ -92,12 +92,16 @@ Respect the pillar percentages. Vary platforms proportionally. Start dates from 
     tomorrow.setDate(tomorrow.getDate() + 1);
     const startStr = tomorrow.toISOString().slice(0, 10);
 
-    const result = await generateWithFallback({
-      systemPrompt,
-      userMessage: `Generate a ${days}-day content calendar starting from ${startStr}. Return ONLY the JSON array, no markdown.`,
-      maxTokens: 4000,
-      temperature: 0.8,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt,
+        userMessage: `Generate a ${days}-day content calendar starting from ${startStr}. Return ONLY the JSON array, no markdown.`,
+        maxTokens: 4000,
+        temperature: 0.8,
+      },
+      'content_calendar',
+    );
 
     let items: Array<{
       date: string;
@@ -121,6 +125,7 @@ Respect the pillar percentages. Vary platforms proportionally. Start dates from 
       userId: user.id,
       feature: 'brand_builder_calendar',
       result,
+      routing: result.routing,
     });
 
     // Delete existing planned items before regenerating

@@ -1,18 +1,19 @@
 import OpenAI from 'openai';
 import type { AIProvider, AIGenerateParams, AIGenerateResult, AIStreamChunk } from './types';
 
-const OPENAI_MODEL = 'gpt-4o';
-
-export class OpenAIProvider implements AIProvider {
-  readonly name = 'openai' as const;
+export class DeepSeekProvider implements AIProvider {
+  readonly name = 'deepseek' as const;
   private client: OpenAI;
 
   constructor() {
-    this.client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    this.client = new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: 'https://api.deepseek.com/v1',
+    });
   }
 
   async generateText(params: AIGenerateParams): Promise<AIGenerateResult> {
-    const model = params.model ?? OPENAI_MODEL;
+    const model = params.model ?? 'deepseek-chat';
     const start = Date.now();
     const response = await this.client.chat.completions.create({
       model,
@@ -29,13 +30,13 @@ export class OpenAIProvider implements AIProvider {
       tokensIn: response.usage?.prompt_tokens ?? 0,
       tokensOut: response.usage?.completion_tokens ?? 0,
       model,
-      provider: 'openai',
+      provider: 'deepseek',
       durationMs: Date.now() - start,
     };
   }
 
   async *generateStream(params: AIGenerateParams): AsyncGenerator<AIStreamChunk> {
-    const model = params.model ?? OPENAI_MODEL;
+    const model = params.model ?? 'deepseek-chat';
     const stream = await this.client.chat.completions.create({
       model,
       max_tokens: params.maxTokens ?? 1024,
@@ -49,11 +50,8 @@ export class OpenAIProvider implements AIProvider {
 
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
-        yield { text: delta, done: false };
-      }
+      if (delta) yield { text: delta, done: false };
     }
-
     yield { text: '', done: true };
   }
 }

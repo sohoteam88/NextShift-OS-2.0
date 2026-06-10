@@ -1,4 +1,4 @@
-import { generateWithFallback } from '@/modules/ai/providers/factory';
+import { getRouterForTenant } from '@/modules/ai/router';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
@@ -69,14 +69,18 @@ export const usernameService = {
   async generate(user: AuthUser, brandProfile: BrandProfile): Promise<UsernameOption[]> {
     await enforceQuota(user.tenantId);
 
-    const result = await generateWithFallback({
-      systemPrompt: SYSTEM_PROMPT,
-      userMessage: buildUserMessage(user.name, brandProfile),
-      temperature: 0.9,
-      maxTokens: 800,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt: SYSTEM_PROMPT,
+        userMessage: buildUserMessage(user.name, brandProfile),
+        temperature: 0.9,
+        maxTokens: 800,
+      },
+      'username_generation',
+    );
 
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'username_generation', result });
+    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'username_generation', result, routing: result.routing });
 
     return parseOptions(result.text, user.name);
   },
@@ -84,14 +88,18 @@ export const usernameService = {
   async regenerate(user: AuthUser, brandProfile: BrandProfile, excluded: string[]): Promise<UsernameOption[]> {
     await enforceQuota(user.tenantId);
 
-    const result = await generateWithFallback({
-      systemPrompt: SYSTEM_PROMPT,
-      userMessage: buildUserMessage(user.name, brandProfile, excluded),
-      temperature: 0.9,
-      maxTokens: 800,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt: SYSTEM_PROMPT,
+        userMessage: buildUserMessage(user.name, brandProfile, excluded),
+        temperature: 0.9,
+        maxTokens: 800,
+      },
+      'username_generation',
+    );
 
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'username_generation', result });
+    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'username_generation', result, routing: result.routing });
 
     return parseOptions(result.text, user.name);
   },

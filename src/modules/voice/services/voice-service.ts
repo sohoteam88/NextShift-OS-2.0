@@ -6,6 +6,7 @@ import { AppError } from '@/lib/errors';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { generateWithFallback } from '@/modules/ai/providers/factory';
+import type { AIProviderName } from '@/modules/ai/providers/types';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 import type {
   VoiceExtractionData,
@@ -329,7 +330,7 @@ async function logVoiceUsage(params: {
     tokensIn: number;
     tokensOut: number;
     model: string;
-    provider: 'anthropic' | 'openai';
+    provider: AIProviderName;
     durationMs: number;
   };
 }) {

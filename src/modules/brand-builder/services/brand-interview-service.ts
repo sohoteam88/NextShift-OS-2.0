@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { generateWithFallback } from '@/modules/ai/providers/factory';
+import { getRouterForTenant } from '@/modules/ai/router';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { validateAIOutput } from '@/modules/ai/prompt/validator';
@@ -91,12 +91,16 @@ export const brandInterviewService = {
 
     if (!inputText.trim()) throw new Error('No interview data to extract from');
 
-    const result = await generateWithFallback({
-      systemPrompt: EXTRACTION_SYSTEM_PROMPT,
-      userMessage: `Interview data:\n${inputText}`,
-      temperature: 0.5,
-      maxTokens: 1500,
-    });
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
+      {
+        systemPrompt: EXTRACTION_SYSTEM_PROMPT,
+        userMessage: `Interview data:\n${inputText}`,
+        temperature: 0.5,
+        maxTokens: 1500,
+      },
+      'brand_extraction',
+    );
 
     let extracted: Record<string, unknown>;
     try {
@@ -113,6 +117,7 @@ export const brandInterviewService = {
       userId: user.id,
       feature: 'brand_interview_extraction',
       result,
+      routing: result.routing,
     });
 
     await prisma.brandInterview.update({

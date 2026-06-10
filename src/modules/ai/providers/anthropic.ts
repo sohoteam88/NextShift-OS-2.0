@@ -12,9 +12,10 @@ export class AnthropicProvider implements AIProvider {
   }
 
   async generateText(params: AIGenerateParams): Promise<AIGenerateResult> {
+    const model = params.model ?? ANTHROPIC_MODEL;
     const start = Date.now();
     const response = await this.client.messages.create({
-      model: ANTHROPIC_MODEL,
+      model,
       max_tokens: params.maxTokens ?? 1024,
       temperature: params.temperature ?? 0.7,
       system: params.systemPrompt,
@@ -30,15 +31,16 @@ export class AnthropicProvider implements AIProvider {
       text,
       tokensIn: response.usage.input_tokens,
       tokensOut: response.usage.output_tokens,
-      model: ANTHROPIC_MODEL,
+      model,
       provider: 'anthropic',
       durationMs: Date.now() - start,
     };
   }
 
   async *generateStream(params: AIGenerateParams): AsyncGenerator<AIStreamChunk> {
+    const model = params.model ?? ANTHROPIC_MODEL;
     const stream = this.client.messages.stream({
-      model: ANTHROPIC_MODEL,
+      model,
       max_tokens: params.maxTokens ?? 1024,
       temperature: params.temperature ?? 0.7,
       system: params.systemPrompt,

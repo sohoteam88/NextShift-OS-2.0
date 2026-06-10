@@ -1,7 +1,7 @@
 import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import prisma from '@/lib/prisma';
-import { generateWithFallback } from '../providers/factory';
+import { getRouterForTenant } from '../router';
 import { templateService } from './template-service';
 import { resolveVariables, buildPrompt } from '../prompt/resolver';
 import { validateAIOutput } from '../prompt/validator';
@@ -114,20 +114,21 @@ export const whatsappReplyService = {
       ms: 'Bahasa Malaysia',
     };
 
-    const result = await generateWithFallback(
+    const router = await getRouterForTenant(user.tenantId);
+    const result = await router.generate(
       {
         systemPrompt: `${systemPrompt}\n\nRespond entirely in ${languageLabel[language]}.`,
         userMessage,
         temperature: 0.6,
         maxTokens: 1024,
       },
-      template.modelPreference as 'anthropic' | 'openai' | undefined,
+      'whatsapp_reply',
     );
 
     let replies = extractJsonArray(result.text);
     const validation = validateAIOutput(result.text);
     if (!validation.valid || replies.length === 0) {
-      const retry = await generateWithFallback(
+      const retry = await router.generate(
         {
           systemPrompt:
             `${systemPrompt}\n\nRespond entirely in ${languageLabel[language]}.` +
@@ -136,7 +137,7 @@ export const whatsappReplyService = {
           temperature: 0.4,
           maxTokens: 1024,
         },
-        template.modelPreference as 'anthropic' | 'openai' | undefined,
+        'whatsapp_reply',
       );
       replies = extractJsonArray(retry.text);
       result.text = retry.text;
@@ -153,6 +154,7 @@ export const whatsappReplyService = {
       templateId: template.id,
       feature: 'whatsapp_reply',
       result,
+      routing: result.routing,
     });
 
     return {

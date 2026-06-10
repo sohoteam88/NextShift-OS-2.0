@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, Building2, Upload } from 'lucide-react';
+import { ArrowRight, Bot, Building2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -16,6 +16,9 @@ type FormState = {
   name: string;
   logoUrl: string;
   defaultLanguage: string;
+  aiRouterMode: 'cost_optimized' | 'balanced' | 'quality_first' | 'zh_optimized';
+  aiPreferredProvider: string;
+  aiAutoEscalate: boolean;
 };
 
 export function AdminSettingsPanel() {
@@ -23,7 +26,14 @@ export function AdminSettingsPanel() {
   const common = useTranslations('common');
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [form, setForm] = React.useState<FormState>({ name: '', logoUrl: '', defaultLanguage: 'zh' });
+  const [form, setForm] = React.useState<FormState>({
+    name: '',
+    logoUrl: '',
+    defaultLanguage: 'zh',
+    aiRouterMode: 'balanced',
+    aiPreferredProvider: 'auto',
+    aiAutoEscalate: true,
+  });
   const [tenantId, setTenantId] = React.useState<string | null>(null);
   const [uploading, setUploading] = React.useState(false);
 
@@ -44,6 +54,18 @@ export function AdminSettingsPanel() {
         name: tenant.name,
         logoUrl: typeof tenant.settings.logo_url === 'string' ? tenant.settings.logo_url : '',
         defaultLanguage: typeof tenant.settings.default_language === 'string' ? tenant.settings.default_language : 'zh',
+        aiRouterMode:
+          typeof (tenant.settings.ai_router as Record<string, unknown> | undefined)?.mode === 'string'
+            ? (tenant.settings.ai_router as { mode: FormState['aiRouterMode'] }).mode
+            : 'balanced',
+        aiPreferredProvider:
+          typeof (tenant.settings.ai_router as Record<string, unknown> | undefined)?.preferred_provider === 'string'
+            ? String((tenant.settings.ai_router as Record<string, unknown>).preferred_provider)
+            : 'auto',
+        aiAutoEscalate:
+          typeof (tenant.settings.ai_router as Record<string, unknown> | undefined)?.auto_escalate === 'boolean'
+            ? Boolean((tenant.settings.ai_router as Record<string, unknown>).auto_escalate)
+            : true,
       });
     }
   }, [query.data]);
@@ -57,7 +79,13 @@ export function AdminSettingsPanel() {
           name: form.name,
           logo_url: form.logoUrl,
           settings: {
+            ...(query.data?.data.tenant.settings ?? {}),
             default_language: form.defaultLanguage,
+            ai_router: {
+              mode: form.aiRouterMode,
+              preferred_provider: form.aiPreferredProvider === 'auto' ? null : form.aiPreferredProvider,
+              auto_escalate: form.aiAutoEscalate,
+            },
           },
         }),
       });
@@ -180,6 +208,55 @@ export function AdminSettingsPanel() {
         </div>
 
         <div className="space-y-4">
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Bot className="h-4 w-4 text-[var(--color-primary)]" />
+              <h2 className="text-base font-semibold text-[var(--color-text)]">AI 模型路由</h2>
+            </div>
+            <div className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--color-text)]">模式</label>
+                <select
+                  value={form.aiRouterMode}
+                  onChange={(e) => setForm((current) => ({ ...current, aiRouterMode: e.target.value as FormState['aiRouterMode'] }))}
+                  className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm"
+                >
+                  <option value="cost_optimized">省钱模式</option>
+                  <option value="balanced">平衡模式（推荐）</option>
+                  <option value="quality_first">质量优先</option>
+                  <option value="zh_optimized">中文优化</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--color-text)]">首选供应商</label>
+                <select
+                  value={form.aiPreferredProvider}
+                  onChange={(e) => setForm((current) => ({ ...current, aiPreferredProvider: e.target.value }))}
+                  className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm"
+                >
+                  <option value="auto">自动选择</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="minimax">MiniMax</option>
+                  <option value="gemini">Gemini</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-[var(--color-text)]">
+                <input
+                  type="checkbox"
+                  checked={form.aiAutoEscalate}
+                  onChange={(e) => setForm((current) => ({ ...current, aiAutoEscalate: e.target.checked }))}
+                  className="h-4 w-4 rounded border-[var(--color-border)]"
+                />
+                失败自动升级到更高模型
+              </label>
+              <Link href="/api/v1/ai/router/stats" className="block rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text-muted)] hover:bg-gray-100">
+                查看本月路由统计
+              </Link>
+            </div>
+          </div>
+
           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
             <h2 className="text-base font-semibold text-[var(--color-text)]">{t('crmSettings')}</h2>
             <div className="mt-4 space-y-3 text-sm text-[var(--color-text-muted)]">
