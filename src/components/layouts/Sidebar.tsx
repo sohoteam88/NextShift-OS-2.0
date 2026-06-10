@@ -32,6 +32,8 @@ import {
   Clapperboard,
   MapPin,
   UserCog,
+  DollarSign,
+  FileClock,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -80,7 +82,7 @@ const PLATFORM_CORE_ITEMS: NavItem[] = [
   { href: '/platform-admin', label: 'allTenants', icon: Shield },
   { href: '/platform-admin/health', label: 'systemHealth', icon: Gauge },
   { href: '/platform-admin/ai-usage', label: 'aiModelUsage', icon: Brain },
-  { href: '/dashboard', label: 'dashboard', icon: Gauge },
+  { href: '/platform-admin/users', label: 'platformUsers', icon: Users },
 ];
 
 const MEMBER_SECTIONS: NavSection[] = [
@@ -152,6 +154,9 @@ const PLATFORM_ITEMS: NavItem[] = [
   { href: '/platform-admin', label: 'allTenants', icon: Shield },
   { href: '/platform-admin/health', label: 'systemHealth', icon: Gauge },
   { href: '/platform-admin/ai-usage', label: 'aiModelUsage', icon: Brain },
+  { href: '/platform-admin/users', label: 'platformUsers', icon: Users },
+  { href: '/platform-admin/billing', label: 'platformBilling', icon: DollarSign },
+  { href: '/platform-admin/audit-logs', label: 'platformAuditLogs', icon: FileClock },
 ];
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
@@ -200,8 +205,12 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
       return pathname === itemPath || pathname.startsWith(`${itemPath}/`);
     }
 
-    if (itemPath === '/admin' || itemPath === '/platform-admin') {
+    if (itemPath === '/admin') {
       return pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+    }
+
+    if (itemPath === '/platform-admin') {
+      return pathname === itemPath;
     }
 
     return pathname === itemPath;
