@@ -69,6 +69,17 @@ export async function completeWizardStep(userId: string, stepId: string): Promis
   });
 }
 
+export async function restartInterviewStep(userId: string): Promise<BrandBuilderState> {
+  const current = await getWizardState(userId);
+  const nextState: BrandBuilderState = {
+    current_step: 1,
+    completed_steps: current.completed_steps.filter((step) => step !== 'interview' && step !== 'profile'),
+    started_at: new Date().toISOString(),
+  };
+
+  return saveWizardState(userId, nextState);
+}
+
 export function getCurrentStepPath(state: BrandBuilderState): string {
   const idx = Math.min(state.current_step - 1, WIZARD_STEPS.length - 1);
   return WIZARD_STEPS[idx].path;
