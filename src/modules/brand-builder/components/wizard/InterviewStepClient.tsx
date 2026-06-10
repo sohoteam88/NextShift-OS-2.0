@@ -20,14 +20,17 @@ export function InterviewStepClient({ existingInterviewId }: Props) {
   async function handleSelectMode(selectedMode: 'voice' | 'text') {
     setCreating(true);
     try {
-      const res = await fetch('/api/v1/brand-builder/interview', { method: 'POST' });
+      const res = await fetch('/api/v1/brand-builder/interview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: selectedMode }),
+      });
       if (!res.ok) throw new Error('Failed to create interview');
       const data = (await res.json()) as { data: { id: string } };
       setInterviewId(data.data.id);
       setMode(selectedMode);
     } catch {
-      // fallback: still set mode
-      setMode(selectedMode);
+      setMode(null);
     } finally {
       setCreating(false);
     }
