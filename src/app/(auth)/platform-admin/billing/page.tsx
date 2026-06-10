@@ -1,10 +1,19 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { DollarSign, TrendingUp, Zap, Building2 } from 'lucide-react';
+import { Building2, DollarSign, TrendingUp, Zap } from 'lucide-react';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { platformAdminService } from '@/modules/admin/services/platform-admin-service';
 
-function fmt$(v: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(v);
+function formatMoney(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat('en-US').format(value);
 }
 
 export default async function BillingPage() {
@@ -20,84 +29,119 @@ export default async function BillingPage() {
   const totalAiCost = stats.ai_cost_this_month;
   const activeTenants = stats.active_tenants;
   const avgCostPerTenant = activeTenants > 0 ? totalAiCost / activeTenants : 0;
-  const maxCost = Math.max(...aiCosts.map((t) => t.costThisMonth), 0.01);
+  const maxCost = Math.max(...aiCosts.map((tenant) => tenant.costThisMonth), 0.01);
+  const totalPlans = Object.values(stats.tenants_by_plan).reduce((sum, count) => sum + count, 0);
 
-  const cardClass = 'rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm';
+  const summaryCards = [
+    { label: '本月 AI 成本', value: formatMoney(totalAiCost), helper: '所有租户累计', icon: DollarSign },
+    { label: 'API 调用', value: formatNumber(stats.ai_calls_this_month), helper: '本月总调用量', icon: Zap },
+    { label: '平均成本 / 租户', value: formatMoney(avgCostPerTenant), helper: `${activeTenants} 个活跃租户`, icon: TrendingUp },
+    { label: '活跃租户', value: activeTenants, helper: `总租户 ${stats.total_tenants}`, icon: Building2 },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-[var(--color-text)]">Billing & Costs</h1>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          Month-to-date AI infrastructure costs across all tenants
-        </p>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-[var(--color-text-muted)]">平台管理</p>
+          <h1 className="mt-1 text-2xl font-semibold text-[var(--color-text)]">账单与成本</h1>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            追踪本月 AI 成本、调用量和各租户的使用分布。
+          </p>
+        </div>
+        <Link
+          href="/platform-admin/ai-usage"
+          className="inline-flex h-10 items-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface)]"
+        >
+          查看 AI 用量明细
+        </Link>
       </div>
 
-      {/* Summary cards */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: 'Total AI Cost (MTD)', value: fmt$(totalAiCost), icon: DollarSign },
-          { label: 'Total API Calls',     value: stats.ai_calls_this_month.toLocaleString(), icon: Zap },
-          { label: 'Avg Cost / Tenant',   value: fmt$(avgCostPerTenant), icon: TrendingUp },
-          { label: 'Active Tenants',      value: activeTenants, icon: Building2 },
-        ].map(({ label, value, icon: Icon }) => (
-          <div key={label} className={cardClass}>
-            <div className="flex items-center justify-between">
+        {summaryCards.map(({ label, value, helper, icon: Icon }) => (
+          <div key={label} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
               <span className="text-sm text-[var(--color-text-muted)]">{label}</span>
-              <Icon className="h-4 w-4 text-[var(--color-primary)]" />
+              <Icon className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
             </div>
-            <p className="mt-3 text-2xl font-semibold text-[var(--color-text)]">{value}</p>
+            <p className="mt-3 text-3xl font-semibold text-[var(--color-text)]">{value}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">{helper}</p>
           </div>
         ))}
       </section>
 
-      {/* Per-tenant cost breakdown */}
-      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold text-[var(--color-text)]">Cost by Tenant (MTD)</h2>
-        {aiCosts.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">No AI usage recorded this month.</p>
-        ) : (
-          <div className="space-y-3">
-            {aiCosts.map((tenant) => {
-              const barWidth = Math.max(4, Math.round((tenant.costThisMonth / maxCost) * 100));
-              const pct = totalAiCost > 0 ? Math.round((tenant.costThisMonth / totalAiCost) * 100) : 0;
+      <section className="grid gap-6 lg:grid-cols-[1.35fr_0.75fr]">
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">租户成本排行</h2>
+              <p className="mt-0.5 text-sm text-[var(--color-text-muted)]">优先关注成本最高的租户。</p>
+            </div>
+            <span className="rounded-[var(--radius-md)] bg-[var(--color-surface)] px-3 py-1 text-xs text-[var(--color-text-muted)]">
+              MTD
+            </span>
+          </div>
+
+          {aiCosts.length === 0 ? (
+            <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] px-4 py-10 text-center text-sm text-[var(--color-text-muted)]">
+              本月还没有 AI 用量记录。
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {aiCosts.map((tenant) => {
+                const barWidth = Math.max(4, Math.round((tenant.costThisMonth / maxCost) * 100));
+                const pct = totalAiCost > 0 ? Math.round((tenant.costThisMonth / totalAiCost) * 100) : 0;
+
+                return (
+                  <div key={tenant.tenantId} className="space-y-2">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-[var(--color-text)]">{tenant.tenantName}</p>
+                        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                          {formatNumber(tenant.callsThisMonth)} 次调用 · <span className="capitalize">{tenant.plan}</span>
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold text-[var(--color-text)]">{formatMoney(tenant.costThisMonth)}</p>
+                        <p className="text-xs text-[var(--color-text-muted)]">{pct}%</p>
+                      </div>
+                    </div>
+                    <div className="h-2 rounded-full bg-[var(--color-surface)]">
+                      <div
+                        className="h-2 rounded-full bg-[var(--color-primary)]"
+                        style={{ width: `${barWidth}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-[var(--color-text)]">套餐分布</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">快速判断收入结构和升级机会。</p>
+          <div className="mt-5 space-y-3">
+            {Object.entries(stats.tenants_by_plan).map(([plan, count]) => {
+              const pct = totalPlans > 0 ? Math.round((count / totalPlans) * 100) : 0;
+
               return (
-                <div key={tenant.tenantId} className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-[var(--color-text)]">{tenant.tenantName}</span>
-                      <span className="rounded-full bg-[var(--color-surface)] px-1.5 py-0.5 text-[10px] capitalize text-[var(--color-text-muted)]">
-                        {tenant.plan}
-                      </span>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-4 text-xs text-[var(--color-text-muted)]">
-                      <span>{tenant.callsThisMonth} calls</span>
-                      <span className="font-semibold text-[var(--color-text)]">{fmt$(tenant.costThisMonth)}</span>
-                      <span className="w-8 text-right">{pct}%</span>
-                    </div>
+                <div key={plan} className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium capitalize text-[var(--color-text)]">{plan}</span>
+                    <span className="font-semibold text-[var(--color-text)]">{count}</span>
                   </div>
-                  <div className="h-2 rounded-full bg-[var(--color-surface)]">
-                    <div className="h-2 rounded-full bg-[var(--color-primary)]" style={{ width: `${barWidth}%` }} />
+                  <div className="mt-2 h-1.5 rounded-full bg-white">
+                    <div className="h-1.5 rounded-full bg-[var(--color-primary)]" style={{ width: `${Math.max(4, pct)}%` }} />
                   </div>
+                  <p className="mt-1 text-xs text-[var(--color-text-muted)]">{pct}% 的租户</p>
                 </div>
               );
             })}
           </div>
-        )}
-      </div>
-
-      {/* Plan distribution */}
-      <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold text-[var(--color-text)]">Tenant Plan Mix</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {Object.entries(stats.tenants_by_plan).map(([plan, count]) => (
-            <div key={plan} className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-4 text-center">
-              <p className="text-2xl font-bold text-[var(--color-text)]">{count}</p>
-              <p className="mt-1 text-sm capitalize text-[var(--color-text-muted)]">{plan}</p>
-            </div>
-          ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
