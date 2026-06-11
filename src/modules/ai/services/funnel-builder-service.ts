@@ -4,6 +4,8 @@ import { validateAIOutput } from '../prompt/validator';
 import { logAIUsage } from '../usage/tracker';
 import { enforceQuota } from '../usage/quota';
 import { AppError } from '@/lib/errors';
+import type { AIGenerateResult } from '../providers/types';
+import type { RoutingDecision } from '../router';
 
 export interface FunnelBuilderInput {
   businessType: string;
@@ -104,6 +106,15 @@ Rules:
 - Be practical and implementation-ready
 - Return ONLY valid JSON, no other text`;
 
+const JSON_REPAIR_PROMPT = `You are a JSON repair engine.
+
+Rules:
+- Return ONLY valid JSON.
+- Do not add markdown, comments, explanations, or code fences.
+- Preserve the provided content as much as possible.
+- If a field is missing because the source was truncated, complete it with practical funnel copy.
+- The final JSON must match the requested funnel schema exactly.`;
+
 function buildPrompt(input: FunnelBuilderInput): string {
   const lang = LANGUAGE_MAP[input.language];
   return `Generate a complete funnel system for this business. Respond entirely in ${lang}.
@@ -183,15 +194,74 @@ Return this exact JSON structure (all strings in ${lang}):
 }`;
 }
 
-function parseOutput(text: string): FunnelBuilderOutput {
-  const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
-  try {
-    return JSON.parse(cleaned) as FunnelBuilderOutput;
-  } catch {
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]) as FunnelBuilderOutput;
-    throw new AppError('INTERNAL_ERROR', 500, 'AI returned invalid JSON for funnel builder');
+function stripCodeFence(text: string): string {
+  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+}
+
+function extractJsonCandidate(text: string): string | null {
+  const cleaned = stripCodeFence(text);
+  const firstBrace = cleaned.indexOf('{');
+  if (firstBrace === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let index = firstBrace; index < cleaned.length; index += 1) {
+    const char = cleaned[index];
+
+    if (escaping) {
+      escaping = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaping = inString;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (char === '{') depth += 1;
+    if (char === '}') {
+      depth -= 1;
+      if (depth === 0) return cleaned.slice(firstBrace, index + 1);
+    }
   }
+
+  return cleaned.slice(firstBrace);
+}
+
+function tryParseOutput(text: string): FunnelBuilderOutput | null {
+  const candidate = extractJsonCandidate(text);
+  if (!candidate) return null;
+
+  try {
+    return JSON.parse(candidate) as FunnelBuilderOutput;
+  } catch {
+    return null;
+  }
+}
+
+function combineResults<T extends AIGenerateResult & { routing: RoutingDecision }>(first: T, second: T): T {
+  return {
+    ...second,
+    tokensIn: first.tokensIn + second.tokensIn,
+    tokensOut: first.tokensOut + second.tokensOut,
+    durationMs: first.durationMs + second.durationMs,
+  };
+}
+
+function buildRepairPrompt(input: FunnelBuilderInput, rawOutput: string): string {
+  return `${buildPrompt(input)}
+
+Malformed JSON output to repair:
+${stripCodeFence(rawOutput).slice(0, 24000)}`;
 }
 
 export const funnelBuilderService = {
@@ -206,8 +276,8 @@ export const funnelBuilderService = {
       {
         systemPrompt: SYSTEM_PROMPT,
         userMessage: buildPrompt(input),
-        temperature: 0.85,
-        maxTokens: 4000,
+        temperature: 0.55,
+        maxTokens: 8000,
       },
       'funnel_copy',
     );
@@ -220,20 +290,33 @@ export const funnelBuilderService = {
         {
           systemPrompt: SYSTEM_PROMPT + '\n\nIMPORTANT: Do NOT mention specific income amounts, medical cures, or guarantees. Return only valid JSON.',
           userMessage: buildPrompt(input),
-          temperature: 0.6,
-          maxTokens: 4000,
+          temperature: 0.35,
+          maxTokens: 8000,
         },
         'funnel_copy',
       );
-      finalResult = {
-        ...retry,
-        tokensIn: result.tokensIn + retry.tokensIn,
-        tokensOut: result.tokensOut + retry.tokensOut,
-        durationMs: result.durationMs + retry.durationMs,
-      };
+      finalResult = combineResults(result, retry);
     }
 
-    const funnel = parseOutput(finalResult.text);
+    let funnel = tryParseOutput(finalResult.text);
+
+    if (!funnel) {
+      const repair = await router.generate(
+        {
+          systemPrompt: JSON_REPAIR_PROMPT,
+          userMessage: buildRepairPrompt(input, finalResult.text),
+          temperature: 0.1,
+          maxTokens: 8000,
+        },
+        'funnel_copy',
+      );
+      finalResult = combineResults(finalResult, repair);
+      funnel = tryParseOutput(repair.text);
+    }
+
+    if (!funnel) {
+      throw new AppError('INTERNAL_ERROR', 500, 'AI returned malformed funnel JSON. Please try generating again.');
+    }
 
     await logAIUsage({
       tenantId: user.tenantId,

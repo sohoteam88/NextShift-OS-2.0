@@ -26,8 +26,8 @@ async function generateFunnel(input: FunnelBuilderInput): Promise<GenerateResult
     body: JSON.stringify(input),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as { message?: string }).message ?? '生成失败，请重试');
+    const err = await res.json().catch(() => ({})) as { message?: string; error?: { message?: string } };
+    throw new Error(err.error?.message ?? err.message ?? '生成失败，请重试');
   }
   const json = await res.json() as { data: GenerateResult };
   return json.data;
