@@ -5,6 +5,8 @@ import { logAIUsage } from '../usage/tracker';
 import { enforceQuota } from '../usage/quota';
 import type { AIGenerateResult } from '../providers/types';
 import type { RoutingDecision } from '../router';
+import { funnelService } from '@/modules/funnel/services/funnel-service';
+import type { FunnelConfig } from '@/modules/funnel/types';
 
 export interface FunnelBuilderInput {
   businessType: string;
@@ -121,6 +123,7 @@ type FunnelGenerationResult = {
   tokensUsed: number;
   provider: string;
   model: string;
+  savedFunnelId?: string;
 };
 
 function copyFor(input: FunnelBuilderInput) {
@@ -532,6 +535,90 @@ function createFallbackResult(input: FunnelBuilderInput): FunnelGenerationResult
   };
 }
 
+function buildSavedFunnelTitle(input: FunnelBuilderInput, funnel: FunnelBuilderOutput): string {
+  const name = funnel.landingPage.leadMagnet.name || input.productOrService;
+  return `${input.productOrService} - ${name}`.slice(0, 180);
+}
+
+function toSavedFunnelConfig(input: FunnelBuilderInput, funnel: FunnelBuilderOutput): FunnelConfig & {
+  ai_generated?: Record<string, unknown>;
+} {
+  return {
+    type: 'landing',
+    theme: {
+      primary_color: '#2563eb',
+      bg_color: '#f8fafc',
+      font: input.language === 'zh' ? 'noto-sans-sc' : 'inter',
+    },
+    sections: [
+      {
+        type: 'hero',
+        headline: funnel.landingPage.hero.headline,
+        subheadline: funnel.landingPage.hero.subheadline,
+        cta_text: funnel.landingPage.hero.ctaButton,
+        cta_type: input.closingMethod.toLowerCase().includes('whatsapp') ? 'whatsapp' : 'form',
+        cta_target: funnel.landingPage.finalCta.whatsappMessage,
+      },
+      {
+        type: 'pain',
+        title: funnel.landingPage.problem.mainProblem,
+        items: funnel.landingPage.problem.painBullets.map((text) => ({ text })),
+      },
+      {
+        type: 'benefits',
+        title: funnel.landingPage.desire.dreamOutcome,
+        items: funnel.landingPage.solution.howItWorks.map((step, index) => ({
+          icon: ['target', 'sparkles', 'message-circle', 'check-circle'][index] ?? 'check-circle',
+          title: step,
+          description: index === 0 ? funnel.landingPage.solution.uniqueMechanism : funnel.landingPage.solution.whyItWorks,
+        })),
+      },
+      {
+        type: 'mechanism',
+        title: funnel.landingPage.solution.systemName,
+        description: `${funnel.landingPage.solution.uniqueMechanism}\n\n${funnel.landingPage.solution.whyItWorks}`,
+      },
+      {
+        type: 'faq',
+        title: '常见问题',
+        items: funnel.landingPage.faq,
+      },
+      {
+        type: 'cta',
+        headline: funnel.landingPage.finalCta.headline,
+        subheadline: funnel.landingPage.finalCta.urgencyLine,
+        button_text: funnel.landingPage.finalCta.ctaButton,
+        button_type: input.closingMethod.toLowerCase().includes('whatsapp') ? 'whatsapp' : 'form',
+        button_target: funnel.landingPage.finalCta.whatsappMessage,
+      },
+    ],
+    ai_generated: {
+      source: 'world_class_funnel_builder',
+      input,
+      output: funnel,
+      generated_at: new Date().toISOString(),
+    },
+  };
+}
+
+async function saveGeneratedFunnel(
+  user: AuthUser,
+  input: FunnelBuilderInput,
+  result: FunnelGenerationResult,
+): Promise<FunnelGenerationResult> {
+  try {
+    const saved = await funnelService.create(user, {
+      title: buildSavedFunnelTitle(input, result.funnel),
+      config: toSavedFunnelConfig(input, result.funnel) as unknown as Record<string, unknown>,
+    });
+
+    return { ...result, savedFunnelId: saved.id };
+  } catch (error) {
+    console.error('Funnel builder: failed to save generated funnel record.', error);
+    return result;
+  }
+}
+
 export const funnelBuilderService = {
   async generateWorldClassFunnel(
     user: AuthUser,
@@ -615,6 +702,7 @@ export const funnelBuilderService = {
       }, AI_GENERATION_TIMEOUT_MS);
     });
 
-    return Promise.race([aiGeneration, timeoutFallback]);
+    const result = await Promise.race([aiGeneration, timeoutFallback]);
+    return saveGeneratedFunnel(user, input, result);
   },
 };

@@ -15,7 +15,13 @@ import type { FunnelBuilderInput, FunnelBuilderOutput } from '@/modules/ai/servi
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type GenerateResult = { funnel: FunnelBuilderOutput; tokensUsed: number; provider: string; model: string };
+type GenerateResult = {
+  funnel: FunnelBuilderOutput;
+  tokensUsed: number;
+  provider: string;
+  model: string;
+  savedFunnelId?: string;
+};
 
 // ─── API call ────────────────────────────────────────────────────────────────
 
@@ -498,12 +504,12 @@ export default function FunnelBuilderPage() {
     brandTone: 'Warm & Relatable',
   });
 
-  const [result, setResult] = React.useState<FunnelBuilderOutput | null>(null);
+  const [result, setResult] = React.useState<GenerateResult | null>(null);
 
   const mutation = useMutation({
     mutationFn: generateFunnel,
     onSuccess: (data) => {
-      setResult(data.funnel);
+      setResult(data);
       setTimeout(() => {
         document.getElementById('funnel-result')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
@@ -663,24 +669,37 @@ export default function FunnelBuilderPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-[var(--color-text)]">漏斗系统已生成</h2>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">先检查漏斗总结和目标客户画像，再复制需要的模块。</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                {result.savedFunnelId ? '已保存为草稿记录，可直接进入漏斗编辑器继续调整。' : '先检查漏斗总结和目标客户画像，再复制需要的模块。'}
+              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => mutation.mutate(form)}
-              disabled={mutation.isPending}
-              className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm font-medium text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface)] disabled:opacity-50"
-            >
-              <Zap className="h-4 w-4" />
-              重新生成
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {result.savedFunnelId ? (
+                <Link
+                  href={`/funnel/${result.savedFunnelId}/edit`}
+                  className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-3 text-sm font-medium text-white shadow-sm hover:bg-[var(--color-primary-hover)]"
+                >
+                  前往编辑
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => mutation.mutate(form)}
+                disabled={mutation.isPending}
+                className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm font-medium text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface)] disabled:opacity-50"
+              >
+                <Zap className="h-4 w-4" />
+                重新生成
+              </button>
+            </div>
           </div>
           <div className="mb-4 grid gap-3 md:grid-cols-4">
             {[
-              ['类型', result.funnelSummary.funnelType],
-              ['目标', result.funnelSummary.primaryGoal],
-              ['成交', result.funnelSummary.closingChannel],
-              ['Lead Magnet', result.landingPage.leadMagnet.name],
+              ['类型', result.funnel.funnelSummary.funnelType],
+              ['目标', result.funnel.funnelSummary.primaryGoal],
+              ['成交', result.funnel.funnelSummary.closingChannel],
+              ['Lead Magnet', result.funnel.landingPage.leadMagnet.name],
             ].map(([label, value]) => (
               <div key={label} className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white p-3 shadow-sm">
                 <p className="text-xs text-[var(--color-text-muted)]">{label}</p>
@@ -688,7 +707,7 @@ export default function FunnelBuilderPage() {
               </div>
             ))}
           </div>
-          <FunnelResult funnel={result} />
+          <FunnelResult funnel={result.funnel} />
           <div className="mt-4">
             <Link
               href="/funnel"
