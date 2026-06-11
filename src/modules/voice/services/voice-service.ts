@@ -17,7 +17,6 @@ import type {
   VoiceUploadResult,
 } from '../types';
 
-const DAILY_LIMIT = 3;
 const MAX_AUDIO_SIZE = 25 * 1024 * 1024;
 const ALLOWED_AUDIO_TYPES = new Set([
   'audio/webm',
@@ -384,7 +383,7 @@ export const voiceService = {
       meta: {
         total,
         todayCount,
-        limitPerDay: DAILY_LIMIT,
+        limitPerDay: null,
       },
     };
   },
@@ -395,11 +394,6 @@ export const voiceService = {
   },
 
   async upload(user: AuthUser, input: { file: File; language?: VoiceLanguage; durationSecs?: number }) {
-    const todayCount = await voiceService.getDailyCount(user);
-    if (todayCount >= DAILY_LIMIT) {
-      throw new AppError('QUOTA_EXCEEDED', 429, `Voice capture limit reached. You can upload up to ${DAILY_LIMIT} recordings per day.`);
-    }
-
     const file = input.file;
     if (!file) {
       throw new AppError('VALIDATION_ERROR', 400, 'No audio file provided');

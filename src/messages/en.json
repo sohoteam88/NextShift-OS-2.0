@@ -450,6 +450,7 @@
     "subtitle": "Record a voice note, review the extracted profile, and approve it into your profile.",
     "backToMember": "Back to member hub",
     "usageCount": "Today: {used}/{limit} recordings",
+    "unlimited": "unlimited",
     "recordingsTitle": "Recordings",
     "recordingsHelp": "Your recent voice uploads and their processing status.",
     "recordingsCount": "{count} recordings",
@@ -492,7 +493,8 @@
     "languageMs": "Bahasa Malaysia",
     "recordingTime": "Recording time: {duration}",
     "pressStart": "Press start to capture audio.",
-    "dailyLimit": "Uploads: 3 per day",
+    "dailyLimit": "Unlimited uploads",
+    "unlimitedUploads": "Unlimited uploads",
     "uploadSuccess": "Voice recording uploaded",
     "saved": "Draft saved",
     "approved": "Voice profile approved",
@@ -898,7 +900,9 @@
       "stuckOk": "No worries, totally normal. Let me ask another way 😄",
       "softWrap": "We've covered a lot. Shall I tidy it up for you?",
       "analyzing": "AI is shaping your brand direction...",
-      "dailyLimit": "Up to 3 voice uploads per day",
+      "dailyLimit": "Unlimited voice uploads",
+      "unlimitedUploads": "Unlimited voice uploads",
+      "uploadLimitReached": "Voice upload limit reached",
       "confidenceTitle": "Brand readiness"
     }
   }

@@ -245,7 +245,7 @@ export function InterviewStepClient({ existingInterviewId }: Props) {
       body: formData,
     });
     if (!res.ok) {
-      throw new Error(res.status === 429 ? t('dailyLimit') : 'Voice upload failed');
+      throw new Error(res.status === 429 ? t('uploadLimitReached') : 'Voice upload failed');
     }
 
     const json = (await res.json()) as VoiceUploadResponse;
@@ -403,7 +403,7 @@ export function InterviewStepClient({ existingInterviewId }: Props) {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--color-text-muted)]">
-              <span>{t('dailyLimit')}</span>
+              <span>{t('unlimitedUploads')}</span>
               <button type="button" onClick={() => void handleSkip()} className="hover:text-[var(--color-text)]">
                 Skip
               </button>

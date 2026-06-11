@@ -309,7 +309,8 @@ export default function VoiceCapturePage() {
     },
   });
 
-  const limitReached = (listQuery.data?.meta.todayCount ?? 0) >= (listQuery.data?.meta.limitPerDay ?? 3);
+  const limitPerDay = listQuery.data?.meta.limitPerDay ?? null;
+  const limitReached = typeof limitPerDay === 'number' && (listQuery.data?.meta.todayCount ?? 0) >= limitPerDay;
 
   if (listQuery.isLoading) {
     return <Skeleton className="h-96 w-full" />;
@@ -330,7 +331,7 @@ export default function VoiceCapturePage() {
           <Badge variant={limitReached ? 'warning' : 'info'}>
             {t('usageCount', {
               used: listQuery.data?.meta.todayCount ?? 0,
-              limit: listQuery.data?.meta.limitPerDay ?? 3,
+              limit: limitPerDay === null ? t('unlimited') : limitPerDay,
             })}
           </Badge>
           {selectedRecord ? <Badge variant={statusVariant(selectedRecord.status)}>{statusLabel(t, selectedRecord.status)}</Badge> : null}

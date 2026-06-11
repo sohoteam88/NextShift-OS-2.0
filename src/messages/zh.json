@@ -450,6 +450,7 @@
     "subtitle": "录制语音，检查提取的个人资料，并将其批准到你的资料中。",
     "backToMember": "返回成员中心",
     "usageCount": "今天：{used}/{limit} 次录音",
+    "unlimited": "无限量",
     "recordingsTitle": "录音记录",
     "recordingsHelp": "你最近的语音上传及其处理状态。",
     "recordingsCount": "{count} 条记录",
@@ -492,7 +493,8 @@
     "languageMs": "马来文",
     "recordingTime": "录音时间：{duration}",
     "pressStart": "点击开始录音。",
-    "dailyLimit": "每天最多 3 次上传",
+    "dailyLimit": "上传次数无限量",
+    "unlimitedUploads": "上传次数无限量",
     "uploadSuccess": "语音录音已上传",
     "saved": "草稿已保存",
     "approved": "语音资料已批准",
@@ -898,7 +900,9 @@
       "stuckOk": "没关系，想不到很正常，我换个方式问 😄",
       "softWrap": "聊得差不多啦，我帮你整理一下好吗？",
       "analyzing": "AI 正在帮你整理品牌方向…",
-      "dailyLimit": "每天最多 3 次语音上传",
+      "dailyLimit": "语音上传次数无限量",
+      "unlimitedUploads": "语音上传次数无限量",
+      "uploadLimitReached": "已达语音上传上限",
       "confidenceTitle": "品牌准备度"
     }
   }

@@ -217,7 +217,7 @@ export function VoiceRecorder({
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[var(--color-text-muted)]">
         <span>{recording ? t('recordingTime', { duration: formatDuration(elapsed) }) : t('pressStart')}</span>
-        <span>{t('dailyLimit')}</span>
+        <span>{t('unlimitedUploads')}</span>
       </div>
 
       {error ? (

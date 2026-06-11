@@ -450,6 +450,7 @@
     "subtitle": "Rakam nota suara, semak profil yang diekstrak, dan luluskannya ke profil anda.",
     "backToMember": "Kembali ke pusat ahli",
     "usageCount": "Hari ini: {used}/{limit} rakaman",
+    "unlimited": "tanpa had",
     "recordingsTitle": "Rakaman",
     "recordingsHelp": "Muat naik suara anda yang terkini dan status pemprosesannya.",
     "recordingsCount": "{count} rakaman",
@@ -492,7 +493,8 @@
     "languageMs": "Bahasa Malaysia",
     "recordingTime": "Masa rakaman: {duration}",
     "pressStart": "Tekan mula untuk merakam audio.",
-    "dailyLimit": "Muat naik: 3 sehari",
+    "dailyLimit": "Muat naik tanpa had",
+    "unlimitedUploads": "Muat naik tanpa had",
     "uploadSuccess": "Rakaman suara telah dimuat naik",
     "saved": "Draf disimpan",
     "approved": "Profil suara diluluskan",
@@ -898,7 +900,9 @@
       "stuckOk": "Takpe, normal je. Saya tanya cara lain 😄",
       "softWrap": "Dah cukup banyak kita borak. Nak saya kemaskan?",
       "analyzing": "AI sedang bentukkan hala tuju brand anda...",
-      "dailyLimit": "Maksimum 3 muat naik suara sehari",
+      "dailyLimit": "Muat naik suara tanpa had",
+      "unlimitedUploads": "Muat naik suara tanpa had",
+      "uploadLimitReached": "Had muat naik suara telah dicapai",
       "confidenceTitle": "Kesediaan brand"
     }
   }

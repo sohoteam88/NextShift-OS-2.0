@@ -55,6 +55,6 @@ export interface VoiceListResult {
   meta: {
     total: number;
     todayCount: number;
-    limitPerDay: number;
+    limitPerDay: number | null;
   };
 }
