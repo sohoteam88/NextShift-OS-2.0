@@ -2,13 +2,13 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
   BadgeCheck,
   ClipboardList,
   Loader2, ChevronDown, ChevronRight, Copy, CheckCheck,
-  Users, Target, FileText, MessageCircle, Mail, BarChart3, Zap,
+  Users, Target, FileText, MessageCircle, Mail, BarChart3, Zap, History,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { FunnelBuilderInput, FunnelBuilderOutput } from '@/modules/ai/services/funnel-builder-service';
@@ -21,6 +21,20 @@ type GenerateResult = {
   provider: string;
   model: string;
   savedFunnelId?: string;
+};
+
+type SavedFunnelRow = {
+  id: string;
+  title: string;
+  createdAt: string;
+  config: {
+    ai_generated?: {
+      source?: string;
+      input?: FunnelBuilderInput;
+      output?: FunnelBuilderOutput;
+      generated_at?: string;
+    };
+  };
 };
 
 // ─── API call ────────────────────────────────────────────────────────────────
@@ -37,6 +51,13 @@ async function generateFunnel(input: FunnelBuilderInput): Promise<GenerateResult
   }
   const json = await res.json() as { data: GenerateResult };
   return json.data;
+}
+
+async function fetchSavedFunnels(): Promise<SavedFunnelRow[]> {
+  const res = await fetch('/api/v1/funnel/funnels?limit=20');
+  if (!res.ok) return [];
+  const json = await res.json() as { data: SavedFunnelRow[] };
+  return json.data.filter((item) => item.config?.ai_generated?.source === 'world_class_funnel_builder');
 }
 
 // ─── Copy button ─────────────────────────────────────────────────────────────
@@ -505,11 +526,16 @@ export default function FunnelBuilderPage() {
   });
 
   const [result, setResult] = React.useState<GenerateResult | null>(null);
+  const savedFunnelsQuery = useQuery({
+    queryKey: ['world-class-funnel-history'],
+    queryFn: fetchSavedFunnels,
+  });
 
   const mutation = useMutation({
     mutationFn: generateFunnel,
     onSuccess: (data) => {
       setResult(data);
+      void savedFunnelsQuery.refetch();
       setTimeout(() => {
         document.getElementById('funnel-result')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
@@ -523,6 +549,26 @@ export default function FunnelBuilderPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     mutation.mutate(form);
+  }
+
+  function restoreSavedFunnel(item: SavedFunnelRow) {
+    const output = item.config.ai_generated?.output;
+    if (!output) return;
+
+    const input = item.config.ai_generated?.input;
+    if (input) setForm((prev) => ({ ...prev, ...input }));
+
+    setResult({
+      funnel: output,
+      tokensUsed: 0,
+      provider: 'saved',
+      model: 'history',
+      savedFunnelId: item.id,
+    });
+
+    setTimeout(() => {
+      document.getElementById('funnel-result')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   }
 
   const isValid = form.businessType && form.productOrService && form.targetAudience &&
@@ -614,6 +660,48 @@ export default function FunnelBuilderPage() {
         </form>
 
         <aside className="space-y-4">
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-[var(--color-primary)]" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-[var(--color-text)]">最近生成</h2>
+            </div>
+            <div className="mt-4 space-y-2">
+              {savedFunnelsQuery.isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  读取记录中...
+                </div>
+              ) : null}
+              {(savedFunnelsQuery.data ?? []).slice(0, 5).map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+                >
+                  <button
+                    type="button"
+                    onClick={() => restoreSavedFunnel(item)}
+                    className="block w-full text-left"
+                  >
+                    <p className="line-clamp-2 text-sm font-medium text-[var(--color-text)]">{item.title}</p>
+                    <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                      {new Date(item.config.ai_generated?.generated_at ?? item.createdAt).toLocaleString()}
+                    </p>
+                  </button>
+                  <Link
+                    href={`/funnel/${item.id}/edit`}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary)] hover:underline"
+                  >
+                    前往编辑
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              ))}
+              {!savedFunnelsQuery.isLoading && (savedFunnelsQuery.data ?? []).length === 0 ? (
+                <p className="text-sm text-[var(--color-text-muted)]">还没有记录。生成一次后会自动保存。</p>
+              ) : null}
+            </div>
+          </div>
+
           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2">
               <BadgeCheck className="h-5 w-5 text-emerald-600" aria-hidden="true" />
