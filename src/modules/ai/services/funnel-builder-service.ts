@@ -114,6 +114,15 @@ Rules:
 - If a field is missing because the source was truncated, complete it with practical funnel copy.
 - The final JSON must match the requested funnel schema exactly.`;
 
+const AI_GENERATION_TIMEOUT_MS = 20_000;
+
+type FunnelGenerationResult = {
+  funnel: FunnelBuilderOutput;
+  tokensUsed: number;
+  provider: string;
+  model: string;
+};
+
 function copyFor(input: FunnelBuilderInput) {
   if (input.language === 'en') {
     return {
@@ -514,15 +523,25 @@ Malformed JSON output to repair:
 ${stripCodeFence(rawOutput).slice(0, 24000)}`;
 }
 
+function createFallbackResult(input: FunnelBuilderInput): FunnelGenerationResult {
+  return {
+    funnel: createFallbackFunnel(input),
+    tokensUsed: 0,
+    provider: 'fallback',
+    model: 'deterministic-funnel-template',
+  };
+}
+
 export const funnelBuilderService = {
   async generateWorldClassFunnel(
     user: AuthUser,
     input: FunnelBuilderInput,
-  ): Promise<{ funnel: FunnelBuilderOutput; tokensUsed: number; provider: string; model: string }> {
+  ): Promise<FunnelGenerationResult> {
     await enforceQuota(user.tenantId);
 
     const router = await getRouterForTenant(user.tenantId);
-    try {
+
+    const aiGeneration = (async (): Promise<FunnelGenerationResult> => {
       const result = await router.generate(
         {
           systemPrompt: SYSTEM_PROMPT,
@@ -584,15 +603,18 @@ export const funnelBuilderService = {
         provider: finalResult.provider,
         model: finalResult.model,
       };
-    } catch (error) {
+    })().catch((error) => {
       console.error('Funnel builder: AI generation failed, using fallback output.', error);
+      return createFallbackResult(input);
+    });
 
-      return {
-        funnel: createFallbackFunnel(input),
-        tokensUsed: 0,
-        provider: 'fallback',
-        model: 'deterministic-funnel-template',
-      };
-    }
+    const timeoutFallback = new Promise<FunnelGenerationResult>((resolve) => {
+      setTimeout(() => {
+        console.warn(`Funnel builder: AI generation exceeded ${AI_GENERATION_TIMEOUT_MS}ms, using fallback output.`);
+        resolve(createFallbackResult(input));
+      }, AI_GENERATION_TIMEOUT_MS);
+    });
+
+    return Promise.race([aiGeneration, timeoutFallback]);
   },
 };
