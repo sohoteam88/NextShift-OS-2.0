@@ -116,7 +116,7 @@ Rules:
 - If a field is missing because the source was truncated, complete it with practical funnel copy.
 - The final JSON must match the requested funnel schema exactly.`;
 
-const AI_GENERATION_TIMEOUT_MS = 20_000;
+const AI_GENERATION_TIMEOUT_MS = 35_000;
 
 type FunnelGenerationResult = {
   funnel: FunnelBuilderOutput;
@@ -213,6 +213,77 @@ function createFallbackFunnel(input: FunnelBuilderInput): FunnelBuilderOutput {
     ['试过失败', copy.failed],
     ['怕被骗', copy.scam],
     ['不适合我', copy.fit],
+  ];
+  const adAngles = [
+    { type: 'pain', angle: `还在被「${input.mainCustomerPain}」拖着走？先用一个简单检查，找出你卡住的真正原因。` },
+    { type: 'desire', angle: `如果你想要的是「${input.desiredResult}」，不要先追复杂技巧，先建立一条清楚路径。` },
+    { type: 'mistake', angle: `多数人做 ${input.productOrService} 失败，不是因为不努力，而是一开始就选错行动顺序。` },
+    { type: 'myth', angle: `你不需要等到全部准备好，先完成第一步诊断，就能知道自己是否适合开始。` },
+    { type: 'story', angle: `从不知道怎么开始，到有一套可跟进的系统，改变通常是从一个小决定开始。` },
+    { type: 'checklist', angle: `领取「${copy.leadMagnet}」，用 5 分钟确认你现在最该做的下一步。` },
+    { type: 'quiz', angle: `测一测：你现在面对的最大障碍，是方向不清、方法不对，还是缺少跟进？` },
+    { type: 'transformation', angle: `把「${input.mainCustomerPain}」变成一个可执行计划，先从 ${input.productOrService} 的入门步骤开始。` },
+    { type: 'local', angle: `专为 ${input.marketLocation} 的 ${input.targetAudience} 设计，避免套用不适合本地市场的方法。` },
+    { type: 'beginner', angle: `新手也能看懂：不用一次做很多，先完成一份检查表，再决定下一步。` },
+  ];
+  const videoHooks = [
+    `如果你现在最大的问题是「${input.mainCustomerPain}」，先别急着买课程，先看这个检查方法。`,
+    `很多人想要「${input.desiredResult}」，但第一步就做错了。`,
+    `我会用 30 秒告诉你，为什么 ${input.targetAudience} 最容易卡在这里。`,
+    `你以为是没资源，其实可能是没有一套简单的行动顺序。`,
+    `如果你来自 ${input.marketLocation}，这个做法会比照搬国外方法更实际。`,
+    `先问自己一个问题：你现在缺的是机会，还是缺一个可以执行的系统？`,
+    `不要再凭感觉尝试，先用这份清单判断你适合走哪一步。`,
+    `如果你已经试过但没有结果，可能不是你不行，是流程太乱。`,
+    `${input.productOrService} 不应该一开始就复杂化，先从这 3 个判断开始。`,
+    `想改善「${input.mainCustomerPain}」，先停止做这一个常见错误。`,
+    `我最建议新手先做的，不是成交，而是先确认客户痛点。`,
+    `你的客户不会因为功能买单，他们会因为「${input.desiredResult}」行动。`,
+    `如果你要用 ${input.closingMethod} 成交，第一句话应该这样设计。`,
+    `这不是让你硬卖，而是让客户自己看见下一步。`,
+    `一个好的 lead magnet，不是资料越多越好，而是让人马上有方向。`,
+    `如果广告一直没人回复，先检查你的角度是不是太像产品介绍。`,
+    `把痛点讲清楚，比把产品讲完整更重要。`,
+    `今天先做一件事：把你的客户痛点写成一句能被理解的话。`,
+    `如果你只有 10 分钟，就先完成这个漏斗入口。`,
+    `想要更稳定的询问，不要只发内容，要设计可跟进的路径。`,
+  ];
+  const emailSequence = [
+    {
+      email: 1,
+      subject: `先别急着开始 ${input.productOrService}`,
+      preview: `第一步是确认你真正卡在「${input.mainCustomerPain}」的哪一层`,
+      body: `今天先做诊断：你面对的是方向问题、方法问题，还是执行跟进问题。确认之后，再决定下一步会更稳。`,
+      cta: copy.cta,
+    },
+    {
+      email: 2,
+      subject: `为什么你一直想改变，却迟迟没有进展`,
+      preview: `多数人不是没有动力，而是缺少一个小到能开始的步骤`,
+      body: `如果目标太大，大脑会自动拖延。先把「${input.desiredResult}」拆成一个今天能完成的小行动。`,
+      cta: copy.cta,
+    },
+    {
+      email: 3,
+      subject: `${input.productOrService} 最常见的 3 个错误`,
+      preview: `避免一开始就走弯路`,
+      body: `常见错误包括：太快推销、没有筛选客户、没有跟进节奏。先修正入口，后面的成交才会更自然。`,
+      cta: copy.cta,
+    },
+    {
+      email: 4,
+      subject: `适合 ${input.targetAudience} 的简单路径`,
+      preview: `不用复杂工具，也可以先建立清楚流程`,
+      body: `你的第一条路径可以很简单：吸引注意 -> 领取清单 -> ${input.closingMethod} 沟通 -> 判断是否适合。`,
+      cta: copy.cta,
+    },
+    {
+      email: 5,
+      subject: `如果你准备好了，这是下一步`,
+      preview: `先用低风险方式判断是否适合`,
+      body: `你不需要马上做重大决定。先通过清单和简短沟通，看这套方式是否真的适合你当前阶段。`,
+      cta: copy.cta,
+    },
   ];
 
   return {
@@ -332,18 +403,9 @@ function createFallbackFunnel(input: FunnelBuilderInput): FunnelBuilderOutput {
           : `第 ${day} 天跟进：你看完资料了吗？如果你现在最想解决「${input.mainCustomerPain}」，我可以帮你判断下一步。`,
       })),
     },
-    emailSequence: [1, 2, 3, 4, 5].map((email) => ({
-      email,
-      subject: `${input.productOrService}: 第 ${email} 步行动建议`,
-      preview: `帮你从${input.mainCustomerPain}走向${input.desiredResult}`,
-      body: `今天的重点是把目标拆小。先确认你目前的情况，再选择一个最容易执行的行动。`,
-      cta: copy.cta,
-    })),
-    adAngles: [
-      '痛点', '结果', '错误', '迷思', '故事', '清单', '测验', '转变', '本地场景', '新手入门',
-    ].map((type) => ({ type, angle: `${type}角度：${input.targetAudience} 如何用 ${input.productOrService} 改善 ${input.mainCustomerPain}` })),
-    videoHooks: Array.from({ length: 20 }, (_, index) =>
-      `${index + 1}. 如果你正在面对「${input.mainCustomerPain}」，先别急着买任何东西，先看这一步。`),
+    emailSequence,
+    adAngles,
+    videoHooks,
     objectionHandling: objections.map(([objection, realMeaning]) => ({
       objection,
       realMeaning,
