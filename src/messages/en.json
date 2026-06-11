@@ -495,6 +495,7 @@
     "pressStart": "Press start to capture audio.",
     "dailyLimit": "Unlimited uploads",
     "unlimitedUploads": "Unlimited uploads",
+    "dailyLimitCount": "Up to {limit} uploads per day",
     "uploadSuccess": "Voice recording uploaded",
     "saved": "Draft saved",
     "approved": "Voice profile approved",

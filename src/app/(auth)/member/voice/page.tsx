@@ -311,6 +311,9 @@ export default function VoiceCapturePage() {
 
   const limitPerDay = listQuery.data?.meta.limitPerDay ?? null;
   const limitReached = typeof limitPerDay === 'number' && (listQuery.data?.meta.todayCount ?? 0) >= limitPerDay;
+  const limitLabel = limitPerDay === null
+    ? t('unlimitedUploads')
+    : t('dailyLimitCount', { limit: limitPerDay });
 
   if (listQuery.isLoading) {
     return <Skeleton className="h-96 w-full" />;
@@ -344,6 +347,7 @@ export default function VoiceCapturePage() {
             language={language}
             onLanguageChange={setLanguage}
             limitReached={limitReached}
+            limitLabel={limitLabel}
             onUpload={(payload) => uploadMutation.mutateAsync(payload)}
           />
 

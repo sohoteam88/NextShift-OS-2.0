@@ -20,6 +20,7 @@ type VoiceRecorderProps = {
   onLanguageChange: (language: VoiceLanguage) => void;
   onUpload: (payload: UploadPayload) => Promise<unknown>;
   limitReached?: boolean;
+  limitLabel?: string;
   className?: string;
 };
 
@@ -61,6 +62,7 @@ export function VoiceRecorder({
   onLanguageChange,
   onUpload,
   limitReached = false,
+  limitLabel,
   className,
 }: VoiceRecorderProps) {
   const t = useTranslations('voice');
@@ -217,7 +219,7 @@ export function VoiceRecorder({
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[var(--color-text-muted)]">
         <span>{recording ? t('recordingTime', { duration: formatDuration(elapsed) }) : t('pressStart')}</span>
-        <span>{t('unlimitedUploads')}</span>
+        <span>{limitLabel ?? t('unlimitedUploads')}</span>
       </div>
 
       {error ? (

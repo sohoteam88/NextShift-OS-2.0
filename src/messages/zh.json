@@ -495,6 +495,7 @@
     "pressStart": "点击开始录音。",
     "dailyLimit": "上传次数无限量",
     "unlimitedUploads": "上传次数无限量",
+    "dailyLimitCount": "每天最多 {limit} 次上传",
     "uploadSuccess": "语音录音已上传",
     "saved": "草稿已保存",
     "approved": "语音资料已批准",

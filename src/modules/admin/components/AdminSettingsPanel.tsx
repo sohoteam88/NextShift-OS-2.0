@@ -19,6 +19,8 @@ type FormState = {
   aiRouterMode: 'cost_optimized' | 'balanced' | 'quality_first' | 'zh_optimized';
   aiPreferredProvider: string;
   aiAutoEscalate: boolean;
+  voiceUploadLimitEnabled: boolean;
+  voiceUploadLimitPerDay: number;
 };
 
 export function AdminSettingsPanel() {
@@ -33,6 +35,8 @@ export function AdminSettingsPanel() {
     aiRouterMode: 'balanced',
     aiPreferredProvider: 'auto',
     aiAutoEscalate: true,
+    voiceUploadLimitEnabled: false,
+    voiceUploadLimitPerDay: 3,
   });
   const [tenantId, setTenantId] = React.useState<string | null>(null);
   const [uploading, setUploading] = React.useState(false);
@@ -50,6 +54,10 @@ export function AdminSettingsPanel() {
     const tenant = query.data?.data.tenant;
     if (tenant) {
       setTenantId(tenant.id);
+      const voiceSettings = tenant.settings.voice && typeof tenant.settings.voice === 'object' && !Array.isArray(tenant.settings.voice)
+        ? tenant.settings.voice as Record<string, unknown>
+        : {};
+      const rawVoiceLimit = voiceSettings.upload_limit_per_day;
       setForm({
         name: tenant.name,
         logoUrl: typeof tenant.settings.logo_url === 'string' ? tenant.settings.logo_url : '',
@@ -66,6 +74,8 @@ export function AdminSettingsPanel() {
           typeof (tenant.settings.ai_router as Record<string, unknown> | undefined)?.auto_escalate === 'boolean'
             ? Boolean((tenant.settings.ai_router as Record<string, unknown>).auto_escalate)
             : true,
+        voiceUploadLimitEnabled: typeof rawVoiceLimit === 'number' && rawVoiceLimit > 0,
+        voiceUploadLimitPerDay: typeof rawVoiceLimit === 'number' && rawVoiceLimit > 0 ? Math.round(rawVoiceLimit) : 3,
       });
     }
   }, [query.data]);
@@ -85,6 +95,14 @@ export function AdminSettingsPanel() {
               mode: form.aiRouterMode,
               preferred_provider: form.aiPreferredProvider === 'auto' ? null : form.aiPreferredProvider,
               auto_escalate: form.aiAutoEscalate,
+            },
+            voice: {
+              ...((query.data?.data.tenant.settings.voice && typeof query.data.data.tenant.settings.voice === 'object' && !Array.isArray(query.data.data.tenant.settings.voice))
+                ? query.data.data.tenant.settings.voice as Record<string, unknown>
+                : {}),
+              upload_limit_per_day: form.voiceUploadLimitEnabled
+                ? Math.max(1, Math.round(form.voiceUploadLimitPerDay || 1))
+                : null,
             },
           },
         }),
@@ -254,6 +272,36 @@ export function AdminSettingsPanel() {
               <Link href="/api/v1/ai/router/stats" className="block rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text-muted)] hover:bg-gray-100">
                 查看本月路由统计
               </Link>
+            </div>
+          </div>
+
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-[var(--color-text)]">语音上传限制</h2>
+            <div className="mt-4 space-y-4">
+              <label className="flex items-center gap-2 text-sm text-[var(--color-text)]">
+                <input
+                  type="checkbox"
+                  checked={!form.voiceUploadLimitEnabled}
+                  onChange={(e) => setForm((current) => ({ ...current, voiceUploadLimitEnabled: !e.target.checked }))}
+                  className="h-4 w-4 rounded border-[var(--color-border)]"
+                />
+                无限量上传
+              </label>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[var(--color-text)]">每天最多上传次数</label>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={String(form.voiceUploadLimitPerDay)}
+                  onChange={(e) => setForm((current) => ({ ...current, voiceUploadLimitPerDay: Number(e.target.value) }))}
+                  disabled={!form.voiceUploadLimitEnabled}
+                  className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)] outline-none transition-colors focus:border-[var(--color-primary)] focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-[var(--color-surface)] disabled:opacity-70"
+                />
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  关闭「无限量上传」后，成员和品牌建设语音都会套用这个每日上限。
+                </p>
+              </div>
             </div>
           </div>
 

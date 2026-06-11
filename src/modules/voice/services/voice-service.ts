@@ -71,6 +71,22 @@ function startOfDay(date = new Date()) {
   return next;
 }
 
+function normalizeSettings(settings: unknown): Prisma.JsonObject {
+  if (settings && typeof settings === 'object' && !Array.isArray(settings)) {
+    return { ...(settings as Prisma.JsonObject) };
+  }
+  return {};
+}
+
+function resolveUploadLimit(settings: unknown): number | null {
+  const normalized = normalizeSettings(settings);
+  const voice = normalized.voice && typeof normalized.voice === 'object' && !Array.isArray(normalized.voice)
+    ? normalized.voice as Record<string, unknown>
+    : {};
+  const limit = voice.upload_limit_per_day;
+  return typeof limit === 'number' && Number.isFinite(limit) && limit > 0 ? Math.round(limit) : null;
+}
+
 function normalizeJsonObject(value: unknown): Prisma.JsonObject {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
     return { ...(value as Prisma.JsonObject) };
@@ -354,7 +370,7 @@ export const voiceService = {
   },
 
   async listMine(user: AuthUser): Promise<VoiceListResult> {
-    const [rows, todayCount, total] = await Promise.all([
+    const [rows, todayCount, total, tenant] = await Promise.all([
       prisma.voiceProfile.findMany({
         where: {
           tenantId: user.tenantId,
@@ -376,14 +392,19 @@ export const voiceService = {
           userId: user.id,
         },
       }),
+      prisma.tenant.findUnique({
+        where: { id: user.tenantId },
+        select: { settings: true },
+      }),
     ]);
+    const limitPerDay = resolveUploadLimit(tenant?.settings);
 
     return {
       data: await Promise.all(rows.map((row) => mapRecord(row))),
       meta: {
         total,
         todayCount,
-        limitPerDay: null,
+        limitPerDay,
       },
     };
   },
@@ -394,6 +415,18 @@ export const voiceService = {
   },
 
   async upload(user: AuthUser, input: { file: File; language?: VoiceLanguage; durationSecs?: number }) {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: user.tenantId },
+      select: { settings: true },
+    });
+    const uploadLimit = resolveUploadLimit(tenant?.settings);
+    if (uploadLimit !== null) {
+      const todayCount = await voiceService.getDailyCount(user);
+      if (todayCount >= uploadLimit) {
+        throw new AppError('QUOTA_EXCEEDED', 429, `Voice capture limit reached. You can upload up to ${uploadLimit} recordings per day.`);
+      }
+    }
+
     const file = input.file;
     if (!file) {
       throw new AppError('VALIDATION_ERROR', 400, 'No audio file provided');
