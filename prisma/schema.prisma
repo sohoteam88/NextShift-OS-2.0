@@ -41,6 +41,9 @@ model Tenant {
   brandInterviews   BrandInterview[]
   contentCalendars  ContentCalendar[]
   postPerformances  PostPerformance[]
+  userProgress       UserProgress[]
+  missions           Mission[]
+  achievements       Achievement[]
 
   @@map("tenants")
 }
@@ -82,11 +85,73 @@ model User {
   brandInterviews     BrandInterview[]
   contentCalendars    ContentCalendar[]
   postPerformances    PostPerformance[]
+  userProgress         UserProgress?
+  missions             Mission[]
+  achievements         Achievement[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
   @@index([sponsorId])
   @@map("users")
+}
+
+model UserProgress {
+  id              String   @id @default(cuid())
+  tenantId        String   @map("tenant_id") @db.Uuid
+  userId          String   @unique @map("user_id") @db.Uuid
+  currentStageId  String   @map("current_stage_id")
+  completedChecks Json     @default("[]") @map("completed_checks")
+  totalXp         Int      @default(0) @map("total_xp")
+  mode            String   @default("guided")
+  stageStartedAt  DateTime @default(now()) @map("stage_started_at") @db.Timestamptz(6)
+  lastActivityAt  DateTime @default(now()) @map("last_activity_at") @db.Timestamptz(6)
+  milestonesSeen  Json     @default("[]") @map("milestones_seen")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("user_progress")
+}
+
+model Mission {
+  id               String    @id @default(cuid())
+  tenantId         String    @map("tenant_id") @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  stageId          String    @map("stage_id")
+  title            String
+  description      String
+  whyItMatters     String    @map("why_it_matters")
+  estimatedMinutes Int       @map("estimated_minutes")
+  route            String
+  status           String    @default("pending")
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, status])
+  @@map("missions")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  tenantId    String   @map("tenant_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  type        String
+  key         String
+  title       String
+  description String
+  icon        String
+  xpAwarded   Int      @map("xp_awarded")
+  unlockedAt  DateTime @default(now()) @map("unlocked_at") @db.Timestamptz(6)
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, key])
+  @@index([tenantId, userId])
+  @@map("achievements")
 }
 
 model Tag {

@@ -63,6 +63,22 @@ export const approvalService = {
         where: { id: memberId },
         data: { status: 'active' },
       }),
+      prisma.userProgress.upsert({
+        where: { userId: memberId },
+        create: {
+          tenantId: user.tenantId,
+          userId: memberId,
+          currentStageId: 'brand_discovery',
+          completedChecks: ['registered', 'approved'],
+          totalXp: 10,
+          mode: 'guided',
+        },
+        update: {
+          completedChecks: ['registered', 'approved'],
+          currentStageId: 'brand_discovery',
+          lastActivityAt: new Date(),
+        },
+      }),
       prisma.auditLog.create({
         data: {
           tenantId: user.tenantId,
