@@ -4,7 +4,6 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -62,33 +61,14 @@ export function JoinInviteForm({ code }: { code: string }) {
     setLoading(true);
     setError('');
 
-    const supabase = createClient();
-    const signUpResult = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          phone,
-          whatsapp: whatsappSameAsPhone ? phone : whatsapp,
-          preferred_language: language,
-          invite_code: code,
-        },
-      },
-    });
-
-    if (signUpResult.error) {
-      setError(signUpResult.error.message);
-      setLoading(false);
-      return;
-    }
-
     const response = await fetch('/api/v1/member/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         invite_code: code,
         name,
+        email,
+        password,
         phone: phone || undefined,
         whatsapp: whatsappSameAsPhone ? phone || undefined : whatsapp || undefined,
         preferred_language: language,
@@ -97,13 +77,11 @@ export function JoinInviteForm({ code }: { code: string }) {
 
     if (!response.ok) {
       const payload = await response.json().catch(() => null);
-      await supabase.auth.signOut();
       setError(payload?.error?.message ?? 'Registration failed');
       setLoading(false);
       return;
     }
 
-    await supabase.auth.signOut();
     setLoading(false);
     router.replace('/pending');
     router.refresh();

@@ -11,9 +11,11 @@ export const approvalService = {
     }
 
     const where =
-      user.role === 'leader'
-        ? { tenantId: user.tenantId, status: 'pending', sponsorId: user.id }
-        : { tenantId: user.tenantId, status: 'pending' };
+      user.role === 'platform_admin'
+        ? { status: 'pending' }
+        : user.role === 'leader'
+          ? { tenantId: user.tenantId, status: 'pending', sponsorId: user.id }
+          : { tenantId: user.tenantId, status: 'pending' };
 
     const members = await prisma.user.findMany({
       where,
@@ -35,8 +37,8 @@ export const approvalService = {
     const member = await prisma.user.findFirst({
       where: {
         id: memberId,
-        tenantId: user.tenantId,
         status: 'pending',
+        ...(user.role === 'platform_admin' ? {} : { tenantId: user.tenantId }),
         ...(user.role === 'leader' ? { sponsorId: user.id } : {}),
       },
     });
@@ -46,12 +48,12 @@ export const approvalService = {
     }
 
     const tenant = await prisma.tenant.findUnique({
-      where: { id: user.tenantId },
+      where: { id: member.tenantId },
       select: { id: true, maxMembers: true, name: true },
     });
 
     const activeCount = await prisma.user.count({
-      where: { tenantId: user.tenantId, status: 'active', deletedAt: null },
+      where: { tenantId: member.tenantId, status: 'active', deletedAt: null },
     });
 
     if (activeCount >= (tenant?.maxMembers ?? 10)) {
@@ -68,7 +70,7 @@ export const approvalService = {
       prisma.userProgress.upsert({
         where: { userId: memberId },
         create: {
-          tenantId: user.tenantId,
+          tenantId: member.tenantId,
           userId: memberId,
           currentStageId: 'brand_discovery',
           completedChecks: [
@@ -89,7 +91,7 @@ export const approvalService = {
       }),
       prisma.auditLog.create({
         data: {
-          tenantId: user.tenantId,
+          tenantId: member.tenantId,
           actorId: user.id,
           action: 'member.approved',
           targetType: 'user',
@@ -113,8 +115,8 @@ export const approvalService = {
     const member = await prisma.user.findFirst({
       where: {
         id: memberId,
-        tenantId: user.tenantId,
         status: 'pending',
+        ...(user.role === 'platform_admin' ? {} : { tenantId: user.tenantId }),
         ...(user.role === 'leader' ? { sponsorId: user.id } : {}),
       },
     });
@@ -130,7 +132,7 @@ export const approvalService = {
       }),
       prisma.auditLog.create({
         data: {
-          tenantId: user.tenantId,
+          tenantId: member.tenantId,
           actorId: user.id,
           action: 'member.rejected',
           targetType: 'user',
