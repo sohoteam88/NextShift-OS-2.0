@@ -7,7 +7,7 @@ type UpdateSessionOptions = {
 
 export async function updateSession(request: NextRequest, options: UpdateSessionOptions = {}) {
   const requestHeaders = options.requestHeaders ?? new Headers(request.headers);
-  const publicPaths = ['/login', '/register', '/signup', '/join', '/api/v1/health', '/api/v1/tenant/check-slug'];
+  const publicPaths = ['/login', '/register', '/signup', '/join', '/pending', '/api/v1/health', '/api/v1/tenant/check-slug'];
   const isPublicPath = publicPaths.some((path) => request.nextUrl.pathname.startsWith(path));
   const isTenantFunnel = request.nextUrl.pathname.match(/^\/[^/]+\/funnel\//);
   const isApiPath = request.nextUrl.pathname.startsWith('/api/');
@@ -52,17 +52,6 @@ export async function updateSession(request: NextRequest, options: UpdateSession
   if (!user && !isPublicPath && !isTenantFunnel) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
-  if (
-    user &&
-    (request.nextUrl.pathname === '/login' ||
-      request.nextUrl.pathname === '/register' ||
-      request.nextUrl.pathname === '/signup')
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
 

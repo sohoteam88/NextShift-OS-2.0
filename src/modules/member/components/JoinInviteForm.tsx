@@ -97,14 +97,16 @@ export function JoinInviteForm({ code }: { code: string }) {
 
     if (!response.ok) {
       const payload = await response.json().catch(() => null);
+      await supabase.auth.signOut();
       setError(payload?.error?.message ?? 'Registration failed');
       setLoading(false);
       return;
     }
 
     await supabase.auth.signOut();
-    setState('pending');
     setLoading(false);
+    router.replace('/pending');
+    router.refresh();
   }
 
   if (state === 'loading') {
