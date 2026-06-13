@@ -56,6 +56,10 @@ export default async function DashboardPage() {
     return <OperatorDashboard user={user} />;
   }
 
+  if (user.role === 'platform_admin') {
+    redirect('/admin');
+  }
+
   return (
     <DashboardPlaceholder
       title="Platform Admin"

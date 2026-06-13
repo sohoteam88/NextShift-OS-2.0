@@ -106,7 +106,7 @@ export function ContentEngineDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 pb-12">
+    <div className="mx-auto max-w-5xl space-y-4 pb-12">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -131,93 +131,102 @@ export function ContentEngineDashboard() {
         </div>
       )}
 
-      {/* Pillars */}
-      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
-        <h3 className="text-sm font-bold mb-3">📚 内容支柱</h3>
-        <div className="flex flex-wrap gap-2">
-          {pillars.map((p) => (
-            <span key={p.name} className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-              {p.emoji} {p.name} <span className="text-blue-400">{p.percentage}%</span>
-            </span>
-          ))}
-        </div>
-      </section>
-
-      {/* Post Generator */}
-      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
-        <h3 className="text-sm font-bold mb-3">✍️ 生成帖子</h3>
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          {(['instagram', 'facebook', 'tiktok', 'xhs'] as Platform[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPlatform(p)}
-              className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', platform === p ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600')}
-            >
-              {p === 'instagram' ? 'IG' : p === 'facebook' ? 'FB' : p === 'tiktok' ? 'TikTok' : 'XHS'}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={handleGeneratePost}
-          disabled={generatePost.isPending}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {generatePost.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PenLine className="h-4 w-4" />}
-          为 {platform === 'instagram' ? 'IG' : platform} 生成帖子
-        </button>
-      </section>
-
-      {/* Generated Post Preview */}
-      {lastPost && (
-        <section className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold">📝 {lastPost.title}</h3>
-            <div className="flex items-center gap-2">
-              {quality && (
-                <span className={cn('text-xs font-bold', quality.score >= 70 ? 'text-emerald-600' : 'text-amber-600')}>
-                  质量 {quality.score}%
+      {/* Main 2-column grid: Left = Pillars + Post Gen, Right = Calendar */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        {/* Left column */}
+        <div className="space-y-4">
+          {/* Pillars */}
+          <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+            <h3 className="text-sm font-bold mb-3">📚 内容支柱</h3>
+            <div className="flex flex-wrap gap-2">
+              {pillars.map((p) => (
+                <span key={p.name} className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                  {p.emoji} {p.name} <span className="text-blue-400">{p.percentage}%</span>
                 </span>
-              )}
-              <button type="button" onClick={handleCopy} className="inline-flex items-center gap-1 text-xs font-medium text-blue-600">
-                {copied ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                {copied ? '已复制' : '复制'}
-              </button>
+              ))}
             </div>
-          </div>
-          <div className="rounded-lg bg-gray-50 p-4 font-mono text-sm whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
-            {lastPost.body}
-          </div>
-          {lastPost.hashtags.length > 0 && (
-            <p className="mt-2 text-xs text-blue-600">{lastPost.hashtags.join(' ')}</p>
-          )}
-        </section>
-      )}
+          </section>
 
-      {/* Calendar */}
-      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
-        <h3 className="text-sm font-bold mb-3">📅 内容日历</h3>
-        <div className="flex flex-wrap gap-2">
-          {([30, 90, 180] as const).map((days) => (
+          {/* Post Generator */}
+          <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+            <h3 className="text-sm font-bold mb-3">✍️ 生成帖子</h3>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              {(['instagram', 'facebook', 'tiktok', 'xhs'] as Platform[]).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPlatform(p)}
+                  className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', platform === p ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600')}
+                >
+                  {p === 'instagram' ? 'IG' : p === 'facebook' ? 'FB' : p === 'tiktok' ? 'TikTok' : 'XHS'}
+                </button>
+              ))}
+            </div>
             <button
-              key={days}
               type="button"
-              onClick={() => generateCalendar.mutate(days)}
-              disabled={generateCalendar.isPending}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
+              onClick={handleGeneratePost}
+              disabled={generatePost.isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              <Calendar className="h-3.5 w-3.5" />
-              生成 {days} 天
+              {generatePost.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PenLine className="h-4 w-4" />}
+              为 {platform === 'instagram' ? 'IG' : platform} 生成帖子
             </button>
-          ))}
+          </section>
+
+          {/* Generated Post Preview */}
+          {lastPost && (
+            <section className="rounded-xl border border-emerald-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold">📝 {lastPost.title}</h3>
+                <div className="flex items-center gap-2">
+                  {quality && (
+                    <span className={cn('text-xs font-bold', quality.score >= 70 ? 'text-emerald-600' : 'text-amber-600')}>
+                      质量 {quality.score}%
+                    </span>
+                  )}
+                  <button type="button" onClick={handleCopy} className="inline-flex items-center gap-1 text-xs font-medium text-blue-600">
+                    {copied ? <CheckCircle2 className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    {copied ? '已复制' : '复制'}
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-lg bg-gray-50 p-4 font-mono text-sm whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto">
+                {lastPost.body}
+              </div>
+              {lastPost.hashtags.length > 0 && (
+                <p className="mt-2 text-xs text-blue-600">{lastPost.hashtags.join(' ')}</p>
+              )}
+            </section>
+          )}
         </div>
-        {calendar && (
-          <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-            ✅ {calendar.days} 天日历已生成 · {calendar.items.length} 条内容
-          </p>
-        )}
-      </section>
+
+        {/* Right column: Calendar */}
+        <div className="space-y-4">
+          <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 lg:sticky lg:top-20">
+            <h3 className="text-sm font-bold mb-3">📅 内容日历</h3>
+            <p className="text-xs text-[var(--color-text-muted)] mb-3">Generate content calendar for the next...</p>
+            <div className="flex flex-wrap gap-2">
+              {([30, 90, 180] as const).map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => generateCalendar.mutate(days)}
+                  disabled={generateCalendar.isPending}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 disabled:opacity-50"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  生成 {days} 天
+                </button>
+              ))}
+            </div>
+            {calendar && (
+              <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                ✅ {calendar.days} 天日历已生成 · {calendar.items.length} 条内容
+              </p>
+            )}
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

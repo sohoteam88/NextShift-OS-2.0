@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   AlertTriangle,
   ArrowRight,
@@ -13,13 +16,19 @@ import {
   Workflow,
 } from 'lucide-react';
 import type { FounderAlertPriority, PlatformOperatingData, TenantHealthRecord } from '@/modules/admin/services/platformOperatingService';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { MetricCard } from '@/components/ui/MetricCard';
 
-function number(value: number) {
-  return new Intl.NumberFormat('en-US').format(Math.round(value));
-}
-
-function currency(value: number) {
-  return `RM${number(value)}`;
+function useFormatters() {
+  const locale = useLocale();
+  return {
+    number(value: number) {
+      return new Intl.NumberFormat(locale).format(Math.round(value));
+    },
+    currency(value: number) {
+      return new Intl.NumberFormat(locale, { style: 'currency', currency: 'MYR' }).format(value);
+    },
+  };
 }
 
 function scoreTone(score: number) {
@@ -42,34 +51,12 @@ function alertTone(priority: FounderAlertPriority) {
   return 'border-slate-200 bg-slate-50 text-slate-600';
 }
 
-function Header({ title, description }: { title: string; description: string }) {
-  return (
-    <div>
-      <p className="text-sm font-medium text-[var(--color-text-muted)]">Platform Operating System</p>
-      <h1 className="mt-1 text-2xl font-semibold text-[var(--color-text)]">{title}</h1>
-      <p className="mt-1 max-w-3xl text-sm text-[var(--color-text-muted)]">{description}</p>
-    </div>
-  );
-}
-
-function Metric({ label, value, helper, icon: Icon }: { label: string; value: string | number; helper?: string; icon: React.ElementType }) {
-  return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-[var(--color-text-muted)]">{label}</span>
-        <Icon className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
-      </div>
-      <p className="mt-3 text-3xl font-semibold text-[var(--color-text)]">{value}</p>
-      {helper ? <p className="mt-1 text-xs text-[var(--color-text-muted)]">{helper}</p> : null}
-    </div>
-  );
-}
-
 function Alerts({ data }: { data: PlatformOperatingData }) {
+  const t = useTranslations('platformAdmin');
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-[var(--color-text)]">Founder Alerts</h2>
+        <h2 className="text-base font-semibold text-[var(--color-text)]">{t('founderAlerts')}</h2>
         <AlertTriangle className="h-5 w-5 text-amber-500" />
       </div>
       <div className="mt-4 space-y-2">
@@ -88,9 +75,10 @@ function Alerts({ data }: { data: PlatformOperatingData }) {
 }
 
 function Briefing({ data }: { data: PlatformOperatingData }) {
+  const t = useTranslations('platformAdmin');
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-      <h2 className="text-base font-semibold text-[var(--color-text)]">CEO Briefing</h2>
+      <h2 className="text-base font-semibold text-[var(--color-text)]">{t('ceoBriefing')}</h2>
       <div className="mt-4 space-y-3">
         {data.briefing.map((line) => (
           <div key={line} className="flex gap-3 text-sm">
@@ -104,29 +92,31 @@ function Briefing({ data }: { data: PlatformOperatingData }) {
 }
 
 export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
+  const t = useTranslations('platformAdmin');
+  const { currency } = useFormatters();
   const metrics = [
-    { label: 'MRR', value: currency(data.summary.mrr), helper: 'Estimated monthly recurring revenue', icon: CircleDollarSign },
-    { label: 'ARR', value: currency(data.summary.arr), helper: 'Annualized run rate', icon: LineChart },
-    { label: 'Active Tenants', value: data.summary.activeTenants, helper: `${data.summary.totalTenants} total tenants`, icon: Building2 },
-    { label: 'Active Users', value: data.summary.activeUsers, helper: `${data.summary.totalUsers} total users`, icon: Users },
-    { label: 'AI Cost', value: currency(data.summary.aiCost), helper: 'This month estimate', icon: Brain },
-    { label: 'Gross Margin', value: `${data.summary.grossMargin}%`, helper: 'Revenue minus AI cost', icon: ShieldCheck },
+    { label: t('mrr'), value: currency(data.summary.mrr), helper: 'Estimated monthly recurring revenue', icon: CircleDollarSign },
+    { label: t('arr'), value: currency(data.summary.arr), helper: 'Annualized run rate', icon: LineChart },
+    { label: t('activeTenants'), value: data.summary.activeTenants, helper: `${data.summary.totalTenants} total tenants`, icon: Building2 },
+    { label: t('activeUsers'), value: data.summary.activeUsers, helper: `${data.summary.totalUsers} total users`, icon: Users },
+    { label: t('aiCost'), value: currency(data.summary.aiCost), helper: 'This month estimate', icon: Brain },
+    { label: t('grossMargin'), value: `${data.summary.grossMargin}%`, helper: 'Revenue minus AI cost', icon: ShieldCheck },
   ];
 
   return (
     <div className="space-y-6">
-      <Header title="CEO Dashboard" description="Business health, revenue health, tenant health, AI profitability, beta conversion, and operational risks." />
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{metrics.map((item) => <Metric key={item.label} {...item} />)}</section>
+      <PageHeader eyebrow={t('platformOperatingSystem')} title={t('ceoTitle')} description={t('ceoHelp')} />
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{metrics.map((item) => <MetricCard key={item.label} {...item} />)}</section>
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <Alerts data={data} />
         <Briefing data={data} />
       </section>
       <section className="grid gap-4 lg:grid-cols-4">
         {[
-          { href: '/platform-admin/revenue', title: 'Revenue Intelligence', value: `${data.revenue.growthPercent}%`, helper: 'MRR growth estimate' },
-          { href: '/platform-admin/tenant-health', title: 'Tenant Health', value: data.tenants.filter((t) => t.churnRisk === 'High' || t.churnRisk === 'Critical').length, helper: 'at-risk tenants' },
-          { href: '/platform-admin/ai-profitability', title: 'AI Profitability', value: `${data.ai.margin}%`, helper: 'AI margin' },
-          { href: '/platform-admin/growth', title: 'Growth', value: `${data.summary.betaConversionRate}%`, helper: 'beta conversion' },
+          { href: '/platform-admin/revenue', title: t('revenueIntel'), value: `${data.revenue.growthPercent}%`, helper: 'MRR growth estimate' },
+          { href: '/platform-admin/tenant-health', title: t('tenantHealth'), value: data.tenants.filter((t) => t.churnRisk === 'High' || t.churnRisk === 'Critical').length, helper: 'at-risk tenants' },
+          { href: '/platform-admin/ai-profitability', title: t('aiProfitabilityTitle'), value: `${data.ai.margin}%`, helper: 'AI margin' },
+          { href: '/platform-admin/growth', title: t('growth'), value: `${data.summary.betaConversionRate}%`, helper: 'beta conversion' },
         ].map((item) => (
           <Link key={item.href} href={item.href} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:bg-[var(--color-surface)]">
             <div className="flex items-center justify-between gap-3">
@@ -143,19 +133,21 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
 }
 
 export function RevenueDashboard({ data }: { data: PlatformOperatingData }) {
+  const t = useTranslations('platformAdmin');
+  const { currency } = useFormatters();
   return (
     <div className="space-y-6">
-      <Header title="Revenue Intelligence" description="MRR, ARR, ARPU, ARPT, plan distribution, and revenue forecasts." />
+      <PageHeader eyebrow={t('platformOperatingSystem')} title={t('revenueTitle')} description={t('revenueHelp')} />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <Metric label="MRR" value={currency(data.revenue.mrr)} icon={CircleDollarSign} />
-        <Metric label="ARR" value={currency(data.revenue.arr)} icon={LineChart} />
-        <Metric label="ARPU" value={currency(data.revenue.arpu)} icon={Users} />
-        <Metric label="ARPT" value={currency(data.revenue.arpt)} icon={Building2} />
-        <Metric label="Growth" value={`${data.revenue.growthPercent}%`} icon={BarChart3} />
+        <MetricCard label={t('mrr')} value={currency(data.revenue.mrr)} icon={CircleDollarSign} />
+        <MetricCard label={t('arr')} value={currency(data.revenue.arr)} icon={LineChart} />
+        <MetricCard label="ARPU" value={currency(data.revenue.arpu)} icon={Users} />
+        <MetricCard label="ARPT" value={currency(data.revenue.arpt)} icon={Building2} />
+        <MetricCard label="Growth" value={`${data.revenue.growthPercent}%`} icon={BarChart3} />
       </section>
       <section className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <h2 className="font-semibold text-[var(--color-text)]">Plan Distribution</h2>
+          <h2 className="font-semibold text-[var(--color-text)]">{t('planDistribution')}</h2>
           <div className="mt-4 space-y-3">
             {data.revenue.planDistribution.map((plan) => (
               <div key={plan.plan} className="flex items-center justify-between rounded-[var(--radius-md)] bg-[var(--color-surface)] px-3 py-3 text-sm">
@@ -166,12 +158,12 @@ export function RevenueDashboard({ data }: { data: PlatformOperatingData }) {
           </div>
         </div>
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <h2 className="font-semibold text-[var(--color-text)]">Forecast Engine</h2>
+          <h2 className="font-semibold text-[var(--color-text)]">{t('forecastEngine')}</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Metric label="30 days" value={currency(data.revenue.forecast30)} icon={LineChart} />
-            <Metric label="90 days" value={currency(data.revenue.forecast90)} icon={LineChart} />
-            <Metric label="180 days" value={currency(data.revenue.forecast180)} icon={LineChart} />
-            <Metric label="365 days" value={currency(data.revenue.forecast365)} icon={LineChart} />
+            <MetricCard label={t('days30')} value={currency(data.revenue.forecast30)} icon={LineChart} />
+            <MetricCard label={t('days90')} value={currency(data.revenue.forecast90)} icon={LineChart} />
+            <MetricCard label={t('days180')} value={currency(data.revenue.forecast180)} icon={LineChart} />
+            <MetricCard label={t('days365')} value={currency(data.revenue.forecast365)} icon={LineChart} />
           </div>
         </div>
       </section>
@@ -180,13 +172,16 @@ export function RevenueDashboard({ data }: { data: PlatformOperatingData }) {
 }
 
 export function TenantHealthCenter({ data }: { data: PlatformOperatingData }) {
+  const t = useTranslations('platformAdmin');
+  const { currency } = useFormatters();
+  const headers = [t('tenantCol'), t('planCol'), t('usersCol'), t('funnelsCol'), t('leadsCol'), t('activityCol'), t('healthTitle'), t('revenueCol'), t('churnRiskCol')];
   return (
     <div className="space-y-6">
-      <Header title="Tenant Health Center" description="Tenants sorted by health score so platform risk is visible first." />
+      <PageHeader eyebrow={t('platformOperatingSystem')} title={t('tenantHealthTitle')} description={t('tenantHealthHelp')} />
       <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">
           <thead className="text-xs text-[var(--color-text-muted)]">
-            <tr>{['Tenant', 'Plan', 'Users', 'Funnels', 'Leads', 'Activity', 'Health', 'Revenue', 'Churn Risk'].map((h) => <th key={h} className="border-b border-[var(--color-border)] px-4 py-3">{h}</th>)}</tr>
+            <tr>{headers.map((h) => <th key={h} className="border-b border-[var(--color-border)] px-4 py-3">{h}</th>)}</tr>
           </thead>
           <tbody>
             {data.tenants.map((tenant) => (
@@ -210,40 +205,44 @@ export function TenantHealthCenter({ data }: { data: PlatformOperatingData }) {
 }
 
 export function AiProfitabilityDashboard({ data }: { data: PlatformOperatingData }) {
+  const t = useTranslations('platformAdmin');
+  const { number, currency } = useFormatters();
   return (
     <div className="space-y-6">
-      <Header title="AI Profitability Dashboard" description="AI calls, cost, revenue, margin, and tenant-level cost efficiency." />
+      <PageHeader eyebrow={t('platformOperatingSystem')} title={t('aiProfitabilityTitle')} description={t('aiProfitabilityHelp')} />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Metric label="AI Calls" value={number(data.ai.calls)} icon={Brain} />
-        <Metric label="Cost" value={currency(data.ai.cost)} icon={CircleDollarSign} />
-        <Metric label="Revenue" value={currency(data.ai.revenue)} icon={LineChart} />
-        <Metric label="Margin" value={`${data.ai.margin}%`} icon={ShieldCheck} />
-        <Metric label="Cost Per Tenant" value={currency(data.ai.costPerTenant)} icon={Building2} />
-        <Metric label="Cost Per User" value={currency(data.ai.costPerUser)} icon={Users} />
-        <Metric label="Most Expensive Tenant" value={data.ai.mostExpensiveTenant} icon={AlertTriangle} />
-        <Metric label="Most Efficient Tenant" value={data.ai.mostEfficientTenant} icon={CheckCircle2} />
+        <MetricCard label={t('aiCallsMetric')} value={number(data.ai.calls)} icon={Brain} />
+        <MetricCard label={t('costMetric')} value={currency(data.ai.cost)} icon={CircleDollarSign} />
+        <MetricCard label={t('revenueCol')} value={currency(data.ai.revenue)} icon={LineChart} />
+        <MetricCard label={t('marginMetric')} value={`${data.ai.margin}%`} icon={ShieldCheck} />
+        <MetricCard label={t('costPerTenant')} value={currency(data.ai.costPerTenant)} icon={Building2} />
+        <MetricCard label={t('costPerUser')} value={currency(data.ai.costPerUser)} icon={Users} />
+        <MetricCard label={t('mostExpensiveTenant')} value={data.ai.mostExpensiveTenant} icon={AlertTriangle} />
+        <MetricCard label={t('mostEfficientTenant')} value={data.ai.mostEfficientTenant} icon={CheckCircle2} />
       </section>
     </div>
   );
 }
 
 export function GrowthDashboard({ data }: { data: PlatformOperatingData }) {
+  const t = useTranslations('platformAdmin');
   const windows = [data.growth.today, data.growth.sevenDays, data.growth.thirtyDays, data.growth.ninetyDays];
+  const windowLabels = [t('today'), t('days7'), t('days30Growth'), '90 Days'];
   return (
     <div className="space-y-6">
-      <Header title="Growth Dashboard" description="Activation, content, lead, customer, and member conversion across key timeframes." />
+      <PageHeader eyebrow={t('platformOperatingSystem')} title={t('growthTitle')} description={t('growthHelp')} />
       <section className="grid gap-4 xl:grid-cols-4">
-        {windows.map((window) => (
+        {windows.map((window, i) => (
           <div key={window.label} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm">
-            <h2 className="font-semibold text-[var(--color-text)]">{window.label}</h2>
+            <h2 className="font-semibold text-[var(--color-text)]">{windowLabels[i]}</h2>
             <div className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span>New Users</span><span className="font-semibold">{window.newUsers}</span></div>
-              <div className="flex justify-between"><span>New Tenants</span><span className="font-semibold">{window.newTenants}</span></div>
-              <div className="flex justify-between"><span>Activation</span><span className="font-semibold">{window.activationPercent}%</span></div>
-              <div className="flex justify-between"><span>Content</span><span className="font-semibold">{window.contentPercent}%</span></div>
-              <div className="flex justify-between"><span>Lead</span><span className="font-semibold">{window.leadPercent}%</span></div>
-              <div className="flex justify-between"><span>Customer</span><span className="font-semibold">{window.customerPercent}%</span></div>
-              <div className="flex justify-between"><span>Member</span><span className="font-semibold">{window.memberPercent}%</span></div>
+              <div className="flex justify-between"><span>{t('newUsers')}</span><span className="font-semibold">{window.newUsers}</span></div>
+              <div className="flex justify-between"><span>{t('newTenants')}</span><span className="font-semibold">{window.newTenants}</span></div>
+              <div className="flex justify-between"><span>{t('activation')}</span><span className="font-semibold">{window.activationPercent}%</span></div>
+              <div className="flex justify-between"><span>{t('content')}</span><span className="font-semibold">{window.contentPercent}%</span></div>
+              <div className="flex justify-between"><span>{t('lead')}</span><span className="font-semibold">{window.leadPercent}%</span></div>
+              <div className="flex justify-between"><span>{t('customer')}</span><span className="font-semibold">{window.customerPercent}%</span></div>
+              <div className="flex justify-between"><span>{t('member')}</span><span className="font-semibold">{window.memberPercent}%</span></div>
             </div>
           </div>
         ))}
@@ -253,17 +252,20 @@ export function GrowthDashboard({ data }: { data: PlatformOperatingData }) {
 }
 
 export function PlatformFunnelsDashboard({ data }: { data: PlatformOperatingData }) {
+  const t = useTranslations('platformAdmin');
+  const { currency } = useFormatters();
+  const headers = [t('funnelNameCol'), t('leadsTableCol'), t('appointmentsTableCol'), t('customersTableCol'), t('membersTableCol'), t('revenueTableCol'), t('conversionTableCol')];
   return (
     <div className="space-y-6">
-      <Header title="Funnel Intelligence" description="Compare retail, recruitment, and upgrade funnel performance." />
+      <PageHeader eyebrow={t('platformOperatingSystem')} title={t('funnelIntelTitle')} description={t('funnelIntelHelp')} />
       <section className="grid gap-4 md:grid-cols-2">
-        <Metric label="Best Funnel" value={data.funnels.bestFunnel} helper="Highest conversion" icon={Workflow} />
-        <Metric label="Worst Funnel" value={data.funnels.worstFunnel} helper="Lowest conversion" icon={AlertTriangle} />
+        <MetricCard label={t('bestFunnel')} value={data.funnels.bestFunnel} helper="Highest conversion" icon={Workflow} />
+        <MetricCard label={t('worstFunnel')} value={data.funnels.worstFunnel} helper="Lowest conversion" icon={AlertTriangle} />
       </section>
       <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">
           <thead className="text-xs text-[var(--color-text-muted)]">
-            <tr>{['Funnel', 'Leads', 'Appointments', 'Customers', 'Members', 'Revenue', 'Conversion'].map((h) => <th key={h} className="border-b border-[var(--color-border)] px-4 py-3">{h}</th>)}</tr>
+            <tr>{headers.map((h) => <th key={h} className="border-b border-[var(--color-border)] px-4 py-3">{h}</th>)}</tr>
           </thead>
           <tbody>
             {data.funnels.rows.map((row) => (

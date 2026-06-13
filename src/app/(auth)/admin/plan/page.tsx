@@ -99,13 +99,13 @@ export default async function AdminPlanPage() {
           <h2 className="text-lg font-semibold text-[var(--color-text)]">{t('upgradeOptions')}</h2>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t('upgradeDescription')}</p>
         </div>
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
           {planCards.map(({ key, plan, isCurrent }) => (
             <div
               key={key}
               className={`rounded-[var(--radius-lg)] border p-5 shadow-sm ${
                 isCurrent
-                  ? 'border-[var(--color-primary)] bg-blue-50/60'
+                  ? 'border-[var(--color-primary)] bg-blue-50/60 ring-1 ring-[var(--color-primary)]'
                   : 'border-[var(--color-border)] bg-white'
               }`}
             >
@@ -114,7 +114,7 @@ export default async function AdminPlanPage() {
                   <h3 className="text-xl font-semibold text-[var(--color-text)]">
                     {plan.name}
                   </h3>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">RM{plan.price_myr}/month</p>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">MYR RM{plan.price_myr}/month</p>
                 </div>
                 {isCurrent ? (
                   <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">

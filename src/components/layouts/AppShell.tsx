@@ -1,10 +1,12 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { MobileTabBar } from './MobileTabBar';
 import { TopBar } from './TopBar';
 import { AdminSidebar } from './AdminSidebar';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { OnboardingState } from '@/modules/member/types';
 import { TenantBranding } from '@/modules/tenant/components/TenantBranding';
@@ -63,20 +65,9 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   // Platform admin gets a dedicated admin console shell
   if (user.role === 'platform_admin' && pathname.startsWith('/platform-admin')) {
     return (
-      <div className="flex h-screen overflow-hidden">
-        <AdminSidebar userName={user.name} />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-white px-6">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
-              NextShift Platform Admin
-            </span>
-          </div>
-          <main className="flex-1 overflow-y-auto bg-[var(--color-surface)] p-6 xl:p-8">
-            {children}
-          </main>
-        </div>
-        <MissionListener />
-      </div>
+      <PlatformAdminShell userName={user.name} pathname={pathname}>
+        {children}
+      </PlatformAdminShell>
     );
   }
 
@@ -93,6 +84,53 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
         {children}
       </main>
       <MobileTabBar className="lg:hidden" />
+      <MissionListener />
+    </div>
+  );
+}
+
+function PlatformAdminShell({ userName, pathname, children }: { userName: string; pathname: string; children: ReactNode }) {
+  const t = useTranslations('platformAdmin');
+
+  const breadcrumbItems = useMemo(() => {
+    const items = [{ label: t('platformAdmin'), href: '/platform-admin' }];
+    const segments = pathname.replace('/platform-admin', '').split('/').filter(Boolean);
+
+    const labelMap: Record<string, string> = {
+      'revenue': t('revenueIntel'),
+      'tenant-health': t('tenantHealth'),
+      'ai-profitability': t('aiProfitabilityTitle'),
+      'growth': t('growth'),
+      'funnels': t('funnelIntelTitle'),
+      'ai-usage': t('aiUsageTitle'),
+      'beta': t('betaTitle'),
+      'health': t('healthTitle'),
+      'users': t('users'),
+      'billing': t('billingTitle'),
+      'audit-logs': t('title'),
+      'tenants': t('tenants'),
+    };
+
+    let currentPath = '/platform-admin';
+    for (const seg of segments) {
+      currentPath += `/${seg}`;
+      items.push({ label: labelMap[seg] ?? seg.replace(/-/g, ' '), href: currentPath });
+    }
+
+    return items;
+  }, [pathname, t]);
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <AdminSidebar userName={userName} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex h-10 shrink-0 items-center border-b border-[var(--color-border)] bg-white px-6">
+          <Breadcrumb items={breadcrumbItems} />
+        </div>
+        <main className="flex-1 overflow-y-auto bg-[var(--color-surface)] p-6 xl:p-8">
+          {children}
+        </main>
+      </div>
       <MissionListener />
     </div>
   );

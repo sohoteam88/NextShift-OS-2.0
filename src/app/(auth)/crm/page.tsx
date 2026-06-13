@@ -65,7 +65,7 @@ export default function CrmPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Input
           name="search"
           placeholder={t('lead.searchPlaceholder')}
@@ -76,7 +76,7 @@ export default function CrmPage() {
         <select
           value={filters.stage ?? ''}
           onChange={(e) => setFilter('stage', e.target.value || undefined)}
-          className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          className="h-10 rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
         >
           <option value="">{t('lead.allStages')}</option>
           {STAGES.map((stage) => <option key={stage.value} value={stage.value}>{t(stage.key)}</option>)}
@@ -84,7 +84,7 @@ export default function CrmPage() {
         <select
           value={filters.sort_by ?? 'createdAt'}
           onChange={(e) => setFilter('sort_by', e.target.value)}
-          className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+          className="h-10 rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
         >
           <option value="createdAt">{t('lead.latest')}</option>
           <option value="score">{t('lead.scoreSort')}</option>
@@ -94,7 +94,7 @@ export default function CrmPage() {
           <select
             value={filters.tag ?? ''}
             onChange={(e) => setFilter('tag', e.target.value || undefined)}
-            className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            className="h-10 rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
           >
             <option value="">{t('lead.allTags')}</option>
             {allTags.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}

@@ -102,7 +102,7 @@ export function TrainingModulesConfig() {
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
         <div className="space-y-3">
           {items.map((item, index) => (
-            <div key={item.id} className="flex flex-wrap items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
+            <div key={item.id} className="flex flex-wrap items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-4">
               <div className="flex items-center gap-1 pt-2">
                 <Button variant="ghost" size="sm" icon={<ArrowUp className="h-4 w-4" />} onClick={() => moveItem(index, -1)} />
                 <Button variant="ghost" size="sm" icon={<ArrowDown className="h-4 w-4" />} onClick={() => moveItem(index, 1)} />
@@ -126,7 +126,7 @@ export function TrainingModulesConfig() {
                 placeholder={t('moduleContentUrl')}
               />
               <div className="pt-2 text-xs text-[var(--color-text-muted)]">{item.id}</div>
-              <Button variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => removeItem(index)} />
+              <Button variant="ghost" size="sm" className="text-[var(--color-text-muted)] hover:text-[var(--color-danger)]" icon={<Trash2 className="h-4 w-4" />} onClick={() => removeItem(index)} />
             </div>
           ))}
         </div>

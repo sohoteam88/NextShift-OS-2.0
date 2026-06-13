@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   AlertTriangle,
   ArrowRight,
@@ -18,17 +21,22 @@ import type {
   WorkspaceFunnelHealth,
   WorkspaceMemberHealth,
 } from '@/modules/admin/services/workspaceHealthService';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { MetricCard } from '@/components/ui/MetricCard';
 
-function formatNumber(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
-
-function formatCurrency(value: number) {
-  return `RM${formatNumber(value)}`;
-}
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+function useFormatters() {
+  const locale = useLocale();
+  return {
+    formatNumber(value: number) {
+      return new Intl.NumberFormat(locale).format(value);
+    },
+    formatCurrency(value: number) {
+      return new Intl.NumberFormat(locale, { style: 'currency', currency: 'MYR' }).format(value);
+    },
+    formatDate(value: string) {
+      return new Date(value).toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+    },
+  };
 }
 
 function scoreTone(score: number) {
@@ -43,46 +51,21 @@ function severityTone(severity: WorkspaceAttention['severity']) {
   return 'border-slate-200 bg-slate-50 text-slate-600';
 }
 
-function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: React.ReactNode }) {
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <p className="text-sm font-medium text-[var(--color-text-muted)]">{eyebrow}</p>
-        <h1 className="mt-1 text-2xl font-semibold text-[var(--color-text)]">{title}</h1>
-        <p className="mt-1 max-w-3xl text-sm text-[var(--color-text-muted)]">{description}</p>
-      </div>
-      {action}
-    </div>
-  );
-}
-
-function MetricCard({ label, value, helper, icon: Icon }: { label: string; value: string | number; helper?: string; icon: React.ElementType }) {
-  return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-[var(--color-text-muted)]">{label}</span>
-        <Icon className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
-      </div>
-      <p className="mt-3 text-3xl font-semibold text-[var(--color-text)]">{value}</p>
-      {helper ? <p className="mt-1 text-xs text-[var(--color-text-muted)]">{helper}</p> : null}
-    </div>
-  );
-}
-
 function AttentionPanel({ items }: { items: WorkspaceAttention[] }) {
+  const t = useTranslations('admin');
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-[var(--color-text)]">Needs Attention</h2>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">Priority ordered operational issues.</p>
+          <h2 className="text-base font-semibold text-[var(--color-text)]">{t('needsAttention')}</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t('needsAttentionHelp')}</p>
         </div>
         <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
       </div>
       <div className="mt-4 space-y-2">
         {items.length === 0 ? (
           <div className="rounded-[var(--radius-md)] border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-700">
-            No urgent issues right now.
+            {t('noUrgentIssues')}
           </div>
         ) : (
           items.map((item) => (
@@ -102,6 +85,8 @@ function AttentionPanel({ items }: { items: WorkspaceAttention[] }) {
 }
 
 function MemberRow({ member }: { member: WorkspaceMemberHealth }) {
+  const t = useTranslations('admin');
+  const { formatDate } = useFormatters();
   return (
     <tr className="hover:bg-[var(--color-surface)]">
       <td className="border-b border-[var(--color-border)] px-4 py-3">
@@ -119,24 +104,25 @@ function MemberRow({ member }: { member: WorkspaceMemberHealth }) {
       <td className="border-b border-[var(--color-border)] px-4 py-3 text-[var(--color-text-muted)]">{formatDate(member.lastActiveAt)}</td>
       <td className="border-b border-[var(--color-border)] px-4 py-3">
         <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${scoreTone(member.healthScore)}`}>
-          Health {member.healthScore}
+          {t('healthScore', { score: member.healthScore })}
         </span>
       </td>
       <td className="border-b border-[var(--color-border)] px-4 py-3 text-sm">
-        {member.needsHelp ? <span className="text-amber-700">Needs Attention</span> : <span className="text-emerald-700">OK</span>}
+        {member.needsHelp ? <span className="text-amber-700">{t('needsAttentionStatus')}</span> : <span className="text-emerald-700">{t('okStatus')}</span>}
       </td>
     </tr>
   );
 }
 
 function FunnelRow({ funnel }: { funnel: WorkspaceFunnelHealth }) {
+  const t = useTranslations('admin');
   return (
     <tr className="hover:bg-[var(--color-surface)]">
       <td className="border-b border-[var(--color-border)] px-4 py-3">
         <p className="font-medium text-[var(--color-text)]">{funnel.title}</p>
         <p className="text-xs text-[var(--color-text-muted)]">{funnel.status}</p>
       </td>
-      <td className="border-b border-[var(--color-border)] px-4 py-3">{funnel.published ? 'Published' : 'Draft'}</td>
+      <td className="border-b border-[var(--color-border)] px-4 py-3">{funnel.published ? t('publishedStatus') : t('draftStatus')}</td>
       <td className="border-b border-[var(--color-border)] px-4 py-3">{funnel.views}</td>
       <td className="border-b border-[var(--color-border)] px-4 py-3">{funnel.conversions}</td>
       <td className="border-b border-[var(--color-border)] px-4 py-3">{funnel.conversionRate}%</td>
@@ -146,50 +132,52 @@ function FunnelRow({ funnel }: { funnel: WorkspaceFunnelHealth }) {
         </span>
       </td>
       <td className="border-b border-[var(--color-border)] px-4 py-3">
-        {funnel.inactive ? <span className="text-amber-700">No traffic</span> : <span className="text-emerald-700">Active</span>}
+        {funnel.inactive ? <span className="text-amber-700">{t('noTraffic')}</span> : <span className="text-emerald-700">{t('activeStatus')}</span>}
       </td>
     </tr>
   );
 }
 
 export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
+  const t = useTranslations('admin');
+  const { formatCurrency } = useFormatters();
   const topMetrics = [
-    { label: 'Members', value: data.overview.totalMembers, helper: 'Total workspace members', icon: Users },
-    { label: 'Active This Week', value: data.overview.activeThisWeek, helper: 'Members with recent activity', icon: Flame },
-    { label: 'Funnels', value: data.overview.funnels, helper: 'Created funnels', icon: LayoutTemplate },
-    { label: 'Leads', value: data.overview.leads, helper: 'Total captured leads', icon: BarChart3 },
+    { label: t('membersMetric'), value: data.overview.totalMembers, helper: t('membersMetricHelp'), icon: Users },
+    { label: t('activeThisWeekMetric'), value: data.overview.activeThisWeek, helper: t('activeThisWeekMetricHelp'), icon: Flame },
+    { label: t('funnelsMetric'), value: data.overview.funnels, helper: t('funnelsMetricHelp'), icon: LayoutTemplate },
+    { label: t('leadsMetric'), value: data.overview.leads, helper: t('leadsMetricHelp'), icon: BarChart3 },
   ];
   const revenueMetrics = [
-    { label: 'Appointments', value: data.overview.appointments, helper: 'Pipeline appointments', icon: Clock3 },
-    { label: 'Customers', value: data.overview.customers, helper: 'Converted customers', icon: CheckCircle2 },
-    { label: 'Team Members', value: data.overview.teamMembers, helper: 'Sponsored members', icon: Users },
-    { label: 'Revenue', value: formatCurrency(data.overview.revenue), helper: `${data.overview.conversionRate}% conversion`, icon: CircleDollarSign },
+    { label: t('appointmentsMetric'), value: data.overview.appointments, helper: t('appointmentsMetricHelp'), icon: Clock3 },
+    { label: t('customersMetric'), value: data.overview.customers, helper: t('customersMetricHelp'), icon: CheckCircle2 },
+    { label: t('teamMembersMetric'), value: data.overview.teamMembers, helper: t('teamMembersMetricHelp'), icon: Users },
+    { label: t('revenueMetric'), value: formatCurrency(data.overview.revenue), helper: t('revenueMetricHelp', { rate: data.overview.conversionRate }), icon: CircleDollarSign },
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Operations Command Center"
-        title="Workspace Overview"
-        description="Know what needs attention, which members are stuck, and what actions are required today."
-        action={<Link href="/admin/operations" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white">Today&apos;s Tasks <ArrowRight className="h-4 w-4" /></Link>}
+        eyebrow={t('commandCenter')}
+        title={t('workspaceOverview')}
+        description={t('workspaceOverviewHelp')}
+        action={<Link href="/admin/operations" className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white">{t('todayTasks')} <ArrowRight className="h-4 w-4" /></Link>}
       />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{topMetrics.map((item) => <MetricCard key={item.label} {...item} />)}</section>
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{revenueMetrics.map((item) => <MetricCard key={item.label} {...item} />)}</section>
       <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
         <AttentionPanel items={data.attention} />
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-[var(--color-text)]">Workspace Health</h2>
+          <h2 className="text-base font-semibold text-[var(--color-text)]">{t('workspaceHealth')}</h2>
           <div className="mt-4 flex items-end gap-3">
             <span className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${scoreTone(data.overview.healthScore)}`}>{data.overview.healthScore}/100</span>
-            <p className="text-sm text-[var(--color-text-muted)]">Members, funnels, leads, content, and approvals.</p>
+            <p className="text-sm text-[var(--color-text-muted)]">{t('workspaceHealthHelp')}</p>
           </div>
           <div className="mt-5 space-y-3">
             {data.journey.slice(0, 5).map((stage) => (
               <div key={stage.id}>
                 <div className="flex justify-between text-sm">
                   <span className="font-medium text-[var(--color-text)]">{stage.label}</span>
-                  <span className="text-[var(--color-text-muted)]">{stage.users} users</span>
+                  <span className="text-[var(--color-text-muted)]">{stage.users} {t('usersInStage')}</span>
                 </div>
                 <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-100">
                   <div className="h-full rounded-full bg-[var(--color-primary)]" style={{ width: `${Math.min(100, stage.users * 12)}%` }} />
@@ -201,9 +189,9 @@ export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
       </section>
       <section className="grid gap-4 lg:grid-cols-3">
         {[
-          { href: '/admin/members', title: 'Member Health Center', value: data.members.filter((m) => m.needsHelp).length, label: 'need help' },
-          { href: '/admin/funnels', title: 'Funnel Health Center', value: data.funnels.filter((f) => f.inactive).length, label: 'without traffic' },
-          { href: '/admin/beta', title: 'Beta Command Center', value: data.overview.activeThisWeek, label: 'activated this week' },
+          { href: '/admin/members', title: t('memberHealthCenter'), value: data.members.filter((m) => m.needsHelp).length, label: t('needHelp') },
+          { href: '/admin/funnels', title: t('funnelHealthCenter'), value: data.funnels.filter((f) => f.inactive).length, label: t('withoutTraffic') },
+          { href: '/admin/beta', title: t('betaTitle'), value: data.overview.activeThisWeek, label: t('activatedThisWeek') },
         ].map((card) => (
           <Link key={card.href} href={card.href} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm transition-colors hover:bg-[var(--color-surface)]">
             <div className="flex items-center justify-between">
@@ -220,13 +208,15 @@ export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
 }
 
 export function AdminMembersCenter({ data }: { data: WorkspaceCommandData }) {
+  const t = useTranslations('admin');
+  const headers = [t('memberCol'), t('roleCol'), t('journeyProgressCol'), t('currentFunnelCol'), t('lastActiveCol'), t('healthCol'), t('needsHelpCol')];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Operations" title="Member Health Center" description="Track progress, last active dates, health scores, and who needs help." />
+      <PageHeader eyebrow={t('operations')} title={t('membersTitle')} description={t('membersHelp')} />
       <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">
           <thead className="text-xs text-[var(--color-text-muted)]">
-            <tr>{['Member', 'Role', 'Journey Progress', 'Current Funnel', 'Last Active', 'Health', 'Needs Help?'].map((h) => <th key={h} className="border-b border-[var(--color-border)] px-4 py-3">{h}</th>)}</tr>
+            <tr>{headers.map((h) => <th key={h} className="border-b border-[var(--color-border)] px-4 py-3">{h}</th>)}</tr>
           </thead>
           <tbody>{data.members.map((member) => <MemberRow key={member.id} member={member} />)}</tbody>
         </table>
@@ -236,13 +226,15 @@ export function AdminMembersCenter({ data }: { data: WorkspaceCommandData }) {
 }
 
 export function AdminFunnelsCenter({ data }: { data: WorkspaceCommandData }) {
+  const t = useTranslations('admin');
+  const headers = [t('funnelCol'), t('publishedCol'), t('viewsCol'), t('conversionsCol'), t('conversionRateCol'), t('healthCol'), t('statusCol')];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Operations" title="Funnel Health Center" description="Monitor published funnels, traffic, conversions, and health scores." />
+      <PageHeader eyebrow={t('operations')} title={t('funnelsTitle')} description={t('funnelsHelp')} />
       <div className="overflow-x-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white shadow-sm">
         <table className="min-w-full text-left text-sm">
           <thead className="text-xs text-[var(--color-text-muted)]">
-            <tr>{['Funnel', 'Published', 'Views', 'Conversions', 'Conversion', 'Health', 'Status'].map((h) => <th key={h} className="border-b border-[var(--color-border)] px-4 py-3">{h}</th>)}</tr>
+            <tr>{headers.map((h) => <th key={h} className="border-b border-[var(--color-border)] px-4 py-3">{h}</th>)}</tr>
           </thead>
           <tbody>{data.funnels.map((funnel) => <FunnelRow key={funnel.id} funnel={funnel} />)}</tbody>
         </table>
@@ -252,47 +244,51 @@ export function AdminFunnelsCenter({ data }: { data: WorkspaceCommandData }) {
 }
 
 export function AdminJourneyCenter({ data }: { data: WorkspaceCommandData }) {
+  const t = useTranslations('admin');
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Operations" title="Journey Monitoring" description="See where users are stuck across the customer and member journey." />
+      <PageHeader eyebrow={t('operations')} title={t('journeyTitle')} description={t('journeyHelp')} />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {data.journey.map((stage) => <MetricCard key={stage.id} label={stage.label} value={stage.users} helper="users in stage" icon={ListChecks} />)}
+        {data.journey.map((stage) => <MetricCard key={stage.id} label={stage.label} value={stage.users} helper={t('usersInStage')} icon={ListChecks} />)}
       </section>
     </div>
   );
 }
 
 export function AdminTeamCenter({ data }: { data: WorkspaceCommandData }) {
+  const t = useTranslations('admin');
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Operations" title="Team Command Center" description="Monitor team activity, leads, appointments, customers, and recruitment conversion." />
+      <PageHeader eyebrow={t('operations')} title={t('teamTitle')} description={t('teamHelp')} />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Total Team Members" value={data.overview.teamMembers} helper="Sponsored members" icon={Users} />
-        <MetricCard label="Active This Week" value={data.overview.activeThisWeek} helper="Recent activity" icon={Flame} />
-        <MetricCard label="Content Published" value={data.content.publishingActivity} helper="Last 30 days" icon={FileText} />
-        <MetricCard label="Leads Generated" value={data.overview.leads} helper="All time" icon={BarChart3} />
-        <MetricCard label="Appointments" value={data.overview.appointments} helper="Pipeline appointment stages" icon={Clock3} />
-        <MetricCard label="Customers" value={data.overview.customers} helper="Converted customers" icon={CheckCircle2} />
-        <MetricCard label="Recruitment Conversion" value={`${data.overview.conversionRate}%`} helper="Customer conversion proxy" icon={Users} />
+        <MetricCard label={t('totalTeamMembers')} value={data.overview.teamMembers} helper={t('teamMembersMetricHelp')} icon={Users} />
+        <MetricCard label={t('activeThisWeekMetric')} value={data.overview.activeThisWeek} helper={t('recentActivityHelper')} icon={Flame} />
+        <MetricCard label={t('contentPublishedMetric')} value={data.content.publishingActivity} helper={t('contentPublishedMetricHelp')} icon={FileText} />
+        <MetricCard label={t('leadsGeneratedMetric')} value={data.overview.leads} helper={t('leadsGeneratedMetricHelp')} icon={BarChart3} />
+        <MetricCard label={t('appointmentsMetric')} value={data.overview.appointments} helper={t('appointmentsMetricHelp')} icon={Clock3} />
+        <MetricCard label={t('customersMetric')} value={data.overview.customers} helper={t('customersMetricHelp')} icon={CheckCircle2} />
+        <MetricCard label={t('recruitmentConversion')} value={`${data.overview.conversionRate}%`} helper={t('recruitmentConversionHelp')} icon={Users} />
       </section>
     </div>
   );
 }
 
 export function AdminContentCenter({ data }: { data: WorkspaceCommandData }) {
+  const t = useTranslations('admin');
+  const platformNames = ['Facebook', 'Instagram', 'TikTok', 'XHS'];
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Operations" title="Content Monitoring" description="Track generated posts, videos, publishing activity, and most used platforms." />
+      <PageHeader eyebrow={t('operations')} title={t('contentTitle')} description={t('contentHelp')} />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Posts Generated" value={data.content.postsGenerated} helper="Last 30 days" icon={FileText} />
-        <MetricCard label="Videos Generated" value={data.content.videosGenerated} helper="Last 30 days" icon={FileText} />
-        <MetricCard label="Publishing Activity" value={data.content.publishingActivity} helper="Published items" icon={CheckCircle2} />
-        <MetricCard label="Most Used Platform" value={data.content.platforms[0]?.label ?? 'None'} helper={`${data.content.platforms[0]?.value ?? 0} items`} icon={BarChart3} />
+        <MetricCard label={t('postsGenerated')} value={data.content.postsGenerated} helper={t('contentPublishedMetricHelp')} icon={FileText} />
+        <MetricCard label={t('videosGenerated')} value={data.content.videosGenerated} helper={t('contentPublishedMetricHelp')} icon={FileText} />
+        <MetricCard label={t('publishingActivity')} value={data.content.publishingActivity} helper={t('publishingActivityHelp')} icon={CheckCircle2} />
+        <MetricCard label={t('mostUsedPlatform')} value={data.content.platforms[0]?.label ?? t('none')} helper={t('itemsCount', { count: data.content.platforms[0]?.value ?? 0 })} icon={BarChart3} />
       </section>
       <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-[var(--color-text)]">Platforms</h2>
+        <h2 className="text-base font-semibold text-[var(--color-text)]">{t('platforms')}</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-4">
-          {['Facebook', 'Instagram', 'TikTok', 'XHS'].map((platform) => {
+          {platformNames.map((platform) => {
             const count = data.content.platforms.find((item) => item.label.toLowerCase() === platform.toLowerCase())?.value ?? 0;
             return <div key={platform} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3"><p className="font-medium">{platform}</p><p className="text-2xl font-semibold">{count}</p></div>;
           })}
@@ -303,33 +299,37 @@ export function AdminContentCenter({ data }: { data: WorkspaceCommandData }) {
 }
 
 export function AdminBillingCenter({ data }: { data: WorkspaceCommandData }) {
+  const t = useTranslations('admin');
+  const { formatCurrency } = useFormatters();
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Operations" title="Billing Monitoring" description="Monitor active plans, trials, failed payments, grace period users, and MRR." />
+      <PageHeader eyebrow={t('operations')} title={t('billingTitle')} description={t('billingHelp')} />
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <MetricCard label="Active Plans" value={data.billing.activePlans} icon={CircleDollarSign} />
-        <MetricCard label="Trials" value={data.billing.trials} icon={Clock3} />
-        <MetricCard label="Expired" value={data.billing.expired} icon={AlertTriangle} />
-        <MetricCard label="Failed Payments" value={data.billing.failedPayments} icon={AlertTriangle} />
-        <MetricCard label="Grace Period Users" value={data.billing.gracePeriodUsers} icon={Users} />
-        <MetricCard label="MRR" value={formatCurrency(data.billing.mrr)} icon={CircleDollarSign} />
+        <MetricCard label={t('activePlans')} value={data.billing.activePlans} icon={CircleDollarSign} />
+        <MetricCard label={t('trialsMetric')} value={data.billing.trials} icon={Clock3} />
+        <MetricCard label={t('expiredMetric')} value={data.billing.expired} icon={AlertTriangle} />
+        <MetricCard label={t('failedPayments')} value={data.billing.failedPayments} icon={AlertTriangle} />
+        <MetricCard label={t('gracePeriodUsers')} value={data.billing.gracePeriodUsers} icon={Users} />
+        <MetricCard label={t('mrrMetric')} value={formatCurrency(data.billing.mrr)} icon={CircleDollarSign} />
       </section>
     </div>
   );
 }
 
 export function AdminOperationsCenter({ data }: { data: WorkspaceCommandData }) {
+  const t = useTranslations('admin');
+  const { formatDate } = useFormatters();
   const tasks = [
     ...data.attention.map((item) => ({ label: `${item.value} ${item.label}`, href: item.href })),
-    { label: `${data.members.filter((item) => item.needsHelp).length} members requiring follow-up`, href: '/admin/members' },
-    { label: `${data.funnels.filter((item) => item.inactive).length} funnels requiring attention`, href: '/admin/funnels' },
+    { label: t('membersRequiringFollowUp', { count: data.members.filter((item) => item.needsHelp).length }), href: '/admin/members' },
+    { label: t('funnelsRequiringAttention', { count: data.funnels.filter((item) => item.inactive).length }), href: '/admin/funnels' },
   ];
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Operations" title="Daily Operations Center" description="A focused checklist for approvals, follow-ups, funnel issues, and payments." />
+      <PageHeader eyebrow={t('operations')} title={t('operationsTitle')} description={t('operationsHelp')} />
       <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-[var(--color-text)]">Today&apos;s Tasks</h2>
+        <h2 className="text-base font-semibold text-[var(--color-text)]">{t('todayTasks')}</h2>
         <div className="mt-4 space-y-2">
           {tasks.map((task) => (
             <Link key={`${task.href}-${task.label}`} href={task.href} className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-3 text-sm hover:bg-[var(--color-surface)]">
@@ -340,9 +340,9 @@ export function AdminOperationsCenter({ data }: { data: WorkspaceCommandData }) 
         </div>
       </section>
       <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-[var(--color-text)]">Recent Activity</h2>
+        <h2 className="text-base font-semibold text-[var(--color-text)]">{t('recentActivity')}</h2>
         <div className="mt-4 space-y-3">
-          {data.activity.length === 0 ? <p className="text-sm text-[var(--color-text-muted)]">No recent activity yet.</p> : data.activity.map((item) => (
+          {data.activity.length === 0 ? <p className="text-sm text-[var(--color-text-muted)]">{t('noRecentActivity')}</p> : data.activity.map((item) => (
             <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
               <span className="text-[var(--color-text)]">{item.label}</span>
               <span className="whitespace-nowrap text-[var(--color-text-muted)]">{formatDate(item.createdAt)}</span>
