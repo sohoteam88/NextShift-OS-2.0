@@ -1,0 +1,1 @@
+# Analytics Intelligence Center Audit — 2026-06-12. New module. Aggregates from all previous modules. Uses existing AnalyticsEvent model. Read-only layer — no new DB tables. Insight engine is deterministic. No AI API calls.

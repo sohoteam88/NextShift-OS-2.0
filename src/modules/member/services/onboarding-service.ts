@@ -202,7 +202,7 @@ export const onboardingService = {
       state: normalizeState(metadata.onboarding ?? DEFAULT_STATE),
       profile: {
         phone: user.phone ?? '',
-        whatsapp: typeof metadata.whatsapp === 'string' ? metadata.whatsapp : user.phone ?? '',
+        whatsapp: user.phone ?? '',
         bio: user.bio ?? '',
         avatar_url: user.avatarUrl ?? '',
       },
@@ -283,12 +283,10 @@ export const onboardingService = {
     await prisma.user.update({
       where: { id: userId },
       data: {
-        phone: input.phone ?? user.phone,
+        phone: input.whatsapp ?? input.phone ?? user.phone, // Canonical in User.phone
         avatarUrl: input.avatar_url ?? user.avatarUrl,
         bio: input.bio ?? user.bio,
-        metadata: buildMetadataPatch(metadata, {
-          whatsapp: input.whatsapp ?? input.phone ?? (metadata.whatsapp as string | undefined) ?? '',
-        }),
+        metadata: buildMetadataPatch(metadata, {}),
       },
     });
     return this.completeStep(userId, 'profile');

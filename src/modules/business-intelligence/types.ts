@@ -1,0 +1,7 @@
+export interface BusinessHealth { overallScore: number; level: 'critical'|'attention'|'good'|'excellent'; brandHealth: number; contentHealth: number; videoHealth: number; leadGenHealth: number; trafficHealth: number; funnelHealth: number; salesHealth: number; crmHealth: number; automationHealth: number; recommendations: string[]; }
+export interface Bottleneck { id: string; category: string; description: string; severity: 'low'|'medium'|'high'|'critical'; impact: string; recommendation: string; }
+export interface GrowthOpportunity { id: string; opportunity: string; impactScore: number; effortScore: number; priorityScore: number; explanation: string; agentRecommended?: string; }
+export interface NextBestAction { priority: number; action: string; expectedImpact: string; agentRecommended: string; route?: string; }
+export interface BusinessForecast { period: string; conservative: { leads: number; appointments: number; revenue: number }; expected: { leads: number; appointments: number; revenue: number }; optimistic: { leads: number; appointments: number; revenue: number }; confidence: number; }
+export interface BusinessRisk { id: string; risk: string; category: string; severity: 'low'|'medium'|'high'|'critical'; impact: string; recommendation: string; }
+export interface CEOReport { summary: string; health: BusinessHealth; bottlenecks: Bottleneck[]; opportunities: GrowthOpportunity[]; actions: NextBestAction[]; risks: BusinessRisk[]; forecast: BusinessForecast; agentRecommendations: string[]; automationRecommendations: string[]; }

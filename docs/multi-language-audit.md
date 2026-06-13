@@ -1,0 +1,1 @@
+# Multi-Language Audit — 2026-06-12. Existing: zh/en/ms strings in UI components, next-intl for i18n. Missing: cultural adaptation engine, translation memory, language-aware content generation, funnel localization. New localization module provides cultural adaptation + translation memory + language profiles.

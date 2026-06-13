@@ -34,8 +34,17 @@ import {
   UserCog,
   DollarSign,
   FileClock,
+  Map,
+  Target,
+  FileText,
+  Megaphone,
+  MessageCircle,
+  Trophy,
+  MessagesSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { ADVANCED_SIDEBAR, GUIDED_SIDEBAR, type MissionSidebarItem } from '@/modules/mission/constants/sidebar-config';
+import { useMissionState, useSetMode } from '@/modules/mission/hooks/use-mission';
 
 type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
 
@@ -59,6 +68,32 @@ type NavSection = {
   items: NavItem[];
 };
 
+const ICONS: Record<string, React.ElementType> = {
+  Activity,
+  BarChart3,
+  BookOpenCheck,
+  Calendar,
+  Clapperboard,
+  ClipboardList,
+  FileText,
+  Gauge,
+  KanbanSquare,
+  LayoutTemplate,
+  LineChart,
+  Map,
+  MapPin,
+  Megaphone,
+  MessageCircle,
+  MessagesSquare,
+  Settings,
+  Target,
+  Trophy,
+  UserCheck,
+  UserCog,
+  Wand2,
+  Zap,
+};
+
 const roleRank: Record<Role, number> = {
   member: 1,
   leader: 2,
@@ -79,10 +114,10 @@ const CORE_ITEMS: NavItem[] = [
 ];
 
 const PLATFORM_CORE_ITEMS: NavItem[] = [
-  { href: '/platform-admin', label: 'allTenants', icon: Shield },
-  { href: '/platform-admin/health', label: 'systemHealth', icon: Gauge },
-  { href: '/platform-admin/ai-usage', label: 'aiModelUsage', icon: Brain },
-  { href: '/platform-admin/users', label: 'platformUsers', icon: Users },
+  { href: '/platform-admin', label: 'ceoDashboard', icon: Shield },
+  { href: '/platform-admin/revenue', label: 'platformRevenue', icon: DollarSign },
+  { href: '/platform-admin/tenant-health', label: 'tenantHealth', icon: Activity },
+  { href: '/platform-admin/growth', label: 'platformGrowth', icon: LineChart },
 ];
 
 const MEMBER_SECTIONS: NavSection[] = [
@@ -103,7 +138,7 @@ const MEMBER_SECTIONS: NavSection[] = [
     items: [
       { href: '/brand-builder/profile', label: 'brandProfile', icon: UserCog },
       { href: '/brand-builder/calendar', label: 'contentCalendar', icon: Calendar },
-      { href: '/brand-builder/video-script', label: 'videoScript', icon: Clapperboard },
+      { href: '/video', label: 'videoScript', icon: Clapperboard },
       { href: '/brand-builder/insights', label: 'contentInsights', icon: LineChart },
       { href: '/brand-builder/guides', label: 'platformGuides', icon: MapPin },
     ],
@@ -141,19 +176,25 @@ const LEADER_ITEMS: NavItem[] = [
 ];
 
 const ADMIN_ITEMS: NavItem[] = [
-  { href: '/admin', label: 'admin', icon: Shield },
-  { href: '/admin/users', label: 'adminUsers', icon: Users },
-  { href: '/admin/daily-actions', label: 'adminDailyActions', icon: ClipboardList },
-  { href: '/admin/training', label: 'adminTraining', icon: BookOpenCheck },
-  { href: '/admin/templates', label: 'adminTemplates', icon: LayoutTemplate },
-  { href: '/admin/plan', label: 'adminPlan', icon: Gauge },
+  { href: '/admin', label: 'adminCommandCenter', icon: Shield },
+  { href: '/admin/operations', label: 'adminOperations', icon: ClipboardList },
+  { href: '/admin/members', label: 'adminMembers', icon: Users },
+  { href: '/admin/funnels', label: 'adminFunnels', icon: LayoutTemplate },
+  { href: '/admin/journey', label: 'adminJourney', icon: Map },
+  { href: '/admin/team', label: 'adminTeam', icon: UserCheck },
+  { href: '/admin/content', label: 'adminContent', icon: FileText },
+  { href: '/admin/billing', label: 'adminBilling', icon: DollarSign },
+  { href: '/admin/beta', label: 'adminBeta', icon: Trophy },
+  { href: '/admin/approvals', label: 'approvals', icon: UserCheck },
   { href: '/admin/settings', label: 'adminSettings', icon: Settings },
 ];
 
 const PLATFORM_ITEMS: NavItem[] = [
-  { href: '/platform-admin', label: 'allTenants', icon: Shield },
+  { href: '/platform-admin/funnels', label: 'platformFunnels', icon: LayoutTemplate },
+  { href: '/platform-admin/ai-profitability', label: 'aiProfitability', icon: Brain },
+  { href: '/platform-admin/beta', label: 'adminBeta', icon: Trophy },
   { href: '/platform-admin/health', label: 'systemHealth', icon: Gauge },
-  { href: '/platform-admin/ai-usage', label: 'aiModelUsage', icon: Brain },
+  { href: '/platform-admin/tenants', label: 'allTenants', icon: Shield },
   { href: '/platform-admin/users', label: 'platformUsers', icon: Users },
   { href: '/platform-admin/billing', label: 'platformBilling', icon: DollarSign },
   { href: '/platform-admin/audit-logs', label: 'platformAuditLogs', icon: FileClock },
@@ -178,6 +219,8 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
     refetchInterval: 30_000,
     staleTime: 30_000,
   });
+  const mission = useMissionState({ enabled: role === 'member' });
+  const setMode = useSetMode();
   const overdueCount = counts?.data.overdue ?? 0;
   const pendingCount = pendingCountData?.meta.total ?? 0;
   const [manualOpen, setManualOpen] = React.useState<Record<string, boolean>>({});
@@ -278,6 +321,97 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
     );
   }
 
+  function renderMissionItem(item: MissionSidebarItem, nested = false) {
+    const Icon = ICONS[item.icon] ?? Gauge;
+    const active = isActiveItem(item.route);
+
+    return (
+      <Link
+        key={`${item.route}-${item.label_zh}`}
+        href={item.route}
+        className={cn(
+          'flex h-9 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium transition-colors',
+          nested && 'pl-8',
+          active
+            ? 'bg-blue-50 text-[var(--color-primary)]'
+            : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span className="flex-1 truncate">{item.label_zh}</span>
+      </Link>
+    );
+  }
+
+  function renderMissionSidebar() {
+    const state = mission.data?.data;
+    const mode = state?.mode ?? 'guided';
+    const current = state?.currentStage ?? state?.nextStage ?? null;
+    const guidedCurrent: MissionSidebarItem | null = current
+      ? {
+          icon: 'Target',
+          label_zh: current.name_zh,
+          label_en: current.name_en,
+          label_ms: current.name_ms,
+          route: current.route,
+        }
+      : null;
+
+    if (mode === 'guided') {
+      return (
+        <nav className="mt-5 flex-1 overflow-y-auto pb-4">
+          <div className="space-y-0.5">
+            {GUIDED_SIDEBAR.map((item) => renderMissionItem(item))}
+          </div>
+          {guidedCurrent ? (
+            <>
+              <div className="my-4 border-t border-[var(--color-border)]" />
+              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+                当前阶段
+              </p>
+              {renderMissionItem(guidedCurrent)}
+            </>
+          ) : null}
+          <div className="my-4 border-t border-[var(--color-border)]" />
+          <button
+            type="button"
+            onClick={() => {
+              const confirmed = window.confirm('切换到高级模式后，AI 教练仍会在仪表盘提示下一步，但你可以自由跳转到任何功能。');
+              if (confirmed) setMode.mutate('advanced');
+            }}
+            className="flex h-9 w-full items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
+          >
+            <Zap className="h-4 w-4" aria-hidden="true" />
+            更多功能（到仪表盘切换高级模式）
+          </button>
+        </nav>
+      );
+    }
+
+    return (
+      <nav className="mt-5 flex-1 overflow-y-auto pb-4">
+        <div className="space-y-0.5">
+          {ADVANCED_SIDEBAR.slice(0, 2).map((item) => renderMissionItem(item))}
+        </div>
+        <div className="my-4 border-t border-[var(--color-border)]" />
+        <div className="space-y-3">
+          {ADVANCED_SIDEBAR.slice(2).map((item) =>
+            item.children ? (
+              <div key={item.label_zh}>
+                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+                  {item.label_zh}
+                </p>
+                <div className="space-y-0.5">{item.children.map((child) => renderMissionItem(child, true))}</div>
+              </div>
+            ) : (
+              renderMissionItem(item)
+            ),
+          )}
+        </div>
+      </nav>
+    );
+  }
+
   const coreItems = role === 'platform_admin' ? PLATFORM_CORE_ITEMS : CORE_ITEMS;
   const sections: NavSection[] =
     role === 'platform_admin'
@@ -322,6 +456,9 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
         <span className="truncate">{tenantName ?? 'NextShift'}</span>
       </Link>
 
+      {role === 'member' ? renderMissionSidebar() : null}
+
+      {role !== 'member' ? (
       <nav className="mt-5 flex-1 overflow-y-auto pb-4">
         <div>
           <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
@@ -334,6 +471,7 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
 
         <div className="space-y-1">{sections.map((section) => renderSection(section))}</div>
       </nav>
+      ) : null}
     </aside>
   );
 }

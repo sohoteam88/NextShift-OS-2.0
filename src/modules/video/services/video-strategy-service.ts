@@ -5,6 +5,7 @@ import { enforceQuota } from '@/modules/ai/usage/quota';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { VideoProductionInput, VideoStrategy } from '../types';
 import { parseJsonFromAI } from './json';
+import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
 
 const FUNNEL_STAGE_GUIDANCE: Record<string, string> = {
   cold_audience: '受众完全不认识你。目标是制造记忆点和好奇心，不要直接推销。',
@@ -25,9 +26,21 @@ const DEFAULT_STRATEGY: VideoStrategy = {
   estimated_completion_reason: '主题有明确痛点，但完播率取决于前 3 秒 hook 的执行。',
 };
 
-async function getBrandProfile(userId: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
-  return ((user?.metadata as Record<string, unknown>)?.brand_profile as Record<string, unknown> | undefined) ?? null;
+/** @deprecated Use getBrandContext() directly. Maps to legacy shape for existing callers. */
+async function getBrandProfile(userId: string): Promise<Record<string, unknown> | null> {
+  const ctx = await getBrandContext(userId);
+  if (!ctx) return null;
+  return {
+    identity: ctx.brandName,
+    name: ctx.personalName,
+    personality: ctx.tone,
+    story: ctx.messaging.coreMessage,
+    audience: ctx.audience,
+    value_proposition: ctx.offer.primary,
+    differentiator: ctx.messaging.uniqueAngle,
+    target_audience: ctx.audience,
+    contentPillars: ctx.contentPillars,
+  };
 }
 
 export const videoStrategyService = {

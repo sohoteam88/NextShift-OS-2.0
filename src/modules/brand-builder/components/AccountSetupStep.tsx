@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Check, Copy, ExternalLink, Pencil, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
+import { triggerMissionCelebrationFromResponse } from '@/stores/mission-celebration-store';
 import type { UsernameOption } from '../services/username-service';
 import type { BioSet } from '../services/bio-service';
 
@@ -53,6 +54,7 @@ export function AccountSetupStep({ brandProfile, onSave }: Props) {
   const [loadingRegenBio, setLoadingRegenBio] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
   const [shownUsernames, setShownUsernames] = React.useState<string[]>([]);
+  const [avatarCompleted, setAvatarCompleted] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -162,14 +164,17 @@ export function AccountSetupStep({ brandProfile, onSave }: Props) {
       platforms: selectedPlatforms,
       username: customUsername.trim() || selectedUsername,
       bios: finalBios,
+      ...(avatarCompleted ? { avatar_completed: true } : {}),
     };
 
     try {
-      await fetch('/api/v1/brand-builder/profile', {
+      const res = await fetch('/api/v1/brand-builder/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
+      const json = await res.json().catch(() => null);
+      triggerMissionCelebrationFromResponse(json);
       onSave(updates);
     } catch {
       setError('保存失败，请重试');
@@ -388,6 +393,15 @@ export function AccountSetupStep({ brandProfile, onSave }: Props) {
           打开 Canva 封面模板
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
+        <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-text)]">
+          <input
+            type="checkbox"
+            checked={avatarCompleted}
+            onChange={(event) => setAvatarCompleted(event.target.checked)}
+            className="h-4 w-4 accent-[var(--color-primary)]"
+          />
+          我已完成头像和封面设置
+        </label>
       </div>
 
       {error && (

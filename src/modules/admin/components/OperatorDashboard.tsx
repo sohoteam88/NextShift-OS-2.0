@@ -82,6 +82,10 @@ export function OperatorDashboard({ user }: Props) {
                 {t('usersTitle')}
                 <ArrowRight className="h-4 w-4" />
               </Link>
+              <Link href="/admin/beta" className="inline-flex items-center gap-2 text-[var(--color-primary)] hover:underline">
+                Beta Command Center
+                <ArrowRight className="h-4 w-4" />
+              </Link>
               <Link href="/admin/approvals" className="inline-flex items-center gap-2 text-[var(--color-primary)] hover:underline">
                 {t('approvalsTitle')}
                 <ArrowRight className="h-4 w-4" />

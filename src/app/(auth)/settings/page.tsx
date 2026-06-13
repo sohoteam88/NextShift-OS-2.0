@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/stores/toast-store';
+import { ModeToggle } from '@/modules/mission/components/ModeToggle';
+import { useMissionState } from '@/modules/mission/hooks/use-mission';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -70,6 +72,7 @@ export default function SettingsPage() {
   const [pwForm, setPwForm] = useState({ next: '', confirm: '' });
   const [pwLoading, setPwLoading] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const mission = useMissionState({ enabled: authMe?.user?.role === 'member' });
 
   useEffect(() => {
     const locale = document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1];
@@ -205,6 +208,8 @@ export default function SettingsPage() {
           ))}
         </div>
       </Section>
+
+      {authMe?.user?.role === 'member' && mission.data?.data ? <ModeToggle mode={mission.data.data.mode} /> : null}
 
       <Section
         title="Password"

@@ -1,0 +1,1 @@
+# AI Automation Engine Audit — 2026-06-12. New module. Event-driven workflows connecting all modules. No Zapier/n8n clone. Mission triggers already wired in 7 generate routes. Automation extends with CRM, lead, content, webinar triggers.

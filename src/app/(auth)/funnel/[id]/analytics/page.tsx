@@ -18,6 +18,18 @@ type Analytics = {
 };
 
 type RecentLead = { id: string; name: string; phone?: string; createdAt: string };
+type FunnelHealth = {
+  overall: number;
+  status: 'excellent' | 'good' | 'needs_attention' | 'critical';
+  breakdown: {
+    completeness: number;
+    real_material_used: number;
+    diversity: number;
+    cta_consistency: number;
+    performance: number | null;
+  };
+  next_best_action: { action: string; reason: string; route: string };
+};
 
 function useAnalytics(id: string) {
   return useQuery({
@@ -46,6 +58,19 @@ function useRecentLeads(funnelId: string) {
   });
 }
 
+function useFunnelHealth(id: string) {
+  return useQuery({
+    queryKey: ['funnel-health', id],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/funnel/funnels/${id}/health`);
+      if (!res.ok) throw new Error('Failed');
+      return res.json() as Promise<{ data: FunnelHealth }>;
+    },
+    enabled: !!id,
+    staleTime: 60_000,
+  });
+}
+
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4">
@@ -56,6 +81,55 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub?: st
   );
 }
 
+function HealthBar({ label, value }: { label: string; value: number | null }) {
+  const pct = value ?? 0;
+  return (
+    <div className="grid grid-cols-[92px_minmax(0,1fr)_48px] items-center gap-3 text-sm">
+      <span className="text-[var(--color-text-muted)]">{label}</span>
+      <div className="h-2 rounded-full bg-[var(--color-surface)]">
+        <div className="h-2 rounded-full bg-[var(--color-primary)]" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-right font-medium text-[var(--color-text)]">{value === null ? '--' : value}</span>
+    </div>
+  );
+}
+
+function FunnelHealthCard({ health }: { health: FunnelHealth }) {
+  const statusLabel = {
+    excellent: '优秀',
+    good: '良好',
+    needs_attention: '需要关注',
+    critical: '严重',
+  }[health.status];
+
+  return (
+    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-[var(--color-text-muted)]">漏斗健康分数</p>
+          <h2 className="mt-1 text-2xl font-bold text-[var(--color-text)]">{health.overall}/100 <span className="text-base font-medium">{statusLabel}</span></h2>
+        </div>
+        <Button size="sm" variant="secondary" onClick={() => routerPush(health.next_best_action.route)}>前往修复</Button>
+      </div>
+      <div className="mt-4 space-y-3">
+        <HealthBar label="完整度" value={health.breakdown.completeness} />
+        <HealthBar label="真实素材" value={health.breakdown.real_material_used} />
+        <HealthBar label="内容差异化" value={health.breakdown.diversity} />
+        <HealthBar label="CTA一致性" value={health.breakdown.cta_consistency} />
+        <HealthBar label="表现" value={health.breakdown.performance} />
+      </div>
+      <div className="mt-4 rounded-[var(--radius-md)] bg-blue-50 p-3">
+        <p className="text-sm font-semibold text-[var(--color-text)]">下一步建议：{health.next_best_action.action}</p>
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">原因：{health.next_best_action.reason}</p>
+      </div>
+    </div>
+  );
+}
+
+function routerPush(route: string) {
+  window.location.href = route;
+}
+
 export default function FunnelAnalyticsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -64,6 +138,7 @@ export default function FunnelAnalyticsPage() {
   const { data: funnelData, isLoading: funnelLoading } = useFunnel(id);
   const { data: analyticsData, isLoading: analyticsLoading } = useAnalytics(id);
   const { data: leadsData } = useRecentLeads(id);
+  const { data: healthData } = useFunnelHealth(id);
 
   const funnel = funnelData?.data;
   const analytics = analyticsData?.data;
@@ -108,6 +183,8 @@ export default function FunnelAnalyticsPage() {
           <KpiCard label="WhatsApp 点击" value={String(analytics?.whatsapp_clicks ?? 0)} />
         </div>
       )}
+
+      {healthData?.data ? <FunnelHealthCard health={healthData.data} /> : null}
 
       {/* Trend chart */}
       {trendData.length > 0 && (

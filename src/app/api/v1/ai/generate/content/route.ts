@@ -6,6 +6,7 @@ import { assertRequestBodySize } from '@/lib/request-guards';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { contentService } from '@/modules/ai/services/content-service';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 const GenerateContentSchema = z.object({
   topic: z.string().min(1),
@@ -25,5 +26,6 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const body = await request.json();
   const input = GenerateContentSchema.parse(body);
   const result = await contentService.generate(user, input);
-  return NextResponse.json({ data: result });
+  const mission = await notifyMissionProgress(user, 'first_content_generated');
+  return NextResponse.json({ data: result, mission });
 });

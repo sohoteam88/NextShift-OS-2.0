@@ -5,6 +5,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/cn';
 import { Button } from '@/components/ui/Button';
+import { triggerMissionCelebrationFromResponse } from '@/stores/mission-celebration-store';
 import { FacebookGuide } from './guides/FacebookGuide';
 import { InstagramGuide } from './guides/InstagramGuide';
 
@@ -33,11 +34,13 @@ const FB_TOTAL_STEPS = 7;
 const IG_TOTAL_STEPS = 6;
 
 async function saveProgress(platform: string, step: number, completed: boolean) {
-  await fetch('/api/v1/brand-builder/guide-progress', {
+  const res = await fetch('/api/v1/brand-builder/guide-progress', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ platform, step, completed }),
   });
+  const json = await res.json().catch(() => null);
+  triggerMissionCelebrationFromResponse(json);
 }
 
 function isGuideComplete(steps_done: number[], total: number): boolean {

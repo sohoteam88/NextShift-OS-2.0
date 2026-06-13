@@ -522,6 +522,49 @@ export const brandInterviewService = {
       },
     });
 
+    // Also upsert into BrandProfile table (canonical source)
+    const ep = editedProfile;
+    await prisma.brandProfile.upsert({
+      where: { userId: user.id },
+      create: {
+        tenantId: user.tenantId, userId: user.id,
+        brandName: (ep.identity as string) ?? (ep.brandName as string) ?? '',
+        personalName: (ep.personalName as string) ?? '',
+        brandPositioning: (ep.positioning as string) ?? (ep.brandPositioning as string) ?? '',
+        slogan: (ep.slogan as string) ?? '',
+        targetAudience: (ep.target_audience as string) ?? (ep.targetAudience as string) ?? '',
+        audiencePainPoints: (ep.audience_pain_points as Prisma.InputJsonValue) ?? [],
+        audienceGoals: (ep.audienceGoals as Prisma.InputJsonValue) ?? [],
+        audienceObjections: (ep.audienceObjections as Prisma.InputJsonValue) ?? [],
+        coreMessage: (ep.coreMessage as string) ?? (ep.value_proposition as string) ?? '',
+        uniqueAngle: (ep.differentiator as string) ?? (ep.uniqueAngle as string) ?? '',
+        elevatorPitch: (ep.elevatorPitch as string) ?? '',
+        contentTone: (ep.personality as string) ?? (ep.contentTone as string) ?? '温暖亲切',
+        contentPillars: (ep.content_pillars as Prisma.InputJsonValue) ?? [],
+        storytellingStyle: (ep.storytellingStyle as string) ?? '',
+        primaryOffer: (ep.primaryOffer as string) ?? '',
+        secondaryOffer: (ep.secondaryOffer as string) ?? '',
+        transformationPromise: (ep.transformationPromise as string) ?? (ep.value_proposition as string) ?? '',
+        brandColors: (ep.brandColors as Prisma.InputJsonValue) ?? ['#2563eb', '#1e40af', '#f59e0b'],
+        profileImagePrompt: (ep.profileImagePrompt as string) ?? '',
+        coverBannerPrompt: (ep.coverBannerPrompt as string) ?? '',
+        confidenceScore: 75,
+      },
+      update: {
+        brandName: (ep.identity as string) ?? (ep.brandName as string) ?? undefined,
+        personalName: (ep.personalName as string) ?? undefined,
+        brandPositioning: (ep.positioning as string) ?? (ep.brandPositioning as string) ?? undefined,
+        slogan: (ep.slogan as string) ?? undefined,
+        targetAudience: (ep.target_audience as string) ?? (ep.targetAudience as string) ?? undefined,
+        audiencePainPoints: (ep.audience_pain_points as Prisma.InputJsonValue) ?? undefined,
+        coreMessage: (ep.coreMessage as string) ?? (ep.value_proposition as string) ?? undefined,
+        uniqueAngle: (ep.differentiator as string) ?? (ep.uniqueAngle as string) ?? undefined,
+        contentTone: (ep.personality as string) ?? (ep.contentTone as string) ?? undefined,
+        contentPillars: (ep.content_pillars as Prisma.InputJsonValue) ?? undefined,
+        transformationPromise: (ep.transformationPromise as string) ?? (ep.value_proposition as string) ?? undefined,
+      },
+    });
+
     return editedProfile;
   },
 

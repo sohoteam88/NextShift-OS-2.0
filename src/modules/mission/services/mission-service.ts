@@ -2,10 +2,14 @@ import prisma from '@/lib/prisma';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import {
   JOURNEY_MAP,
+  extractCheckKeys,
+  getCompletionDate,
   getNextStage,
   getProgressPercent,
   getStageById,
   getTotalXP,
+  type CompletedCheckEntry,
+  type CompletedChecksValue,
   type JourneyStage,
   type JourneyStageId,
 } from '../constants/journey-map';
@@ -24,8 +28,27 @@ export interface MissionState {
   estimatedTimeToFirstSale: string | null;
 }
 
-function toStringArray(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+function toCompletedChecks(value: unknown): CompletedChecksValue {
+  if (!Array.isArray(value)) return [];
+  if (value.length === 0) return [];
+  if (typeof value[0] === 'string') {
+    return value.filter((item): item is string => typeof item === 'string');
+  }
+  return value.filter((item): item is CompletedCheckEntry => {
+    if (!item || typeof item !== 'object') return false;
+    const entry = item as Record<string, unknown>;
+    return typeof entry.check === 'string' && typeof entry.completed_at === 'string';
+  });
+}
+
+function toCompletedCheckEntries(value: unknown): CompletedCheckEntry[] {
+  const checks = toCompletedChecks(value);
+  if (checks.length === 0) return [];
+  if (typeof checks[0] !== 'string') return checks as CompletedCheckEntry[];
+  return (checks as string[]).map((check) => ({
+    check,
+    completed_at: new Date().toISOString(),
+  }));
 }
 
 export const missionService = {
@@ -40,7 +63,10 @@ export const missionService = {
           tenantId: user.tenantId,
           userId: user.id,
           currentStageId: 'brand_discovery',
-          completedChecks: ['registered', 'approved'],
+          completedChecks: [
+            { check: 'registered', completed_at: new Date().toISOString() },
+            { check: 'approved', completed_at: new Date().toISOString() },
+          ],
           totalXp: 10,
           mode: 'guided',
         },
@@ -52,7 +78,8 @@ export const missionService = {
 
   async getState(user: AuthUser): Promise<MissionState> {
     const progress = await this.getProgress(user);
-    const completedChecks = toStringArray(progress.completedChecks);
+    const completedChecks = toCompletedChecks(progress.completedChecks);
+    const checkKeys = extractCheckKeys(completedChecks);
     const nextStage = getNextStage(completedChecks);
     const currentStage = nextStage ?? getStageById('growth_mode') ?? null;
 
@@ -61,12 +88,12 @@ export const missionService = {
       nextStage,
       progressPercent: getProgressPercent(completedChecks),
       totalXP: getTotalXP(completedChecks),
-      completedChecks,
+      completedChecks: checkKeys,
       mode: progress.mode === 'advanced' ? 'advanced' : 'guided',
       isJourneyComplete: nextStage === null,
       estimatedTimeToNext: nextStage ? this.formatMinutes(nextStage.estimated_minutes) : '已完成',
-      estimatedTimeToFirstLead: this.estimateTimeTo(completedChecks, 'lead_magnet_created'),
-      estimatedTimeToFirstSale: this.estimateTimeTo(completedChecks, 'first_sale_completed'),
+      estimatedTimeToFirstLead: this.estimateTimeTo(checkKeys, 'lead_magnet_created'),
+      estimatedTimeToFirstSale: this.estimateTimeTo(checkKeys, 'first_sale_completed'),
     };
   },
 
@@ -79,18 +106,31 @@ export const missionService = {
     newAchievements: string[];
   }> {
     const progress = await this.getProgress(user);
-    const completedChecks = new Set(toStringArray(progress.completedChecks));
+    const completedEntries = toCompletedCheckEntries(progress.completedChecks);
+    const completedChecks = new Set(extractCheckKeys(completedEntries));
 
     if (completedChecks.has(checkKey)) {
       return { newlyCompleted: null, isNewMilestone: false, newAchievements: [] };
     }
 
     completedChecks.add(checkKey);
+    completedEntries.push({ check: checkKey, completed_at: new Date().toISOString() });
 
     const stage = JOURNEY_MAP.find((item) => item.completion_check === checkKey) ?? null;
-    const nextCompletedChecks = [...completedChecks];
+    if (checkKey === 'first_sale_completed') {
+      completedChecks.add('growth_mode_active');
+      if (!completedEntries.some((entry) => entry.check === 'growth_mode_active')) {
+        completedEntries.push({ check: 'growth_mode_active', completed_at: new Date().toISOString() });
+      }
+    }
+
+    const nextCompletedChecks = completedEntries;
     const totalXp = getTotalXP(nextCompletedChecks);
-    const milestonesSeen = new Set(toStringArray(progress.milestonesSeen));
+    const milestonesSeen = new Set(
+      Array.isArray(progress.milestonesSeen)
+        ? progress.milestonesSeen.filter((item): item is string => typeof item === 'string')
+        : [],
+    );
     let isNewMilestone = false;
 
     if (stage?.is_milestone && !milestonesSeen.has(stage.id)) {
@@ -112,7 +152,7 @@ export const missionService = {
       },
     });
 
-    const newAchievements = await checkAndUnlockAchievements(user, nextCompletedChecks);
+    const newAchievements = await checkAndUnlockAchievements(user, extractCheckKeys(nextCompletedChecks));
 
     return { newlyCompleted: stage, isNewMilestone, newAchievements };
   },
@@ -159,11 +199,13 @@ export const missionService = {
 
   async getJourneyMap(user: AuthUser) {
     const progress = await this.getProgress(user);
-    const completedChecks = toStringArray(progress.completedChecks);
+    const completedChecks = toCompletedChecks(progress.completedChecks);
+    const checkKeys = extractCheckKeys(completedChecks);
 
     return JOURNEY_MAP.map((stage) => ({
       ...stage,
-      status: completedChecks.includes(stage.completion_check)
+      completed_at: getCompletionDate(completedChecks, stage.completion_check) ?? undefined,
+      status: checkKeys.includes(stage.completion_check)
         ? 'completed'
         : stage.id === progress.currentStageId
           ? 'active'

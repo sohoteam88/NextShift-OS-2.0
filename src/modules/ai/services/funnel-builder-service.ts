@@ -7,6 +7,9 @@ import type { AIGenerateResult } from '../providers/types';
 import type { RoutingDecision } from '../router';
 import { funnelService } from '@/modules/funnel/services/funnel-service';
 import type { FunnelConfig } from '@/modules/funnel/types';
+import type { StrategyContext } from '@/modules/funnel/types/strategy-context';
+import { qualityGateService, type QualityGateSummary } from '@/modules/funnel/services/quality-gate-service';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 export interface FunnelBuilderInput {
   businessType: string;
@@ -21,6 +24,7 @@ export interface FunnelBuilderInput {
   trafficSource?: string;
   closingMethod: string;
   brandTone?: string;
+  strategyContext?: StrategyContext;
 }
 
 export interface FunnelBuilderOutput {
@@ -124,6 +128,8 @@ type FunnelGenerationResult = {
   provider: string;
   model: string;
   savedFunnelId?: string;
+  strategyContext?: StrategyContext;
+  qualityGateResults?: QualityGateSummary;
 };
 
 function copyFor(input: FunnelBuilderInput) {
@@ -439,6 +445,27 @@ function createFallbackFunnel(input: FunnelBuilderInput): FunnelBuilderOutput {
   };
 }
 
+function buildStrategyPromptBlock(input: FunnelBuilderInput): string {
+  const context = input.strategyContext;
+  if (!context) return '';
+
+  return `
+
+Shared Strategy Context - this is mandatory and must guide every section:
+${JSON.stringify(context, null, 2)}
+
+Generation rules based on Strategy Context:
+- Every major section must connect back to strategy.core_narrative.
+- Use real_material.case_studies for testimonials, story hooks, social proof, emails, and WhatsApp follow-up.
+- Use real_material.common_objections as the primary objectionHandling list.
+- Do not repeat the same sentence frame across hooks, ad angles, objections, emails, or WhatsApp messages.
+- Generate 20 video hooks as 5 groups of 4: pain, curiosity, story, numbers, contrarian.
+- Generate adAngles as 10 distinct frames: pain, result, mistake, myth, story, checklist, test, transformation, local, beginner.
+- WhatsApp followUpSequence length must follow strategy.sequence_length_days and every day needs a distinct purpose.
+- Lead magnets must use 5 different formats across TOFU/MOFU/BOFU, not five checklists.
+- If case studies exist, landing page must include testimonial-style proof inside the copy and FAQ.`;
+}
+
 function buildPrompt(input: FunnelBuilderInput): string {
   const lang = LANGUAGE_MAP[input.language];
   return `Generate a complete funnel system for this business. Respond entirely in ${lang}.
@@ -455,6 +482,7 @@ Business Information:
 - Traffic Source: ${input.trafficSource ?? 'Social media ads'}
 - Closing Method: ${input.closingMethod}
 - Brand Tone: ${input.brandTone ?? 'Warm and relatable'}
+${buildStrategyPromptBlock(input)}
 
 Return this exact JSON structure (all strings in ${lang}):
 {
@@ -594,7 +622,98 @@ function createFallbackResult(input: FunnelBuilderInput): FunnelGenerationResult
     tokensUsed: 0,
     provider: 'fallback',
     model: 'deterministic-funnel-template',
+    strategyContext: input.strategyContext,
   };
+}
+
+const HOOK_PREFIXES = ['痛点', '好奇', '故事', '数字', '反直觉'];
+const LEAD_MAGNET_FORMATS = ['Checklist', 'Guide', 'Template', 'Case Study', 'Quiz'];
+const WHATSAPP_PURPOSES = [
+  '欢迎+交付',
+  '教育',
+  '案例故事',
+  '克服异议',
+  '社会证明',
+  '软成交',
+  '明确邀约',
+];
+
+function firstCase(input: FunnelBuilderInput) {
+  return input.strategyContext?.real_material.case_studies[0];
+}
+
+function diversifyFunnel(input: FunnelBuilderInput, funnel: FunnelBuilderOutput): FunnelBuilderOutput {
+  const context = input.strategyContext;
+  if (!context) return funnel;
+
+  const caseStudy = firstCase(input);
+  const caseText = caseStudy ? `${caseStudy.name} 从「${caseStudy.before_state}」经过「${caseStudy.process}」，最后达到「${caseStudy.after_result}」` : context.strategy.core_narrative;
+  const cta = funnel.landingPage.finalCta.ctaButton || funnel.landingPage.leadMagnet.cta || `通过 ${input.closingMethod} 了解下一步`;
+
+  const adAngles = [
+    { type: 'pain', angle: `痛点角度：如果「${input.mainCustomerPain}」已经影响生活，先用一个低风险清单找出卡点。` },
+    { type: 'result', angle: `结果角度：想要「${input.desiredResult}」，重点不是更努力，而是先走对第一步。` },
+    { type: 'mistake', angle: `错误角度：多数 ${input.targetAudience} 不是机会太少，而是一开始就用错行动顺序。` },
+    { type: 'myth', angle: `迷思角度：不需要等到完全准备好，先完成诊断就能知道自己适不适合。` },
+    { type: 'story', angle: `故事角度：${caseText}，改变不是靠冲动，而是靠清楚路径。` },
+    { type: 'checklist', angle: `清单角度：领取 ${funnel.landingPage.leadMagnet.name}，5 分钟确认你现在最该做什么。` },
+    { type: 'test', angle: `测试角度：测一测你卡在方向、方法，还是跟进系统。` },
+    { type: 'transformation', angle: `转变角度：把「${input.mainCustomerPain}」变成可执行计划，从一个小入口开始。` },
+    { type: 'local', angle: `本地角度：专为 ${input.marketLocation} 的 ${input.targetAudience} 设计，避免套用不适合本地市场的方法。` },
+    { type: 'beginner', angle: `新手角度：不用懂复杂工具，先看懂自己的现状和下一步。` },
+  ];
+
+  const videoHooks = HOOK_PREFIXES.flatMap((prefix) =>
+    [0, 1, 2, 3].map((offset) => {
+      const detail = [input.mainCustomerPain, input.desiredResult, caseText, input.marketLocation][offset];
+      return `${prefix}Hook ${offset + 1}：${detail}，这就是 ${input.productOrService} 漏斗第一步要解决的问题。`;
+    }),
+  ).slice(0, 20);
+
+  const objections = [...context.real_material.common_objections];
+  const defaults = ['没时间', '太贵了', '怕被骗', '我之前试过失败了', '不确定适不适合我', '要再想一想'];
+  for (const item of defaults) if (objections.length < 6 && !objections.includes(item)) objections.push(item);
+
+  const objectionHandling = objections.slice(0, 6).map((objection) => ({
+    objection,
+    realMeaning: `客户真正担心的是：${objection} 背后会不会让自己再次浪费时间、钱或信任。`,
+    response: `我理解你会这样想。我们不急着决定，先用 ${caseStudy?.name ?? '真实案例'} 的路径看：从「${caseStudy?.before_state ?? input.mainCustomerPain}」到「${caseStudy?.after_result ?? input.desiredResult}」中间靠的不是硬冲，而是先确认是否适合你当前阶段。`,
+    softCta: cta,
+  }));
+
+  const sequenceLength = Math.max(3, Math.min(7, context.strategy.sequence_length_days));
+  const followUpSequence = Array.from({ length: sequenceLength + 1 }, (_, day) => ({
+    day,
+    message: `Day ${day}｜${WHATSAPP_PURPOSES[day] ?? '跟进'}：${day === 0 ? `这是你的 ${funnel.landingPage.leadMagnet.name}，先看第一步。` : `今天用「${context.strategy.core_narrative.slice(0, 48)}」这个角度，帮你判断是否适合继续了解。`} ${cta}`,
+  }));
+
+  return {
+    ...funnel,
+    adAngles,
+    videoHooks,
+    objectionHandling,
+    leadMagnets: funnel.leadMagnets.slice(0, 5).map((item, index) => ({
+      ...item,
+      format: LEAD_MAGNET_FORMATS[index] ?? item.format,
+      title: item.title || `${input.productOrService} ${LEAD_MAGNET_FORMATS[index]}`,
+    })),
+    whatsappSystem: { ...funnel.whatsappSystem, followUpSequence },
+  };
+}
+
+function runQualityGate(funnel: FunnelBuilderOutput): QualityGateSummary {
+  const emailItems = funnel.emailSequence.map((email) => `${email.subject} ${email.body}`);
+  const objectionItems = funnel.objectionHandling.map((item) => `${item.objection} ${item.response}`);
+  const whatsappItems = funnel.whatsappSystem.followUpSequence.map((item) => item.message);
+  const leadMagnetItems = funnel.leadMagnets.map((item) => `${item.format} ${item.title} ${item.problemSolved}`);
+  return qualityGateService.summarize({
+    video_hooks: funnel.videoHooks,
+    ad_angles: funnel.adAngles.map((item) => item.angle),
+    objections: objectionItems,
+    whatsapp: whatsappItems,
+    emails: emailItems,
+    lead_magnets: leadMagnetItems,
+  });
 }
 
 function buildSavedFunnelTitle(input: FunnelBuilderInput, funnel: FunnelBuilderOutput): string {
@@ -602,9 +721,13 @@ function buildSavedFunnelTitle(input: FunnelBuilderInput, funnel: FunnelBuilderO
   return `${input.productOrService} - ${name}`.slice(0, 180);
 }
 
-function toSavedFunnelConfig(input: FunnelBuilderInput, funnel: FunnelBuilderOutput): FunnelConfig & {
+function toSavedFunnelConfig(input: FunnelBuilderInput, funnel: FunnelBuilderOutput, qualityGateResults: QualityGateSummary): FunnelConfig & {
   ai_generated?: Record<string, unknown>;
+  strategy_context?: StrategyContext;
+  quality_gate_results?: QualityGateSummary;
 } {
+  const firstStudy = input.strategyContext?.real_material.case_studies[0];
+  const { strategyContext: _strategyContext, ...savedInput } = input;
   return {
     type: 'landing',
     theme: {
@@ -640,6 +763,14 @@ function toSavedFunnelConfig(input: FunnelBuilderInput, funnel: FunnelBuilderOut
         title: funnel.landingPage.solution.systemName,
         description: `${funnel.landingPage.solution.uniqueMechanism}\n\n${funnel.landingPage.solution.whyItWorks}`,
       },
+      ...(firstStudy ? [{
+        type: 'testimonial' as const,
+        title: '真实案例',
+        items: [{
+          name: firstStudy.name,
+          text: `从「${firstStudy.before_state}」，经过「${firstStudy.process}」，最后达到「${firstStudy.after_result}」。`,
+        }],
+      }] : []),
       {
         type: 'faq',
         title: '常见问题',
@@ -656,10 +787,12 @@ function toSavedFunnelConfig(input: FunnelBuilderInput, funnel: FunnelBuilderOut
     ],
     ai_generated: {
       source: 'world_class_funnel_builder',
-      input,
+      input: savedInput,
       output: funnel,
       generated_at: new Date().toISOString(),
     },
+    strategy_context: input.strategyContext,
+    quality_gate_results: qualityGateResults,
   };
 }
 
@@ -671,8 +804,15 @@ async function saveGeneratedFunnel(
   try {
     const saved = await funnelService.create(user, {
       title: buildSavedFunnelTitle(input, result.funnel),
-      config: toSavedFunnelConfig(input, result.funnel) as unknown as Record<string, unknown>,
+      config: toSavedFunnelConfig(input, result.funnel, result.qualityGateResults ?? runQualityGate(result.funnel)) as unknown as Record<string, unknown>,
     });
+
+    if (
+      result.strategyContext?.real_material.case_studies.length &&
+      (result.qualityGateResults?.pass_rate ?? 0) >= 80
+    ) {
+      await notifyMissionProgress(user, 'lead_magnet_created');
+    }
 
     return { ...result, savedFunnelId: saved.id };
   } catch (error) {
@@ -738,6 +878,9 @@ export const funnelBuilderService = {
         funnel = createFallbackFunnel(input);
       }
 
+      funnel = diversifyFunnel(input, funnel);
+      const qualityGateResults = runQualityGate(funnel);
+
       await logAIUsage({
         tenantId: user.tenantId,
         userId: user.id,
@@ -751,6 +894,8 @@ export const funnelBuilderService = {
         tokensUsed: finalResult.tokensIn + finalResult.tokensOut,
         provider: finalResult.provider,
         model: finalResult.model,
+        strategyContext: input.strategyContext,
+        qualityGateResults,
       };
     })().catch((error) => {
       console.error('Funnel builder: AI generation failed, using fallback output.', error);

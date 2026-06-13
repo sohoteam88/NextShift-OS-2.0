@@ -1,11 +1,9 @@
-import { NextResponse } from 'next/server';
-import { getAuthUser } from '@/modules/auth/services/auth-service';
+import { NextRequest, NextResponse } from 'next/server';
+import { apiHandler } from '@/lib/api-handler';
+import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { restartInterviewStep } from '@/modules/brand-builder/services/wizard-state-service';
 
-export async function POST() {
-  const user = await getAuthUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const state = await restartInterviewStep(user.id);
-  return NextResponse.json({ data: state });
-}
+export const POST = apiHandler(async (request: NextRequest) => {
+  const user = await requireAuthApi(request);
+  return NextResponse.json({ data: await restartInterviewStep(user.id) });
+});

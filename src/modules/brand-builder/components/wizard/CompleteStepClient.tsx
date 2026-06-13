@@ -52,7 +52,7 @@ export function CompleteStepClient({ userName }: Props) {
             <span className="mt-1.5 text-xs font-medium text-[var(--color-text)]">开始创作内容</span>
           </Link>
           <Link
-            href="/brand-builder/video-script"
+            href="/video/new"
             className="flex flex-col items-center rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:border-[var(--color-primary)] hover:bg-blue-50"
           >
             <span className="text-2xl">🎬</span>

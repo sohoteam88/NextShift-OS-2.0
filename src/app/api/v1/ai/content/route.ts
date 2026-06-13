@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { contentService } from '@/modules/ai/services/content-service';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 const SaveContentSchema = z.object({
   content: z.string().min(1),
@@ -29,5 +30,6 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const body = await request.json();
   const input = SaveContentSchema.parse(body);
   const content = await contentService.saveContent(user, input);
-  return NextResponse.json({ data: content }, { status: 201 });
+  const mission = input.status === 'published' ? await notifyMissionProgress(user, 'content_published') : undefined;
+  return NextResponse.json({ data: content, mission }, { status: 201 });
 });

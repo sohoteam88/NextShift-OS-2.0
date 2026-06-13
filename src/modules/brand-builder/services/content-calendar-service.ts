@@ -3,8 +3,8 @@ import prisma from '@/lib/prisma';
 import { getRouterForTenant } from '@/modules/ai/router';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
-
-type AuthUser = { id: string; tenantId: string; languagePreference?: string };
+import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import type { AuthUser } from '@/modules/auth/services/auth-service';
 
 export type CalendarItem = {
   id: string;
@@ -47,32 +47,28 @@ export const contentCalendarService = {
   async generate(user: AuthUser, days = 30): Promise<CalendarItem[]> {
     await enforceQuota(user.tenantId);
 
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { metadata: true, name: true },
-    });
-    const meta = (dbUser?.metadata as Record<string, unknown>) ?? {};
-    const profile = (meta.brand_profile as BrandProfile) ?? {};
-    const pillars = profile.contentPillars ?? DEFAULT_PILLARS;
-    const strategy = profile.contentStrategy ?? {};
-    const platforms = profile.platforms ?? ['facebook'];
-    const lang = user.languagePreference ?? 'zh';
+    const ctx = await getBrandContext(user.id);
+    const pillars = (ctx?.contentPillars?.length ?? 0) > 0
+      ? ctx!.contentPillars.map(p => ({ name: p.name, emoji: p.emoji, pct: p.percentage }))
+      : DEFAULT_PILLARS;
+    const platforms = ['facebook'];
+    const lang = user.preferredLanguage ?? 'zh';
 
     const systemPrompt = `You are a social media content calendar generator for a Malaysian network marketing professional. Generate a ${days}-day content calendar.
 
 BRAND CONTEXT:
-- Name: ${dbUser?.name ?? 'Creator'}
-- Identity: ${profile.identity ?? profile.name ?? ''}
-- Products: ${(profile.products ?? []).join(', ')}
-- Target Audience: ${profile.targetAudience ?? ''}
-- Value Proposition: ${profile.valueProposition ?? ''}
+- Name: ${ctx?.personalName ?? 'Creator'}
+- Identity: ${ctx?.brandName ?? ''}
+- Products: ${ctx?.offer?.primary ?? ''}
+- Target Audience: ${ctx?.audience ?? ''}
+- Value Proposition: ${ctx?.offer?.transformation ?? ''}
 - Platforms: ${platforms.join(', ')}
 
 CONTENT STRATEGY:
-- Tone: ${strategy.tone ?? 'friendly'}
-- Visual Style: ${strategy.visual ?? 'lifestyle'}
-- Frequency: ${strategy.frequency ?? 'daily'}
-- Primary Format: ${strategy.format ?? 'short_video'}
+- Tone: ${ctx?.tone ?? 'friendly'}
+- Visual Style: lifestyle
+- Frequency: daily
+- Primary Format: short_video
 - Content Pillars (with %): ${pillars.map((p) => `${p.emoji} ${p.name} (${p.pct}%)`).join(', ')}
 
 OUTPUT: Return a JSON array of ${days} objects, one per day, each with:

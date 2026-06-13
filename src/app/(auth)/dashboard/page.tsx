@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   }
 
   if (user.role === 'member') {
-    return <MemberDashboard userName={user.name} />;
+    return <MemberDashboard userName={user.name} locale={user.preferredLanguage as 'zh' | 'en' | 'ms'} />;
   }
 
   if (user.role === 'leader') {

@@ -47,6 +47,25 @@ export interface JourneyStage {
   xp_reward: number;
 }
 
+export type CompletedCheckEntry = {
+  check: string;
+  completed_at: string;
+};
+
+export type CompletedChecksValue = CompletedCheckEntry[] | string[];
+
+export function extractCheckKeys(completedChecks: CompletedChecksValue): string[] {
+  if (completedChecks.length === 0) return [];
+  if (typeof completedChecks[0] === 'string') return completedChecks as string[];
+  return (completedChecks as CompletedCheckEntry[]).map((entry) => entry.check);
+}
+
+export function getCompletionDate(completedChecks: CompletedChecksValue, checkKey: string): string | null {
+  if (completedChecks.length === 0 || typeof completedChecks[0] === 'string') return null;
+  const entry = (completedChecks as CompletedCheckEntry[]).find((item) => item.check === checkKey);
+  return entry?.completed_at ?? null;
+}
+
 export const JOURNEY_MAP: JourneyStage[] = [
   {
     id: 'register',
@@ -229,7 +248,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'AI generates your first short video script with hook, scenes, and copy',
     description_ms: 'AI menjana skrip video pendek pertama anda',
     estimated_minutes: 8,
-    route: '/brand-builder/video-script',
+    route: '/video/new',
     completion_check: 'first_video_generated',
     prerequisites: ['first_content'],
     is_milestone: false,
@@ -394,13 +413,14 @@ export function getStageById(id: JourneyStageId): JourneyStage | undefined {
   return JOURNEY_MAP.find((stage) => stage.id === id);
 }
 
-export function getNextStage(completedChecks: string[]): JourneyStage | null {
+export function getNextStage(completedChecks: CompletedChecksValue): JourneyStage | null {
+  const checkKeys = extractCheckKeys(completedChecks);
   for (const stage of JOURNEY_MAP) {
-    if (completedChecks.includes(stage.completion_check)) continue;
+    if (checkKeys.includes(stage.completion_check)) continue;
 
     const prereqsMet = stage.prerequisites.every((prereqId) => {
       const prereqStage = getStageById(prereqId);
-      return prereqStage ? completedChecks.includes(prereqStage.completion_check) : true;
+      return prereqStage ? checkKeys.includes(prereqStage.completion_check) : true;
     });
 
     if (prereqsMet) return stage;
@@ -409,14 +429,16 @@ export function getNextStage(completedChecks: string[]): JourneyStage | null {
   return null;
 }
 
-export function getProgressPercent(completedChecks: string[]): number {
+export function getProgressPercent(completedChecks: CompletedChecksValue): number {
+  const checkKeys = extractCheckKeys(completedChecks);
   const userStages = JOURNEY_MAP.filter((stage) => stage.id !== 'admin_approve');
-  const completed = userStages.filter((stage) => completedChecks.includes(stage.completion_check)).length;
+  const completed = userStages.filter((stage) => checkKeys.includes(stage.completion_check)).length;
   return Math.round((completed / userStages.length) * 100);
 }
 
-export function getTotalXP(completedChecks: string[]): number {
-  return JOURNEY_MAP.filter((stage) => completedChecks.includes(stage.completion_check)).reduce(
+export function getTotalXP(completedChecks: CompletedChecksValue): number {
+  const checkKeys = extractCheckKeys(completedChecks);
+  return JOURNEY_MAP.filter((stage) => checkKeys.includes(stage.completion_check)).reduce(
     (sum, stage) => sum + stage.xp_reward,
     0,
   );

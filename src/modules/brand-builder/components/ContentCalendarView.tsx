@@ -114,10 +114,11 @@ function ItemActions({ item, onStatusChange, onDelete }: ItemActionsProps) {
   function goToScript() {
     const params = new URLSearchParams({
       topic: item.title,
+      pillar: item.pillar,
       platform: item.platform,
-      calendarId: item.id,
+      calendar_id: item.id,
     });
-    router.push(`/brand-builder/video-script?${params.toString()}`);
+    router.push(`/video/new?${params.toString()}`);
     setOpen(false);
   }
 

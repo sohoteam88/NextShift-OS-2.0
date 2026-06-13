@@ -1,0 +1,1 @@
+# WhatsApp AI Assistant Audit — 2026-06-12. New module. Reuses existing Lead/Activity/ScheduledMessage Prisma models. Stores config in user.metadata.whatsapp_ai. Deterministic engines — no paid AI calls. Voice reuses existing voice-service.ts.

@@ -1,0 +1,1 @@
+# Funnel Context Audit — 2026-06-12. New layer. Three funnel types (retail/recruitment/upgrade) sharing Brand DNA, CRM, Analytics. Each has different audience, messaging, offers, CTAs. Inherits from getBrandContext() + overrides.

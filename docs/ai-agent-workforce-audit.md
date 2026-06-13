@@ -1,0 +1,1 @@
+# AI Agent Workforce Audit — 2026-06-12. New module. Agents are thin orchestration wrappers around existing services. No duplicated logic. All agents use routeAiRequest() + getBrandContext() + Mission Engine + SaaS feature gates.

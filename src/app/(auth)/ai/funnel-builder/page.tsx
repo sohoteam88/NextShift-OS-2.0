@@ -8,10 +8,11 @@ import {
   BadgeCheck,
   ClipboardList,
   Loader2, ChevronDown, ChevronRight, Copy, CheckCheck,
-  Users, Target, FileText, MessageCircle, Mail, BarChart3, Zap, History,
+  Users, Target, FileText, MessageCircle, Mail, BarChart3, Zap, History, Plus, Trash2, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { FunnelBuilderInput, FunnelBuilderOutput } from '@/modules/ai/services/funnel-builder-service';
+import type { CaseStudy, StrategyContext } from '@/modules/funnel/types/strategy-context';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,8 @@ type GenerateResult = {
   provider: string;
   model: string;
   savedFunnelId?: string;
+  strategyContext?: StrategyContext;
+  qualityGateResults?: { passed: boolean; pass_rate: number };
 };
 
 type SavedFunnelRow = {
@@ -28,6 +31,8 @@ type SavedFunnelRow = {
   title: string;
   createdAt: string;
   config: {
+    strategy_context?: StrategyContext;
+    quality_gate_results?: { passed: boolean; pass_rate: number };
     ai_generated?: {
       source?: string;
       input?: FunnelBuilderInput;
@@ -35,6 +40,13 @@ type SavedFunnelRow = {
       generated_at?: string;
     };
   };
+};
+
+type RealMaterialForm = {
+  founder_story: string;
+  case_studies: CaseStudy[];
+  common_objections: string[];
+  competitors_mentioned: string;
 };
 
 // ─── API call ────────────────────────────────────────────────────────────────
@@ -50,6 +62,23 @@ async function generateFunnel(input: FunnelBuilderInput): Promise<GenerateResult
     throw new Error(err.error?.message ?? err.message ?? '生成失败，请重试');
   }
   const json = await res.json() as { data: GenerateResult };
+  return json.data;
+}
+
+async function buildStrategy(input: {
+  business: StrategyContext['business'];
+  real_material: StrategyContext['real_material'];
+}): Promise<StrategyContext> {
+  const res = await fetch('/api/v1/ai/funnel-builder/build-strategy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { message?: string; error?: { message?: string } };
+    throw new Error(err.error?.message ?? err.message ?? '策略生成失败，请重试');
+  }
+  const json = await res.json() as { data: StrategyContext };
   return json.data;
 }
 
@@ -449,6 +478,40 @@ const CLOSING_OPTIONS = ['WhatsApp', 'Zoom Call', 'Direct Purchase', 'Webinar', 
 const TRAFFIC_OPTIONS = ['Facebook Ads', 'TikTok Ads', 'TikTok Organic', 'Instagram', 'Referral', 'Google Ads', 'WhatsApp Blast'];
 const TONE_OPTIONS = ['Warm & Relatable', 'Professional', 'Casual', 'Motivational', 'Educational'];
 
+function normalizeRealMaterial(material: RealMaterialForm): StrategyContext['real_material'] {
+  return {
+    founder_story: material.founder_story.trim() || undefined,
+    case_studies: material.case_studies
+      .map((item) => ({
+        name: item.name.trim(),
+        before_state: item.before_state.trim(),
+        process: item.process.trim(),
+        after_result: item.after_result.trim(),
+      }))
+      .filter((item) => item.name && item.before_state && item.process && item.after_result),
+    common_objections: material.common_objections.map((item) => item.trim()).filter(Boolean),
+    competitors_mentioned: material.competitors_mentioned.trim() || undefined,
+  };
+}
+
+function buildExampleMaterial(form: FunnelBuilderInput): RealMaterialForm {
+  return {
+    founder_story: `示例 - 建议替换为真实经历：我以前也面对「${form.mainCustomerPain || '不知道从哪里开始'}」，后来把过程拆成更小的步骤，才发现改变不需要一次做很多。`,
+    case_studies: [{
+      name: '示例小美',
+      before_state: form.mainCustomerPain || '每个月都想增加收入，但不知道该从哪里开始',
+      process: `用 ${form.productOrService || '这套系统'} 先完成诊断，再用 2-3 周执行一个小行动`,
+      after_result: form.desiredResult || '开始看到清楚方向，并愿意进入下一步咨询',
+    }],
+    common_objections: [
+      '示例 - 我不懂技术，怎么开始？',
+      '示例 - 这会不会很难坚持？',
+      '示例 - 我之前试过类似的但失败了',
+    ],
+    competitors_mentioned: '示例 - 其他副业课程 / 自己摸索',
+  };
+}
+
 type InputFieldProps = {
   label: string;
   value: string;
@@ -470,6 +533,23 @@ function InputField({ label, value, onChange, placeholder, required, className }
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm outline-none transition-colors placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+      />
+    </div>
+  );
+}
+
+function TextareaField({ label, value, onChange, placeholder, required, className }: InputFieldProps) {
+  return (
+    <div className={className}>
+      <label className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+        {label} {required ? <span className="text-red-500">*</span> : null}
+      </label>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={3}
+        className="w-full resize-none rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 py-2 text-sm outline-none transition-colors placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
       />
     </div>
   );
@@ -524,6 +604,14 @@ export default function FunnelBuilderPage() {
     closingMethod: 'WhatsApp',
     brandTone: 'Warm & Relatable',
   });
+  const [realMaterial, setRealMaterial] = React.useState<RealMaterialForm>({
+    founder_story: '',
+    case_studies: [{ name: '', before_state: '', process: '', after_result: '' }],
+    common_objections: ['', '', ''],
+    competitors_mentioned: '',
+  });
+  const [strategyContext, setStrategyContext] = React.useState<StrategyContext | null>(null);
+  const [generationStage, setGenerationStage] = React.useState<'idle' | 'strategy' | 'content'>('idle');
 
   const [result, setResult] = React.useState<GenerateResult | null>(null);
   const savedFunnelsQuery = useQuery({
@@ -532,14 +620,32 @@ export default function FunnelBuilderPage() {
   });
 
   const mutation = useMutation({
-    mutationFn: generateFunnel,
+    mutationFn: async (input: FunnelBuilderInput) => {
+      setGenerationStage('strategy');
+      const context = strategyContext ?? await buildStrategy({
+        business: {
+          type: input.businessType,
+          product: input.productOrService,
+          audience: input.targetAudience,
+          pain_point: input.mainCustomerPain,
+          desired_outcome: input.desiredResult,
+          price_range: input.offerPrice,
+        },
+        real_material: normalizeRealMaterial(realMaterial),
+      });
+      setStrategyContext(context);
+      setGenerationStage('content');
+      return generateFunnel({ ...input, strategyContext: context });
+    },
     onSuccess: (data) => {
       setResult(data);
+      setGenerationStage('idle');
       void savedFunnelsQuery.refetch();
       setTimeout(() => {
         document.getElementById('funnel-result')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     },
+    onError: () => setGenerationStage('idle'),
   });
 
   function set(key: keyof FunnelBuilderInput, value: string) {
@@ -548,6 +654,7 @@ export default function FunnelBuilderPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setStrategyContext(null);
     mutation.mutate(form);
   }
 
@@ -557,6 +664,7 @@ export default function FunnelBuilderPage() {
 
     const input = item.config.ai_generated?.input;
     if (input) setForm((prev) => ({ ...prev, ...input }));
+    if (item.config.strategy_context) setStrategyContext(item.config.strategy_context);
 
     setResult({
       funnel: output,
@@ -564,6 +672,8 @@ export default function FunnelBuilderPage() {
       provider: 'saved',
       model: 'history',
       savedFunnelId: item.id,
+      strategyContext: item.config.strategy_context,
+      qualityGateResults: item.config.quality_gate_results,
     });
 
     setTimeout(() => {
@@ -572,7 +682,9 @@ export default function FunnelBuilderPage() {
   }
 
   const isValid = form.businessType && form.productOrService && form.targetAudience &&
-    form.mainCustomerPain && form.desiredResult && form.funnelGoal && form.closingMethod;
+    form.mainCustomerPain && form.desiredResult && form.funnelGoal && form.closingMethod &&
+    normalizeRealMaterial(realMaterial).case_studies.length >= 1 &&
+    normalizeRealMaterial(realMaterial).common_objections.length >= 3;
   const requiredFields = [
     form.businessType,
     form.productOrService,
@@ -581,6 +693,8 @@ export default function FunnelBuilderPage() {
     form.desiredResult,
     form.funnelGoal,
     form.closingMethod,
+    normalizeRealMaterial(realMaterial).case_studies.length >= 1 ? 'case' : '',
+    normalizeRealMaterial(realMaterial).common_objections.length >= 3 ? 'objections' : '',
   ];
   const completedRequired = requiredFields.filter(Boolean).length;
   const completionPct = Math.round((completedRequired / requiredFields.length) * 100);
@@ -631,6 +745,147 @@ export default function FunnelBuilderPage() {
             <SelectField label="品牌调性" value={form.brandTone ?? ''} onChange={(value) => set('brandTone', value)} options={TONE_OPTIONS} />
           </div>
 
+          <div className="mt-5 rounded-[var(--radius-lg)] border border-blue-100 bg-blue-50/40 p-4">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--color-text)]">真实素材</h3>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">这是 AI 生成高质量、不重复文案的关键。至少 1 个案例和 3 条真实异议。</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRealMaterial(buildExampleMaterial(form));
+                  setStrategyContext(null);
+                }}
+                className="inline-flex h-9 items-center gap-2 rounded-[var(--radius-md)] border border-blue-200 bg-white px-3 text-xs font-medium text-blue-700 hover:bg-blue-50"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                使用 AI 帮我想几个常见的
+              </button>
+            </div>
+
+            <TextareaField
+              label="你的转变故事"
+              value={realMaterial.founder_story}
+              onChange={(value) => {
+                setRealMaterial((prev) => ({ ...prev, founder_story: value }));
+                setStrategyContext(null);
+              }}
+              placeholder="你自己从什么状态变成什么状态，可选但强烈建议填写"
+            />
+
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-[var(--color-text)]">真实学员案例 <span className="text-red-500">*</span></label>
+                <button
+                  type="button"
+                  disabled={realMaterial.case_studies.length >= 3}
+                  onClick={() => setRealMaterial((prev) => ({ ...prev, case_studies: [...prev.case_studies, { name: '', before_state: '', process: '', after_result: '' }] }))}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary)] disabled:opacity-40"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  添加案例
+                </button>
+              </div>
+              {realMaterial.case_studies.map((item, index) => (
+                <div key={index} className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white p-3">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-[var(--color-text-muted)]">案例 {index + 1}</p>
+                    {realMaterial.case_studies.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRealMaterial((prev) => ({ ...prev, case_studies: prev.case_studies.filter((_, i) => i !== index) }));
+                          setStrategyContext(null);
+                        }}
+                        className="text-[var(--color-text-muted)] hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      ['name', '学员称呼', '例：小美'],
+                      ['before_state', '开始前', '例：月入 RM3000，每月超支'],
+                      ['process', '过程', '例：花 3 周学习，第 4 周开始接单'],
+                      ['after_result', '结果', '例：副业收入 RM800/月'],
+                    ].map(([key, label, placeholder]) => (
+                      <InputField
+                        key={key}
+                        label={label}
+                        value={item[key as keyof CaseStudy]}
+                        onChange={(value) => {
+                          setRealMaterial((prev) => ({
+                            ...prev,
+                            case_studies: prev.case_studies.map((caseStudy, i) => i === index ? { ...caseStudy, [key]: value } : caseStudy),
+                          }));
+                          setStrategyContext(null);
+                        }}
+                        placeholder={placeholder}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-[var(--color-text)]">客户最常说的异议 <span className="text-red-500">*</span></label>
+                <button
+                  type="button"
+                  disabled={realMaterial.common_objections.length >= 6}
+                  onClick={() => setRealMaterial((prev) => ({ ...prev, common_objections: [...prev.common_objections, ''] }))}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary)] disabled:opacity-40"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  添加异议
+                </button>
+              </div>
+              {realMaterial.common_objections.map((item, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => {
+                      setRealMaterial((prev) => ({
+                        ...prev,
+                        common_objections: prev.common_objections.map((objection, i) => i === index ? e.target.value : objection),
+                      }));
+                      setStrategyContext(null);
+                    }}
+                    placeholder="例：我不懂技术，怎么做？"
+                    className="h-10 flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+                  />
+                  {realMaterial.common_objections.length > 3 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRealMaterial((prev) => ({ ...prev, common_objections: prev.common_objections.filter((_, i) => i !== index) }));
+                        setStrategyContext(null);
+                      }}
+                      className="text-[var(--color-text-muted)] hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            <InputField
+              className="mt-4"
+              label="客户通常会比较什么"
+              value={realMaterial.competitors_mentioned}
+              onChange={(value) => {
+                setRealMaterial((prev) => ({ ...prev, competitors_mentioned: value }));
+                setStrategyContext(null);
+              }}
+              placeholder="例：其他副业课程 / 自己摸索"
+            />
+          </div>
+
           {mutation.error ? (
             <p className="mt-4 rounded-[var(--radius-md)] bg-red-50 px-3 py-2 text-sm text-red-600">
               {(mutation.error as Error).message}
@@ -647,7 +902,7 @@ export default function FunnelBuilderPage() {
               {mutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  AI 生成中...
+                  {generationStage === 'strategy' ? 'AI 正在制定策略...' : 'AI 正在生成内容...'}
                 </>
               ) : (
                 <>
@@ -745,9 +1000,26 @@ export default function FunnelBuilderPage() {
             <div>
               <h2 className="text-base font-semibold text-[var(--color-text)]">正在生成漏斗系统</h2>
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                AI 正在组合 landing page、WhatsApp 脚本、广告角度和跟进序列。完成后会自动跳到结果区。
+                {generationStage === 'strategy'
+                  ? 'Stage 1：AI 正在制定漏斗类型、核心叙事、最大风险和跟进天数。'
+                  : 'Stage 2：AI 正在用已确认的策略生成落地页、WhatsApp、广告角度、Hooks 和异议处理。'}
               </p>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {strategyContext ? (
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center gap-2">
+            <Target className="h-5 w-5 text-[var(--color-primary)]" />
+            <h2 className="text-base font-semibold text-[var(--color-text)]">AI 漏斗策略</h2>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="漏斗类型" value={`${strategyContext.strategy.funnel_type}｜${strategyContext.strategy.funnel_type_reason}`} />
+            <Field label="主角度" value={`${strategyContext.strategy.primary_angle}｜${strategyContext.strategy.primary_angle_reason}`} />
+            <Field label="核心叙事" value={strategyContext.strategy.core_narrative} />
+            <Field label="最大风险与应对" value={`${strategyContext.strategy.biggest_risk} → ${strategyContext.strategy.risk_mitigation}`} />
           </div>
         </div>
       ) : null}
@@ -759,6 +1031,7 @@ export default function FunnelBuilderPage() {
               <h2 className="text-lg font-semibold text-[var(--color-text)]">漏斗系统已生成</h2>
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">
                 {result.savedFunnelId ? '已保存为草稿记录，可直接进入漏斗编辑器继续调整。' : '先检查漏斗总结和目标客户画像，再复制需要的模块。'}
+                {result.qualityGateResults ? ` 内容差异化通过率：${result.qualityGateResults.pass_rate}%。` : ''}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">

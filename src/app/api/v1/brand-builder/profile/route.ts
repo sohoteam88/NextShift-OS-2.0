@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import prisma from '@/lib/prisma';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,5 +32,16 @@ export const PATCH = apiHandler(async (request: NextRequest) => {
     data: { metadata: newMeta as Prisma.InputJsonValue },
   });
 
-  return NextResponse.json({ data: newMeta.brand_profile });
+  const missionResults = [];
+  if (updates.contentStrategy) {
+    missionResults.push(await notifyMissionProgress(user, 'positioning_completed'));
+  }
+  if (updates.bios) {
+    missionResults.push(await notifyMissionProgress(user, 'bio_generated'));
+  }
+  if (updates.avatar_completed || updates.avatarCompleted) {
+    missionResults.push(await notifyMissionProgress(user, 'avatar_completed'));
+  }
+
+  return NextResponse.json({ data: newMeta.brand_profile, mission: missionResults.find((result) => result.isNewMilestone) ?? missionResults[0] });
 });

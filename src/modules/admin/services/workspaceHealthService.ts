@@ -1,0 +1,315 @@
+import { prisma } from '@/lib/prisma';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export type AttentionSeverity = 'critical' | 'high' | 'normal';
+
+export type WorkspaceAttention = {
+  label: string;
+  value: number;
+  severity: AttentionSeverity;
+  href: string;
+};
+
+export type WorkspaceMemberHealth = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  journeyProgress: number;
+  currentStage: string;
+  currentFunnel: string;
+  lastActiveAt: string;
+  healthScore: number;
+  needsHelp: boolean;
+};
+
+export type WorkspaceFunnelHealth = {
+  id: string;
+  title: string;
+  status: string;
+  published: boolean;
+  leads: number;
+  appointments: number;
+  customers: number;
+  views: number;
+  conversions: number;
+  conversionRate: number;
+  healthScore: number;
+  inactive: boolean;
+};
+
+export type WorkspaceJourneyStage = {
+  id: string;
+  label: string;
+  users: number;
+};
+
+export type WorkspaceContentStats = {
+  postsGenerated: number;
+  videosGenerated: number;
+  publishingActivity: number;
+  platforms: { label: string; value: number }[];
+};
+
+export type WorkspaceBillingStats = {
+  activePlans: number;
+  trials: number;
+  expired: number;
+  failedPayments: number;
+  gracePeriodUsers: number;
+  mrr: number;
+};
+
+export type WorkspaceCommandData = {
+  overview: {
+    totalMembers: number;
+    activeThisWeek: number;
+    funnels: number;
+    leads: number;
+    appointments: number;
+    customers: number;
+    teamMembers: number;
+    revenue: number;
+    conversionRate: number;
+    healthScore: number;
+    healthTone: 'green' | 'yellow' | 'red';
+  };
+  attention: WorkspaceAttention[];
+  members: WorkspaceMemberHealth[];
+  funnels: WorkspaceFunnelHealth[];
+  journey: WorkspaceJourneyStage[];
+  content: WorkspaceContentStats;
+  billing: WorkspaceBillingStats;
+  activity: { id: string; label: string; createdAt: string }[];
+};
+
+function clampScore(score: number) {
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function healthTone(score: number): 'green' | 'yellow' | 'red' {
+  if (score > 80) return 'green';
+  if (score >= 50) return 'yellow';
+  return 'red';
+}
+
+function daysSince(date: Date) {
+  return Math.floor((Date.now() - date.getTime()) / DAY_MS);
+}
+
+function stageLabel(stageId?: string | null) {
+  const stage = (stageId ?? '').toLowerCase();
+  if (stage.includes('brand')) return 'Brand Discovery';
+  if (stage.includes('content')) return 'Content';
+  if (stage.includes('lead') || stage.includes('funnel')) return 'Lead Generation';
+  if (stage.includes('crm') || stage.includes('customer')) return 'CRM';
+  if (stage.includes('team') || stage.includes('recruit')) return 'Team Building';
+  return stageId || 'Not started';
+}
+
+function estimateJourneyProgress(stageId?: string | null, completedChecks?: unknown) {
+  const checks = Array.isArray(completedChecks) ? completedChecks.length : 0;
+  const stage = (stageId ?? '').toLowerCase();
+  let base = 8;
+  if (stage.includes('brand')) base = 20;
+  if (stage.includes('content')) base = 40;
+  if (stage.includes('lead') || stage.includes('funnel')) base = 60;
+  if (stage.includes('crm') || stage.includes('customer')) base = 78;
+  if (stage.includes('team') || stage.includes('recruit')) base = 88;
+  return clampScore(base + checks * 3);
+}
+
+function memberHealth(progress: number, lastActiveAt: Date, onboardingCompleted: boolean) {
+  const inactiveDays = daysSince(lastActiveAt);
+  const activityScore = inactiveDays <= 2 ? 30 : inactiveDays <= 7 ? 20 : inactiveDays <= 14 ? 10 : 0;
+  const onboardingScore = onboardingCompleted ? 20 : 5;
+  return clampScore(progress * 0.5 + activityScore + onboardingScore);
+}
+
+function funnelHealth(views: number, conversions: number, published: boolean) {
+  const trafficScore = views > 100 ? 35 : views > 20 ? 24 : views > 0 ? 12 : 0;
+  const conversionScore = conversions > 10 ? 35 : conversions > 2 ? 22 : conversions > 0 ? 12 : 0;
+  return clampScore((published ? 30 : 10) + trafficScore + conversionScore);
+}
+
+function appointmentWhere(tenantId: string) {
+  return {
+    tenantId,
+    deletedAt: null,
+    OR: [
+      { pipelineStage: { contains: 'appointment', mode: 'insensitive' as const } },
+      { pipelineStage: { contains: 'booking', mode: 'insensitive' as const } },
+      { pipelineStage: { contains: 'demo', mode: 'insensitive' as const } },
+    ],
+  };
+}
+
+class WorkspaceHealthService {
+  async getCommandData(tenantId: string): Promise<WorkspaceCommandData> {
+    const weekAgo = new Date(Date.now() - 7 * DAY_MS);
+    const monthAgo = new Date(Date.now() - 30 * DAY_MS);
+
+    const [
+      users,
+      funnels,
+      leadCount,
+      appointmentCount,
+      customerCount,
+      contents,
+      videos,
+      activity,
+      inviteCount,
+    ] = await Promise.all([
+      prisma.user.findMany({
+        where: { tenantId, deletedAt: null },
+        include: { userProgress: true, funnels: { take: 1, orderBy: { updatedAt: 'desc' } } },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      prisma.funnel.findMany({ where: { tenantId }, orderBy: { updatedAt: 'desc' } }),
+      prisma.lead.count({ where: { tenantId, deletedAt: null } }),
+      prisma.lead.count({ where: appointmentWhere(tenantId) }),
+      prisma.customer.count({ where: { tenantId } }),
+      prisma.content.findMany({ where: { tenantId, createdAt: { gte: monthAgo } }, orderBy: { createdAt: 'desc' } }),
+      prisma.videoProject.findMany({ where: { tenantId, createdAt: { gte: monthAgo } }, orderBy: { createdAt: 'desc' } }),
+      prisma.activity.findMany({ where: { tenantId }, take: 8, orderBy: { createdAt: 'desc' } }),
+      prisma.inviteCode.count({ where: { tenantId } }),
+    ]);
+
+    const members = users.filter((user) => user.role !== 'platform_admin');
+    const activeThisWeek = members.filter((user) => {
+      const lastActive = user.userProgress?.lastActivityAt ?? user.updatedAt;
+      return lastActive >= weekAgo;
+    }).length;
+    const pendingApprovals = users.filter((user) => user.status === 'pending').length;
+    const inactiveMembers = members.filter((user) => {
+      const lastActive = user.userProgress?.lastActivityAt ?? user.updatedAt;
+      return daysSince(lastActive) > 7;
+    }).length;
+    const stuckBrandDiscovery = members.filter((user) => {
+      const stage = user.userProgress?.currentStageId ?? '';
+      return stage.toLowerCase().includes('brand') && daysSince(user.userProgress?.lastActivityAt ?? user.updatedAt) > 3;
+    }).length;
+
+    const memberRows: WorkspaceMemberHealth[] = members.slice(0, 50).map((user) => {
+      const lastActive = user.userProgress?.lastActivityAt ?? user.updatedAt;
+      const progress = estimateJourneyProgress(user.userProgress?.currentStageId, user.userProgress?.completedChecks);
+      const score = memberHealth(progress, lastActive, user.onboardingCompleted);
+      return {
+        id: user.id,
+        name: user.name || 'Unnamed member',
+        email: user.email,
+        role: user.role,
+        journeyProgress: progress,
+        currentStage: stageLabel(user.userProgress?.currentStageId),
+        currentFunnel: user.funnels[0]?.title ?? 'No funnel',
+        lastActiveAt: lastActive.toISOString(),
+        healthScore: score,
+        needsHelp: score < 50 || daysSince(lastActive) > 7,
+      };
+    });
+
+    const funnelRows: WorkspaceFunnelHealth[] = funnels.map((funnel) => {
+      const published = funnel.status === 'published' || Boolean(funnel.publishedAt);
+      const conversionRate = funnel.views > 0 ? Math.round((funnel.conversions / funnel.views) * 1000) / 10 : 0;
+      const score = funnelHealth(funnel.views, funnel.conversions, published);
+      return {
+        id: funnel.id,
+        title: funnel.title,
+        status: funnel.status,
+        published,
+        leads: funnel.conversions,
+        appointments: 0,
+        customers: 0,
+        views: funnel.views,
+        conversions: funnel.conversions,
+        conversionRate,
+        healthScore: score,
+        inactive: published && funnel.views === 0,
+      };
+    });
+
+    const journeyMap = new Map<string, number>();
+    for (const member of members) {
+      const label = stageLabel(member.userProgress?.currentStageId);
+      journeyMap.set(label, (journeyMap.get(label) ?? 0) + 1);
+    }
+
+    const platformCounts = new Map<string, number>();
+    for (const item of contents) {
+      const platform = item.platform || 'Unassigned';
+      platformCounts.set(platform, (platformCounts.get(platform) ?? 0) + 1);
+    }
+    for (const item of videos) {
+      const platform = item.platform || 'Unassigned';
+      platformCounts.set(platform, (platformCounts.get(platform) ?? 0) + 1);
+    }
+
+    const totalFunnels = funnels.length;
+    const inactiveFunnels = funnelRows.filter((funnel) => funnel.inactive).length;
+    const contentPublished = contents.filter((item) => item.status === 'published').length;
+    const conversionRate = leadCount > 0 ? Math.round((customerCount / leadCount) * 1000) / 10 : 0;
+    const healthScore = clampScore(
+      (members.length ? (activeThisWeek / members.length) * 30 : 30) +
+        (totalFunnels ? ((totalFunnels - inactiveFunnels) / totalFunnels) * 25 : 15) +
+        (leadCount > 0 ? 20 : 5) +
+        (contentPublished > 0 ? 15 : 5) +
+        (pendingApprovals === 0 ? 10 : 3),
+    );
+
+    const attentionCandidates: WorkspaceAttention[] = [
+      { label: 'Pending Approvals', value: pendingApprovals, severity: pendingApprovals > 5 ? 'critical' : 'high', href: '/admin/approvals' },
+      { label: 'Members Inactive > 7 Days', value: inactiveMembers, severity: inactiveMembers > 5 ? 'critical' : 'high', href: '/admin/members' },
+      { label: 'Funnels Without Traffic', value: inactiveFunnels, severity: inactiveFunnels > 0 ? 'high' : 'normal', href: '/admin/funnels' },
+      { label: 'Failed Payments', value: 0, severity: 'normal', href: '/admin/billing' },
+      { label: 'Users Stuck In Brand Discovery', value: stuckBrandDiscovery, severity: stuckBrandDiscovery > 3 ? 'high' : 'normal', href: '/admin/journey' },
+    ];
+    const severityRank: Record<AttentionSeverity, number> = { critical: 0, high: 1, normal: 2 };
+    const attention = attentionCandidates
+      .filter((item) => item.value > 0 || item.label === 'Failed Payments')
+      .sort((a, b) => {
+        return severityRank[a.severity] - severityRank[b.severity] || b.value - a.value;
+      });
+
+    return {
+      overview: {
+        totalMembers: members.length,
+        activeThisWeek,
+        funnels: totalFunnels,
+        leads: leadCount,
+        appointments: appointmentCount,
+        customers: customerCount,
+        teamMembers: members.filter((user) => user.sponsorId).length,
+        revenue: 0,
+        conversionRate,
+        healthScore,
+        healthTone: healthTone(healthScore),
+      },
+      attention,
+      members: memberRows,
+      funnels: funnelRows,
+      journey: Array.from(journeyMap.entries()).map(([label, users], index) => ({ id: `${index}-${label}`, label, users })),
+      content: {
+        postsGenerated: contents.length,
+        videosGenerated: videos.length,
+        publishingActivity: contentPublished + videos.filter((item) => item.status === 'published').length,
+        platforms: Array.from(platformCounts.entries()).map(([label, value]) => ({ label, value })),
+      },
+      billing: {
+        activePlans: 1,
+        trials: 0,
+        expired: 0,
+        failedPayments: 0,
+        gracePeriodUsers: 0,
+        mrr: 0,
+      },
+      activity: activity.map((item) => ({
+        id: item.id,
+        label: item.description,
+        createdAt: item.createdAt.toISOString(),
+      })),
+    };
+  }
+}
+
+export const workspaceHealthService = new WorkspaceHealthService();

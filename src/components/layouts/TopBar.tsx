@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Menu, Search, Settings, LogOut, User, ChevronDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
@@ -10,10 +12,21 @@ import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
 
+type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
+
 type TopBarProps = {
   className?: string;
   userName?: string;
+  userRole?: Role;
+  tenantName?: string;
+  tenantLogoUrl?: string | null;
 };
+
+function getBusinessHref(role: Role) {
+  if (role === 'platform_admin') return '/platform-admin';
+  if (role === 'operator') return '/workspace';
+  return '/analytics-center';
+}
 
 function UserMenu({ userName }: { userName: string }) {
   const [open, setOpen] = useState(false);
@@ -41,20 +54,29 @@ function UserMenu({ userName }: { userName: string }) {
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setOpen((value) => !value)}
         className="flex min-h-10 items-center gap-2 rounded-[var(--radius-md)] px-2 hover:bg-[var(--color-surface)]"
         aria-label="User menu"
         aria-expanded={open}
       >
         <Avatar name={userName} size="sm" />
         <span className="hidden text-sm font-medium text-[var(--color-text)] sm:inline">{userName}</span>
-        <ChevronDown className={cn('hidden h-3.5 w-3.5 text-[var(--color-text-muted)] transition-transform sm:block', open && 'rotate-180')} />
+        <ChevronDown
+          className={cn(
+            'hidden h-3.5 w-3.5 text-[var(--color-text-muted)] transition-transform sm:block',
+            open && 'rotate-180',
+          )}
+          aria-hidden="true"
+        />
       </button>
 
-      {open && (
+      {open ? (
         <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white py-1 shadow-lg">
           <button
-            onClick={() => { setOpen(false); router.push('/settings'); }}
+            onClick={() => {
+              setOpen(false);
+              router.push('/settings');
+            }}
             className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface)]"
           >
             <User className="h-4 w-4 text-[var(--color-text-muted)]" />
@@ -70,39 +92,73 @@ function UserMenu({ userName }: { userName: string }) {
             {loading ? '退出中...' : '退出登录'}
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
-export function TopBar({ className, userName = 'User' }: TopBarProps) {
-  const common = useTranslations('common');
+export function TopBar({
+  className,
+  userName = 'User',
+  userRole = 'member',
+  tenantName = 'NextShift',
+  tenantLogoUrl,
+}: TopBarProps) {
   const nav = useTranslations('nav');
   const router = useRouter();
+  const pathname = usePathname();
+  const topNav = [
+    { href: '/dashboard', label: 'dashboard' },
+    { href: '/journey', label: 'journey' },
+    { href: '/content-engine', label: 'growth' },
+    { href: '/crm', label: 'leads' },
+    { href: getBusinessHref(userRole), label: 'business' },
+    { href: userRole === 'member' ? '/member' : '/team', label: 'team' },
+    { href: '/settings', label: 'settings' },
+  ] as const;
 
   return (
     <header
       className={cn(
-        'sticky top-0 z-20 flex h-16 min-w-0 items-center gap-3 border-b border-[var(--color-border)] bg-white px-4 lg:px-6',
+        'sticky top-0 z-20 flex min-h-16 min-w-0 items-center gap-3 border-b border-[var(--color-border)] bg-white px-4 lg:px-6',
         className,
       )}
     >
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        icon={<Menu className="h-5 w-5" aria-hidden="true" />}
-        aria-label="Open navigation"
-        className="h-10 w-10 lg:hidden"
-      />
-      <div className="relative hidden w-full min-w-0 max-w-md md:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-        <input
-          type="search"
-          placeholder={common('search')}
-          className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] pl-9 pr-3 text-sm outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-blue-100"
-        />
-      </div>
+      <Link href="/dashboard" className="flex min-w-0 shrink-0 items-center gap-2">
+        {tenantLogoUrl ? (
+          <span className="relative h-8 w-8 overflow-hidden rounded-[var(--radius-md)]">
+            <Image src={tenantLogoUrl} alt={`${tenantName} logo`} fill unoptimized sizes="32px" className="object-cover" />
+          </span>
+        ) : (
+          <span className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary)] text-xs font-semibold text-white">
+            NS
+          </span>
+        )}
+        <span className="hidden max-w-36 truncate text-sm font-semibold text-[var(--color-text)] sm:inline">
+          {tenantName}
+        </span>
+      </Link>
+
+      <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" aria-label="Primary navigation">
+        {topNav.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'inline-flex h-10 items-center rounded-[var(--radius-md)] px-3 text-sm font-semibold transition-colors',
+                active
+                  ? 'bg-blue-50 text-[var(--color-primary)]'
+                  : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
+              )}
+            >
+              {nav(item.label)}
+            </Link>
+          );
+        })}
+      </nav>
+
       <div className="ml-auto flex items-center gap-2">
         <LanguageSwitcher />
         <Button
@@ -112,7 +168,7 @@ export function TopBar({ className, userName = 'User' }: TopBarProps) {
           icon={<Settings className="h-4 w-4" aria-hidden="true" />}
           aria-label={nav('settings')}
           onClick={() => router.push('/settings')}
-          className="hidden h-10 w-10 sm:inline-flex"
+          className="hidden h-10 w-10 sm:inline-flex lg:hidden"
         />
         <UserMenu userName={userName} />
       </div>

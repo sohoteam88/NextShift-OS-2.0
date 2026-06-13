@@ -4,6 +4,7 @@ import { apiHandler } from '@/lib/api-handler';
 import { AppError } from '@/lib/errors';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import prisma from '@/lib/prisma';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,5 +69,13 @@ export const PATCH = apiHandler(async (request: NextRequest) => {
     data: { metadata: newMeta as Prisma.InputJsonValue },
   });
 
-  return NextResponse.json({ data: updated });
+  const checkKey =
+    completed && !current.completed && body.platform === 'facebook'
+      ? 'fb_page_completed'
+      : completed && !current.completed && body.platform === 'instagram'
+        ? 'ig_account_completed'
+        : null;
+  const mission = checkKey ? await notifyMissionProgress(user, checkKey) : undefined;
+
+  return NextResponse.json({ data: updated, mission });
 });

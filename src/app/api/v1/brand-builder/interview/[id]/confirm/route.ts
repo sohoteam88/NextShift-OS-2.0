@@ -3,6 +3,7 @@ import { apiHandler } from '@/lib/api-handler';
 import { AppError } from '@/lib/errors';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { brandInterviewService } from '@/modules/brand-builder/services/brand-interview-service';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,5 +24,6 @@ export const POST = apiHandler(async (request: NextRequest, context) => {
   if (!interview) throw new AppError('NOT_FOUND', 404, 'Interview not found');
 
   const confirmed = await brandInterviewService.confirmProfile(id, user, body.profile);
-  return NextResponse.json({ data: confirmed });
+  const mission = await notifyMissionProgress(user, 'brand_dna_confirmed');
+  return NextResponse.json({ data: confirmed, mission });
 });

@@ -1,0 +1,1 @@
+# Traffic Engine Audit — 2026-06-12. New module. Stores in user.metadata.traffic_engine. Reads from BrandContext + leadMagnetContext + webinarContext + funnelContext. No ad API connections yet — planning only.

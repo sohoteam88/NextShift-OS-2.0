@@ -1,18 +1,13 @@
-import prisma from '@/lib/prisma';
 import { getRouterForTenant } from '@/modules/ai/router';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 import { postPerformanceService } from './post-performance-service';
+import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import type { AuthUser } from '@/modules/auth/services/auth-service';
 
-type AuthUser = { id: string; tenantId: string };
-
+/** @deprecated Use getBrandContext() directly. */
 async function getBrandProfile(userId: string) {
-  const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { metadata: true },
-  });
-  const meta = (dbUser?.metadata as Record<string, unknown>) ?? {};
-  return (meta.brand_profile as Record<string, unknown>) ?? null;
+  return getBrandContext(userId);
 }
 
 export type ContentInsights = {

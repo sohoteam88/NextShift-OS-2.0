@@ -58,6 +58,8 @@ export const approvalService = {
       throw new AppError('QUOTA_EXCEEDED', 429, 'Member limit reached. Upgrade your plan.');
     }
 
+    const approvedAt = new Date().toISOString();
+
     await prisma.$transaction([
       prisma.user.update({
         where: { id: memberId },
@@ -69,12 +71,18 @@ export const approvalService = {
           tenantId: user.tenantId,
           userId: memberId,
           currentStageId: 'brand_discovery',
-          completedChecks: ['registered', 'approved'],
+          completedChecks: [
+            { check: 'registered', completed_at: approvedAt },
+            { check: 'approved', completed_at: approvedAt },
+          ],
           totalXp: 10,
           mode: 'guided',
         },
         update: {
-          completedChecks: ['registered', 'approved'],
+          completedChecks: [
+            { check: 'registered', completed_at: approvedAt },
+            { check: 'approved', completed_at: approvedAt },
+          ],
           currentStageId: 'brand_discovery',
           lastActivityAt: new Date(),
         },

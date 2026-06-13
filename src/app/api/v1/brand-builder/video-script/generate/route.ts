@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { videoScriptService } from '@/modules/brand-builder/services/video-script-service';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,5 +20,6 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const body = await request.json();
   const input = GenerateSchema.parse(body);
   const script = await videoScriptService.generate(user, input);
-  return NextResponse.json({ data: script }, { status: 201 });
+  const mission = await notifyMissionProgress(user, 'first_video_generated');
+  return NextResponse.json({ data: script, mission }, { status: 201 });
 });

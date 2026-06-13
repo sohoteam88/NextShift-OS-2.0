@@ -3,6 +3,7 @@ import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi, requireRoleApi } from '@/modules/auth/middleware/require-auth-api';
 import { leadService } from '@/modules/crm/services/lead-service';
 import { UpdateLeadSchema } from '@/modules/crm/schemas/lead-schemas';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 async function getLeadId(context: { params: Promise<Record<string, string>> | Record<string, string> } | undefined) {
   const params = await Promise.resolve(context!.params);
@@ -23,7 +24,11 @@ export const PATCH = apiHandler(async (request: NextRequest, context) => {
   const body = await request.json();
   const input = UpdateLeadSchema.parse(body);
   const lead = await leadService.update(user, id, input);
-  return NextResponse.json({ data: lead });
+  const convertedStages = new Set(['已转化', 'converted', 'won']);
+  const mission = input.pipelineStage && convertedStages.has(input.pipelineStage)
+    ? await notifyMissionProgress(user, 'first_sale_completed')
+    : undefined;
+  return NextResponse.json({ data: lead, mission });
 });
 
 export const DELETE = apiHandler(async (request: NextRequest, context) => {

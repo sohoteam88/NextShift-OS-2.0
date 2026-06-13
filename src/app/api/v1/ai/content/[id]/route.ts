@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { contentService } from '@/modules/ai/services/content-service';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 const UpdateContentSchema = z.object({
   content: z.string().min(1).optional(),
@@ -30,7 +31,8 @@ export const PATCH = apiHandler(async (request: NextRequest, context) => {
   const body = await request.json();
   const input = UpdateContentSchema.parse(body);
   const content = await contentService.update(user, id, input);
-  return NextResponse.json({ data: content });
+  const mission = input.status === 'published' ? await notifyMissionProgress(user, 'content_published') : undefined;
+  return NextResponse.json({ data: content, mission });
 });
 
 export const DELETE = apiHandler(async (request: NextRequest, context) => {

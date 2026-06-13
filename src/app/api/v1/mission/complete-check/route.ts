@@ -13,5 +13,5 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const body = await request.json();
   const input = CompleteCheckSchema.parse(body);
   const result = await missionService.completeCheck(user, input.check_key);
-  return NextResponse.json({ data: result });
+  return NextResponse.json({ data: result, mission: result });
 });

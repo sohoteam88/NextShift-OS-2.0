@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Bot, ClipboardList, Gauge, Settings, Activity } from 'lucide-react';
+import { BriefcaseBusiness, ClipboardList, Gauge, Settings, Map } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 type MobileTabBarProps = {
@@ -12,9 +12,9 @@ type MobileTabBarProps = {
 
 const tabs = [
   { href: '/dashboard', label: 'dashboard', icon: Gauge },
+  { href: '/journey', label: 'journey', icon: Map },
+  { href: '/content-engine', label: 'growth', icon: BriefcaseBusiness },
   { href: '/crm', label: 'leads', icon: ClipboardList },
-  { href: '/ai', label: 'aiTools', icon: Bot },
-  { href: '/member', label: 'dailyActions', icon: Activity },
   { href: '/settings', label: 'settings', icon: Settings },
 ] as const;
 

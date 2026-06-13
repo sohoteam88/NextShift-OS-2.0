@@ -4,6 +4,7 @@ import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { getSearchParams } from '@/lib/query-helpers';
 import { funnelService } from '@/modules/funnel/services/funnel-service';
 import { CreateFunnelSchema, FunnelQuerySchema } from '@/modules/funnel/schemas/funnel-schemas';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
@@ -17,5 +18,11 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const body = await request.json();
   const input = CreateFunnelSchema.parse(body);
   const funnel = await funnelService.create(user, input);
-  return NextResponse.json({ data: funnel }, { status: 201 });
+  const configType = typeof input.config?.type === 'string' ? input.config.type : null;
+  const templateType = funnel.template?.type ?? null;
+  const mission =
+    configType === 'lead_magnet' || templateType === 'lead_magnet'
+      ? await notifyMissionProgress(user, 'lead_magnet_created')
+      : undefined;
+  return NextResponse.json({ data: funnel, mission }, { status: 201 });
 });

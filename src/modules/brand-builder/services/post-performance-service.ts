@@ -1,6 +1,5 @@
 import prisma from '@/lib/prisma';
-
-type AuthUser = { id: string; tenantId: string };
+import type { AuthUser } from '@/modules/auth/services/auth-service';
 
 export type PostPerformanceData = {
   platform: string;

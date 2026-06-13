@@ -1,0 +1,1 @@
+# SaaS Layer Audit — 2026-06-12. Existing: Tenant.plan, Tenant.maxAiCalls, Tenant.maxMembers, AIUsageLog. New: centralized plan definitions, feature gates, usage limits, AI credit system, upgrade engine. No payment gateway yet.

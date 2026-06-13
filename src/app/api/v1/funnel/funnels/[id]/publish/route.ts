@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { funnelService } from '@/modules/funnel/services/funnel-service';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 async function getId(context: { params: Promise<Record<string, string>> | Record<string, string> } | undefined) {
   return (await Promise.resolve(context!.params)).id;
@@ -25,5 +26,6 @@ export const POST = apiHandler(async (request: NextRequest, context) => {
   }
 
   const funnel = await funnelService.publish(user, id);
-  return NextResponse.json({ data: funnel });
+  const mission = await notifyMissionProgress(user, 'funnel_published');
+  return NextResponse.json({ data: funnel, mission });
 });

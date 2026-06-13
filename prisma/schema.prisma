@@ -41,9 +41,11 @@ model Tenant {
   brandInterviews   BrandInterview[]
   contentCalendars  ContentCalendar[]
   postPerformances  PostPerformance[]
+  videoProjects     VideoProject[]
   userProgress       UserProgress[]
   missions           Mission[]
   achievements       Achievement[]
+  brandProfiles      BrandProfile[]
 
   @@map("tenants")
 }
@@ -85,9 +87,11 @@ model User {
   brandInterviews     BrandInterview[]
   contentCalendars    ContentCalendar[]
   postPerformances    PostPerformance[]
+  videoProjects       VideoProject[]
   userProgress         UserProgress?
   missions             Mission[]
   achievements         Achievement[]
+  brandProfile         BrandProfile?
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -152,6 +156,50 @@ model Achievement {
   @@unique([tenantId, userId, key])
   @@index([tenantId, userId])
   @@map("achievements")
+}
+
+model BrandProfile {
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id") @db.Uuid
+  userId              String   @unique @map("user_id") @db.Uuid
+  // Identity
+  brandName           String   @default("") @map("brand_name")
+  personalName        String   @default("") @map("personal_name")
+  brandPositioning    String   @default("") @map("brand_positioning")
+  slogan              String   @default("")
+  // Audience
+  targetAudience      String   @default("") @map("target_audience")
+  audiencePainPoints  Json     @default("[]") @map("audience_pain_points")
+  audienceGoals       Json     @default("[]") @map("audience_goals")
+  audienceObjections  Json     @default("[]") @map("audience_objections")
+  // Messaging
+  coreMessage         String   @default("") @map("core_message")
+  uniqueAngle         String   @default("") @map("unique_angle")
+  elevatorPitch       String   @default("") @map("elevator_pitch")
+  // Content
+  contentTone         String   @default("温暖亲切") @map("content_tone")
+  contentPillars      Json     @default("[]") @map("content_pillars")
+  storytellingStyle   String   @default("") @map("storytelling_style")
+  // Offer
+  primaryOffer        String   @default("") @map("primary_offer")
+  secondaryOffer      String   @default("") @map("secondary_offer")
+  transformationPromise String @default("") @map("transformation_promise")
+  // Visual
+  brandColors         Json     @default("[]") @map("brand_colors")
+  profileImagePrompt  String   @default("") @map("profile_image_prompt")
+  coverBannerPrompt   String   @default("") @map("cover_banner_prompt")
+  // Metadata
+  confidenceScore     Int      @default(0) @map("confidence_score")
+  version             Int      @default(1)
+  publishedAt         DateTime? @map("published_at")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("brand_profiles")
 }
 
 model Tag {
@@ -612,4 +660,36 @@ model ContentCalendar {
   @@index([tenantId, userId, date])
   @@index([tenantId, userId, status])
   @@map("content_calendars")
+}
+
+model VideoProject {
+  id                  String   @id @default(cuid())
+  tenantId            String   @map("tenant_id") @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  calendarId          String?  @map("calendar_id")
+  topic               String
+  contentPillar       String   @map("content_pillar")
+  funnelStage         String   @map("funnel_stage")
+  platform            String
+  duration            String
+  style               String
+  strategy            Json
+  masterScript        Json     @map("master_script")
+  shotList            Json?    @map("shot_list")
+  brollList           Json?    @map("broll_list")
+  veoPrompt           String?  @map("veo_prompt")
+  minimaxPrompt       String?  @map("minimax_prompt")
+  capcutScript        Json?    @map("capcut_script")
+  subtitleSrt         String?  @map("subtitle_srt")
+  platformAdaptations Json?    @map("platform_adaptations")
+  status              String   @default("draft")
+  performanceId       String?  @map("performance_id")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId])
+  @@index([tenantId, userId, status])
+  @@map("video_projects")
 }

@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { LeaderDashboardData } from '../types';
 import { TeamAlerts } from './TeamAlerts';
+import { TeamJourneyProgress } from './TeamJourneyProgress';
 import { TopPerformers } from './TopPerformers';
 
 const TeamPerformanceTable = dynamic(() => import('./TeamPerformanceTable').then((mod) => mod.TeamPerformanceTable), {
@@ -77,6 +78,8 @@ export function LeaderDashboard({ user }: Props) {
       </div>
 
       {dashboard?.alerts ? <TeamAlerts alerts={dashboard.alerts} /> : <Skeleton className="h-40 w-full rounded-[var(--radius-lg)]" />}
+
+      <TeamJourneyProgress />
 
       {dashboard?.topPerformers ? (
         <TopPerformers members={dashboard.memberPerformance} initialTopPerformers={dashboard.topPerformers} />

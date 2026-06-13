@@ -17,6 +17,7 @@ const Schema = z.object({
   trafficSource: z.string().max(200).optional(),
   closingMethod: z.string().min(1).max(100),
   brandTone: z.string().max(100).optional(),
+  strategyContext: z.any().optional(),
 });
 
 export const POST = apiHandler(async (request: NextRequest) => {

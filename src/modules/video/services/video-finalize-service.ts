@@ -7,9 +7,13 @@ import { capcutService } from './capcut-service';
 import { platformAdaptationService } from './platform-adaptation-service';
 import { subtitleService } from './subtitle-service';
 
-async function getBrandProfile(userId: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
-  return ((user?.metadata as Record<string, unknown>)?.brand_profile as Record<string, unknown> | undefined) ?? null;
+import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+
+/** @deprecated Use getBrandContext() directly. Maps to legacy shape. */
+async function getBrandProfile(userId: string): Promise<Record<string, unknown> | null> {
+  const ctx = await getBrandContext(userId);
+  if (!ctx) return null;
+  return { identity: ctx.brandName, personality: ctx.tone, story: ctx.messaging.coreMessage, audience: ctx.audience };
 }
 
 export const videoFinalizeService = {

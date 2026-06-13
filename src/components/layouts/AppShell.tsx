@@ -1,16 +1,15 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { MobileTabBar } from './MobileTabBar';
-import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { AdminSidebar } from './AdminSidebar';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { OnboardingState } from '@/modules/member/types';
 import { TenantBranding } from '@/modules/tenant/components/TenantBranding';
 import { PLAN_TIERS, type PlanTier } from '@/modules/tenant/constants/plans';
+import { MissionListener } from '@/modules/mission/components/MissionListener';
 
 type AppShellProps = {
   children: ReactNode;
@@ -24,12 +23,6 @@ type AppShellProps = {
     settings: unknown;
   } | null;
 };
-
-const allowedDuringOnboarding = ['/settings', '/member', '/onboarding', '/api/', '/brand-builder'];
-
-function isAllowedPath(pathname: string) {
-  return allowedDuringOnboarding.some((path) => pathname === path || pathname.startsWith(path));
-}
 
 function extractBranding(tenant: AppShellProps['tenant']) {
   if (!tenant) return null;
@@ -53,24 +46,18 @@ function extractBranding(tenant: AppShellProps['tenant']) {
 
 export default function AppShell({ children, user, onboarding, tenant }: AppShellProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const isOnboardingPath = pathname.startsWith('/onboarding');
   const isWizardPath = pathname.startsWith('/brand-builder/step');
-  const shouldRedirect = !onboarding.completed && !isAllowedPath(pathname);
+  void onboarding;
   const branding = extractBranding(tenant);
 
-  useEffect(() => {
-    if (shouldRedirect) {
-      router.replace('/onboarding');
-    }
-  }, [router, shouldRedirect]);
-
-  if (shouldRedirect) {
-    return <div className="min-h-screen bg-[var(--color-surface)]" />;
-  }
-
   if (isOnboardingPath || isWizardPath) {
-    return <div className="min-h-screen bg-[var(--color-surface)]">{children}</div>;
+    return (
+      <div className="min-h-screen bg-[var(--color-surface)]">
+        {children}
+        <MissionListener />
+      </div>
+    );
   }
 
   // Platform admin gets a dedicated admin console shell
@@ -88,6 +75,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
             {children}
           </main>
         </div>
+        <MissionListener />
       </div>
     );
   }
@@ -95,17 +83,17 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   return (
     <div className="min-h-screen overflow-x-hidden bg-[var(--color-surface)]">
       <TenantBranding primaryColor={branding?.primaryColor} />
-      <TopBar userName={user.name} />
-      <div className="flex min-w-0">
-        <Sidebar
-          className="hidden lg:block"
-          role={user.role as 'member' | 'leader' | 'operator' | 'platform_admin'}
-          tenantName={tenant?.name}
-          tenantLogoUrl={branding?.logoUrl}
-        />
-        <main className="min-w-0 flex-1 p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:p-6 lg:pb-6">{children}</main>
-      </div>
+      <TopBar
+        userName={user.name}
+        userRole={user.role as 'member' | 'leader' | 'operator' | 'platform_admin'}
+        tenantName={tenant?.name}
+        tenantLogoUrl={branding?.logoUrl}
+      />
+      <main className="mx-auto min-w-0 max-w-[1440px] p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:p-6 lg:pb-6">
+        {children}
+      </main>
       <MobileTabBar className="lg:hidden" />
+      <MissionListener />
     </div>
   );
 }

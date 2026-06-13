@@ -2,8 +2,8 @@ import prisma from '@/lib/prisma';
 import { getRouterForTenant } from '@/modules/ai/router';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
-
-type AuthUser = { id: string; tenantId: string; languagePreference?: string };
+import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import type { AuthUser } from '@/modules/auth/services/auth-service';
 
 export interface VideoScriptInput {
   topic: string;
@@ -40,13 +40,17 @@ type BrandProfileData = {
   personality?: string;
 };
 
+/** @deprecated Use getBrandContext() directly. */
 async function getBrandProfile(userId: string): Promise<BrandProfileData | null> {
-  const dbUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { metadata: true },
-  });
-  const meta = (dbUser?.metadata as Record<string, unknown>) ?? {};
-  return (meta.brand_profile as BrandProfileData) ?? null;
+  const ctx = await getBrandContext(userId);
+  if (!ctx) return null;
+  return {
+    identity: ctx.brandName,
+    name: ctx.personalName,
+    target_audience: ctx.audience,
+    targetAudience: ctx.audience,
+    personality: ctx.tone,
+  };
 }
 
 const DURATION_GUIDE: Record<VideoScriptInput['duration'], string> = {

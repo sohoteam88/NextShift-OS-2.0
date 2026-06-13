@@ -3,6 +3,7 @@ import { apiHandler } from '@/lib/api-handler';
 import { AppError } from '@/lib/errors';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { brandInterviewService } from '@/modules/brand-builder/services/brand-interview-service';
+import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,5 +24,6 @@ export const POST = apiHandler(async (request: NextRequest, context) => {
   }
 
   const extracted = await brandInterviewService.extractBrandProfile(id, user);
-  return NextResponse.json({ data: extracted });
+  const mission = await notifyMissionProgress(user, 'brand_discovery_completed');
+  return NextResponse.json({ data: extracted, mission });
 });
