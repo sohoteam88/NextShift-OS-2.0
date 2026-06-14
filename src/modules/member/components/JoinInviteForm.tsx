@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -60,6 +61,27 @@ export function JoinInviteForm({ code }: { code: string }) {
     if (!invite) return;
     setLoading(true);
     setError('');
+
+    const supabase = createClient();
+    const signUpResult = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          phone,
+          whatsapp: whatsappSameAsPhone ? phone : whatsapp,
+          preferred_language: language,
+          invite_code: code,
+        },
+      },
+    });
+
+    if (signUpResult.error && !signUpResult.error.message.toLowerCase().includes('already')) {
+      setError(signUpResult.error.message);
+      setLoading(false);
+      return;
+    }
 
     const response = await fetch('/api/v1/member/register', {
       method: 'POST',

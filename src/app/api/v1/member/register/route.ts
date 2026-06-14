@@ -30,28 +30,50 @@ export const POST = apiHandler(async (request: NextRequest) => {
     throw new AppError('CONFLICT', 409, 'User already registered');
   }
 
-  const supabaseAdmin = createServiceRoleSupabaseClient();
-  const { data: createdAuthUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-    email: normalizedEmail,
-    password: input.password,
-    email_confirm: true,
-    user_metadata: {
-      name: input.name,
-      phone: input.phone ?? '',
-      whatsapp: input.whatsapp ?? input.phone ?? '',
-      preferred_language: input.preferred_language ?? 'zh',
-      invite_code: input.invite_code,
-    },
-  });
+  let supabaseAdmin: ReturnType<typeof createServiceRoleSupabaseClient> | null = null;
+  let createAuthError: { message: string } | null = null;
+  let authUserId: string | undefined;
+  let shouldCleanupAuth = false;
 
-  let authUserId = createdAuthUser.user?.id;
-  let shouldCleanupAuth = Boolean(authUserId);
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabaseAdmin = createServiceRoleSupabaseClient();
+    const { data: createdAuthUser, error } = await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      password: input.password,
+      email_confirm: true,
+      user_metadata: {
+        name: input.name,
+        phone: input.phone ?? '',
+        whatsapp: input.whatsapp ?? input.phone ?? '',
+        preferred_language: input.preferred_language ?? 'zh',
+        invite_code: input.invite_code,
+      },
+    });
 
-  if (createAuthError && createAuthError.message.toLowerCase().includes('already')) {
+    authUserId = createdAuthUser.user?.id;
+    shouldCleanupAuth = Boolean(authUserId);
+    createAuthError = error ? { message: error.message } : null;
+  }
+
+  if (supabaseAdmin && createAuthError && createAuthError.message.toLowerCase().includes('already')) {
     const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
     const existingAuthUser = authUsers.users.find((authUser) => authUser.email?.toLowerCase() === normalizedEmail);
     authUserId = existingAuthUser?.id;
     shouldCleanupAuth = false;
+  }
+
+  if (!authUserId) {
+    const authRows = await prisma.$queryRaw<Array<{ id: string; raw_user_meta_data: Record<string, unknown> | null }>>`
+      select id::text, raw_user_meta_data
+      from auth.users
+      where lower(email) = lower(${normalizedEmail})
+      order by created_at desc
+      limit 1
+    `;
+    const authRow = authRows[0];
+    if (authRow?.raw_user_meta_data?.invite_code === input.invite_code) {
+      authUserId = authRow.id;
+    }
   }
 
   if (!authUserId) {
@@ -110,7 +132,7 @@ export const POST = apiHandler(async (request: NextRequest) => {
       return dbUser;
     });
   } catch (error) {
-    if (shouldCleanupAuth) {
+    if (shouldCleanupAuth && supabaseAdmin) {
       await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => undefined);
     }
     throw error;
