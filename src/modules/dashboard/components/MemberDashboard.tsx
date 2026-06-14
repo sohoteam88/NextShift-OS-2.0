@@ -1,161 +1,107 @@
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
-import type { ElementType } from 'react';
-import { ArrowRight, BarChart3, CalendarCheck, Flame, MessageCircle, Sparkles, Target, Users } from 'lucide-react';
+import { ArrowRight, BarChart3, CircleDollarSign, FileText, Sparkles, Target, Users, Zap } from 'lucide-react';
 import { AiRecommendationPanel } from './AiRecommendationPanel';
 import { TodaysActionCard } from './TodaysActionCard';
-import { DNAHealthCard } from '@/modules/brand-dna/components/DNAHealthCard';
-import { FunnelOperatingCenter } from '@/components/funnel-operating-system/FunnelOperatingCenter';
+import { JourneyProgress } from './JourneyProgress';
+import { useMissionCurrent } from '@/modules/mission-engine/components/MissionCard';
+import { useQuery } from '@tanstack/react-query';
 
 type Locale = 'zh' | 'en' | 'ms';
-
-type Props = {
-  userName?: string;
-  locale?: Locale;
-};
+type Props = { userName?: string; locale?: Locale };
 
 function copy(locale: Locale) {
-  if (locale === 'en') {
-    return {
-      title: 'Funnel Operating Center',
-      subtitle: 'Build the business through one funnel, one bottleneck, and one next action.',
-      mission: "Today's Mission",
-      health: 'Business Health',
-      next: 'Next Best Action',
-      leads: 'Hot Leads',
-      activity: 'Recent Activity',
-      summary: 'AI CEO Summary',
-      openJourney: 'Open Journey',
-      leadText: 'Review follow-ups and move qualified leads forward.',
-      activityText: 'Content, funnel, and CRM activity will appear here as the operating feed matures.',
-      summaryText: 'Focus on one output today: publish one useful asset, capture one lead, or follow up with one prospect.',
-    };
-  }
-
-  if (locale === 'ms') {
-    return {
-      title: 'Pusat Operasi Funnel',
-      subtitle: 'Bina bisnes melalui satu funnel, satu bottleneck dan satu tindakan seterusnya.',
-      mission: 'Misi Hari Ini',
-      health: 'Kesihatan Bisnes',
-      next: 'Tindakan Terbaik Seterusnya',
-      leads: 'Prospek Panas',
-      activity: 'Aktiviti Terkini',
-      summary: 'Ringkasan AI CEO',
-      openJourney: 'Buka Perjalanan',
-      leadText: 'Semak susulan dan gerakkan prospek yang layak ke depan.',
-      activityText: 'Aktiviti kandungan, funnel dan CRM akan muncul di sini.',
-      summaryText: 'Fokus pada satu hasil hari ini: terbitkan aset, dapatkan prospek, atau susul satu prospek.',
-    };
-  }
-
-  return {
-    title: '漏斗运营中心',
-    subtitle: '围绕一个漏斗、一个瓶颈、一个下一步来建立业务。',
-    mission: '今日任务',
-    health: '业务健康',
-    next: '下一步最佳行动',
-    leads: '高温潜在客户',
-    activity: '近期动态',
-    summary: 'AI CEO 总结',
-    openJourney: '打开旅程',
-    leadText: '查看需要跟进的潜在客户，把合格对象推进到下一阶段。',
-    activityText: '内容、漏斗和 CRM 动态会集中显示在这里。',
-    summaryText: '今天只专注一个产出：发布一个内容、收集一个线索，或跟进一个潜在客户。',
-  };
+  if (locale === 'en') return { title: 'What should I do today?', subtitle: 'Focus on one action. Build momentum.', mission: "Today's Mission", aiCoach: 'AI Coach', journey: 'Journey Progress', openJourney: 'Open Journey', continueJourney: 'Continue Your Journey', startJourney: 'Start Your Journey', content: 'Content', leads: 'Leads', customers: 'Customers', revenue: 'Revenue' };
+  if (locale === 'ms') return { title: 'Apa patut saya buat hari ini?', subtitle: 'Fokus satu tindakan. Bina momentum.', mission: 'Misi Hari Ini', aiCoach: 'Jurulatih AI', journey: 'Kemajuan Perjalanan', openJourney: 'Buka Perjalanan', continueJourney: 'Teruskan Perjalanan', startJourney: 'Mula Perjalanan', content: 'Kandungan', leads: 'Prospek', customers: 'Pelanggan', revenue: 'Hasil' };
+  return { title: '今天我应该做什么？', subtitle: '专注一个行动。建立动力。', mission: '今日任务', aiCoach: 'AI 教练', journey: '旅程进度', openJourney: '打开旅程', continueJourney: '继续旅程', startJourney: '开始旅程', content: '内容', leads: '潜在客户', customers: '客户', revenue: '收入' };
 }
 
-function MetricCard({ label, value, icon: Icon }: { label: string; value: string; icon: ElementType }) {
-  return (
-    <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm">
-      <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-        <Icon className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
-        {label}
-      </div>
-      <p className="mt-3 text-2xl font-semibold text-[var(--color-text)]">{value}</p>
-    </div>
-  );
+function useQuickStats() {
+  return useQuery({
+    queryKey: ['dashboard-quick-stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/team/summary');
+      if (!res.ok) return { content: 0, leads: 0, customers: 0, revenue: 0 };
+      const json = await res.json() as { data?: any };
+      const d = json.data ?? {};
+      return {
+        content: d.contentCount ?? d.content?.total ?? 0,
+        leads: d.leadCount ?? d.leads?.total ?? 0,
+        customers: d.customerCount ?? d.customers?.total ?? 0,
+        revenue: d.revenue ?? d.mrr ?? 0,
+      };
+    },
+    staleTime: 60_000,
+  });
 }
 
 export function MemberDashboard({ locale = 'zh' }: Props) {
   const t = copy(locale);
+  const q = useMissionCurrent();
+  const stats = useQuickStats();
+  const progress = q.data?.data?.progress;
+  const hasStarted = (progress?.completedStages ?? 0) > 0;
+  const fmt = (n: number) => n.toLocaleString();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto max-w-3xl space-y-5 pb-8">
+      {/* Hero — Dynamic CTA based on journey progress */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
-            NextShift OS
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">NextShift OS</p>
           <h1 className="mt-2 text-2xl font-semibold text-[var(--color-text)]">{t.title}</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t.subtitle}</p>
         </div>
         <Link
           href="/journey"
-          className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white shadow-sm"
+          className="inline-flex h-11 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--color-primary-hover)]"
         >
-          {t.openJourney}
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          {hasStarted ? t.continueJourney : t.startJourney}
+          <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
 
-      <FunnelOperatingCenter locale={locale} />
+      {/* Quick Stats — Content, Leads, Customers, Revenue only */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: t.content, value: fmt(stats.data?.content ?? 0), icon: FileText },
+          { label: t.leads, value: fmt(stats.data?.leads ?? 0), icon: Users },
+          { label: t.customers, value: fmt(stats.data?.customers ?? 0), icon: Target },
+          { label: t.revenue, value: `RM ${fmt(stats.data?.revenue ?? 0)}`, icon: CircleDollarSign },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-3 shadow-sm text-center">
+            <stat.icon className="mx-auto h-4 w-4 text-[var(--color-primary)]" />
+            <p className="mt-2 text-lg font-semibold text-[var(--color-text)]">{stat.value}</p>
+            <p className="text-xs text-[var(--color-text-muted)]">{stat.label}</p>
+          </div>
+        ))}
+      </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-        <div className="space-y-5">
-          <section className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-[var(--color-primary)]" aria-hidden="true" />
-              <h2 className="text-lg font-semibold text-[var(--color-text)]">{t.mission}</h2>
-            </div>
-            <TodaysActionCard locale={locale} />
-          </section>
-
-          <section className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-[var(--color-primary)]" aria-hidden="true" />
-              <h2 className="text-lg font-semibold text-[var(--color-text)]">{t.next}</h2>
-            </div>
-            <AiRecommendationPanel locale={locale} />
-          </section>
-        </div>
-
-        <aside className="space-y-5">
-          <section>
-            <h2 className="mb-3 text-lg font-semibold text-[var(--color-text)]">{t.health}</h2>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <DNAHealthCard locale={locale} />
-              <MetricCard label="Content" value="0/3" icon={CalendarCheck} />
-              <MetricCard label="Leads" value="0" icon={Users} />
-              <MetricCard label="Pipeline" value="0%" icon={BarChart3} />
-            </div>
-          </section>
-
-          <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-[var(--color-primary)]" aria-hidden="true" />
-              <h2 className="text-lg font-semibold text-[var(--color-text)]">{t.leads}</h2>
-            </div>
-            <p className="mt-3 text-sm text-[var(--color-text-muted)]">{t.leadText}</p>
-            <Link href="/crm" className="mt-4 inline-flex text-sm font-semibold text-[var(--color-primary)]">
-              CRM <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
-            </Link>
-          </section>
-
-          <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-[var(--color-primary)]" aria-hidden="true" />
-              <h2 className="text-lg font-semibold text-[var(--color-text)]">{t.summary}</h2>
-            </div>
-            <p className="mt-3 text-sm text-[var(--color-text-muted)]">{t.summaryText}</p>
-          </section>
-
-          <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-[var(--color-text)]">{t.activity}</h2>
-            <p className="mt-3 text-sm text-[var(--color-text-muted)]">{t.activityText}</p>
-          </section>
-        </aside>
+      {/* Journey Progress + AI Coach + Mission — compact single-column grid */}
+      <div className="grid gap-5 md:grid-cols-[1fr_1fr]">
+        <section className="space-y-3 md:col-span-2">
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-[var(--color-primary)]" />
+            <h2 className="text-base font-semibold text-[var(--color-text)]">{t.journey}</h2>
+          </div>
+          <JourneyProgress locale={locale} />
+        </section>
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[var(--color-primary)]" />
+            <h2 className="text-base font-semibold text-[var(--color-text)]">{t.aiCoach}</h2>
+          </div>
+          <AiRecommendationPanel locale={locale} />
+        </section>
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-[var(--color-primary)]" />
+            <h2 className="text-base font-semibold text-[var(--color-text)]">{t.mission}</h2>
+          </div>
+          <TodaysActionCard locale={locale} />
+        </section>
       </div>
     </div>
   );

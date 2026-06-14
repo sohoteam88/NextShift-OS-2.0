@@ -36,13 +36,13 @@ type UnlockedAchievement = {
 
 const JOURNEYS: Record<BusinessFunnelType, Array<{ title: string; description: string; criteria: string; steps: Array<{ label: string; href: string }> }>> = {
   retail: [
-    { title: 'Retail Funnel · Brand Trust', description: '让顾客知道你是谁、你解决什么问题。', criteria: 'Brand setup ready', steps: [{ label: 'Brand DNA', href: '/brand-dna' }, { label: 'Social Setup', href: '/social-setup' }] },
+    { title: 'Retail Funnel · Brand Trust', description: '让顾客知道你是谁、你解决什么问题。', criteria: 'Brand setup ready', steps: [{ label: 'Brand Interview', href: '/brand-builder/step/interview' }, { label: 'Brand DNA', href: '/brand-dna' }, { label: 'Social Setup', href: '/social-setup' }] },
     { title: 'Retail Funnel · Demand Content', description: '持续发布能带来询问的内容和短视频。', criteria: '3 posts · 1 video', steps: [{ label: 'Content Engine', href: '/content-engine' }, { label: 'Video Production', href: '/video-production' }] },
     { title: 'Retail Funnel · Lead Capture', description: '把注意力转成名单和 WhatsApp 对话。', criteria: '1 funnel published · first lead', steps: [{ label: 'Lead Magnet', href: '/lead-magnet' }, { label: 'Funnel Builder', href: '/funnel-builder' }, { label: 'Traffic Engine', href: '/traffic-engine' }] },
     { title: 'Retail Funnel · First Customer', description: '跟进潜在客户，推动预约和第一笔成交。', criteria: '1 appointment · 1 customer', steps: [{ label: 'WhatsApp AI', href: '/whatsapp-ai' }, { label: 'CRM', href: '/crm' }] },
   ],
   recruitment: [
-    { title: 'Recruitment Funnel · Opportunity Positioning', description: '清楚表达副业机会和适合人群。', criteria: 'Brand setup ready', steps: [{ label: 'Brand DNA', href: '/brand-dna' }, { label: 'Brand Discovery', href: '/brand-discovery' }] },
+    { title: 'Recruitment Funnel · Opportunity Positioning', description: '清楚表达副业机会和适合人群。', criteria: 'Brand setup ready', steps: [{ label: 'Brand Interview', href: '/brand-builder/step/interview' }, { label: 'Brand DNA', href: '/brand-dna' }, { label: 'Brand Discovery', href: '/brand-discovery' }] },
     { title: 'Recruitment Funnel · Story Content', description: '发布能吸引想增加收入人群的内容。', criteria: '3 posts · 1 video', steps: [{ label: 'Content Engine', href: '/content-engine' }, { label: 'Video Production', href: '/video-production' }] },
     { title: 'Recruitment Funnel · Webinar Invite', description: '把名单引导到讲座、说明会或策略电话。', criteria: '1 webinar · first lead', steps: [{ label: 'Webinar Center', href: '/webinar-center' }, { label: 'Traffic Engine', href: '/traffic-engine' }] },
     { title: 'Recruitment Funnel · First Member', description: '跟进、筛选并转化第一位伙伴。', criteria: '1 call · 1 member', steps: [{ label: 'WhatsApp AI', href: '/whatsapp-ai' }, { label: 'CRM', href: '/crm' }] },
