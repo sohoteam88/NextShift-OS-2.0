@@ -1,7 +1,7 @@
 'use client';
 
 import { Activity, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import type { FunnelHealth, FunnelProgress } from '@/modules/funnel-os/types';
+import type { FunnelHealth, FunnelProgress } from '@/modules/funnel/types/funnel-os';
 import { cn } from '@/lib/cn';
 
 function scoreTone(score: number) {

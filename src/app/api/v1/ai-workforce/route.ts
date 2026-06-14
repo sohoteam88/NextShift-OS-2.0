@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
-import { agentManager } from '@/modules/ai-agents/agentManager';
-import { agentMemoryService } from '@/modules/ai-agents/agentMemoryService';
+import { agentManager } from '@/modules/ai/services/agent-manager';
+import { agentMemoryService } from '@/modules/ai/services/agent-memory';
 import prisma from '@/lib/prisma';
 
 export const GET = apiHandler(async (req: NextRequest) => {

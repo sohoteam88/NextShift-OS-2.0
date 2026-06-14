@@ -6,6 +6,7 @@ import { type AuthUser } from '@/modules/auth/services/auth-service';
 import { type CreateFunnelInput, type UpdateFunnelInput, type FunnelQuery } from '../schemas/funnel-schemas';
 import { type FunnelConfig } from '../types';
 import { quotaService } from '@/modules/tenant/services/quota-service';
+import { measureConfigSize, logOversizedConfig } from './funnel-config-monitor';
 
 function slugify(str: string): string {
   return str
@@ -52,7 +53,12 @@ export const funnelService = {
         orderBy: { createdAt: 'desc' },
         skip: (query.page - 1) * query.limit,
         take: query.limit,
-        include: { template: { select: { id: true, name: true, type: true } } },
+        select: {
+          id: true, title: true, slug: true, status: true,
+          views: true, conversions: true, createdAt: true, updatedAt: true,
+          ownerId: true, tenantId: true,
+          template: { select: { id: true, name: true, type: true } },
+        },
       }),
       prisma.funnel.count({ where }),
     ]);
@@ -95,9 +101,42 @@ export const funnelService = {
     return funnel;
   },
 
-  async create(user: AuthUser, input: CreateFunnelInput) {
-    await quotaService.checkFunnelQuota(user.tenantId);
+  /**
+   * Internal write path — canonical single entry point for all Funnel table inserts.
+   * Used by funnelService.create() and funnelBuilderService.generate().
+   */
+  async createInternal(params: {
+    tenantId: string;
+    ownerId: string;
+    title: string;
+    config: Record<string, unknown>;
+    templateId?: string | null;
+  }) {
+    await quotaService.checkFunnelQuota(params.tenantId);
 
+    const slug = await generateSlug(params.title);
+
+    // Monitor config size
+    const sizeResult = measureConfigSize(params.config);
+    if (sizeResult.level !== 'ok') {
+      void logOversizedConfig(params.tenantId, null, params.title, sizeResult);
+    }
+
+    return prisma.funnel.create({
+      data: {
+        tenantId: params.tenantId,
+        ownerId: params.ownerId,
+        templateId: params.templateId ?? null,
+        title: params.title,
+        slug,
+        config: params.config as Prisma.InputJsonValue,
+        status: 'draft',
+      },
+      include: { template: { select: { id: true, name: true, type: true } } },
+    });
+  },
+
+  async create(user: AuthUser, input: CreateFunnelInput) {
     let config: Record<string, unknown> = input.config ?? {};
 
     if (input.template_id) {
@@ -108,19 +147,12 @@ export const funnelService = {
       config = template.config as Record<string, unknown>;
     }
 
-    const slug = await generateSlug(input.title);
-
-    return prisma.funnel.create({
-      data: {
-        tenantId: user.tenantId,
-        ownerId: user.id,
-        templateId: input.template_id ?? null,
-        title: input.title,
-        slug,
-        config: config as Prisma.InputJsonValue,
-        status: 'draft',
-      },
-      include: { template: { select: { id: true, name: true, type: true } } },
+    return this.createInternal({
+      tenantId: user.tenantId,
+      ownerId: user.id,
+      title: input.title,
+      config,
+      templateId: input.template_id ?? null,
     });
   },
 
@@ -131,6 +163,12 @@ export const funnelService = {
     if (!funnel) throw new AppError('NOT_FOUND', 404, 'Funnel not found');
     if (user.role === 'member' && funnel.ownerId !== user.id) {
       throw new AppError('FORBIDDEN', 403, 'Access denied');
+    }
+
+    // Monitor config size on updates
+    if (input.config) {
+      const sizeResult = measureConfigSize(input.config as Record<string, unknown>);
+      if (sizeResult.level !== 'ok') void logOversizedConfig(user.tenantId, funnelId, input.title ?? funnel.title ?? '', sizeResult);
     }
 
     return prisma.funnel.update({

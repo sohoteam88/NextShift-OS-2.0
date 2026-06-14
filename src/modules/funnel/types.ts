@@ -1,4 +1,4 @@
-export type FunnelType = 'landing' | 'quiz' | 'lead_magnet';
+export type FunnelPageType = 'landing' | 'quiz' | 'lead_magnet';
 
 export interface FunnelTheme {
   primary_color: string;
@@ -101,7 +101,7 @@ export interface QuizConfig {
 }
 
 export interface FunnelConfig {
-  type: FunnelType;
+  type: FunnelPageType;
   theme: FunnelTheme;
   sections: FunnelSection[];
   quiz?: QuizConfig;

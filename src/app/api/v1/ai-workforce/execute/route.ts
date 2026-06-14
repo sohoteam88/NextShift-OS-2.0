@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
-import { agentManager } from '@/modules/ai-agents/agentManager';
-import { orchestrateForGoal } from '@/modules/ai-agents/workforceOrchestrator';
-import { agentMemoryService } from '@/modules/ai-agents/agentMemoryService';
+import { agentManager } from '@/modules/ai/services/agent-manager';
+import { orchestrateForGoal } from '@/modules/ai/services/workforce-orchestrator';
+import { agentMemoryService } from '@/modules/ai/services/agent-memory';
 import prisma from '@/lib/prisma';
 
 const Schema = z.object({

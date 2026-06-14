@@ -1,13 +1,13 @@
 'use client';
 
 import { RefreshCw, ShoppingBag, TrendingUp, Users } from 'lucide-react';
-import type { FunnelType } from '@/modules/funnel-context/types';
+import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
 import { cn } from '@/lib/cn';
 import { useFunnelPreference } from './useFunnelPreference';
 
 type Locale = 'zh' | 'en' | 'ms';
 
-const FUNNELS: Array<{ id: FunnelType; icon: typeof ShoppingBag; labels: Record<Locale, string>; description: Record<Locale, string> }> = [
+const FUNNELS: Array<{ id: BusinessFunnelType; icon: typeof ShoppingBag; labels: Record<Locale, string>; description: Record<Locale, string> }> = [
   {
     id: 'retail',
     icon: ShoppingBag,
@@ -28,7 +28,7 @@ const FUNNELS: Array<{ id: FunnelType; icon: typeof ShoppingBag; labels: Record<
   },
 ];
 
-export function getFunnelLabel(funnelType: FunnelType, locale: Locale = 'zh') {
+export function getFunnelLabel(funnelType: BusinessFunnelType, locale: Locale = 'zh') {
   return FUNNELS.find((item) => item.id === funnelType)?.labels[locale] ?? funnelType;
 }
 

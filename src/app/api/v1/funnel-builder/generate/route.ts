@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
-import { funnelBuilderService } from '@/modules/funnel-builder/funnelBuilderService';
+import { funnelBuilderService } from '@/modules/funnel/services/funnel-builder-service';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
 export const POST = apiHandler(async (request: NextRequest) => {

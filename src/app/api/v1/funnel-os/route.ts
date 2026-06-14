@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
-import { funnelProgressService } from '@/modules/funnel-os/funnelProgressService';
-import { calculateFunnelHealth } from '@/modules/funnel-os/funnelHealthService';
-import { getNextAction } from '@/modules/funnel-os/funnelNextActionEngine';
-import { FUNNEL_GOALS, MILESTONES } from '@/modules/funnel-os/types';
-import type { FunnelType } from '@/modules/funnel-context/types';
+import { funnelProgressService } from '@/modules/funnel/services/funnel-progress-service';
+import { funnelHealthService } from '@/modules/funnel/services/funnel-health-service';
+import { FUNNEL_GOALS, MILESTONES } from '@/modules/funnel/types/funnel-os';
+import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
 import prisma from '@/lib/prisma';
 
-const FUNNEL_TYPES: FunnelType[] = ['retail', 'recruitment', 'upgrade'];
+const FUNNEL_TYPES: BusinessFunnelType[] = ['retail', 'recruitment', 'upgrade'];
 
 function parseGoalTarget(goal: string) {
   const match = goal.match(/\d+/);
   return match ? Number(match[0]) : 1;
 }
 
-function buildKpi(funnelType: FunnelType, leadCount: number, customerCount: number) {
+function buildKpi(funnelType: BusinessFunnelType, leadCount: number, customerCount: number) {
   if (funnelType === 'recruitment') {
     return [
       { label: 'Leads', value: String(leadCount), target: '10' },
@@ -44,7 +43,7 @@ function buildKpi(funnelType: FunnelType, leadCount: number, customerCount: numb
 
 export const GET = apiHandler(async (req: NextRequest) => {
   const user = await requireAuthApi(req);
-  const requestedType = (new URL(req.url).searchParams.get('type') ?? 'retail') as FunnelType;
+  const requestedType = (new URL(req.url).searchParams.get('type') ?? 'retail') as BusinessFunnelType;
   const funnelType = FUNNEL_TYPES.includes(requestedType) ? requestedType : 'retail';
 
   const [progress, contentCount, videoCount] = await Promise.all([
@@ -57,8 +56,8 @@ export const GET = apiHandler(async (req: NextRequest) => {
   const customerCount = await prisma.customer.count({ where: { tenantId: user.tenantId } });
   const funnelCount = await prisma.funnel.count({ where: { tenantId: user.tenantId } });
 
-  const health = await calculateFunnelHealth(contentCount, videoCount, funnelCount > 0, leadCount, customerCount);
-  const nextAction = getNextAction(funnelType, contentCount, videoCount, funnelCount > 0, leadCount, customerCount);
+  const health = await funnelHealthService.evaluateActivity(contentCount, videoCount, funnelCount > 0, leadCount, customerCount);
+  const nextAction = funnelHealthService.getActivityNextAction(funnelType, contentCount, videoCount, funnelCount > 0, leadCount, customerCount);
 
   // Map real data to milestones
   const milestones = (MILESTONES[funnelType] ?? []).map(m => {

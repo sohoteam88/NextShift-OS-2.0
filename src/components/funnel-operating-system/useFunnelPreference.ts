@@ -1,25 +1,25 @@
 'use client';
 
 import * as React from 'react';
-import type { FunnelType } from '@/modules/funnel-context/types';
+import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
 
 const STORAGE_KEY = 'nextshift.currentFunnel';
-const FUNNEL_TYPES: FunnelType[] = ['retail', 'recruitment', 'upgrade'];
+const FUNNEL_TYPES: BusinessFunnelType[] = ['retail', 'recruitment', 'upgrade'];
 
-function readPreference(): FunnelType {
+function readPreference(): BusinessFunnelType {
   if (typeof window === 'undefined') return 'retail';
   const value = window.localStorage.getItem(STORAGE_KEY);
-  return FUNNEL_TYPES.includes(value as FunnelType) ? (value as FunnelType) : 'retail';
+  return FUNNEL_TYPES.includes(value as BusinessFunnelType) ? (value as BusinessFunnelType) : 'retail';
 }
 
 export function useFunnelPreference() {
-  const [funnelType, setFunnelTypeState] = React.useState<FunnelType>('retail');
+  const [funnelType, setFunnelTypeState] = React.useState<BusinessFunnelType>('retail');
 
   React.useEffect(() => {
     setFunnelTypeState(readPreference());
   }, []);
 
-  const setFunnelType = React.useCallback((next: FunnelType) => {
+  const setFunnelType = React.useCallback((next: BusinessFunnelType) => {
     setFunnelTypeState(next);
     window.localStorage.setItem(STORAGE_KEY, next);
     window.dispatchEvent(new CustomEvent('nextshift:funnel-change', { detail: next }));
@@ -27,7 +27,7 @@ export function useFunnelPreference() {
 
   React.useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<FunnelType>).detail;
+      const detail = (event as CustomEvent<BusinessFunnelType>).detail;
       if (FUNNEL_TYPES.includes(detail)) setFunnelTypeState(detail);
     };
     window.addEventListener('nextshift:funnel-change', handler);

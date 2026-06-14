@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, Circle, Trophy } from 'lucide-react';
-import type { FunnelMilestone } from '@/modules/funnel-os/types';
+import type { FunnelMilestone } from '@/modules/funnel/types/funnel-os';
 import { cn } from '@/lib/cn';
 
 export function FunnelMilestoneCard({ milestones }: { milestones: FunnelMilestone[] }) {

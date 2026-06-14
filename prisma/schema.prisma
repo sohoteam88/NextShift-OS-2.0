@@ -132,6 +132,7 @@ model Mission {
   status           String    @default("pending")
   completedAt      DateTime? @map("completed_at") @db.Timestamptz(6)
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -150,6 +151,8 @@ model Achievement {
   icon        String
   xpAwarded   Int      @map("xp_awarded")
   unlockedAt  DateTime @default(now()) @map("unlocked_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -272,6 +275,7 @@ model LeadTag {
   leadId    String   @map("lead_id") @db.Uuid
   tagId     String   @map("tag_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
   tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
@@ -285,6 +289,7 @@ model Note {
   userId    String   @map("user_id") @db.Uuid
   content   String
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
 
@@ -425,6 +430,7 @@ model ScheduledMessage {
   sentAt      DateTime? @map("sent_at") @db.Timestamptz(6)
   status      String    @default("pending")
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   lead        Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id])
@@ -444,6 +450,7 @@ model DailyAction {
   completed   Boolean   @default(false)
   completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -461,6 +468,7 @@ model TrainingProgress {
   status      String    @default("not_started")
   completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -536,6 +544,7 @@ model InviteCode {
   usedBy     String?  @map("used_by") @db.Uuid
   expiresAt  DateTime @map("expires_at") @db.Timestamptz(6)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sponsor    User     @relation("InviteSponsor", fields: [sponsorId], references: [id], onDelete: Cascade)
 
@@ -692,4 +701,24 @@ model VideoProject {
   @@index([tenantId, userId])
   @@index([tenantId, userId, status])
   @@map("video_projects")
+}
+
+model Feedback {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String
+  severity  String?
+  message   String
+  route     String?
+  metadata  Json?    @default("{}")
+  status    String   @default("open")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt(sort: Desc)])
+  @@map("feedback")
 }

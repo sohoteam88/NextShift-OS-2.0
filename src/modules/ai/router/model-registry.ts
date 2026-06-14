@@ -195,3 +195,44 @@ export function getModelsByTier(tier: string): ModelConfig[] {
 export function getModelById(id: string): ModelConfig | undefined {
   return MODEL_REGISTRY.find((model) => model.id === id);
 }
+
+// ─── Derived provider summaries (canonical — replaces ai-router/providerRegistry) ───
+
+export interface ProviderSummary {
+  name: string;
+  available: boolean;
+  models: string[];
+  supportsJson: boolean;
+  supportsStreaming: boolean;
+  costTier: 'low' | 'medium' | 'high';
+}
+
+const PROVIDER_COST_TIERS: Record<string, 'low' | 'medium' | 'high'> = {
+  anthropic: 'high', openai: 'high', deepseek: 'low', gemini: 'medium', minimax: 'low',
+};
+
+export function getProviderSummaries(): ProviderSummary[] {
+  const available = getAvailableModels();
+  const grouped = new Map<string, ModelConfig[]>();
+  for (const m of available) {
+    if (!grouped.has(m.provider)) grouped.set(m.provider, []);
+    grouped.get(m.provider)!.push(m);
+  }
+  return Array.from(grouped.entries()).map(([name, models]) => ({
+    name,
+    available: true,
+    models: models.map(m => m.id),
+    supportsJson: name !== 'deepseek' && name !== 'minimax',
+    supportsStreaming: models.every(m => m.supportsStreaming),
+    costTier: PROVIDER_COST_TIERS[name] ?? 'medium',
+  }));
+}
+
+export function getFirstAvailableProvider(preferredList: string[]): string {
+  const summaries = getProviderSummaries();
+  for (const name of preferredList) {
+    if (summaries.find(s => s.name === name)?.available) return name;
+  }
+  const any = summaries.find(s => s.available);
+  return any?.name ?? 'deepseek';
+}

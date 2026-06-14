@@ -8,16 +8,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import prisma from '@/lib/prisma';
 
+const ALLOWED_ROLES = ['platform_admin', 'operator'];
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
-      return NextResponse.json({
-        ok: false,
-        message: 'No active session. Please login first, then visit this URL.',
-      }, { status: 401 });
+      return NextResponse.json({ ok: false, message: 'No active session. Please login first, then visit this URL.' }, { status: 401 });
     }
 
     // Find DB user by email
@@ -25,6 +24,10 @@ export async function GET(request: NextRequest) {
       where: { email: user.email! },
       select: { id: true, email: true, role: true, tenantId: true },
     });
+
+    if (!dbUser || !ALLOWED_ROLES.includes(dbUser.role)) {
+      return NextResponse.json({ ok: false, message: 'Insufficient permissions. Admin role required.' }, { status: 403 });
+    }
 
     if (!dbUser) {
       return NextResponse.json({

@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ModeToggle } from '@/modules/mission/components/ModeToggle';
 import { useAchievements, useMissionState } from '@/modules/mission/hooks/use-mission';
 import { cn } from '@/lib/cn';
-import type { FunnelType } from '@/modules/funnel-context/types';
+import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
 import { FunnelSelector, getFunnelLabel } from '@/components/funnel-operating-system/FunnelSelector';
 import { FunnelHealthCard } from '@/components/funnel-operating-system/FunnelHealthCard';
 import { FunnelMilestoneCard } from '@/components/funnel-operating-system/FunnelMilestoneCard';
@@ -34,7 +34,7 @@ type UnlockedAchievement = {
   unlockedAt: string;
 };
 
-const JOURNEYS: Record<FunnelType, Array<{ title: string; description: string; criteria: string; steps: Array<{ label: string; href: string }> }>> = {
+const JOURNEYS: Record<BusinessFunnelType, Array<{ title: string; description: string; criteria: string; steps: Array<{ label: string; href: string }> }>> = {
   retail: [
     { title: 'Retail Funnel · Brand Trust', description: '让顾客知道你是谁、你解决什么问题。', criteria: 'Brand setup ready', steps: [{ label: 'Brand DNA', href: '/brand-dna' }, { label: 'Social Setup', href: '/social-setup' }] },
     { title: 'Retail Funnel · Demand Content', description: '持续发布能带来询问的内容和短视频。', criteria: '3 posts · 1 video', steps: [{ label: 'Content Engine', href: '/content-engine' }, { label: 'Video Production', href: '/video-production' }] },
@@ -115,7 +115,7 @@ function AchievementsTab({ totalXP }: { totalXP: number }) {
   );
 }
 
-function JourneyPhaseList({ progressPercent, funnelType }: { progressPercent: number; funnelType: FunnelType }) {
+function JourneyPhaseList({ progressPercent, funnelType }: { progressPercent: number; funnelType: BusinessFunnelType }) {
   const phases = JOURNEYS[funnelType];
   const completedPhaseCount = Math.min(phases.length, Math.floor(progressPercent / Math.max(1, 100 / phases.length)));
   const currentPhaseIndex = Math.min(phases.length - 1, completedPhaseCount);

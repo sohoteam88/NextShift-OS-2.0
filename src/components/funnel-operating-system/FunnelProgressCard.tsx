@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import type { FunnelProgress } from '@/modules/funnel-os/types';
+import type { FunnelProgress } from '@/modules/funnel/types/funnel-os';
 
 const STAGE_LABELS: Record<string, string> = {
   brand_setup: 'Brand Setup',

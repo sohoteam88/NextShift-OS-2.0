@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { FunnelType } from '@/modules/funnel-context/types';
-import type { FunnelGoal, FunnelHealth, FunnelKPI, FunnelMilestone, FunnelNextAction, FunnelProgress } from '@/modules/funnel-os/types';
+import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
+import type { FunnelGoal, FunnelHealth, FunnelKPI, FunnelMilestone, FunnelNextAction, FunnelProgress } from '@/modules/funnel/types/funnel-os';
 
 export type FunnelOperatingData = {
   progress: FunnelProgress;
@@ -13,7 +13,7 @@ export type FunnelOperatingData = {
   goal: FunnelGoal;
 };
 
-export function useFunnelOperatingData(funnelType: FunnelType) {
+export function useFunnelOperatingData(funnelType: BusinessFunnelType) {
   return useQuery({
     queryKey: ['funnel-os', funnelType],
     queryFn: async () => {

@@ -1,26 +1,2 @@
-import type { BrandContext } from '@/modules/brand-dna/types';
-
-export type FunnelType = 'retail' | 'recruitment' | 'upgrade';
-
-export interface FunnelContext {
-  funnelType: FunnelType;
-  audience: string;
-  painPoints: string[];
-  goals: string[];
-  positioning: string;
-  offer: string;
-  contentPillars: Array<{ name: string; emoji: string; percentage: number; description: string }>;
-  cta: string;
-  webinarTheme: string;
-  leadMagnetTheme: string;
-  videoTheme: string;
-  salesApproach: string;
-  // Inherited from Brand DNA
-  brandDNA: BrandContext | null;
-}
-
-export interface FunnelContextMap {
-  retail: FunnelContext | null;
-  recruitment: FunnelContext | null;
-  upgrade: FunnelContext | null;
-}
+// @deprecated — Module merged into @/modules/funnel/types/funnel-context
+export type { BusinessFunnelType, FunnelContext, FunnelContextMap } from '@/modules/funnel/types/funnel-context';

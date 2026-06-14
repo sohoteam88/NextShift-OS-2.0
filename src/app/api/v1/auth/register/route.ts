@@ -56,6 +56,9 @@ export async function POST(request: NextRequest) {
       ownerName: input.name,
     });
 
+    // Track signup event (fire-and-forget)
+    import('@/lib/telemetry/tracker').then(m => m.trackUserSignedUp(user.id, { plan: 'starter', locale: 'zh' })).catch(() => {});
+
     return NextResponse.json({ data: result }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {

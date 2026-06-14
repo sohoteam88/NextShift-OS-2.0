@@ -115,6 +115,8 @@ export const contentService = {
       };
     }
 
+    try { const { trackAIContentGenerated } = await import('@/lib/telemetry/tracker'); trackAIContentGenerated(user.id, { feature: 'content', provider: result.provider, model: result.model, tokens: result.tokensIn + result.tokensOut, cost: 0 }); } catch {}
+
     await logAIUsage({
       tenantId: user.tenantId,
       userId: user.id,

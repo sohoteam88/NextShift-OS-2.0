@@ -2,16 +2,16 @@
 
 import * as React from 'react';
 import { Target } from 'lucide-react';
-import type { FunnelType } from '@/modules/funnel-context/types';
-import type { FunnelGoal } from '@/modules/funnel-os/types';
-import { FUNNEL_GOALS } from '@/modules/funnel-os/types';
+import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
+import type { FunnelGoal } from '@/modules/funnel/types/funnel-os';
+import { FUNNEL_GOALS } from '@/modules/funnel/types/funnel-os';
 
 const STORAGE_KEY = 'nextshift.funnelGoals';
 
-function readGoals(): Partial<Record<FunnelType, string>> {
+function readGoals(): Partial<Record<BusinessFunnelType, string>> {
   if (typeof window === 'undefined') return {};
   try {
-    return JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<Record<FunnelType, string>>;
+    return JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<Record<BusinessFunnelType, string>>;
   } catch {
     return {};
   }
@@ -22,7 +22,7 @@ function parseTarget(goal: string) {
   return match ? Number(match[0]) : 1;
 }
 
-export function FunnelGoalCard({ funnelType, goal }: { funnelType: FunnelType; goal: FunnelGoal }) {
+export function FunnelGoalCard({ funnelType, goal }: { funnelType: BusinessFunnelType; goal: FunnelGoal }) {
   const [selectedGoal, setSelectedGoal] = React.useState(goal.goal);
   const options = React.useMemo(() => FUNNEL_GOALS[funnelType] ?? [goal.goal], [funnelType, goal.goal]);
   const target = parseTarget(selectedGoal);

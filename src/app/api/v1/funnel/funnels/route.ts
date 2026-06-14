@@ -24,5 +24,10 @@ export const POST = apiHandler(async (request: NextRequest) => {
     configType === 'lead_magnet' || templateType === 'lead_magnet'
       ? await notifyMissionProgress(user, 'lead_magnet_created')
       : undefined;
+      try {
+        const { trackFunnelCreated } = await import('@/lib/telemetry/tracker');
+        trackFunnelCreated(user.id, { funnel_type: configType || 'landing', template_used: !!input.template_id, title: input.title });
+      } catch {}
+
   return NextResponse.json({ data: funnel, mission }, { status: 201 });
 });

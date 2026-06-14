@@ -1,18 +1,18 @@
-import type { FunnelType } from '@/modules/funnel-context/types';
+import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
 
 export interface BlueprintDefinition {
   id: string; name: string; description: string; category: string; version: string;
-  supportedFunnels: FunnelType[];
+  supportedFunnels: BusinessFunnelType[];
   supportedLanguages: string[];
   installSteps: string[];
   brandDNA: {
     brandPositioning: string; targetAudience: string; contentTone: string;
     primaryOffer: string; slogan: string; brandColors: string[];
   };
-  funnels: Record<FunnelType, BlueprintFunnelConfig>;
+  funnels: Record<BusinessFunnelType, BlueprintFunnelConfig>;
   automationTemplates: string[];
-  crmPipelines: Record<FunnelType, string[]>;
-  whatsappScripts: Record<FunnelType, Array<{ trigger: string; reply: string }>>;
+  crmPipelines: Record<BusinessFunnelType, string[]>;
+  whatsappScripts: Record<BusinessFunnelType, Array<{ trigger: string; reply: string }>>;
 }
 
 export interface BlueprintFunnelConfig {
@@ -24,6 +24,6 @@ export interface BlueprintFunnelConfig {
 
 export interface BlueprintInstallState {
   blueprintId: string; installedAt: string; status: 'installing' | 'installed';
-  activatedFunnels: FunnelType[];
+  activatedFunnels: BusinessFunnelType[];
   brandDNAGenerated: boolean;
 }

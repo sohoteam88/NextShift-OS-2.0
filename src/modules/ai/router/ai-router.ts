@@ -249,11 +249,26 @@ function parseRouterSettings(settings: Prisma.JsonValue | null | undefined): Par
   };
 }
 
+const routerCache = new Map<string, { router: AIRouter; expiresAt: number }>();
+const ROUTER_CACHE_TTL = 60_000; // 60 seconds
+
 export async function getRouterForTenant(tenantId: string, overrides?: Partial<RouterConfig>): Promise<AIRouter> {
+  // Overrides bypass cache (tenant-specific config changes)
+  if (!overrides) {
+    const cached = routerCache.get(tenantId);
+    if (cached && cached.expiresAt > Date.now()) return cached.router;
+  }
+
   const tenant = await (await import('@/lib/prisma')).default.tenant.findUnique({
     where: { id: tenantId },
     select: { settings: true },
   });
 
-  return new AIRouter({ ...parseRouterSettings(tenant?.settings), ...overrides });
+  const router = new AIRouter({ ...parseRouterSettings(tenant?.settings), ...overrides });
+
+  if (!overrides) {
+    routerCache.set(tenantId, { router, expiresAt: Date.now() + ROUTER_CACHE_TTL });
+  }
+
+  return router;
 }

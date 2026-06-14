@@ -4,10 +4,15 @@ import { useMemo } from 'react';
 import { cn } from '@/lib/cn';
 
 function escapeHtml(input: string) {
+  // Escapes ALL HTML entities before markdown rendering.
+  // Only <strong>, <em>, <p>, <li>, <ul>, <div> are added back by renderMarkdown().
+  // No raw user/AI input ever reaches dangerouslySetInnerHTML.
   return input
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 function renderMarkdown(input: string) {

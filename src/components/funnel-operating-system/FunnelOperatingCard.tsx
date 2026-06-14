@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { ArrowRight, Zap } from 'lucide-react';
-import type { FunnelType } from '@/modules/funnel-context/types';
-import type { FunnelGoal, FunnelNextAction, FunnelProgress } from '@/modules/funnel-os/types';
+import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
+import type { FunnelGoal, FunnelNextAction, FunnelProgress } from '@/modules/funnel/types/funnel-os';
 import { getFunnelLabel } from './FunnelSelector';
 
 type Locale = 'zh' | 'en' | 'ms';
@@ -15,7 +15,7 @@ export function FunnelOperatingCard({
   nextAction,
   locale = 'zh',
 }: {
-  funnelType: FunnelType;
+  funnelType: BusinessFunnelType;
   progress: FunnelProgress;
   goal: FunnelGoal;
   nextAction: FunnelNextAction;

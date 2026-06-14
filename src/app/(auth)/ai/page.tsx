@@ -8,7 +8,7 @@ import { Bot, MessageCircle, BarChart3, Clock3, Sparkles, Video } from 'lucide-r
 import { ContentGeneratorPanel } from '@/modules/ai/components/ContentGeneratorPanel';
 import { WhatsAppReplyPanel } from '@/modules/ai/components/WhatsAppReplyPanel';
 import { LeadAnalysisPanel } from '@/modules/ai/components/LeadAnalysisPanel';
-import { ContentHistory } from '@/modules/ai/components/ContentHistory';
+const ContentHistory = React.lazy(() => import('@/modules/ai/components/ContentHistory').then(m => ({ default: m.ContentHistory })));
 import { AIUsageMeter } from '@/modules/ai/components/AIUsageMeter';
 import { SafeSection } from '@/components/molecules/ErrorFallback';
 import { VideoScriptGenerator } from '@/modules/brand-builder/components/VideoScriptGenerator';
@@ -144,7 +144,9 @@ export default function AiPage() {
       )}
       {activeTool === 'history' && (
         <SafeSection>
-          <ContentHistory />
+          <React.Suspense fallback={<div className="flex justify-center py-10"><div className="h-6 w-6 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" /></div>}>
+            <ContentHistory />
+          </React.Suspense>
         </SafeSection>
       )}
 
