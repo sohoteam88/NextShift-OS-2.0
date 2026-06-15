@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { OperatorDashboard } from '@/modules/admin/components/OperatorDashboard';
-import { MemberDashboard } from '@/modules/dashboard/components/MemberDashboard';
+import { DashboardV4 } from '@/modules/dashboard/components/DashboardV4';
 import { LeaderDashboard } from '@/modules/team/components/LeaderDashboard';
 
 function DashboardPlaceholder({
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
   }
 
   if (user.role === 'member') {
-    return <MemberDashboard userName={user.name} locale={user.preferredLanguage as 'zh' | 'en' | 'ms'} />;
+    return <DashboardV4 />;
   }
 
   if (user.role === 'leader') {

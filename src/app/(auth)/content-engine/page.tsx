@@ -1,11 +1,9 @@
-import { ContentEngineDashboard } from '@/modules/content-engine/components/ContentEngineDashboard';
-import { FunnelSelector } from '@/components/funnel-operating-system/FunnelSelector';
+import { ContentDashboard } from '@/modules/content-engine/components/ContentDashboard';
 
 export default function ContentEnginePage() {
   return (
-    <div className="space-y-4 px-4 py-6">
-      <FunnelSelector compact />
-      <ContentEngineDashboard />
+    <div className="py-6">
+      <ContentDashboard />
     </div>
   );
 }
