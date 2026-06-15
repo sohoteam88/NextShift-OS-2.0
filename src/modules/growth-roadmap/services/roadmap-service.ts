@@ -10,21 +10,21 @@ import { getUnlockedModules } from '@/modules/user-evolution/services/unlock-ser
 // ─── 15-Step Roadmap Definition ──────────────────────────────────────────────
 
 const STEPS: Omit<RoadmapStep, 'status'>[] = [
-  { id: 'brand_interview', stepNumber: 1, title: 'Brand Interview', description: 'Tell AI your story, goals, and audience.', missionId: 'brand_foundation', route: '/brand-builder/step/interview', estimatedTime: '10 min', rewards: ['Brand Positioning', 'Content Direction'] },
-  { id: 'brand_dna', stepNumber: 2, title: 'Brand DNA', description: 'Generate your complete brand identity.', missionId: 'brand_foundation', route: '/brand-dna', estimatedTime: '5 min', rewards: ['Brand Identity', 'AI Personalization'] },
-  { id: 'social_setup', stepNumber: 3, title: 'Social Setup', description: 'Set up your social media presence.', missionId: 'brand_foundation', route: '/social-setup', estimatedTime: '15 min', rewards: ['Social Profiles', 'Bio + Banner'] },
-  { id: 'first_content', stepNumber: 4, title: 'First Content', description: 'Publish your first piece of content.', missionId: 'content_creation', route: '/content-engine', estimatedTime: '10 min', rewards: ['Visibility', 'Audience Growth'] },
-  { id: 'content_engine', stepNumber: 8, title: 'Content Engine', description: 'Scale content production with AI.', missionId: 'content_creation', route: '/content-engine', estimatedTime: '20 min', rewards: ['Content Calendar', 'Multi-Platform'] },
-  { id: 'first_lead', stepNumber: 5, title: 'First Lead', description: 'Capture your first potential customer.', missionId: 'lead_generation', route: '/lead-magnet', estimatedTime: '15 min', rewards: ['Lead Pipeline', 'Audience List'] },
-  { id: 'lead_engine', stepNumber: 9, title: 'Lead Engine', description: 'Build automated lead generation.', missionId: 'lead_generation', route: '/traffic-engine', estimatedTime: '30 min', rewards: ['Automated Leads', 'Traffic System'] },
-  { id: 'first_customer', stepNumber: 6, title: 'First Customer', description: 'Convert your first paying customer.', missionId: 'customer_acquisition', route: '/crm', estimatedTime: '30 min', rewards: ['Revenue', 'Case Study', 'Confidence'] },
-  { id: 'follow_up_system', stepNumber: 7, title: 'Follow-Up System', description: 'Automate customer follow-ups.', missionId: 'customer_acquisition', route: '/whatsapp-ai', estimatedTime: '20 min', rewards: ['Automation', 'Consistency'] },
-  { id: 'sales_engine', stepNumber: 10, title: 'Sales Engine', description: 'Build repeatable sales processes.', missionId: 'customer_acquisition', route: '/crm', estimatedTime: '30 min', rewards: ['Sales Pipeline', 'Revenue System'] },
-  { id: 'automation_engine', stepNumber: 11, title: 'Automation Engine', description: 'Automate workflows end-to-end.', missionId: 'system_building', route: '/automation', estimatedTime: '40 min', rewards: ['Scalability', 'Time Freedom'] },
-  { id: 'team_building', stepNumber: 12, title: 'Team Building', description: 'Bring in your first team member.', missionId: 'team_scaling', route: '/team', estimatedTime: '60 min', rewards: ['Team Growth', 'Delegation'] },
-  { id: 'leadership', stepNumber: 13, title: 'Leadership', description: 'Develop leadership capabilities.', missionId: 'team_scaling', route: '/team', estimatedTime: 'ongoing', rewards: ['Leadership Skills', 'Mentorship'] },
-  { id: 'scale', stepNumber: 14, title: 'Scale', description: 'Scale operations and revenue.', missionId: 'team_scaling', route: '/analytics-center', estimatedTime: 'ongoing', rewards: ['Business Growth', 'Market Presence'] },
-  { id: 'business_operator', stepNumber: 15, title: 'Business Operator', description: 'Run a self-sustaining business.', missionId: 'team_scaling', route: '/dashboard', estimatedTime: 'ongoing', rewards: ['Full System', 'Financial Freedom'] },
+  { id: 'brand_interview', stepNumber: 1, title: '品牌访谈', description: '告诉 AI 你的故事、目标和受众。', missionId: 'brand_foundation', route: '/brand-builder/step/interview', estimatedTime: '10 分钟', rewards: ['品牌定位', '内容方向'] },
+  { id: 'brand_dna', stepNumber: 2, title: '品牌 DNA', description: '生成你完整的品牌身份。', missionId: 'brand_foundation', route: '/brand-dna', estimatedTime: '5 分钟', rewards: ['品牌身份', 'AI 个性化'] },
+  { id: 'social_setup', stepNumber: 3, title: '社交媒体设置', description: '建立你的社交媒体存在。', missionId: 'brand_foundation', route: '/social-setup', estimatedTime: '15 分钟', rewards: ['社交资料', '简介与封面'] },
+  { id: 'first_content', stepNumber: 4, title: '第一篇内容', description: '发布你的第一篇内容。', missionId: 'content_creation', route: '/content-engine', estimatedTime: '10 分钟', rewards: ['曝光度', '受众增长'] },
+  { id: 'content_engine', stepNumber: 8, title: '内容引擎', description: '用 AI 规模化内容生产。', missionId: 'content_creation', route: '/content-engine', estimatedTime: '20 分钟', rewards: ['内容日历', '多平台'] },
+  { id: 'first_lead', stepNumber: 5, title: '第一个潜在客户', description: '获取你的第一个潜在客户。', missionId: 'lead_generation', route: '/lead-magnet', estimatedTime: '15 分钟', rewards: ['客户管道', '受众列表'] },
+  { id: 'lead_engine', stepNumber: 9, title: '客户引擎', description: '建立自动化客户获取系统。', missionId: 'lead_generation', route: '/traffic-engine', estimatedTime: '30 分钟', rewards: ['自动化客户', '流量系统'] },
+  { id: 'first_customer', stepNumber: 6, title: '第一个客户', description: '转化你的第一个付费客户。', missionId: 'customer_acquisition', route: '/crm', estimatedTime: '30 分钟', rewards: ['收入', '案例', '信心'] },
+  { id: 'follow_up_system', stepNumber: 7, title: '跟进系统', description: '自动化客户跟进。', missionId: 'customer_acquisition', route: '/whatsapp-ai', estimatedTime: '20 分钟', rewards: ['自动化', '一致性'] },
+  { id: 'sales_engine', stepNumber: 10, title: '销售引擎', description: '建立可复制的销售流程。', missionId: 'customer_acquisition', route: '/crm', estimatedTime: '30 分钟', rewards: ['销售管道', '收入系统'] },
+  { id: 'automation_engine', stepNumber: 11, title: '自动化引擎', description: '端到端自动化工作流程。', missionId: 'system_building', route: '/automation', estimatedTime: '40 分钟', rewards: ['可扩展性', '时间自由'] },
+  { id: 'team_building', stepNumber: 12, title: '团队建设', description: '引入你的第一个团队成员。', missionId: 'team_scaling', route: '/team', estimatedTime: '60 分钟', rewards: ['团队成长', '授权分工'] },
+  { id: 'leadership', stepNumber: 13, title: '领导力', description: '发展领导能力。', missionId: 'team_scaling', route: '/team', estimatedTime: '持续进行', rewards: ['领导技能', '导师能力'] },
+  { id: 'scale', stepNumber: 14, title: '规模化', description: '规模化运营与收入。', missionId: 'team_scaling', route: '/analytics-center', estimatedTime: '持续进行', rewards: ['业务增长', '市场影响力'] },
+  { id: 'business_operator', stepNumber: 15, title: '业务运营者', description: '运营一个自我维持的事业。', missionId: 'team_scaling', route: '/dashboard', estimatedTime: '持续进行', rewards: ['完整系统', '财务自由'] },
 ];
 
 const TOTAL = STEPS.length;
@@ -104,12 +104,12 @@ export function getGrowthRoadmapState(input: {
   }
 
   const missionGroups: RoadmapMissionGroup[] = [
-    { missionId: 'brand_foundation', title: 'Brand Foundation', description: 'Build your personal brand foundation.' },
-    { missionId: 'content_creation', title: 'Content Creation', description: 'Publish your first content.' },
-    { missionId: 'lead_generation', title: 'Lead Generation', description: 'Get your first lead.' },
-    { missionId: 'customer_acquisition', title: 'Customer Acquisition', description: 'Get your first customer.' },
-    { missionId: 'system_building', title: 'System Building', description: 'Create repeatable systems.' },
-    { missionId: 'team_scaling', title: 'Team Scaling', description: 'Build beyond yourself.' },
+    { missionId: 'brand_foundation', title: '品牌基础', description: '建立你的个人品牌基础。' },
+    { missionId: 'content_creation', title: '内容创作', description: '发布你的第一篇内容。' },
+    { missionId: 'lead_generation', title: '客户开发', description: '获得你的第一个潜在客户。' },
+    { missionId: 'customer_acquisition', title: '客户获取', description: '获得你的第一个付费客户。' },
+    { missionId: 'system_building', title: '系统建设', description: '创建可复制的系统。' },
+    { missionId: 'team_scaling', title: '团队扩展', description: '超越个人能力，建立团队。' },
   ].map(m => {
     const groupSteps = missionMap.get(m.missionId) ?? [];
     const completedInGroup = groupSteps.filter(s => s.status === 'completed').length;

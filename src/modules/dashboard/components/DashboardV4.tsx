@@ -1,34 +1,20 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, CheckCircle2, Clock, Lightbulb, Target, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, Lightbulb, Zap } from 'lucide-react';
 import { useDashboardMission } from '../hooks/useDashboardMission';
 import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
-import { EvolutionBadge } from '@/modules/user-evolution/components/EvolutionBadge';
 import { AchievementToast } from '@/modules/user-evolution/components/AchievementToast';
 import { RoadmapProgressSummary } from '@/modules/growth-roadmap/components/RoadmapProgressSummary';
 import { useGrowthRoadmap } from '@/modules/growth-roadmap/hooks/useGrowthRoadmap';
-import type { UserLevel } from '@/modules/user-evolution/types/evolution.types';
-
-function useSnapshotLevel(level: UserLevel): string[] {
-  switch (level) {
-    case 'explorer': return ['content', 'leads', 'customers'];
-    case 'builder': return ['content', 'leads', 'leadGrowth'];
-    case 'operator': return ['leads', 'customers', 'revenue', 'followUp'];
-    case 'leader': return ['revenue', 'pipeline', 'conversion', 'team', 'funnelHealth', 'automation'];
-  }
-}
 
 export function DashboardV4() {
   const router = useRouter();
-  const { nextAction, userLevel, mission, progress, aiCoachMessage, businessSnapshot, isLoading } = useDashboardMission();
+  const { nextAction, mission, aiCoachMessage, isLoading } = useDashboardMission();
   const evolution = useUserEvolution();
   const { roadmap } = useGrowthRoadmap();
   const completedTasks = mission.tasks.filter(t => t.completed).length;
   const totalTasks = mission.tasks.length;
-  const snapshotKeys = useSnapshotLevel(userLevel.level);
-  const fmt = (n: number) => n.toLocaleString();
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" /></div>;
@@ -94,50 +80,6 @@ export function DashboardV4() {
           </div>
         </section>
       </div>
-
-      {/* ── Section 4: Business Snapshot (lowest priority, full width) ── */}
-      <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <Target className="h-5 w-5 text-[var(--color-primary)]" />
-          <h2 className="text-base font-semibold text-[var(--color-text)]">业务概览</h2>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {snapshotKeys.includes('content') && (
-            <div className="text-center p-3 rounded-[var(--radius-md)] bg-[var(--color-surface)]">
-              <p className="text-lg font-semibold">{fmt(businessSnapshot.content)}</p>
-              <p className="text-xs text-[var(--color-text-muted)]">内容</p>
-            </div>
-          )}
-          {snapshotKeys.includes('leads') && (
-            <div className="text-center p-3 rounded-[var(--radius-md)] bg-[var(--color-surface)]">
-              <p className="text-lg font-semibold">{fmt(businessSnapshot.leads)}</p>
-              <p className="text-xs text-[var(--color-text-muted)]">潜在客户</p>
-            </div>
-          )}
-          {snapshotKeys.includes('customers') && (
-            <div className="text-center p-3 rounded-[var(--radius-md)] bg-[var(--color-surface)]">
-              <p className="text-lg font-semibold">{fmt(businessSnapshot.customers)}</p>
-              <p className="text-xs text-[var(--color-text-muted)]">客户</p>
-            </div>
-          )}
-          {snapshotKeys.includes('revenue') && (
-            <div className="text-center p-3 rounded-[var(--radius-md)] bg-[var(--color-surface)]">
-              <p className="text-lg font-semibold">RM {fmt(businessSnapshot.revenue)}</p>
-              <p className="text-xs text-[var(--color-text-muted)]">收入</p>
-            </div>
-          )}
-          {(snapshotKeys.length === 0 || snapshotKeys.length <= 3) && (
-            <div className="text-center p-3 rounded-[var(--radius-md)] bg-[var(--color-surface)]">
-              <p className="text-lg font-semibold text-[var(--color-text-muted)]">—</p>
-              <p className="text-xs text-[var(--color-text-muted)]">更多数据即将开放</p>
-            </div>
-          )}
-        </div>
-        <div className="mt-3 flex justify-end">
-          <EvolutionBadge level={evolution.level} className="mr-2" />
-          <Link href="/journey" className="text-xs font-medium text-[var(--color-primary)] hover:underline">查看完整成长地图 →</Link>
-        </div>
-      </section>
 
       {/* Achievement Toast */}
       <AchievementToast
