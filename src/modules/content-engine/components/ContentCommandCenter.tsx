@@ -69,7 +69,7 @@ export function ContentCommandCenter() {
           <div className="flex flex-col justify-center gap-2">
             <p className="text-xs text-[var(--color-text-muted)]">任务进度：{completedTasks}/{totalTasks}</p>
             <button
-              onClick={() => router.push('/content-engine?generate=smart&platform=facebook')}
+              onClick={() => router.push('/content-engine?mode=generator&generate=smart&platform=facebook')}
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
               生成推荐内容 <ArrowRight className="h-4 w-4" />
@@ -84,7 +84,7 @@ export function ContentCommandCenter() {
           <h2 className="text-base font-semibold mb-3">AI 推荐内容</h2>
           <div className="space-y-2">
             {AI_RECOMMENDATIONS.map((rec, i) => (
-              <div key={i} className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 hover:bg-[var(--color-surface)] cursor-pointer" onClick={() => router.push('/content-engine?generate=smart')}>
+              <div key={i} className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 hover:bg-[var(--color-surface)] cursor-pointer" onClick={() => router.push('/content-engine?mode=generator&generate=smart')}>
                 <div>
                   <p className="text-sm font-medium text-[var(--color-text)]">{rec.title}</p>
                   <p className="text-xs text-[var(--color-text-muted)]">{rec.type} · {rec.platform} · {rec.impact}</p>

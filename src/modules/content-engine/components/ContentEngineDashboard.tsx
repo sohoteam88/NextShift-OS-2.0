@@ -72,13 +72,22 @@ function useGenerateCalendar() {
 // Component
 // ============================================================
 
-export function ContentEngineDashboard() {
+type ContentEngineDashboardProps = {
+  initialPlatform?: Platform;
+  autoGenerate?: boolean;
+};
+
+export function ContentEngineDashboard({
+  initialPlatform = 'instagram',
+  autoGenerate = false,
+}: ContentEngineDashboardProps) {
   const router = useRouter();
   const query = useContentEngine();
   const generatePost = useGeneratePost();
   const generateCalendar = useGenerateCalendar();
-  const [platform, setPlatform] = React.useState<Platform>('instagram');
+  const [platform, setPlatform] = React.useState<Platform>(initialPlatform);
   const [copied, setCopied] = React.useState(false);
+  const autoTriggeredRef = React.useRef(false);
 
   const data = query.data?.data;
   const pillars = data?.pillars ?? [];
@@ -89,9 +98,24 @@ export function ContentEngineDashboard() {
 
   const quality = lastPost ? validateContent(lastPost) : null;
 
-  function handleGeneratePost() {
+  React.useEffect(() => {
+    setPlatform(initialPlatform);
+  }, [initialPlatform]);
+
+  const triggerGeneratePost = React.useCallback(() => {
     generatePost.mutate({ platform, format: 'text_post', funnelStage: 'awareness' });
+  }, [generatePost, platform]);
+
+  function handleGeneratePost() {
+    triggerGeneratePost();
   }
+
+  React.useEffect(() => {
+    if (!autoGenerate || autoTriggeredRef.current) return;
+    if (query.isLoading || query.isFetching || !query.data) return;
+    autoTriggeredRef.current = true;
+    triggerGeneratePost();
+  }, [autoGenerate, query.isLoading, query.isFetching, query.data, triggerGeneratePost]);
 
   function handleCopy() {
     if (lastPost) {
