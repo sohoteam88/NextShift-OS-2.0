@@ -4,10 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, BarChart3, Calendar, Clock, FileText, Lightbulb, Sparkles, Target, Zap, TrendingUp } from 'lucide-react';
 import { useDashboardMission } from '@/modules/dashboard/hooks/useDashboardMission';
-import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
 import { usePublishingCenter } from '@/modules/content-publishing/hooks/usePublishingCenter';
-import { useContentEngine } from '../hooks/useContentEngine';
-import { cn } from '@/lib/cn';
 
 const AI_RECOMMENDATIONS = [
   { title: '为什么大部分人副业失败？', type: '教育型', platform: 'Facebook', impact: '互动率高' },
@@ -24,22 +21,11 @@ const WEEKLY_PLAN = [
 
 export function ContentCommandCenter() {
   const router = useRouter();
-  const { mission, aiCoachMessage } = useDashboardMission();
-  const evolution = useUserEvolution();
+  const { mission } = useDashboardMission();
   const publishing = usePublishingCenter();
-  const engine = useContentEngine();
 
   const completedTasks = mission.tasks.filter(t => t.completed).length;
   const totalTasks = mission.tasks.length;
-
-  if (!engine.isUnlocked) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 px-4">
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">内容指挥中心</h1>
-        <p className="mt-2 text-sm text-[var(--color-text-muted)]">{engine.lockReason ?? '请先完成品牌基础。'}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
