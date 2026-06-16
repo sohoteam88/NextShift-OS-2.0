@@ -30,6 +30,12 @@ type Props = {
 export function CalendarPageClient({ brandProfile, hasStrategy: initialHasStrategy, initialItems }: Props) {
   const router = useRouter();
   const [hasStrategy, setHasStrategy] = React.useState(initialHasStrategy);
+  const strategy = (brandProfile.contentStrategy as {
+    tone?: string;
+    visual?: string;
+    frequency?: string;
+    format?: string;
+  } | undefined) ?? null;
 
   function handleStrategyComplete(_: { contentPillars: Pillar[]; contentStrategy: ContentStrategy }) {
     setHasStrategy(true);
@@ -73,6 +79,14 @@ export function CalendarPageClient({ brandProfile, hasStrategy: initialHasStrate
             </span>
           ))}
         </div>
+        {strategy ? (
+          <div className="mt-4 grid gap-2 text-xs text-[var(--color-text-muted)] sm:grid-cols-2">
+            <div><span className="font-medium text-[var(--color-text)]">调性：</span>{strategy.tone ?? '未设置'}</div>
+            <div><span className="font-medium text-[var(--color-text)]">视觉：</span>{strategy.visual ?? '未设置'}</div>
+            <div><span className="font-medium text-[var(--color-text)]">频率：</span>{strategy.frequency ?? '未设置'}</div>
+            <div><span className="font-medium text-[var(--color-text)]">格式：</span>{strategy.format ?? '未设置'}</div>
+          </div>
+        ) : null}
       </div>
       <ContentCalendarView initialItems={initialItems} hasProfile={!!brandProfile} />
     </div>

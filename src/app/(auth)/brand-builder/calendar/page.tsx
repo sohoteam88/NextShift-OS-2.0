@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import prisma from '@/lib/prisma';
 import { CalendarPageClient } from '@/modules/brand-builder/components/CalendarPageClient';
+import { brandDnaService } from '@/modules/brand-dna/services/brandDnaService';
 
 export default async function ContentCalendarPage() {
   const user = await getAuthUser();
@@ -14,11 +15,23 @@ export default async function ContentCalendarPage() {
   });
 
   const meta = (dbUser?.metadata as Record<string, unknown>) ?? {};
-  const brandProfile = (meta.brand_profile as Record<string, unknown>) ?? null;
-  const hasStrategy = !!(
-    brandProfile &&
-    (brandProfile.contentPillars || brandProfile.contentStrategy)
-  );
+  const legacyBrandProfile = (meta.brand_profile as Record<string, unknown>) ?? null;
+  const brandDNA = await brandDnaService.getBrandDNA(user.id);
+
+  const brandProfile = {
+    ...(legacyBrandProfile ?? {}),
+    contentPillars: (legacyBrandProfile?.contentPillars as unknown[])?.length
+      ? legacyBrandProfile.contentPillars
+      : brandDNA.content.contentPillars,
+    contentStrategy: (legacyBrandProfile?.contentStrategy as Record<string, unknown> | undefined) ?? {
+      tone: brandDNA.content.contentTone,
+      visual: 'lifestyle',
+      frequency: 'daily',
+      format: 'short_video',
+    },
+  };
+
+  const hasStrategy = brandDNA.content.contentPillars.length > 0 || !!legacyBrandProfile?.contentStrategy;
 
   const items = await prisma.contentCalendar.findMany({
     where: { userId: user.id, tenantId: user.tenantId },
