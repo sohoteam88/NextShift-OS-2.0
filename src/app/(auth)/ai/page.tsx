@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { Bot, MessageCircle, BarChart3, Clock3, Sparkles, Video } from 'lucide-react';
-import { ContentGeneratorPanel } from '@/modules/ai/components/ContentGeneratorPanel';
+import { ContentCommandCenter } from '@/modules/content-engine/components/ContentCommandCenter';
 import { WhatsAppReplyPanel } from '@/modules/ai/components/WhatsAppReplyPanel';
 import { LeadAnalysisPanel } from '@/modules/ai/components/LeadAnalysisPanel';
 const ContentHistory = React.lazy(() => import('@/modules/ai/components/ContentHistory').then(m => ({ default: m.ContentHistory })));
@@ -46,10 +46,16 @@ export default function AiPage() {
 
   React.useEffect(() => {
     const tool = searchParams.get('tool') as Tool | null;
+    const tab = searchParams.get('tab') as string | null;
+    // Redirect /ai to /content-engine for default content tab
+    if (!tool && !tab) {
+      router.replace('/content-engine');
+      return;
+    }
     if (tool && ['content', 'whatsapp_reply', 'lead_analysis', 'history', 'video_script'].includes(tool)) {
       setActiveTool(tool);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const leadId = searchParams.get('leadId') ?? undefined;
   const topic = searchParams.get('topic') ?? undefined;
@@ -74,8 +80,8 @@ export default function AiPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-[var(--color-text)]">{t('title')}</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t('pageSubtitle')}</p>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">内容指挥中心</h1>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">AI 驱动的内容操作系统——系统知道你是谁、你的受众、你应该发布什么。</p>
         </div>
         <button
           type="button"
@@ -115,7 +121,7 @@ export default function AiPage() {
 
       {activeTool === 'content' && (
         <SafeSection>
-          <ContentGeneratorPanel defaultValues={contentDefaults} />
+          <ContentCommandCenter />
         </SafeSection>
       )}
       {activeTool === 'whatsapp_reply' && (

@@ -7,14 +7,31 @@ import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolutio
 import { AchievementToast } from '@/modules/user-evolution/components/AchievementToast';
 import { RoadmapProgressSummary } from '@/modules/growth-roadmap/components/RoadmapProgressSummary';
 import { useGrowthRoadmap } from '@/modules/growth-roadmap/hooks/useGrowthRoadmap';
+import { UnlockPreview } from '@/modules/experience/components/UnlockPreview';
+import { ActivationDashboard } from '@/modules/activation/components/ActivationDashboard';
+import { useActivation } from '@/modules/activation/hooks/useActivation';
+import { RevenueProgress } from '@/modules/revenue-activation/components/RevenueProgress';
 
 export function DashboardV4() {
   const router = useRouter();
   const { nextAction, mission, aiCoachMessage, isLoading } = useDashboardMission();
   const evolution = useUserEvolution();
   const { roadmap } = useGrowthRoadmap();
+  const activation = useActivation();
   const completedTasks = mission.tasks.filter(t => t.completed).length;
   const totalTasks = mission.tasks.length;
+
+  // Show Activation Dashboard for new users (first 7 days, not yet completed)
+  if (!activation.isComplete && activation.currentDay <= 7) {
+    return <ActivationDashboard />;
+  }
+
+  const ctaLabel = mission.stage === 'brand_foundation' ? '开始品牌访谈' :
+    mission.stage === 'content_creation' ? '进入内容中心' :
+    mission.stage === 'lead_generation' ? '进入客户开发' :
+    mission.stage === 'customer_acquisition' ? '进入客户管理' :
+    mission.stage === 'system_building' ? '进入销售中心' :
+    mission.stage === 'team_scaling' ? '进入团队成长' : '继续成长旅程';
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" /></div>;
@@ -45,14 +62,17 @@ export function DashboardV4() {
           onClick={() => router.push(nextAction.route)}
           className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:w-auto"
         >
-          继续成长旅程 <ArrowRight className="h-4 w-4" />
+          {ctaLabel} <ArrowRight className="h-4 w-4" />
         </button>
       </section>
 
       {/* ── Section 2+3: Progress + AI Coach (side by side) ── */}
       <div className="grid gap-5 md:grid-cols-2">
-        {/* Growth Roadmap (replaces old Progress) */}
-        <RoadmapProgressSummary roadmap={roadmap} />
+        <div className="space-y-5">
+          <RoadmapProgressSummary roadmap={roadmap} />
+          {!activation.isComplete && <RevenueProgress />}
+          <UnlockPreview />
+        </div>
 
         {/* AI Coach */}
         <section className="rounded-[var(--radius-lg)] border border-amber-100 bg-amber-50 p-5 shadow-sm">

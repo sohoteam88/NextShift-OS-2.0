@@ -43,8 +43,9 @@ import {
   MessagesSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { ADVANCED_SIDEBAR, GUIDED_SIDEBAR, type MissionSidebarItem } from '@/modules/mission/constants/sidebar-config';
+import { ADVANCED_SIDEBAR, EXPLORER_SIDEBAR, BUILDER_SIDEBAR, OPERATOR_SIDEBAR, type MissionSidebarItem } from '@/modules/mission/constants/sidebar-config';
 import { useMissionState, useSetMode } from '@/modules/mission/hooks/use-mission';
+import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
 
 type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
 
@@ -220,6 +221,7 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
     staleTime: 30_000,
   });
   const mission = useMissionState({ enabled: role === 'member' });
+  const evolution = useUserEvolution();
   const setMode = useSetMode();
   const overdueCount = counts?.data.overdue ?? 0;
   const pendingCount = pendingCountData?.meta.total ?? 0;
@@ -357,11 +359,19 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
         }
       : null;
 
-    if (mode === 'guided') {
+    // Level-based sidebar selection
+    const level = evolution.level;
+    const sidebarItems: MissionSidebarItem[] =
+      level === 'explorer' ? EXPLORER_SIDEBAR :
+      level === 'builder' ? BUILDER_SIDEBAR :
+      level === 'operator' ? OPERATOR_SIDEBAR :
+      ADVANCED_SIDEBAR; // leader or platform_admin
+
+    if (mode === 'guided' || level === 'explorer') {
       return (
         <nav className="mt-5 flex-1 overflow-y-auto pb-4">
           <div className="space-y-0.5">
-            {GUIDED_SIDEBAR.map((item) => renderMissionItem(item))}
+            {sidebarItems.map((item) => renderMissionItem(item))}
           </div>
           {guidedCurrent ? (
             <>
@@ -372,6 +382,14 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
               {renderMissionItem(guidedCurrent)}
             </>
           ) : null}
+          {level === 'explorer' && (
+            <>
+              <div className="my-4 border-t border-[var(--color-border)]" />
+              <p className="mb-1 px-3 text-[10px] text-[var(--color-text-muted)]">
+                完成品牌基础后解锁：内容引擎、客户开发、销售中心
+              </p>
+            </>
+          )}
           <div className="my-4 border-t border-[var(--color-border)]" />
           <button
             type="button"
@@ -391,11 +409,11 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
     return (
       <nav className="mt-5 flex-1 overflow-y-auto pb-4">
         <div className="space-y-0.5">
-          {ADVANCED_SIDEBAR.slice(0, 2).map((item) => renderMissionItem(item))}
+          {sidebarItems.slice(0, 2).map((item) => renderMissionItem(item))}
         </div>
         <div className="my-4 border-t border-[var(--color-border)]" />
         <div className="space-y-3">
-          {ADVANCED_SIDEBAR.slice(2).map((item) =>
+          {sidebarItems.slice(2).map((item) =>
             item.children ? (
               <div key={item.label_zh}>
                 <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
