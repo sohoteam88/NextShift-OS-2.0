@@ -77,11 +77,11 @@ describe('Rate Limiting', () => {
     expect(blocked.status).toBe(429);
   });
 
-  it('blocks excessive funnel form submissions', () => {
+  it('blocks excessive funnel form submissions', async () => {
     for (let attempt = 0; attempt < 10; attempt += 1) {
-      expect(checkRateLimit('submit:203.0.113.9', 10, 60 * 60 * 1000)).toBe(true);
+      expect(await checkRateLimit('submit:203.0.113.9', 10, 60 * 60 * 1000)).toBe(true);
     }
 
-    expect(checkRateLimit('submit:203.0.113.9', 10, 60 * 60 * 1000)).toBe(false);
+    expect(await checkRateLimit('submit:203.0.113.9', 10, 60 * 60 * 1000)).toBe(false);
   });
 });

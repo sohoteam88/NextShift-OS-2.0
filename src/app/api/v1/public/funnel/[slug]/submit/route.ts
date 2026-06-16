@@ -24,7 +24,7 @@ export async function POST(request: NextRequest, context: { params: Promise<Reco
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
 
   // Rate limit: 10 per IP per hour
-  if (!checkRateLimit(`submit:${ip}`, 10, 60 * 60 * 1000)) {
+  if (!(await checkRateLimit(`submit:${ip}`, 10, 60 * 60 * 1000))) {
     return NextResponse.json({ error: { code: 'RATE_LIMITED', message: 'Too many submissions' } }, { status: 429 });
   }
 

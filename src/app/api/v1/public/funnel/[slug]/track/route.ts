@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, context: { params: Promise<Reco
 
   if (event === 'view') {
     // Deduplicate: 1 view per IP per funnel per hour
-    if (!checkRateLimit(`view:${ip}:${slug}`, 1, 60 * 60 * 1000)) {
+    if (!(await checkRateLimit(`view:${ip}:${slug}`, 1, 60 * 60 * 1000))) {
       return NextResponse.json({ ok: true, deduped: true });
     }
     await prisma.funnel.updateMany({ where: { slug, status: 'published' }, data: { views: { increment: 1 } } });

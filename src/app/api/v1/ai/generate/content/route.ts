@@ -19,7 +19,7 @@ const GenerateContentSchema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  if (!checkRateLimit(`ai:${user.id}`, 20, 60 * 60 * 1000)) {
+  if (!(await checkRateLimit(`ai:${user.id}`, 20, 60 * 60 * 1000))) {
     throw new AppError('RATE_LIMITED', 429, 'Too many AI generation requests');
   }
   assertRequestBodySize(request, 1_000_000, 'AI generation payload');

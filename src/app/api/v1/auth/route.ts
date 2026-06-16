@@ -12,7 +12,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
 
-  if (!checkRateLimit(`auth-login:${ip}`, 10, 15 * 60 * 1000)) {
+  if (!(await checkRateLimit(`auth-login:${ip}`, 10, 15 * 60 * 1000))) {
     return NextResponse.json(
       { error: { code: 'RATE_LIMITED', message: 'Too many login attempts' } },
       { status: 429 },
