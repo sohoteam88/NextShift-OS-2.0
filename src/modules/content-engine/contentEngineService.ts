@@ -43,23 +43,40 @@ export const contentEngineService = {
     const items = generateCalendar(ctx, pillars, days);
     const calendar: ContentCalendar = { days, items, generatedAt: new Date().toISOString() };
 
-    // Store in ContentCalendar Prisma model
+    // Replace future generated calendar rows so repeated clicks do not hit the unique constraint.
     const userRecord = await prisma.user.findUnique({ where: { id: userId }, select: { tenantId: true } });
-    for (const item of items.slice(0, 90)) { // Store first 90 days
-      await prisma.contentCalendar.create({
-        data: {
-          tenantId: userRecord!.tenantId, userId,
-          date: new Date(item.date), pillar: item.pillar, pillarEmoji: item.pillarEmoji,
-          title: item.title, hook: item.hook, platform: item.platform, format: item.format, status: 'planned',
-        },
-      });
-    }
+    if (!userRecord) throw new Error('User record not found');
+
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+
+    await prisma.contentCalendar.deleteMany({
+      where: {
+        userId,
+        date: { gte: startDate },
+      },
+    });
+
+    await prisma.contentCalendar.createMany({
+      data: items.map((item) => ({
+        tenantId: userRecord.tenantId,
+        userId,
+        date: new Date(item.date),
+        pillar: item.pillar,
+        pillarEmoji: item.pillarEmoji,
+        title: item.title,
+        hook: item.hook,
+        platform: item.platform,
+        format: item.format,
+        status: 'planned',
+      })),
+    });
 
     return calendar;
   },
 
   async getCalendar(userId: string): Promise<ContentCalendar | null> {
-    const items = await prisma.contentCalendar.findMany({ where: { userId }, orderBy: { date: 'asc' }, take: 90 });
+    const items = await prisma.contentCalendar.findMany({ where: { userId }, orderBy: { date: 'asc' }, take: 180 });
     if (items.length === 0) return null;
     return { days: items.length, items: items as unknown as ContentCalendarItem[], generatedAt: items[0].createdAt.toISOString() };
   },

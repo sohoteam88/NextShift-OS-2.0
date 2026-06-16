@@ -9,7 +9,7 @@ export function useLeadEngine() {
 
   return {
     isLocked,
-    lockReason: evolution.getLockedReason('lead-magnet') ?? 'Complete Brand Foundation and Content Creation first.',
+    lockReason: evolution.getLockedReason('lead-magnet') ?? '请先完成品牌基础和内容创建。',
     scoreLead: calculateLeadScore,
     showScoring: evolution.level === 'operator' || evolution.level === 'leader',
     showAnalytics: evolution.level === 'leader',

@@ -87,6 +87,7 @@ export function ContentEngineDashboard({
   const generateCalendar = useGenerateCalendar();
   const [platform, setPlatform] = React.useState<Platform>(initialPlatform);
   const [copied, setCopied] = React.useState(false);
+  const [calendarStatus, setCalendarStatus] = React.useState<string | null>(null);
   const autoTriggeredRef = React.useRef(false);
 
   const data = query.data?.data;
@@ -101,6 +102,22 @@ export function ContentEngineDashboard({
   React.useEffect(() => {
     setPlatform(initialPlatform);
   }, [initialPlatform]);
+
+  React.useEffect(() => {
+    const generatedDays = generateCalendar.data?.data?.days;
+    const generatedItems = generateCalendar.data?.data?.items?.length;
+    if (generateCalendar.isSuccess && typeof generatedDays === 'number' && typeof generatedItems === 'number') {
+      setCalendarStatus(`✅ ${generatedDays} 天日历已生成 · ${generatedItems} 条内容`);
+    } else if (generateCalendar.isSuccess && calendar) {
+      setCalendarStatus(`✅ ${calendar.days} 天日历已生成 · ${calendar.items.length} 条内容`);
+    }
+  }, [calendar, generateCalendar.data, generateCalendar.isSuccess]);
+
+  React.useEffect(() => {
+    if (generateCalendar.isError) {
+      setCalendarStatus('生成失败，请重试。');
+    }
+  }, [generateCalendar.isError]);
 
   const triggerGeneratePost = React.useCallback(() => {
     generatePost.mutate({ platform, format: 'text_post', funnelStage: 'awareness' });
@@ -228,7 +245,7 @@ export function ContentEngineDashboard({
         <div className="space-y-4">
           <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 lg:sticky lg:top-20">
             <h3 className="text-sm font-bold mb-3">📅 内容日历</h3>
-            <p className="text-xs text-[var(--color-text-muted)] mb-3">Generate content calendar for the next...</p>
+            <p className="mb-3 text-xs text-[var(--color-text-muted)]">生成接下来 30、90 或 180 天的内容日历。</p>
             <div className="flex flex-wrap gap-2">
               {([30, 90, 180] as const).map((days) => (
                 <button
@@ -243,6 +260,17 @@ export function ContentEngineDashboard({
                 </button>
               ))}
             </div>
+            {generateCalendar.isPending && (
+              <p className="mt-3 text-xs text-[var(--color-text-muted)]">正在生成日历...</p>
+            )}
+            {generateCalendar.isError && (
+              <p className="mt-3 text-xs text-red-600">
+                生成失败，请重试。
+              </p>
+            )}
+            {calendarStatus && !generateCalendar.isPending && (
+              <p className="mt-3 text-xs text-emerald-600">{calendarStatus}</p>
+            )}
             {calendar && (
               <p className="mt-3 text-xs text-[var(--color-text-muted)]">
                 ✅ {calendar.days} 天日历已生成 · {calendar.items.length} 条内容
