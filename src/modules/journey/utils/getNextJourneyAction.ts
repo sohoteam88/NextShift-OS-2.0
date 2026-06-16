@@ -100,7 +100,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '发布第一篇内容',
         description: '根据你的品牌 DNA，AI 会帮你生成第一篇社交媒体内容。选择平台，一键生成。',
         ctaLabel: '生成第一篇内容',
-        route: '/ai?tab=content',
+        route: '/content-engine',
         progressStep: 3,
         totalSteps: TOTAL_STEPS,
         stageName: stage.stageName,

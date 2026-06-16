@@ -101,7 +101,7 @@ export function ContentDashboard() {
           {QUICK_ACTIONS.map(a => (
             <button
               key={a.platform}
-              onClick={() => router.push(`/ai?tab=content&platform=${a.platform}`)}
+              onClick={() => router.push(`/content-engine?generate=smart&platform=${a.platform}`)}
               className="flex flex-col items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 text-sm hover:bg-[var(--color-surface)] transition-colors"
             >
               <a.icon className="h-5 w-5 text-[var(--color-primary)]" />

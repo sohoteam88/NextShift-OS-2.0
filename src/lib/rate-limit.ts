@@ -4,13 +4,13 @@
 type Entry = { count: number; resetAt: number };
 const store = new Map<string, Entry>();
 
-// Redis adapter — activates when REDIS_URL is set
+// Redis adapter - activates when both Upstash env vars are set.
 // Install: pnpm add @upstash/redis
 async function getRedisStore() {
-  if (!process.env.REDIS_URL) return null;
+  if (!process.env.REDIS_URL || !process.env.REDIS_TOKEN) return null;
   try {
     const { Redis } = await import('@upstash/redis');
-    return new Redis({ url: process.env.REDIS_URL, token: process.env.REDIS_TOKEN! });
+    return new Redis({ url: process.env.REDIS_URL, token: process.env.REDIS_TOKEN });
   } catch { return null; }
 }
 
