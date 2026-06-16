@@ -111,6 +111,7 @@ jobs:
 
   e2e:
     name: E2E Tests
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [quality, test]
