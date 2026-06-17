@@ -1,12 +1,13 @@
 'use client';
 
-import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
+import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 import { calculateRevenueStats, forecastRevenue } from '../services/revenue-service';
 import { identifyObjection, generateResponse } from '../services/objection-service';
 
 export function useSalesEngine() {
-  const evolution = useUserEvolution();
-  const isLocked = evolution.level === 'explorer' || evolution.level === 'builder';
+  const { snapshot } = useEvolutionProjection();
+  const level = snapshot?.level ?? 'explorer';
+  const isLocked = level === 'explorer' || level === 'builder';
 
   const stats = calculateRevenueStats({});
   const forecast = forecastRevenue(stats.revenue, stats.closeRate, stats.proposalsSent * 500);
@@ -18,7 +19,7 @@ export function useSalesEngine() {
     forecast,
     identifyObjection,
     generateResponse,
-    showFeatures: evolution.level === 'operator' || evolution.level === 'leader',
-    showAdvanced: evolution.level === 'leader',
+    showFeatures: level === 'operator' || level === 'leader',
+    showAdvanced: level === 'leader',
   };
 }

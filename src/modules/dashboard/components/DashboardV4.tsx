@@ -1,9 +1,10 @@
 'use client';
 
+import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, CheckCircle2, Clock, Lightbulb, Zap } from 'lucide-react';
+import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 import { useDashboardMission } from '../hooks/useDashboardMission';
-import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
 import { AchievementToast } from '@/modules/user-evolution/components/AchievementToast';
 import { RoadmapProgressSummary } from '@/modules/growth-roadmap/components/RoadmapProgressSummary';
 import { useGrowthRoadmap } from '@/modules/growth-roadmap/hooks/useGrowthRoadmap';
@@ -11,15 +12,132 @@ import { UnlockPreview } from '@/modules/experience/components/UnlockPreview';
 import { ActivationDashboard } from '@/modules/activation/components/ActivationDashboard';
 import { useActivation } from '@/modules/activation/hooks/useActivation';
 import { RevenueProgress } from '@/modules/revenue-activation/components/RevenueProgress';
+import type { AICoachPersona } from '@/modules/user-evolution/types/evolution.types';
+import type { EvolutionSnapshot } from '@/modules/evolution/types/evolution-snapshot';
+
+type DashboardAchievement = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+};
+
+const DEFAULT_SNAPSHOT: EvolutionSnapshot = {
+  level: 'explorer',
+  progressPercentage: 0,
+  currentStage: 'brand_foundation',
+  nextLevel: 'builder',
+  unlockedModules: ['dashboard', 'journey', 'brand-builder'],
+  completedMissions: 0,
+  totalMissions: 0,
+};
+
+function getCoachPersona(level: EvolutionSnapshot['level']): AICoachPersona {
+  switch (level) {
+    case 'builder':
+      return {
+        style: 'content_strategist',
+        focus: ['Content', 'Lead Generation'],
+        tone: 'Consistency matters more than perfection. Publish three pieces of content before worrying about performance.',
+      };
+    case 'operator':
+      return {
+        style: 'sales_coach',
+        focus: ['Follow-Up', 'Sales', 'Customers'],
+        tone: 'You already have leads. Focus on follow-up consistency. Most sales happen after multiple follow-ups.',
+      };
+    case 'leader':
+      return {
+        style: 'business_mentor',
+        focus: ['Scaling', 'Automation', 'Leadership'],
+        tone: 'Your goal is no longer doing everything. Your goal is building systems that work without you.',
+      };
+    case 'explorer':
+    default:
+      return {
+        style: 'teacher',
+        focus: ['Brand', 'Story', 'Audience'],
+        tone: 'Let\'s first understand who you are. Once your Brand DNA is complete, AI can create content that sounds like you.',
+      };
+  }
+}
+
+function getDashboardAchievement(snapshot: EvolutionSnapshot): DashboardAchievement | null {
+  if (snapshot.level === 'leader' || snapshot.progressPercentage >= 90) {
+    return {
+      id: 'business_leader',
+      title: 'Business Leader',
+      description: 'Reached Leader level.',
+      icon: '🚀',
+    };
+  }
+
+  if (snapshot.level === 'operator' || snapshot.currentStage === 'customer_acquisition') {
+    return {
+      id: 'customer_closer',
+      title: 'Customer Closer',
+      description: 'Closed your first customer.',
+      icon: '🤝',
+    };
+  }
+
+  if (snapshot.level === 'builder' || snapshot.currentStage === 'content_creation') {
+    return {
+      id: 'content_creator',
+      title: 'Content Creator',
+      description: 'Published your first piece of content.',
+      icon: '✍️',
+    };
+  }
+
+  if (snapshot.completedMissions > 0 || snapshot.progressPercentage > 0) {
+    return {
+      id: 'brand_explorer',
+      title: 'Brand Explorer',
+      description: 'Completed your first brand milestone.',
+      icon: '🧭',
+    };
+  }
+
+  return null;
+}
 
 export function DashboardV4() {
   const router = useRouter();
   const { nextAction, mission, aiCoachMessage, isLoading } = useDashboardMission();
-  const evolution = useUserEvolution();
+  const { snapshot } = useEvolutionProjection();
   const { roadmap } = useGrowthRoadmap();
   const activation = useActivation();
+  const resolvedSnapshot = snapshot ?? DEFAULT_SNAPSHOT;
+  const coachPersona = getCoachPersona(resolvedSnapshot.level);
+  const achievement = getDashboardAchievement(resolvedSnapshot);
+  const achievementId = achievement?.id ?? null;
+  const [dismissedAchievementId, setDismissedAchievementId] = React.useState<string | null>(null);
   const completedTasks = mission.tasks.filter(t => t.completed).length;
   const totalTasks = mission.tasks.length;
+
+  React.useEffect(() => {
+    if (!achievementId) {
+      setDismissedAchievementId(null);
+      return;
+    }
+
+    const storageKey = `dashboard-achievement:${achievementId}`;
+    if (typeof window !== 'undefined' && window.sessionStorage.getItem(storageKey)) {
+      setDismissedAchievementId(achievementId);
+      return;
+    }
+
+    setDismissedAchievementId(null);
+  }, [achievementId]);
+
+  const dismissAchievement = React.useCallback(() => {
+    if (!achievementId || typeof window === 'undefined') return;
+    window.sessionStorage.setItem(`dashboard-achievement:${achievementId}`, '1');
+    setDismissedAchievementId(achievementId);
+  }, [achievementId]);
+
+  const visibleAchievement = achievement && dismissedAchievementId !== achievement.id ? achievement : null;
 
   // Show Activation Dashboard for new users (first 7 days, not yet completed)
   if (!activation.isComplete && activation.currentDay <= 7) {
@@ -96,18 +214,18 @@ export function DashboardV4() {
               <p className="text-[var(--color-text-muted)] leading-relaxed">{aiCoachMessage.mistake}</p>
             </div>
             <p className="text-xs text-emerald-600 font-medium italic">✨ {aiCoachMessage.encouragement}</p>
-            <p className="text-xs text-amber-600 font-medium">⏱ {aiCoachMessage.time}  ·  {evolution.coachPersona.style.replace('_', ' ')} 模式</p>
+            <p className="text-xs text-amber-600 font-medium">⏱ {aiCoachMessage.time}  ·  {coachPersona.style.replace('_', ' ')} 模式</p>
           </div>
         </section>
       </div>
 
       {/* Achievement Toast */}
       <AchievementToast
-        title={evolution.newAchievement?.title ?? ''}
-        description={evolution.newAchievement?.description ?? ''}
-        icon={evolution.newAchievement?.icon ?? ''}
-        visible={!!evolution.newAchievement}
-        onDismiss={evolution.dismissAchievement}
+        title={visibleAchievement?.title ?? ''}
+        description={visibleAchievement?.description ?? ''}
+        icon={visibleAchievement?.icon ?? ''}
+        visible={!!visibleAchievement}
+        onDismiss={dismissAchievement}
       />
     </div>
   );

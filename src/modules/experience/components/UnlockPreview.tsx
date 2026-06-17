@@ -1,13 +1,13 @@
 'use client';
 
 import { ArrowRight, Lock } from 'lucide-react';
-import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
+import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 
 export function UnlockPreview() {
-  const evolution = useUserEvolution();
-  if (evolution.level === 'leader') return null; // nothing locked for leaders
-
-  const nextLevel = evolution.level === 'explorer' ? 'builder' : evolution.level === 'builder' ? 'operator' : 'leader';
+  const { snapshot } = useEvolutionProjection();
+  const level = snapshot?.level ?? 'explorer';
+  const nextLevel = snapshot?.nextLevel ?? (level === 'explorer' ? 'builder' : level === 'builder' ? 'operator' : 'leader');
+  if (level === 'leader') return null; // nothing locked for leaders
 
   const previews: Record<string, { title: string; items: string[] }> = {
     builder: { title: '解锁内容引擎', items: ['内容策略自动生成', 'AI 内容创作助手', '内容表现分析'] },

@@ -45,7 +45,7 @@ import {
 import { cn } from '@/lib/cn';
 import { ADVANCED_SIDEBAR, EXPLORER_SIDEBAR, BUILDER_SIDEBAR, OPERATOR_SIDEBAR, type MissionSidebarItem } from '@/modules/mission/constants/sidebar-config';
 import { useMissionState, useSetMode } from '@/modules/mission/hooks/use-mission';
-import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
+import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 
 type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
 
@@ -221,7 +221,7 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
     staleTime: 30_000,
   });
   const mission = useMissionState({ enabled: role === 'member' });
-  const evolution = useUserEvolution();
+  const evolution = useEvolutionProjection();
   const setMode = useSetMode();
   const overdueCount = counts?.data.overdue ?? 0;
   const pendingCount = pendingCountData?.meta.total ?? 0;
@@ -360,7 +360,7 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
       : null;
 
     // Level-based sidebar selection
-    const level = evolution.level;
+    const level = evolution.snapshot?.level ?? 'explorer';
     const sidebarItems: MissionSidebarItem[] =
       level === 'explorer' ? EXPLORER_SIDEBAR :
       level === 'builder' ? BUILDER_SIDEBAR :

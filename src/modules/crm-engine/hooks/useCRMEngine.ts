@@ -1,15 +1,16 @@
 'use client';
 
-import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
 import { useState } from 'react';
+import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 import { getFollowUpStats } from '../services/followup-service';
 import type { CRMStats } from '../types/crm.types';
 
 export function useCRMEngine() {
-  const evolution = useUserEvolution();
+  const { snapshot } = useEvolutionProjection();
   const [followUpStats] = useState(getFollowUpStats());
+  const level = snapshot?.level ?? 'explorer';
 
-  const isLocked = evolution.level === 'explorer' || evolution.level === 'builder';
+  const isLocked = level === 'explorer' || level === 'builder';
 
   const stats: CRMStats = {
     pipeline: { new: 52, contacted: 28, qualified: 14, appointment: 8, proposal: 5, customer: 3, lost: 2, totalValue: 12500, conversionRate: 5.8 },
@@ -24,7 +25,7 @@ export function useCRMEngine() {
     isLocked,
     lockReason: 'Unlocks at Operator Level. Complete Lead Generation first.',
     stats,
-    showPipeline: evolution.level === 'operator' || evolution.level === 'leader',
-    showAdvanced: evolution.level === 'leader',
+    showPipeline: level === 'operator' || level === 'leader',
+    showAdvanced: level === 'leader',
   };
 }

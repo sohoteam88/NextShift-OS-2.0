@@ -1,12 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { useUserEvolution } from '@/modules/user-evolution/hooks/useUserEvolution';
+import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 import { getStats, getAllItems, createPublishingItem, updateStatus, getOptimalPublishTime } from '../services/publishing-service';
 import type { PublishingStats, PublishingItem, PublishingPlatform } from '../types/publishing.types';
 
 export function usePublishingCenter() {
-  const evolution = useUserEvolution();
+  const projection = useEvolutionProjection();
+  const snapshot = projection.snapshot;
   const [stats, setStats] = React.useState<PublishingStats>(getStats());
   const [queue, setQueue] = React.useState<PublishingItem[]>(getAllItems());
 
@@ -39,7 +40,7 @@ export function usePublishingCenter() {
     schedule,
     refresh,
     getOptimalTime: getOptimalPublishTime,
-    isLocked: !evolution.isModuleUnlocked('content-engine'),
-    showSmartSchedule: evolution.level === 'operator' || evolution.level === 'leader',
+    isLocked: !(snapshot?.unlockedModules.includes('content-engine') ?? false),
+    showSmartSchedule: snapshot?.level === 'operator' || snapshot?.level === 'leader',
   };
 }

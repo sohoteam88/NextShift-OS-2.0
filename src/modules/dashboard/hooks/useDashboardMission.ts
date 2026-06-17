@@ -1,20 +1,20 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 import { useMissionState } from '@/modules/mission/hooks/use-mission';
 import { getNextJourneyAction } from '@/modules/journey/utils/getNextJourneyAction';
-import { getUserLevel } from '@/modules/user-evolution/services/user-level-service';
 import { getCurrentMission } from '@/modules/mission-engine/services/mission-service';
 import { getAICoachAdvice } from '@/modules/ai-coach/ai-coach-service';
 import type { JourneyNextAction } from '@/modules/journey/utils/getNextJourneyAction';
-import type { UserEvolutionState } from '@/modules/user-evolution/services/user-level-service';
+import type { EvolutionSnapshot } from '@/modules/evolution/types/evolution-snapshot';
 import type { Mission } from '@/modules/mission-engine/types/mission.types';
 
 interface BusinessSnapshot { content: number; leads: number; customers: number; revenue: number; }
 
 interface DashboardMission {
   nextAction: JourneyNextAction;
-  userLevel: UserEvolutionState;
+  userLevel: Pick<EvolutionSnapshot, 'level' | 'progressPercentage' | 'currentStage' | 'unlockedModules'>;
   mission: Mission;
   progress: { currentStep: number; totalSteps: number; pct: number; stageName: string };
   aiCoachMessage: { why: string; outcome: string; mistake: string; nextBestAction: string; encouragement: string; time: string };
@@ -43,11 +43,21 @@ function useQuickStats() {
 
 export function useDashboardMission(): DashboardMission {
   const mission = useMissionState();
+  const { snapshot, isLoading: evolutionIsLoading } = useEvolutionProjection();
   const stats = useQuickStats();
   const state = mission.data?.data;
   const completedChecks = state?.completedChecks ?? [];
   const checkSet = new Set(completedChecks);
   const pct = state?.progressPercent ?? 0;
+  const levelSnapshot = snapshot ?? {
+    level: 'explorer',
+    progressPercentage: 0,
+    currentStage: 'brand_foundation',
+    nextLevel: 'builder',
+    unlockedModules: ['dashboard', 'journey', 'brand-builder'],
+    completedMissions: 0,
+    totalMissions: 0,
+  };
 
   const nextAction = getNextJourneyAction({
     brandInterview: checkSet.has('brand_interview') || pct >= 10,
@@ -59,20 +69,8 @@ export function useDashboardMission(): DashboardMission {
     firstMember: checkSet.has('first_member') || pct >= 95,
   });
 
-  const userLevel = getUserLevel({
-    brandInterview: checkSet.has('brand_interview') || pct >= 10,
-    brandDNA: checkSet.has('brand_dna') || pct >= 25,
-    socialSetup: checkSet.has('social_setup') || pct >= 35,
-    contentCount: stats.data?.content ?? 0,
-    leadCount: stats.data?.leads ?? 0,
-    customerCount: stats.data?.customers ?? 0,
-    teamMemberCount: 0,
-    crmActive: checkSet.has('crm_setup'),
-    followUpActive: checkSet.has('follow_up_active'),
-  });
-
   const currentMission = getCurrentMission({
-    level: userLevel.level,
+    level: levelSnapshot.level,
     brandInterview: checkSet.has('brand_interview') || pct >= 10,
     brandDNA: checkSet.has('brand_dna') || pct >= 25,
     socialSetup: checkSet.has('social_setup') || pct >= 35,
@@ -86,7 +84,12 @@ export function useDashboardMission(): DashboardMission {
 
   return {
     nextAction,
-    userLevel,
+    userLevel: {
+      level: levelSnapshot.level,
+      progressPercentage: levelSnapshot.progressPercentage,
+      currentStage: levelSnapshot.currentStage,
+      unlockedModules: levelSnapshot.unlockedModules,
+    },
     mission: currentMission,
     progress: {
       currentStep: nextAction.progressStep,
@@ -108,6 +111,6 @@ export function useDashboardMission(): DashboardMission {
       customers: stats.data?.customers ?? 0,
       revenue: stats.data?.revenue ?? 0,
     },
-    isLoading: mission.isLoading || stats.isLoading,
+    isLoading: mission.isLoading || stats.isLoading || evolutionIsLoading,
   };
 }
