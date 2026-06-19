@@ -155,7 +155,7 @@ function quickAccessFor(input: { progress: number; readiness: number; growth: nu
   return [
     { label: '内容引擎', route: '/content-engine', unlocked: firstWinAchieved || activated },
     { label: '漏斗工具', route: '/funnel-builder', unlocked: activated },
-    { label: 'AI 工作队', route: '/ai/workforce', unlocked: advanced },
+    { label: 'AI 工作队', route: '/ai-workforce', unlocked: advanced },
     { label: '数据分析', route: '/analytics', unlocked: advanced },
     { label: '设置', route: '/settings', unlocked: true },
   ];

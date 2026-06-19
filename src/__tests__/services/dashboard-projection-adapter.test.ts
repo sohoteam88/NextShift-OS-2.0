@@ -916,7 +916,7 @@ describe('AUTH-005 dashboard projection adapter', () => {
     expect(projection.quickAccess).toEqual([
       { label: '内容引擎', route: '/content-engine', unlocked: true },
       { label: '漏斗工具', route: '/funnel-builder', unlocked: true },
-      { label: 'AI 工作队', route: '/ai/workforce', unlocked: true },
+      { label: 'AI 工作队', route: '/ai-workforce', unlocked: true },
       { label: '数据分析', route: '/analytics', unlocked: true },
       { label: '设置', route: '/settings', unlocked: true },
     ]);
