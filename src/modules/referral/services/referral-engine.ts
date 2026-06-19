@@ -15,6 +15,27 @@ function isReferralSource(source: string | null) {
   return normalized.includes('referral') || normalized.includes('invite') || normalized.includes('推荐') || normalized.includes('转介绍');
 }
 
+async function countFeedbackSignals(input: { tenantId: string | null; userId: string; types: string[] }) {
+  if (!input.tenantId) return 0;
+
+  try {
+    return await prisma.feedback.count({
+      where: {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        OR: input.types.map((type) => ({ type: { contains: type, mode: 'insensitive' as const } })),
+      },
+    });
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2021') {
+      console.warn('feedback table missing; referral satisfaction signals defaulted to 0');
+      return 0;
+    }
+
+    throw error;
+  }
+}
+
 export async function getReferralProjection(userId: string, tenantId?: string): Promise<ReferralProjection> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -50,20 +71,8 @@ export async function getReferralProjection(userId: string, tenantId?: string): 
       take: 500,
     }),
     prisma.user.count({ where: { tenantId: resolvedTenantId, sponsorId: user.id, deletedAt: null } }),
-    prisma.feedback.count({
-      where: {
-        tenantId: resolvedTenantId,
-        userId: user.id,
-        OR: POSITIVE_FEEDBACK_TYPES.map((type) => ({ type: { contains: type, mode: 'insensitive' as const } })),
-      },
-    }),
-    prisma.feedback.count({
-      where: {
-        tenantId: resolvedTenantId,
-        userId: user.id,
-        OR: NEGATIVE_FEEDBACK_TYPES.map((type) => ({ type: { contains: type, mode: 'insensitive' as const } })),
-      },
-    }),
+    countFeedbackSignals({ tenantId: resolvedTenantId, userId: user.id, types: POSITIVE_FEEDBACK_TYPES }),
+    countFeedbackSignals({ tenantId: resolvedTenantId, userId: user.id, types: NEGATIVE_FEEDBACK_TYPES }),
   ]);
 
   return buildReferralProjection({
