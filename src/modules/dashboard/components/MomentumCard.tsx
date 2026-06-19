@@ -20,7 +20,7 @@ export function MomentumCard({ metrics }: MomentumCardProps) {
         <Target className="h-5 w-5 text-emerald-600" />
         <h2 className="text-base font-semibold text-[var(--color-text)]">业务动能</h2>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3">
         {items.map((item) => (
           <div key={item.label} className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <p className="text-xs text-[var(--color-text-muted)]">{item.label}</p>

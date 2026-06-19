@@ -4,26 +4,53 @@ import type { AgentWorkforceProjection, WorkforceAgentType, WorkforceTaskStatus 
 
 export type WorkforceSummaryItem = {
   assignmentId: string;
-  agentType: WorkforceAgentType;
-  status: WorkforceTaskStatus;
-  title: string;
+  agentName: string;
+  status: 'IDLE' | 'RUNNING' | 'WAITING' | 'FAILED' | 'COMPLETED';
+  currentTask: string;
+  completionPercent: number;
 };
+
+const AGENT_NAMES: Record<WorkforceAgentType, string> = {
+  coo_agent: 'AI COO',
+  content_agent: 'Content Agent',
+  lead_magnet_agent: 'Lead Magnet Agent',
+  funnel_agent: 'Funnel Agent',
+  landing_page_agent: 'Landing Page Agent',
+  traffic_agent: 'Traffic Agent',
+  analytics_agent: 'Analytics Agent',
+  crm_agent: 'CRM Agent',
+};
+
+function workforceStatus(status: WorkforceTaskStatus): WorkforceSummaryItem['status'] {
+  if (status === 'running') return 'RUNNING';
+  if (status === 'completed') return 'COMPLETED';
+  if (status === 'failed') return 'FAILED';
+  return 'WAITING';
+}
+
+function completionPercent(status: WorkforceSummaryItem['status']) {
+  if (status === 'COMPLETED') return 100;
+  if (status === 'RUNNING') return 67;
+  return 0;
+}
 
 export function buildWorkforceSummary(workforce: AgentWorkforceProjection): WorkforceSummaryItem[] {
   const assignments = workforce.currentAssignments.slice(0, 3).map((assignment) => ({
     assignmentId: assignment.assignmentId,
-    agentType: assignment.agentType,
-    status: assignment.status,
-    title: assignment.action.title,
+    agentName: AGENT_NAMES[assignment.agentType],
+    status: workforceStatus(assignment.status),
+    currentTask: assignment.action.title,
+    completionPercent: completionPercent(workforceStatus(assignment.status)),
   }));
 
   if (assignments.length > 0) return assignments;
 
   return workforce.activeAgents.slice(0, 3).map((agent) => ({
     assignmentId: agent.agentType,
-    agentType: agent.agentType,
-    status: agent.availability === 'available' ? 'assigned' : 'approval_required',
-    title: '等待 AI COO 分配任务',
+    agentName: agent.name || AGENT_NAMES[agent.agentType],
+    status: agent.availability === 'available' ? 'IDLE' : 'WAITING',
+    currentTask: '等待 AI COO 分配任务',
+    completionPercent: 0,
   }));
 }
 
@@ -43,12 +70,18 @@ export function WorkforceCard({ agents }: WorkforceCardProps) {
           打开工作队
         </Link>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3">
         {agents.map((agent) => (
           <div key={agent.assignmentId} className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <p className="text-xs font-semibold uppercase text-blue-700">{agent.status}</p>
-            <h3 className="mt-2 text-sm font-bold text-[var(--color-text)]">{agent.agentType.replace(/_/g, ' ')}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">{agent.title}</p>
+            <div className="mt-2 flex items-start justify-between gap-3">
+              <h3 className="text-sm font-bold text-[var(--color-text)]">{agent.agentName}</h3>
+              <span className="text-xs font-semibold text-[var(--color-text-muted)]">{agent.completionPercent}%</span>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">{agent.currentTask}</p>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
+              <div className="h-full rounded-full bg-blue-600" style={{ width: `${agent.completionPercent}%` }} />
+            </div>
           </div>
         ))}
         {agents.length === 0 ? (
