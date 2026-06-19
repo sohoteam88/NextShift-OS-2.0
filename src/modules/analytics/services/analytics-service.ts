@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { teamService } from '@/modules/team/services/team-service';
+import { growthLoopStateService } from '@/modules/growth-loop/services/GrowthLoopStateService';
 import type {
   AnalyticsDashboardData,
   AnalyticsDistributionPoint,
@@ -148,6 +149,19 @@ function percentileSort(a: AnalyticsMemberStat, b: AnalyticsMemberStat) {
   return b.score - a.score || b.conversions - a.conversions || b.leads - a.leads || a.name.localeCompare(b.name);
 }
 
+async function loadGrowthProjectionScores(userIds: string[]) {
+  const entries = await Promise.all(userIds.map(async (userId) => {
+    try {
+      const state = await growthLoopStateService.getGrowthLoopState(userId);
+      return [userId, state.overallScore] as const;
+    } catch {
+      return [userId, 0] as const;
+    }
+  }));
+
+  return new Map(entries);
+}
+
 function buildHeatmap(points: Array<{ createdAt: Date } | { completedAt: Date | null; createdAt: Date }>) {
   const cells = new Map<string, number>();
 
@@ -273,6 +287,7 @@ async function loadDashboard(user: AuthUser, periodInput: string | null | undefi
   const scopeSet = new Set(scopeIds);
   const scopedUsers = users.filter((item) => scopeSet.has(item.id));
   const scopedUserIds = scopedUsers.map((item) => item.id);
+  const growthProjectionScores = await loadGrowthProjectionScores(scopedUserIds);
   const scopeLeadIds = leads.filter((lead) => scopeSet.has(lead.ownerId)).map((lead) => lead.id);
   const scopedFunnels = funnels.filter((funnel) => scopeSet.has(funnel.ownerId));
   const scopedActivities = activities.filter((activity) => scopeSet.has(activity.userId));
@@ -460,7 +475,7 @@ async function loadDashboard(user: AuthUser, periodInput: string | null | undefi
       member.createdAt,
     ]);
     const retention = leadsForUser > 0 || contentForUser > 0 || actionsForUser > 0 || aiForUser > 0 || activityForUser > 0;
-    const score = leadsForUser * 2 + conversionsForUser * 5 + contentForUser * 2 + actionsForUser * 2 + aiForUser;
+    const score = growthProjectionScores.get(member.id) ?? 0;
 
     return {
       id: member.id,

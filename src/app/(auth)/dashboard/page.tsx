@@ -4,6 +4,7 @@ import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { OperatorDashboard } from '@/modules/admin/components/OperatorDashboard';
 import { DashboardV4 } from '@/modules/dashboard/components/DashboardV4';
 import { missionService } from '@/modules/mission/services/mission-service';
+import { onboardingService } from '@/modules/member/services/onboarding-service';
 import { LeaderDashboard } from '@/modules/team/components/LeaderDashboard';
 
 function DashboardPlaceholder({
@@ -46,6 +47,11 @@ export default async function DashboardPage() {
   }
 
   if (user.role === 'member') {
+    const onboarding = await onboardingService.getState(user.id);
+    if (!onboarding.completed) {
+      redirect('/onboarding');
+    }
+
     return <DashboardV4 />;
   }
 

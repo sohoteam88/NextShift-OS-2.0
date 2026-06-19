@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import {
+  Activity,
   AlertTriangle,
   ArrowRight,
   BarChart3,
@@ -10,9 +12,16 @@ import {
   Building2,
   CheckCircle2,
   CircleDollarSign,
+  Clock,
+  ExternalLink,
+  Gauge,
   LineChart,
+  LockKeyhole,
+  Rocket,
+  ShieldAlert,
   ShieldCheck,
   Users,
+  Zap,
   Workflow,
 } from 'lucide-react';
 import type { FounderAlertPriority, PlatformOperatingData, TenantHealthRecord } from '@/modules/admin/services/platformOperatingService';
@@ -49,6 +58,43 @@ function alertTone(priority: FounderAlertPriority) {
   if (priority === 'High') return 'border-orange-200 bg-orange-50 text-orange-700';
   if (priority === 'Medium') return 'border-amber-200 bg-amber-50 text-amber-700';
   return 'border-slate-200 bg-slate-50 text-slate-600';
+}
+
+function priorityTone(priority: FounderAlertPriority) {
+  if (priority === 'Critical') return 'bg-rose-600 text-white';
+  if (priority === 'High') return 'bg-orange-100 text-orange-700';
+  if (priority === 'Medium') return 'bg-amber-100 text-amber-700';
+  return 'bg-emerald-100 text-emerald-700';
+}
+
+function toTrackingId(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 70) || 'item';
+}
+
+function trackAdminDashboardUsage(eventType: 'view' | 'click', targetId: string, targetKind: 'dashboard' | 'card' | 'action' | 'queue', section: string) {
+  const payload = JSON.stringify({
+    eventType,
+    targetId,
+    targetKind,
+    section,
+    path: '/platform-admin',
+  });
+
+  if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+    navigator.sendBeacon('/api/v1/platform-admin/usage', new Blob([payload], { type: 'application/json' }));
+    return;
+  }
+
+  void fetch('/api/v1/platform-admin/usage', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
+    keepalive: true,
+  }).catch(() => {});
 }
 
 function Alerts({ data }: { data: PlatformOperatingData }) {
@@ -93,40 +139,171 @@ function Briefing({ data }: { data: PlatformOperatingData }) {
 
 export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
   const t = useTranslations('platformAdmin');
-  const { currency } = useFormatters();
-  const metrics = [
-    { label: t('mrr'), value: currency(data.summary.mrr), helper: 'Estimated monthly recurring revenue', icon: CircleDollarSign },
-    { label: t('arr'), value: currency(data.summary.arr), helper: 'Annualized run rate', icon: LineChart },
-    { label: t('activeTenants'), value: data.summary.activeTenants, helper: `${data.summary.totalTenants} total tenants`, icon: Building2 },
-    { label: t('activeUsers'), value: data.summary.activeUsers, helper: `${data.summary.totalUsers} total users`, icon: Users },
-    { label: t('aiCost'), value: currency(data.summary.aiCost), helper: 'This month estimate', icon: Brain },
-    { label: t('grossMargin'), value: `${data.summary.grossMargin}%`, helper: 'Revenue minus AI cost', icon: ShieldCheck },
-  ];
+  const { number, currency } = useFormatters();
+  const criticalAlerts = data.alerts.filter((alert) => alert.priority === 'Critical');
+  const highAlerts = data.alerts.filter((alert) => alert.priority === 'High');
+  const atRiskTenants = data.tenants.filter((tenant) => tenant.churnRisk === 'Critical' || tenant.churnRisk === 'High');
+  const inactiveTenants = Math.max(0, data.summary.totalTenants - data.summary.activeTenants);
+  const launchScore = Math.max(0, Math.min(100, Math.round((data.growth.thirtyDays.activationPercent + data.growth.thirtyDays.leadPercent + data.growth.thirtyDays.customerPercent) / 3)));
+  const platformStatus = criticalAlerts.length > 0 ? t('v3Critical') : highAlerts.length > 0 || atRiskTenants.length > 0 ? t('v3Watch') : t('v3Operational');
+  const platformTone = criticalAlerts.length > 0 ? 'border-rose-200 bg-rose-50 text-rose-700' : highAlerts.length > 0 || atRiskTenants.length > 0 ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  const queue = [
+    ...data.alerts
+      .filter((alert) => alert.priority !== 'Low')
+      .slice(0, 4)
+      .map((alert) => ({ id: toTrackingId(`${alert.priority}-${alert.title}`), title: alert.title, description: alert.description, priority: alert.priority, href: alert.href })),
+    ...(atRiskTenants.length > 0 ? [{ id: 'tenant-risk-review', title: t('v3ReviewTenantRisk'), description: t('v3ReviewTenantRiskHelp', { count: atRiskTenants.length }), priority: 'High' as FounderAlertPriority, href: '/platform-admin/tenant-health' }] : []),
+    ...(data.summary.grossMargin > 0 && data.summary.grossMargin < 65 ? [{ id: 'ai-margin-review', title: t('v3ReviewAiMargin'), description: t('v3ReviewAiMarginHelp', { margin: data.summary.grossMargin }), priority: 'Medium' as FounderAlertPriority, href: '/platform-admin/ai-profitability' }] : []),
+  ].slice(0, 5);
+  const visibleQueue = queue.length > 0 ? queue : [{ id: 'stable-review', title: t('v3NoImmediateAction'), description: t('v3NoImmediateActionHelp'), priority: 'Low' as FounderAlertPriority, href: '/platform-admin/health' }];
+
+  useEffect(() => {
+    trackAdminDashboardUsage('view', 'platform-admin-v3', 'dashboard', 'homepage');
+  }, []);
+
+  function onTrackClick(targetId: string, targetKind: 'card' | 'action' | 'queue', section: string) {
+    trackAdminDashboardUsage('click', targetId, targetKind, section);
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader eyebrow={t('platformOperatingSystem')} title={t('ceoTitle')} description={t('ceoHelp')} />
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{metrics.map((item) => <MetricCard key={item.label} {...item} />)}</section>
-      <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <Alerts data={data} />
-        <Briefing data={data} />
-      </section>
-      <section className="grid gap-4 lg:grid-cols-4">
-        {[
-          { href: '/platform-admin/revenue', title: t('revenueIntel'), value: `${data.revenue.growthPercent}%`, helper: 'MRR growth estimate' },
-          { href: '/platform-admin/tenant-health', title: t('tenantHealth'), value: data.tenants.filter((t) => t.churnRisk === 'High' || t.churnRisk === 'Critical').length, helper: 'at-risk tenants' },
-          { href: '/platform-admin/ai-profitability', title: t('aiProfitabilityTitle'), value: `${data.ai.margin}%`, helper: 'AI margin' },
-          { href: '/platform-admin/growth', title: t('growth'), value: `${data.summary.betaConversionRate}%`, helper: 'beta conversion' },
-        ].map((item) => (
-          <Link key={item.href} href={item.href} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:bg-[var(--color-surface)]">
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow={t('platformOperatingSystem')}
+        title={t('v3Title')}
+        description={t('v3Help')}
+        action={(
+          <div className={`inline-flex items-center gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-sm font-semibold ${platformTone}`}>
+            <Activity className="h-4 w-4" />
+            {platformStatus}
+          </div>
+        )}
+      />
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Link
+            href="/platform-admin/health"
+            onClick={() => onTrackClick('platform-health', 'card', 'primary-card')}
+            className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+          >
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-semibold text-[var(--color-text)]">{item.title}</h2>
-              <ArrowRight className="h-4 w-4 text-[var(--color-text-muted)]" />
+              <div>
+                <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3PlatformHealth')}</p>
+                <p className="mt-2 text-3xl font-semibold text-[var(--color-text)]">{platformStatus}</p>
+              </div>
+              <Gauge className="h-5 w-5 text-[var(--color-primary)]" />
             </div>
-            <p className="mt-3 text-2xl font-semibold text-[var(--color-text)]">{item.value}</p>
-            <p className="text-sm text-[var(--color-text-muted)]">{item.helper}</p>
+            <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-[var(--color-text-muted)]">
+              <span>{t('activeTenants')}: <strong className="text-[var(--color-text)]">{number(data.summary.activeTenants)}</strong></span>
+              <span>{t('activeUsers')}: <strong className="text-[var(--color-text)]">{number(data.summary.activeUsers)}</strong></span>
+              <span>{t('v3Alerts')}: <strong className="text-[var(--color-text)]">{criticalAlerts.length + highAlerts.length}</strong></span>
+            </div>
           </Link>
-        ))}
+
+          <Link
+            href="/platform-admin/growth"
+            onClick={() => onTrackClick('launch-metrics', 'card', 'primary-card')}
+            className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3LaunchMetrics')}</p>
+                <p className="mt-2 text-3xl font-semibold text-[var(--color-text)]">{launchScore}%</p>
+              </div>
+              <Rocket className="h-5 w-5 text-[var(--color-primary)]" />
+            </div>
+            <div className="mt-4 h-2 rounded-full bg-slate-100">
+              <div className="h-2 rounded-full bg-blue-600" style={{ width: `${launchScore}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t('v3LaunchMetricsHelp')}</p>
+          </Link>
+
+          <Link
+            href="/platform-admin/audit-logs"
+            onClick={() => onTrackClick('security-risk', 'card', 'primary-card')}
+            className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3SecurityRisk')}</p>
+                <p className="mt-2 text-3xl font-semibold text-[var(--color-text)]">{atRiskTenants.length + inactiveTenants}</p>
+              </div>
+              <ShieldAlert className="h-5 w-5 text-[var(--color-primary)]" />
+            </div>
+            <p className="mt-3 text-xs text-[var(--color-text-muted)]">{t('v3SecurityRiskHelp', { tenants: atRiskTenants.length, inactive: inactiveTenants })}</p>
+          </Link>
+
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3RevenueControl')}</p>
+                <p className="mt-2 text-3xl font-semibold text-[var(--color-text)]">{currency(data.summary.mrr)}</p>
+              </div>
+              <CircleDollarSign className="h-5 w-5 text-[var(--color-primary)]" />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-[var(--color-text-muted)]">
+              <span>{t('grossMargin')}: <strong className="text-[var(--color-text)]">{data.summary.grossMargin}%</strong></span>
+              <span>{t('aiCost')}: <strong className="text-[var(--color-text)]">{currency(data.summary.aiCost)}</strong></span>
+            </div>
+          </div>
+
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm md:col-span-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-[var(--color-text)]">{t('v3QuickActions')}</h2>
+              <Zap className="h-5 w-5 text-[var(--color-primary)]" />
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                { id: 'review-tenants', href: '/platform-admin/tenant-health', label: t('reviewTenantUsage'), icon: Building2 },
+                { id: 'check-ai-spend', href: '/platform-admin/ai-profitability', label: t('checkAiSpend'), icon: Brain },
+                { id: 'open-audit-logs', href: '/platform-admin/audit-logs', label: t('openAuditLogs'), icon: LockKeyhole },
+                { id: 'system-health', href: '/platform-admin/health', label: t('systemHealth'), icon: Gauge },
+              ].map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.id}
+                    href={action.href}
+                    onClick={() => onTrackClick(action.id, 'action', 'quick-actions')}
+                    className="flex min-h-12 items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+                  >
+                    <span className="flex items-center gap-2"><Icon className="h-4 w-4 text-[var(--color-primary)]" />{action.label}</span>
+                    <ExternalLink className="h-4 w-4 text-[var(--color-text-muted)]" />
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">{t('v3ActionQueue')}</h2>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t('v3ActionQueueHelp')}</p>
+            </div>
+            <Clock className="h-5 w-5 text-[var(--color-primary)]" />
+          </div>
+          <div className="mt-4 divide-y divide-[var(--color-border)]">
+            {visibleQueue.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => onTrackClick(item.id, 'queue', 'action-queue')}
+                className="flex items-start justify-between gap-3 py-3 hover:bg-[var(--color-surface)]"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${priorityTone(item.priority)}`}>{item.priority}</span>
+                    <span className="text-sm font-semibold text-[var(--color-text)]">{item.title}</span>
+                  </div>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{item.description}</p>
+                </div>
+                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
+              </Link>
+            ))}
+          </div>
+        </section>
       </section>
     </div>
   );

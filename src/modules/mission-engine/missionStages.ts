@@ -189,7 +189,7 @@ export const BEGINNER_STAGES: MissionStage[] = [
     description: 'Push your funnel to real audiences through targeted ads or organic content strategy.',
     whyItMatters: 'A funnel without traffic is like a shop with no road. This step puts your offer in front of people who need it.',
     estimatedMinutes: 20,
-    route: '/ai/funnel-builder',
+    route: '/funnel-builder',
     xp: 35,
     mode: 'beginner',
     unlocksNextStage: true,

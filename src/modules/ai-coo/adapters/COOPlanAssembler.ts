@@ -1,6 +1,13 @@
 import prisma from '@/lib/prisma';
 import { journeyStateService } from '@/modules/journey/services/JourneyStateService';
+import { missionEngineAuthorityService } from '@/modules/mission-engine/services/MissionEngineAuthorityService';
+import { getInterviewAuthorityProjection } from '@/modules/interview-authority/services/interview-authority-service';
+import { businessContextMemoryService } from '@/modules/business-context-memory/services/business-context-memory-service';
+import { aiCOODecisionEngine } from '@/modules/ai-coo/services/ai-coo-decision-engine';
 import type { JourneyState } from '@/modules/journey/contracts/JourneyState';
+import type { MissionAuthoritySnapshot } from '@/modules/mission-engine/contracts/MissionAuthority';
+import type { InterviewAuthorityProjection } from '@/modules/interview-authority/contracts/InterviewAuthorityProjection';
+import type { BusinessContextProjection } from '@/modules/business-context-memory/contracts/BusinessContextMemory';
 import type { COOPlan } from '../contracts/COOPlan';
 import type { COORecommendation } from '../contracts/COORecommendation';
 import { adaptAssignments } from './AssignmentAdapter';
@@ -27,19 +34,29 @@ function journeyStageToAgentStage(stage: JourneyState['stage']): string {
   }
 }
 
-function buildJourneyRecommendation(journeyState: JourneyState): COORecommendation {
+function buildMissionRecommendation(
+  missionAuthority: MissionAuthoritySnapshot,
+  journeyState: JourneyState,
+  interviewAuthority: InterviewAuthorityProjection,
+): COORecommendation {
+  const mission = missionAuthority.currentMission;
   const completedMilestones = journeyState.milestones.filter((item) => item.completed).length;
 
   return {
-    source: 'JourneyStateService',
+    source: 'MissionEngineAuthorityService',
     scope: 'user',
-    confidence: journeyState.confidence === 'confirmed' ? 'confirmed' : journeyState.confidence === 'fallback' ? 'fallback' : 'derived',
-    fallback: journeyState.fallback,
+    confidence: missionAuthority.confidence === 'confirmed'
+      ? 'confirmed'
+      : missionAuthority.confidence === 'fallback'
+        ? 'fallback'
+        : 'derived',
+    fallback: missionAuthority.fallback,
+    recommendationSource: 'journey_state',
 
-    id: `journey-next-action-${journeyState.stage}`,
+    id: `mission-current-${mission.id}`,
     type: 'strategic',
-    title: journeyState.nextAction.title,
-    summary: journeyState.nextAction.description,
+    title: mission.title,
+    summary: mission.description,
     domain: journeyState.stage === 'lead_generation'
       ? 'traffic'
       : journeyState.stage === 'offer_creation'
@@ -51,25 +68,45 @@ function buildJourneyRecommendation(journeyState: JourneyState): COORecommendati
             : journeyState.stage === 'team_growth' || journeyState.stage === 'scale'
               ? 'team'
               : 'brand',
-    priority: journeyState.revenueProgress.completionPercent < 50 ? 'high' : 'medium',
+    priority: mission.priority >= 80 ? 'high' : 'medium',
     horizon: 'week',
     reasoning: [
+      `Mission Engine current mission: ${mission.id}.`,
+      `Interview business mode: ${interviewAuthority.businessMode}.`,
+      `Interview authority score: ${interviewAuthority.authorityScore}.`,
       `Journey stage: ${journeyState.stage}.`,
       `Completed milestones: ${completedMilestones}/${journeyState.milestones.length}.`,
-      `Revenue milestone: ${journeyState.revenueProgress.currentMilestone} -> ${journeyState.revenueProgress.nextMilestone}.`,
+      `Mission progress: ${missionAuthority.progress.completedMissions}/${missionAuthority.progress.totalMissions}.`,
     ],
-    expectedOutcome: `Advance journey via ${journeyState.nextAction.title}.`,
+    expectedOutcome: mission.expectedOutcome,
     supportingSignals: [
+      `mission:${mission.id}`,
+      `mission-status:${mission.status}`,
+      `interview-business-mode:${interviewAuthority.businessMode}`,
+      `interview-readiness:${interviewAuthority.readinessScore}`,
       `journey-stage:${journeyState.stage}`,
-      `journey-action:${journeyState.nextAction.route}`,
-      `revenue-progress:${journeyState.revenueProgress.completionPercent}`,
+      `mission-progress:${missionAuthority.progress.completionPercentage}`,
     ],
-    relatedRoute: journeyState.nextAction.route,
+    relatedRoute: mission.route,
   };
 }
 
+function prioritizeWithBusinessMemory(
+  recommendations: COORecommendation[],
+  businessContext: BusinessContextProjection,
+): COORecommendation[] {
+  const recentlyIssued = new Set(businessContext.recommendationMemory.recentlyIssuedIds);
+  const ignored = new Set(businessContext.recommendationMemory.ignoredIds);
+  const fresh = recommendations.filter((recommendation) => !recentlyIssued.has(recommendation.id) && !ignored.has(recommendation.id));
+
+  if (fresh.length === 0) return recommendations;
+
+  const repeated = recommendations.filter((recommendation) => recentlyIssued.has(recommendation.id) || ignored.has(recommendation.id));
+  return [...fresh, ...repeated];
+}
+
 export async function assembleCOOPlan(userId: string): Promise<COOPlan> {
-  const [user, journeyState] = await Promise.all([
+  const [user, journeyState, missionAuthority, interviewAuthority] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -83,23 +120,51 @@ export async function assembleCOOPlan(userId: string): Promise<COOPlan> {
       },
     }),
     journeyStateService.getJourneyState(userId),
+    missionEngineAuthorityService.getCurrentMission(userId),
+    getInterviewAuthorityProjection(userId),
   ]);
 
   if (!user) throw new Error('User not found');
 
   const plan = user.tenant?.plan ?? 'free';
   const currentStage = journeyStageToAgentStage(journeyState.stage);
-  const ceoResult = await adaptCEORecommendations(user.id, user.tenantId);
-  const journeyRecommendation = buildJourneyRecommendation(journeyState);
+  const [businessContext, decision, ceoResult] = await Promise.all([
+    businessContextMemoryService.getBusinessContext(user.id, user.tenantId),
+    aiCOODecisionEngine.getDecision(user.id, user.tenantId),
+    adaptCEORecommendations(user.id, user.tenantId),
+  ]);
+  const missionRecommendation = buildMissionRecommendation(missionAuthority, journeyState, interviewAuthority);
   const assignments = await adaptAssignments({
     userId: user.id,
     tenantId: user.tenantId,
     plan,
     currentStage,
-    explicitGoal: journeyState.nextAction.title,
+    explicitGoal: missionAuthority.currentMission.title,
     ceoReport: ceoResult.report,
+    businessRecommendations: ceoResult.source === 'business_state' ? ceoResult.recommendations : undefined,
   });
   const delegations = adaptDelegations(assignments);
+  const recommendations = prioritizeWithBusinessMemory(
+    [missionRecommendation, ...ceoResult.recommendations],
+    businessContext,
+  );
+  const primaryRecommendation = recommendations[0];
+
+  if (primaryRecommendation) {
+    try {
+      await businessContextMemoryService.recordRecommendationIssued({
+        userId: user.id,
+        tenantId: user.tenantId,
+        recommendation: primaryRecommendation,
+      });
+    } catch (error) {
+      console.warn('business_context_memory.recommendation_record_failed', {
+        userId: user.id,
+        recommendationId: primaryRecommendation.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
 
   return {
     source: 'COOPlanAssembler',
@@ -111,8 +176,9 @@ export async function assembleCOOPlan(userId: string): Promise<COOPlan> {
     subjectId: user.id,
     generatedAt: new Date().toISOString(),
     horizon: 'week',
-    strategicFocus: journeyRecommendation.title,
-    recommendations: [journeyRecommendation, ...ceoResult.recommendations],
+    strategicFocus: decision.currentFocus || businessContext.recommendedFocus || missionRecommendation.title,
+    decision,
+    recommendations,
     assignments,
     delegations,
   };

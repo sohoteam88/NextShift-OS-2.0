@@ -19,11 +19,16 @@ const agentMocks = vi.hoisted(() => ({
   agentMemoryService: { remember: vi.fn() },
 }));
 
+const runtimeMocks = vi.hoisted(() => ({
+  runtimeStateService: { getRuntimeState: vi.fn() },
+}));
+
 vi.mock('@/modules/auth/middleware/require-auth-api', () => authMocks);
 vi.mock('@/lib/prisma', () => ({ default: prismaMocks }));
 vi.mock('@/modules/ai/services/agent-manager', () => ({ agentManager: agentMocks.agentManager }));
 vi.mock('@/modules/ai/services/workforce-orchestrator', () => ({ orchestrateForGoal: agentMocks.orchestrateForGoal }));
 vi.mock('@/modules/ai/services/agent-memory', () => ({ agentMemoryService: agentMocks.agentMemoryService }));
+vi.mock('@/modules/agent-runtime/services/RuntimeStateService', () => runtimeMocks);
 
 import { POST } from '@/app/api/v1/ai-workforce/execute/route';
 
@@ -53,6 +58,62 @@ describe('AI workforce execute API', () => {
     prismaMocks.tenant.findUnique.mockResolvedValue({ plan: 'free' });
     prismaMocks.userProgress.findUnique.mockResolvedValue({ currentStageId: 'account_approved' });
     agentMocks.agentMemoryService.remember.mockResolvedValue(undefined);
+    runtimeMocks.runtimeStateService.getRuntimeState.mockResolvedValue({
+      pendingAssignments: [
+        {
+          source: 'COOPlan.assignments',
+          scope: 'user',
+          confidence: 'derived',
+          fallback: 'none',
+          assignmentId: 'runtime-assignment-1',
+          basis: 'coo_assignment',
+          objective: 'Generate Lead Magnet',
+          selectedAgents: ['brand_strategist', 'funnel_architect'],
+          executionMode: 'multi_agent',
+          branchPreserved: true,
+          reasoning: ['test assignment'],
+        },
+      ],
+    });
+  });
+
+  it('AUTH-002 executes a runtime assignment by assignmentId', async () => {
+    const firstReport = {
+      agent: 'brand_strategist',
+      objective: 'Generate Lead Magnet',
+      findings: [],
+      recommendations: [],
+      actions: [],
+      confidenceScore: 90,
+      executedAt: '2026-06-19T00:00:00.000Z',
+    };
+    const result = {
+      summary: 'assignment done',
+      agents: [firstReport],
+      recommendedActions: [],
+      overallConfidence: 90,
+    };
+    agentMocks.agentManager.executeMultiAgent.mockResolvedValue(result);
+
+    const res = await POST(makeReq({ assignmentId: 'runtime-assignment-1' }) as any);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.data).toEqual(result);
+    expect(runtimeMocks.runtimeStateService.getRuntimeState).toHaveBeenCalledWith('user_1');
+    expect(agentMocks.agentManager.executeMultiAgent).toHaveBeenCalledWith(
+      ['brand_strategist', 'funnel_architect'],
+      expect.objectContaining({
+        userId: 'user_1',
+        tenantId: 'tenant_1',
+        objective: 'Generate Lead Magnet',
+        context: expect.objectContaining({
+          executionSource: 'assignment',
+          assignmentId: 'runtime-assignment-1',
+        }),
+      }),
+    );
+    expect(agentMocks.agentMemoryService.remember).toHaveBeenCalledWith('user_1', firstReport);
   });
 
   it('C3-RUNTIME-007 keeps the single agent execution response and stores memory', async () => {
@@ -75,6 +136,10 @@ describe('AI workforce execute API', () => {
       userId: 'user_1',
       tenantId: 'tenant_1',
       objective: '分析并给出建议',
+      context: {
+        executionSource: 'manual_override',
+        overrideReason: 'direct_agent_request',
+      },
     });
     expect(agentMocks.agentMemoryService.remember).toHaveBeenCalledWith('user_1', report);
   });
@@ -95,7 +160,7 @@ describe('AI workforce execute API', () => {
     };
     agentMocks.orchestrateForGoal.mockResolvedValue(result);
 
-    const res = await POST(makeReq({ goal: '开发客户', multi: true }) as any);
+    const res = await POST(makeReq({ goal: '开发客户', multi: true, overrideReason: 'Need to override today assignment' }) as any);
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -105,5 +170,14 @@ describe('AI workforce execute API', () => {
       'free',
     );
     expect(agentMocks.agentMemoryService.remember).toHaveBeenCalledWith('user_1', firstReport);
+  });
+
+  it('AUTH-002 rejects manual goal override without overrideReason', async () => {
+    const res = await POST(makeReq({ goal: '开发客户', multi: true }) as any);
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(agentMocks.orchestrateForGoal).not.toHaveBeenCalled();
   });
 });

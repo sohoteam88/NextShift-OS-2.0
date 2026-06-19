@@ -178,7 +178,7 @@ function QuickWorkflow() {
   const actions = [
     { label: t('addLead'), href: '/crm', icon: Users, helper: t('addLeadHelp') },
     { label: t('createContent'), href: '/ai', icon: FileText, helper: t('createContentHelp') },
-    { label: t('buildFunnel'), href: '/ai/funnel-builder', icon: LayoutTemplate, helper: t('buildFunnelHelp') },
+    { label: t('buildFunnel'), href: '/funnel-builder', icon: LayoutTemplate, helper: t('buildFunnelHelp') },
     { label: t('planContent'), href: '/ai/content-plan', icon: Brain, helper: t('planContentHelp') },
   ];
 

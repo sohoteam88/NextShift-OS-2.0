@@ -132,7 +132,7 @@ const MEMBER_SECTIONS: NavSection[] = [
       { href: '/ai/content-plan', label: 'contentPlan', icon: Calendar },
       { href: '/ai/image', label: 'aiImage', icon: ImageIcon },
       { href: '/member/voice', label: 'voiceCapture', icon: Mic },
-      { href: '/ai/funnel-builder', label: 'funnelBuilder', icon: Zap },
+      { href: '/funnel-builder', label: 'funnelBuilder', icon: Zap },
     ],
   },
   {

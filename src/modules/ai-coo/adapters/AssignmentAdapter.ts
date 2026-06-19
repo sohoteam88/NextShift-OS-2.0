@@ -3,6 +3,7 @@ import type { AgentId } from '@/modules/ai/types/agents';
 import { agentManager } from '@/modules/ai/services/agent-manager';
 import { AGENT_REGISTRY, getAgentsForMissionStage, getAgentsForPlan } from '@/modules/ai/services/agent-registry';
 import type { COOAssignment } from '../contracts/COOAssignment';
+import type { COORecommendation } from '../contracts/COORecommendation';
 
 export type AssignmentAdapterInput = {
   userId: string;
@@ -11,6 +12,7 @@ export type AssignmentAdapterInput = {
   currentStage: string;
   explicitGoal?: string;
   ceoReport?: CEOReport;
+  businessRecommendations?: COORecommendation[];
 };
 
 function isAgentId(value: string): value is AgentId {
@@ -111,6 +113,44 @@ export function adaptExplicitGoalAssignment(input: AssignmentAdapterInput): COOA
 }
 
 export function adaptBusinessOpportunityAssignments(input: AssignmentAdapterInput): COOAssignment[] {
+  if (input.businessRecommendations && input.businessRecommendations.length > 0) {
+    const agents = uniqueAgents(input.businessRecommendations.flatMap((recommendation) => {
+      const domainAgents: Partial<Record<COORecommendation['domain'], AgentId[]>> = {
+        brand: ['brand_strategist'],
+        content: ['content_director'],
+        traffic: ['traffic_strategist'],
+        funnel: ['funnel_architect'],
+        crm: ['crm_manager'],
+        sales: ['sales_coach'],
+        operations: ['ceo_advisor'],
+        team: ['ceo_advisor'],
+      };
+
+      return domainAgents[recommendation.domain] ?? [];
+    }));
+
+    if (agents.length === 0) return [];
+
+    return [
+      {
+        source: 'business_state.recommendations',
+        scope: 'user',
+        confidence: input.businessRecommendations.some((item) => item.confidence === 'fallback') ? 'fallback' : 'derived',
+        fallback: input.businessRecommendations.some((item) => item.fallback !== 'none') ? 'business_state_projection_fallback' : 'none',
+
+        id: 'assignment-business-state-opportunity',
+        basis: 'business_opportunity',
+        objective: 'Support canonical Business State recommendations.',
+        recommendedAgents: agents,
+        reasoning: input.businessRecommendations.slice(0, 3).map((recommendation) => (
+          `${recommendation.title}: ${recommendation.summary}`
+        )),
+        executionMode: agents.length > 1 ? 'multi_agent' : 'single_agent',
+        contextSource: 'business_state',
+      },
+    ];
+  }
+
   if (!input.ceoReport) return [];
 
   const actionAgents = input.ceoReport.actions.flatMap((action) => [action.agentRecommended]);
@@ -137,7 +177,7 @@ export function adaptBusinessOpportunityAssignments(input: AssignmentAdapterInpu
         `Wrapped ${agents.length} CEO Advisor agent recommendation(s).`,
       ],
       executionMode: agents.length > 1 ? 'multi_agent' : 'single_agent',
-      contextSource: 'ceoAdvisorEngine.generateCEOReport',
+      contextSource: 'fallback_ceo_advisor',
     },
   ];
 }

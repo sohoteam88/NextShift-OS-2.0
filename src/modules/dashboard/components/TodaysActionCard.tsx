@@ -159,7 +159,7 @@ function getActionForStage(stage: MissionStage | null): DailyAction | null {
         en: 'Push your funnel to your target audience. No traffic means no one sees your funnel.',
         ms: 'Hantar funnel anda kepada audiens sasaran. Tiada trafik bermakna tiada yang lihat.',
       },
-      route: '/ai/funnel-builder',
+      route: '/funnel-builder',
       buttonLabel: { zh: '启动流量 →', en: 'Launch Traffic →', ms: 'Lancarkan Trafik →' },
     },
     whatsapp_followup: {

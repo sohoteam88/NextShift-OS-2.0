@@ -272,9 +272,32 @@ export function ContentEngineDashboard({
               <p className="mt-3 text-xs text-emerald-600">{calendarStatus}</p>
             )}
             {calendar && (
-              <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-                ✅ {calendar.days} 天日历已生成 · {calendar.items.length} 条内容
-              </p>
+              <div className="mt-4 space-y-3">
+                <p className="text-xs font-semibold text-[var(--color-text)]">
+                  ✅ {calendar.days} 天日历已生成 · {calendar.items.length} 条内容
+                </p>
+                <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                  {calendar.items.slice(0, 10).map((item) => (
+                    <div key={`${item.date}-${item.platform}-${item.title}`} className="rounded-lg border border-[var(--color-border)] bg-white p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold text-[var(--color-text)]">{item.date}</p>
+                        <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-purple-700">
+                          {item.platform}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs font-medium text-[var(--color-text)]">
+                        {item.pillarEmoji} {item.title}
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-muted)]">{item.hook}</p>
+                    </div>
+                  ))}
+                </div>
+                {calendar.items.length > 10 && (
+                  <p className="text-xs text-[var(--color-text-muted)]">
+                    已显示前 10 条。完整内容保存在内容日历数据中。
+                  </p>
+                )}
+              </div>
             )}
           </section>
         </div>

@@ -14,14 +14,16 @@ type IntelligenceOverviewProps = {
   className?: string;
 };
 
-function PlaceholderCard({
+function CapabilityCard({
   title,
   icon: Icon,
   detail,
+  status,
 }: {
   title: string;
   icon: ComponentType<{ className?: string }>;
   detail: string;
+  status: string;
 }) {
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm">
@@ -30,7 +32,7 @@ function PlaceholderCard({
         <h3 className="text-sm font-semibold text-[var(--color-text)]">{title}</h3>
       </div>
       <div className="mt-4 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5">
-        <p className="text-sm font-medium text-[var(--color-text)]">Coming Soon</p>
+        <p className="text-sm font-medium text-[var(--color-text)]">{status}</p>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">{detail}</p>
       </div>
     </section>
@@ -107,7 +109,7 @@ export function IntelligenceOverview({ userId, className }: IntelligenceOverview
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-[var(--color-text)]">Brand Intelligence</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            The intelligence layer is live as a shell. Health, Advisor, Regeneration, and Version History will land in later phases.
+            Brand health, advisor signals, recent changes, and version tracking are consolidated here.
           </p>
         </div>
         <Link href="/brand-builder/profile" className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-primary)] hover:underline">
@@ -168,22 +170,26 @@ export function IntelligenceOverview({ userId, className }: IntelligenceOverview
           <div className="mt-4 space-y-3">
             <div className="rounded-[var(--radius-md)] bg-[var(--color-surface)] px-4 py-3">
               <p className="text-sm font-medium text-[var(--color-text)]">Health Score</p>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">Coming Soon</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">{snapshot.overallScore}% live projection</p>
             </div>
             <div className="rounded-[var(--radius-md)] bg-[var(--color-surface)] px-4 py-3">
               <p className="text-sm font-medium text-[var(--color-text)]">Advisor</p>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">Coming Soon</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                {advisorSnapshot ? `${advisorSnapshot.priorityActions.length} priority actions` : 'No advisor actions available'}
+              </p>
             </div>
             <div className="rounded-[var(--radius-md)] bg-[var(--color-surface)] px-4 py-3">
               <p className="text-sm font-medium text-[var(--color-text)]">Regeneration</p>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">Coming Soon</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                Controlled from Brand DNA actions
+              </p>
             </div>
             <div className="rounded-[var(--radius-md)] bg-[var(--color-surface)] px-4 py-3">
               <p className="text-sm font-medium text-[var(--color-text)]">Version History</p>
               <p className="mt-1 text-sm text-[var(--color-text-muted)]">
                 {versionHistorySnapshot
                   ? `${versionHistorySnapshot.totalVersions} versions tracked`
-                  : 'Coming Soon'}
+                  : 'No versions tracked yet'}
               </p>
             </div>
           </div>
@@ -223,7 +229,7 @@ export function IntelligenceOverview({ userId, className }: IntelligenceOverview
         ) : (
           <div className="mt-4 rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5">
             <p className="text-sm font-medium text-[var(--color-text)]">Advisor</p>
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">Coming Soon</p>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">No advisor data available for this profile yet.</p>
           </div>
         )}
 
@@ -245,7 +251,7 @@ export function IntelligenceOverview({ userId, className }: IntelligenceOverview
                 ))}
               </div>
             ) : (
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">Coming Soon</p>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">No priority actions available.</p>
             )}
           </div>
 
@@ -262,19 +268,22 @@ export function IntelligenceOverview({ userId, className }: IntelligenceOverview
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <PlaceholderCard
+        <CapabilityCard
           title="Advisor"
           icon={BadgeInfo}
+          status={advisorSnapshot ? 'Active' : 'No data'}
           detail="Advisor is now surfaced in the summary section above. This card remains as shell scaffolding for later UI expansion."
         />
-        <PlaceholderCard
+        <CapabilityCard
           title="Regeneration"
           icon={Wand2}
+          status="Managed in Brand DNA"
           detail="Regeneration workflows will be wired in later, once the intelligence layer owns the capability."
         />
-        <PlaceholderCard
+        <CapabilityCard
           title="Version History"
           icon={Sparkles}
+          status={versionHistorySnapshot ? `${versionHistorySnapshot.totalVersions} saved` : 'No versions'}
           detail="Version history remains in Brand DNA Studio until the later migration phase."
         />
       </section>

@@ -92,7 +92,7 @@ export default function OnboardingFirstFunnelPage() {
     },
     onSuccess: () => {
       toast('success', t('funnelCreated'));
-      router.replace('/dashboard');
+      router.replace('/onboarding/complete');
       router.refresh();
     },
   });
@@ -107,7 +107,7 @@ export default function OnboardingFirstFunnelPage() {
       return res.json() as Promise<{ data: unknown }>;
     },
     onSuccess: () => {
-      router.replace('/dashboard');
+      router.replace('/onboarding/complete');
       router.refresh();
     },
     onError: (error) => {

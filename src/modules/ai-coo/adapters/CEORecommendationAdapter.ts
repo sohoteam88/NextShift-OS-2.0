@@ -5,9 +5,17 @@ import type {
   COORecommendationDomain,
   COORecommendationPriority,
 } from '../contracts/COORecommendation';
+import {
+  adaptBusinessStateProjection,
+  mapBusinessStateProjectionToCOORecommendations,
+  type BusinessStateProjection,
+} from './BusinessStateProjectionAdapter';
+import { emitCOORecommendationGenerated } from '../telemetry/coo-telemetry';
 
 export type CEORecommendationAdapterResult = {
-  report: CEOReport;
+  source: 'business_state' | 'fallback_ceo_advisor';
+  report?: CEOReport;
+  businessState?: BusinessStateProjection;
   recommendations: COORecommendation[];
 };
 
@@ -33,10 +41,11 @@ function priorityFromAction(action: NextBestAction): COORecommendationPriority {
 
 export function mapCEOReportToCOORecommendations(report: CEOReport): COORecommendation[] {
   return report.actions.map((action) => ({
-    source: 'ceoAdvisorEngine.generateCEOReport',
+    source: 'fallback_ceo_advisor',
     scope: 'user',
-    confidence: 'derived',
-    fallback: 'none',
+    confidence: 'fallback',
+    fallback: 'business_state_unavailable',
+    recommendationSource: 'fallback',
 
     id: `ceo-action-${action.priority}`,
     type: 'strategic',
@@ -64,10 +73,40 @@ export async function adaptCEORecommendations(
   userId: string,
   tenantId: string,
 ): Promise<CEORecommendationAdapterResult> {
-  const report = await ceoAdvisorEngine.generateCEOReport(userId, tenantId);
+  try {
+    const businessState = await adaptBusinessStateProjection(userId);
+    const recommendations = mapBusinessStateProjectionToCOORecommendations(businessState);
 
-  return {
-    report,
-    recommendations: mapCEOReportToCOORecommendations(report),
-  };
+    emitCOORecommendationGenerated({
+      userId,
+      tenantId,
+      recommendationSource: 'business_state',
+      businessStage: businessState.businessStage,
+      readiness: businessState.readiness.percentage,
+      bottleneckCount: businessState.bottlenecks.length,
+    });
+
+    return {
+      source: 'business_state',
+      businessState,
+      recommendations,
+    };
+  } catch {
+    const report = await ceoAdvisorEngine.generateCEOReport(userId, tenantId);
+    const recommendations = mapCEOReportToCOORecommendations(report);
+
+    emitCOORecommendationGenerated({
+      userId,
+      tenantId,
+      recommendationSource: 'fallback',
+      readiness: report.health.overallScore,
+      bottleneckCount: report.bottlenecks.length,
+    });
+
+    return {
+      source: 'fallback_ceo_advisor',
+      report,
+      recommendations,
+    };
+  }
 }

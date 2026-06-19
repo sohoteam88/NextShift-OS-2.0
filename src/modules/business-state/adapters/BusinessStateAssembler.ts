@@ -1,4 +1,6 @@
-import { getInterviewAuthority } from '@/modules/interview-authority/services/InterviewAuthorityService';
+import { getInterviewAuthorityProjection } from '@/modules/interview-authority/services/interview-authority-service';
+import type { BusinessMode } from '@/modules/interview-authority/contracts/BusinessContextSnapshot';
+import type { InterviewAuthorityProjection } from '@/modules/interview-authority/contracts/InterviewAuthorityProjection';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { BusinessState } from '../contracts/BusinessState';
 import type { BusinessBottleneck } from '../contracts/BusinessBottleneck';
@@ -61,9 +63,15 @@ function mergeReadiness(results: BusinessStateAdapterResult[]): ReadinessScore {
   };
 }
 
+function toFunnelBusinessMode(projection: InterviewAuthorityProjection): BusinessMode {
+  if (projection.businessMode === 'team_building') return 'team_building';
+  if (projection.businessMode === 'hybrid') return 'hybrid';
+  return 'retail';
+}
+
 export async function assembleBusinessState(user: AuthUser): Promise<BusinessState> {
-  const interviewAuthority = await getInterviewAuthority(user.id);
-  const businessMode = interviewAuthority.businessContext.businessMode;
+  const interviewAuthority = await getInterviewAuthorityProjection(user.id);
+  const businessMode = toFunnelBusinessMode(interviewAuthority);
   const adapterResults = await Promise.all([
     adaptMissionStage(user),
     adaptFunnelReadiness(user.id, user.tenantId, businessMode),

@@ -16,11 +16,18 @@ export type COORecommendationPriority = 'low' | 'medium' | 'high' | 'critical';
 
 export type COOPlanningHorizon = 'today' | 'week' | 'month' | 'quarter';
 
+export type COORecommendationSource =
+  | 'business_state'
+  | 'journey_state'
+  | 'growth_loop'
+  | 'fallback';
+
 export interface COORecommendation {
   source: string;
   scope: COOAuthorityScope;
   confidence: COOConfidence;
   fallback: string | 'none';
+  recommendationSource: COORecommendationSource;
 
   id: string;
   type: 'strategic';

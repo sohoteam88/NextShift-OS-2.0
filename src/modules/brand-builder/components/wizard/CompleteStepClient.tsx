@@ -15,8 +15,8 @@ export function CompleteStepClient({ userName }: Props) {
       body: JSON.stringify({ stepId: 'complete' }),
     });
     // Also mark onboarding brand step as completed
-    await fetch('/api/v1/member/onboarding/complete-step', {
-      method: 'POST',
+    await fetch('/api/v1/member/onboarding', {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ step: 'brand' }),
     }).catch(() => null);

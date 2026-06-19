@@ -1,26 +1,22 @@
-import { getCurrentMission } from '@/modules/mission-engine/services/mission-service';
-import {
-  resolveJourneyCompletion,
-  toMissionInput,
-} from '@/modules/journey/services/JourneyCompletionResolver';
+import { missionEngineAuthorityService } from '@/modules/mission-engine/services/MissionEngineAuthorityService';
 import type { JourneyMission } from '../contracts/JourneyMission';
-import { metadataFor, readJourneyProgress } from './journey-adapter-diagnostics';
 
 export async function adaptJourneyMissions(userId: string): Promise<JourneyMission[]> {
-  const progress = await readJourneyProgress(userId);
-  const metadata = metadataFor('mission-engine.getCurrentMission+userProgress', progress);
-  const completion = resolveJourneyCompletion({
-    completedChecks: progress.completedChecksValue,
-    progressPercent: progress.progressPercent,
-  });
-
-  const mission = getCurrentMission(toMissionInput(completion, 'explorer'));
+  const authority = await missionEngineAuthorityService.getCurrentMission(userId);
+  const mission = authority.currentMission;
 
   return [{
-    ...metadata,
+    source: authority.source,
+    scope: authority.scope,
+    confidence: authority.confidence,
+    fallback: authority.fallback,
     id: mission.id,
     title: mission.title,
     description: mission.description,
-    status: mission.completed ? 'completed' : progress.completedChecks.length > 0 ? 'in_progress' : 'not_started',
+    status: mission.status === 'completed'
+      ? 'completed'
+      : mission.status === 'active'
+        ? 'in_progress'
+        : 'not_started',
   }];
 }

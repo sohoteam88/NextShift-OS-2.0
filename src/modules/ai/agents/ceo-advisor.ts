@@ -10,7 +10,7 @@ export async function executeCEOAdvisor(input: AgentExecutionInput): Promise<Age
   else { f.push('业务运转良好。'); r.push('可以开始扩大规模和团队。'); a.push({ description: '扩大规模', route: '/traffic-engine', module: 'Traffic Engine' }); }
 
   if (ac.insights.length > 0) { f.push(`💡 ${ac.insights[0].insight}`); r.push(ac.insights[0].action); }
-  if (ac.nextActions.length > 0) { a.push({ description: ac.nextActions[0].action, route: '/analytics-center', module: 'Analytics' }); }
+  if (ac.actions.length > 0) { a.push({ description: ac.actions[0].action, route: '/analytics-center', module: 'Analytics' }); }
 
   return { agent: 'ceo_advisor', objective: input.objective, findings: f, recommendations: r, actions: a, confidenceScore: ac.health.overallScore, executedAt: new Date().toISOString() };
 }

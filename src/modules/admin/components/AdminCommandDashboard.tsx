@@ -98,7 +98,16 @@ export function AdminCommandDashboard() {
 
 function S({ title, children }: { title: string; children: React.ReactNode }) { return <section className="rounded-xl border border-[var(--color-border)] bg-white p-5"><h3 className="text-sm font-bold mb-3">{title}</h3>{children}</section>; }
 function Stat({ icon: Icon, label, value, color, bg, onClick }: { icon: any; label: string; value: number; color: string; bg: string; onClick?: () => void }) {
-  return <button onClick={onClick} className={cn('rounded-xl border border-[var(--color-border)] p-4 text-center hover:shadow-sm transition-shadow', bg, onClick ? 'cursor-pointer' : 'cursor-default')}>
-    <Icon className={cn('h-5 w-5 mx-auto mb-1', color)} /><p className="text-2xl font-bold">{value}</p><p className="text-xs text-gray-500">{label}</p>
-  </button>;
+  const className = cn('rounded-xl border border-[var(--color-border)] p-4 text-center transition-shadow', bg, onClick && 'hover:shadow-sm');
+  const content = (
+    <>
+      <Icon className={cn('h-5 w-5 mx-auto mb-1', color)} /><p className="text-2xl font-bold">{value}</p><p className="text-xs text-gray-500">{label}</p>
+    </>
+  );
+
+  if (!onClick) {
+    return <div className={className}>{content}</div>;
+  }
+
+  return <button type="button" onClick={onClick} className={cn(className, 'cursor-pointer')}>{content}</button>;
 }

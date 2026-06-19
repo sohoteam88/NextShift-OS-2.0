@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { funnelService } from '@/modules/funnel/services/funnel-service';
-import { SectionRenderer } from '@/modules/funnel/components/sections/SectionRenderer';
+import { PublicSectionRenderer } from '@/modules/funnel/components/renderer/PublicSectionRenderer';
 import type { FunnelConfig, FunnelTheme } from '@/modules/funnel/types';
 
 type Props = {
@@ -24,12 +24,18 @@ export default async function PublicFunnelPage({ params }: Props) {
 
   const config = funnel.config as unknown as FunnelConfig;
   const theme = config.theme ?? DEFAULT_THEME;
+  const ctx = {
+    theme,
+    funnelSlug: funnel_slug,
+    funnelId: funnel.id,
+    funnelTitle: funnel.title,
+  };
 
   return (
     <div style={{ backgroundColor: theme.bg_color, minHeight: '100vh',
       fontFamily: theme.font === 'system' ? 'system-ui, sans-serif' : theme.font }}>
       {(config.sections ?? []).map((section, i) => (
-        <SectionRenderer key={i} section={section} theme={theme} />
+        <PublicSectionRenderer key={i} section={section} ctx={ctx} />
       ))}
     </div>
   );

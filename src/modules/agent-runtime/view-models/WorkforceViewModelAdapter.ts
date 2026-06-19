@@ -5,6 +5,7 @@ import type { RuntimeState } from '../contracts/RuntimeState';
 
 export interface WorkforceViewModel extends WorkforceState {
   reports: AgentExecutionReport[];
+  pendingAssignments: RuntimeState['pendingAssignments'];
 }
 
 function toWorkforceHealth(health: RuntimeState['health']): WorkforceState['health'] {
@@ -51,5 +52,6 @@ export function toWorkforceViewModel(runtimeState: RuntimeState): WorkforceViewM
     recentReports: [],
     health: toWorkforceHealth(runtimeState.health),
     reports,
+    pendingAssignments: runtimeState.pendingAssignments,
   };
 }

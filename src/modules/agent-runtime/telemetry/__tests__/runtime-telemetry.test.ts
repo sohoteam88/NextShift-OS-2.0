@@ -16,6 +16,7 @@ describe('runtime telemetry', () => {
       tenantId: 'tenant_1',
       agentId: 'agent_1',
       executionMode: 'direct_agent',
+      executionSource: 'manual_override',
     });
 
     const result = emitRuntimeExecutionStarted({
@@ -34,6 +35,7 @@ describe('runtime telemetry', () => {
     expect(loggedEvent.properties.prompt).toBe('[REDACTED]');
     expect(loggedEvent.properties.conversation).toBe('[REDACTED]');
     expect(loggedEvent.properties.safeCounter).toBe(2);
+    expect(loggedEvent.properties.executionSource).toBe('manual_override');
     expect(JSON.stringify(loggedEvent)).not.toContain('raw prompt');
     expect(JSON.stringify(loggedEvent)).not.toContain('raw conversation');
   });
@@ -47,6 +49,7 @@ describe('runtime telemetry', () => {
       tenantId: 'tenant_1',
       agentId: 'agent_1',
       executionMode: 'direct_agent',
+      executionSource: 'manual_override',
     });
 
     expect(() => emitRuntimeExecutionStarted(telemetry)).not.toThrow();

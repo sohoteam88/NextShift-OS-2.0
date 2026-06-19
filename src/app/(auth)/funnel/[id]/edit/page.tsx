@@ -42,6 +42,19 @@ const SECTION_LABELS: Record<string, string> = {
 const DEFAULT_THEME: FunnelTheme = { primary_color: '#2563eb', bg_color: '#ffffff', font: 'system' };
 const DEFAULT_CONFIG: FunnelConfig = { type: 'landing', theme: DEFAULT_THEME, sections: [] };
 
+function buildAICopyContext(config: FunnelConfig, fallbackTitle?: string | null) {
+  const hero = config.sections.find((section): section is Extract<FunnelSection, { type: 'hero' }> => section.type === 'hero');
+  const pain = config.sections.find((section): section is Extract<FunnelSection, { type: 'pain' }> => section.type === 'pain');
+  const cta = config.sections.find((section): section is Extract<FunnelSection, { type: 'cta' }> => section.type === 'cta');
+
+  return {
+    audience: [hero?.subheadline, pain?.title].filter(Boolean).join(' ') || fallbackTitle || '',
+    offer: cta?.headline || hero?.headline || fallbackTitle || '',
+    product: fallbackTitle || hero?.headline || undefined,
+    language: 'zh' as const,
+  };
+}
+
 function SectionItem({
   section, index, expanded, onToggle, onDelete, onChange,
 }: {
@@ -182,6 +195,7 @@ export default function FunnelEditorPage() {
           <AIFunnelCopyButton
             funnelId={id}
             funnelType={(config.type ?? 'landing') as 'landing' | 'quiz' | 'lead_magnet'}
+            context={buildAICopyContext(config, funnel.title)}
             onApply={(copy: Partial<FunnelCopyOutput>) => {
               const sectionTypeMap: Record<string, string> = {
                 hero: 'hero', pain: 'pain', mechanism: 'mechanism',

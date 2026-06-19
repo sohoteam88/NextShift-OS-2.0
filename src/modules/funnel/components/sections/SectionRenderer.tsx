@@ -9,6 +9,9 @@ import type {
 type Props = { section: FunnelSection; theme: FunnelTheme; onCtaClick?: () => void };
 
 function HeroRender({ s, theme, onCtaClick }: { s: HeroSection; theme: FunnelTheme; onCtaClick?: () => void }) {
+  const ctaClassName = 'mt-6 inline-block rounded-full px-6 py-3 text-sm font-semibold text-white';
+  const ctaStyle = { backgroundColor: theme.primary_color };
+
   return (
     <div className="py-12 px-6 text-center" style={{ backgroundColor: theme.bg_color }}>
       {s.image_url && (
@@ -18,13 +21,15 @@ function HeroRender({ s, theme, onCtaClick }: { s: HeroSection; theme: FunnelThe
       )}
       <h1 className="text-2xl font-bold leading-tight" style={{ color: '#111827' }}>{s.headline}</h1>
       <p className="mt-3 text-base text-gray-500">{s.subheadline}</p>
-      <button
-        onClick={onCtaClick}
-        className="mt-6 inline-block rounded-full px-6 py-3 text-sm font-semibold text-white"
-        style={{ backgroundColor: theme.primary_color }}
-      >
-        {s.cta_text}
-      </button>
+      {onCtaClick ? (
+        <button type="button" onClick={onCtaClick} className={ctaClassName} style={ctaStyle}>
+          {s.cta_text}
+        </button>
+      ) : (
+        <div className={ctaClassName} style={ctaStyle}>
+          {s.cta_text}
+        </div>
+      )}
     </div>
   );
 }
@@ -97,10 +102,10 @@ function FormRender({ s, theme }: { s: FormSection; theme: FunnelTheme }) {
             className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" readOnly />
         ))}
       </div>
-      <button className="mt-4 w-full rounded-full py-3 text-sm font-semibold text-white"
+      <div className="mt-4 w-full rounded-full py-3 text-center text-sm font-semibold text-white"
         style={{ backgroundColor: theme.primary_color }}>
         {s.submit_text}
-      </button>
+      </div>
     </div>
   );
 }
@@ -136,17 +141,22 @@ function MechanismRender({ s }: { s: MechanismSection }) {
 }
 
 function CTARender({ s, theme, onCtaClick }: { s: CTASection; theme: FunnelTheme; onCtaClick?: () => void }) {
+  const ctaClassName = 'mt-6 inline-block rounded-full bg-white px-6 py-3 text-sm font-semibold';
+  const ctaStyle = { color: theme.primary_color };
+
   return (
     <div className="px-6 py-12 text-center" style={{ backgroundColor: theme.primary_color }}>
       <h2 className="text-xl font-bold text-white">{s.headline}</h2>
       {s.subheadline && <p className="mt-2 text-sm text-white/80">{s.subheadline}</p>}
-      <button
-        onClick={onCtaClick}
-        className="mt-6 inline-block rounded-full bg-white px-6 py-3 text-sm font-semibold"
-        style={{ color: theme.primary_color }}
-      >
-        {s.button_text}
-      </button>
+      {onCtaClick ? (
+        <button type="button" onClick={onCtaClick} className={ctaClassName} style={ctaStyle}>
+          {s.button_text}
+        </button>
+      ) : (
+        <div className={ctaClassName} style={ctaStyle}>
+          {s.button_text}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { ERROR_EVENTS, OBSERVABILITY_MODULES, RUNTIME_EVENTS } from '@/lib/obser
 import { emitServerEvent, type TelemetryEmitResult } from '@/lib/observability/server-telemetry';
 
 type RuntimeExecutionMode = 'multi_agent' | 'direct_agent' | 'recommended_agents';
+type RuntimeExecutionSource = 'assignment' | 'manual_override';
 
 interface RuntimeTelemetryBase {
   userId: string;
@@ -10,6 +11,7 @@ interface RuntimeTelemetryBase {
   assignmentId: string;
   agentId: string;
   executionMode: RuntimeExecutionMode;
+  executionSource: RuntimeExecutionSource;
   executionId?: string;
   correlationId?: string;
   extra?: Record<string, unknown>;
@@ -42,6 +44,8 @@ export function createRuntimeTelemetryContext(input: {
   tenantId?: string;
   agentId: string;
   executionMode: RuntimeExecutionMode;
+  executionSource: RuntimeExecutionSource;
+  assignmentId?: string;
 }) {
   const correlationId = createLogEventId('corr');
 
@@ -50,7 +54,8 @@ export function createRuntimeTelemetryContext(input: {
     tenantId: input.tenantId,
     agentId: input.agentId,
     executionMode: input.executionMode,
-    assignmentId: createLogEventId('runtime_assignment'),
+    executionSource: input.executionSource,
+    assignmentId: input.assignmentId ?? createLogEventId('runtime_assignment'),
     executionId: createLogEventId('runtime_execution'),
     correlationId,
   };
@@ -77,6 +82,7 @@ function emitRuntimeEvent(input: RuntimeTelemetryBase & {
         assignmentId: input.assignmentId,
         agentId: input.agentId,
         executionMode: input.executionMode,
+        executionSource: input.executionSource,
         executionId: input.executionId ?? null,
         durationMs: input.durationMs ?? null,
         failureCode: input.failureCode ?? null,

@@ -1,4 +1,5 @@
 import type { COOAssignment } from './COOAssignment';
+import type { AICOODecision } from './AICOODecision';
 import type { COODelegation } from './COODelegation';
 import type {
   COOAuthorityScope,
@@ -18,6 +19,7 @@ export interface COOPlan {
   generatedAt: string;
   horizon: COOPlanningHorizon;
   strategicFocus: string;
+  decision: AICOODecision;
   recommendations: COORecommendation[];
   assignments: COOAssignment[];
   delegations: COODelegation[];
