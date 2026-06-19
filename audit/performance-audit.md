@@ -1,7 +1,7 @@
 # Performance Audit — NextShift OS V6-3
 
-**Date:** 2026-06-14  
-**Scope:** Bundle, render, query, and API performance analysis  
+**Date:** 2026-06-14
+**Scope:** Bundle, render, query, and API performance analysis
 **Status:** Audit complete
 
 ---

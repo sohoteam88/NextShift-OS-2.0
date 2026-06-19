@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { apiHandler } from '@/lib/api-handler';
+import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { templateService } from '@/modules/ai/services/template-service';
 import { resolveVariables, buildPrompt } from '@/modules/ai/prompt/resolver';
 import { enforceQuota } from '@/modules/ai/usage/quota';
@@ -42,6 +43,7 @@ function pickTemplate(
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  await sharedAiRateLimitGuard(user, { feature: 'generation' });
   const body = await request.json();
   const input = StreamSchema.parse(body);
 

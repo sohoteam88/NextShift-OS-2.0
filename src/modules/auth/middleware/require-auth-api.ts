@@ -26,8 +26,13 @@ export function requireRoleApi(user: AuthUser, allowedRoles: string[]): void {
     member: 40,
   };
 
+  const unknownRoles = allowedRoles.filter((role) => roleHierarchy[role] === undefined);
+  if (unknownRoles.length > 0) {
+    throw new AppError('FORBIDDEN', 403, `Unknown role requirement: ${unknownRoles.join(', ')}`);
+  }
+
   const userLevel = roleHierarchy[user.role] ?? 0;
-  const minLevel = Math.min(...allowedRoles.map((role) => roleHierarchy[role] ?? 0));
+  const minLevel = Math.min(...allowedRoles.map((role) => roleHierarchy[role]));
 
   if (userLevel < minLevel) {
     throw new AppError('FORBIDDEN', 403, 'Insufficient permissions');

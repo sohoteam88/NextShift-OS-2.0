@@ -1,7 +1,7 @@
 # V6-7 — Admin Service Split Phase A Report
 
-**Date:** 2026-06-14  
-**Scope:** Split `platform-admin-service.ts` (599 lines) into focused modules  
+**Date:** 2026-06-14
+**Scope:** Split `platform-admin-service.ts` (599 lines) into focused modules
 **Status:** ✅ Complete
 
 ---

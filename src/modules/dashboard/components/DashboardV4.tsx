@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, CheckCircle2, Clock, Lightbulb, Zap } from 'lucide-react';
+import { ArrowRight, Brain, CheckCircle2, Clock, Lightbulb, Zap } from 'lucide-react';
+import { CANONICAL_ROUTES } from '@/config/canonical-routes';
 import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 import { useDashboardMission } from '../hooks/useDashboardMission';
 import { AchievementToast } from '@/modules/user-evolution/components/AchievementToast';
@@ -194,9 +195,19 @@ export function DashboardV4() {
 
         {/* AI Coach */}
         <section className="rounded-[var(--radius-lg)] border border-amber-100 bg-amber-50 p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="h-5 w-5 text-amber-600" />
-            <h2 className="text-base font-semibold text-[var(--color-text)]">AI 教练</h2>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-amber-600" />
+              <h2 className="text-base font-semibold text-[var(--color-text)]">AI 教练</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push(CANONICAL_ROUTES.ceoMode)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-md)] border border-amber-200 bg-white px-2.5 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+            >
+              <Brain className="h-3.5 w-3.5" aria-hidden="true" />
+              AI COO
+            </button>
           </div>
           <div className="space-y-3 text-sm text-[var(--color-text)]">
             <p className="text-xs font-semibold uppercase tracking-widest text-amber-700">当前任务：{mission.title}</p>

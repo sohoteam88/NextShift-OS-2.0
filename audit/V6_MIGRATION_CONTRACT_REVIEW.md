@@ -128,4 +128,3 @@ It is strict enough to prevent another round of hidden truth systems, but it sti
 - revenue scope boundaries
 
 Once those are fixed, the contract is ready to drive the V6 refactor sequence.
-

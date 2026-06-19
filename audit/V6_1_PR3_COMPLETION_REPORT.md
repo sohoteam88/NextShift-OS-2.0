@@ -43,4 +43,3 @@
 
 - Delete `src/modules/evolution/projections/evolution-projection.ts`
 - No other rollback actions required
-

@@ -104,7 +104,7 @@ function getActionForStage(stage: MissionStage | null): DailyAction | null {
         en: 'AI generates your first social post based on brand DNA. Good content is step one to attract clients.',
         ms: 'AI menjana pos media sosial pertama berdasarkan DNA jenama anda.',
       },
-      route: '/ai',
+      route: '/content-engine',
       buttonLabel: { zh: '生成内容 →', en: 'Generate Content →', ms: 'Jana Kandungan →' },
     },
     first_video: {

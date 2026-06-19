@@ -86,7 +86,7 @@ export function AICoachCard({ userName }: { userName: string }) {
     rec ? { label: rec.actionLabel, href: rec.actionHref, time: rec.estimatedMinutes } : null,
     calendarAction,
     { label: '跟进潜在客户', href: '/crm', time: 10 },
-    { label: '发布一条内容', href: '/ai', time: 5 },
+    { label: '发布一条内容', href: '/content-engine', time: 5 },
   ].filter(Boolean) as { label: string; href: string; time: number }[];
 
   return (

@@ -1,7 +1,7 @@
 # V6-2 — API Smoke Tests Report
 
-**Date:** 2026-06-14  
-**Scope:** Critical API route authentication and authorization testing  
+**Date:** 2026-06-14
+**Scope:** Critical API route authentication and authorization testing
 **Status:** ✅ Complete
 
 ---

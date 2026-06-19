@@ -1,7 +1,7 @@
 # Phase 2c — Next-Action Engine Consolidation Report
 
-**Date:** 2026-06-14  
-**Scope:** Merge 3 recommendation/next-action engines into 1 canonical service  
+**Date:** 2026-06-14
+**Scope:** Merge 3 recommendation/next-action engines into 1 canonical service
 **Status:** ✅ Complete
 
 ---

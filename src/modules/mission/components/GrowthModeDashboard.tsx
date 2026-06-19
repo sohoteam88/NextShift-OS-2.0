@@ -46,7 +46,7 @@ function useCrmStats() {
 }
 
 const QUICK_LINKS = [
-  { label: 'AI Tools', href: '/ai', icon: Sparkles },
+  { label: 'AI Tools', href: '/content-engine', icon: Sparkles },
   { label: 'Content Calendar', href: '/brand-builder/calendar', icon: CalendarDays },
   { label: 'CRM Pipeline', href: '/crm/pipeline', icon: GitBranch },
   { label: 'Analytics', href: '/analytics', icon: BarChart3 },
@@ -85,7 +85,7 @@ export function GrowthModeDashboard() {
                 {item.platform} · {item.format}
               </p>
               <Link
-                href="/ai"
+                href="/content-engine"
                 className="mt-4 inline-flex h-10 items-center rounded-[var(--radius-md)] bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
               >
                 生成文案 →

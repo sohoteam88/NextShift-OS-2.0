@@ -89,4 +89,3 @@ Reason:
 - the hook does not import `EvolutionProjection`
 - the returned snapshot is produced by `normalizeLegacySnapshot(evolution)`
 - the feature flag currently returns `snapshot` in both branches
-

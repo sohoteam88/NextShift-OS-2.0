@@ -1,7 +1,7 @@
 # V6-1 — Critical Business Logic Tests Report
 
-**Date:** 2026-06-14  
-**Scope:** Vitest unit tests for 6 critical services  
+**Date:** 2026-06-14
+**Scope:** Vitest unit tests for 6 critical services
 **Status:** ✅ Complete
 
 ---

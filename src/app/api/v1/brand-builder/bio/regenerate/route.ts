@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
+import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { AppError } from '@/lib/errors';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { bioService } from '@/modules/brand-builder/services/bio-service';
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  await sharedAiRateLimitGuard(user, { feature: 'generation' });
   const body = (await request.json()) as {
     platform?: string;
     instruction?: string;

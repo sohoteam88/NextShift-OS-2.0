@@ -1,7 +1,7 @@
 # Admin Dashboard Decomposition Audit — V6-6
 
-**Date:** 2026-06-14  
-**Scope:** `src/app/(auth)/admin`, `src/modules/admin`  
+**Date:** 2026-06-14
+**Scope:** `src/app/(auth)/admin`, `src/modules/admin`
 **Status:** Audit complete — no code changes
 
 ---

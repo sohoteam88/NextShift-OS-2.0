@@ -1,7 +1,7 @@
 # V5-5 — AI Barrel Export Final Report
 
-**Date:** 2026-06-14  
-**Scope:** Create clean public API surface for unified `src/modules/ai`  
+**Date:** 2026-06-14
+**Scope:** Create clean public API surface for unified `src/modules/ai`
 **Status:** ✅ Complete — AI Domain Architecture Finalized
 
 ---

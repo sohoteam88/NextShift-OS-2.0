@@ -1,9 +1,5 @@
-import { CRMDashboard } from '@/modules/crm-engine/components/CRMDashboard';
+import { redirect } from 'next/navigation';
 
 export default function CRMEnginePage() {
-  return (
-    <div className="py-6">
-      <CRMDashboard />
-    </div>
-  );
+  redirect('/crm');
 }

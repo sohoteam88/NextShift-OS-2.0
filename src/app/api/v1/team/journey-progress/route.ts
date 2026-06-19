@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi, requireRoleApi } from '@/modules/auth/middleware/require-auth-api';
-import { getProgressPercent, getStageById, type CompletedChecksValue } from '@/modules/mission/constants/journey-map';
+import { journeyStateService } from '@/modules/journey/services/JourneyStateService';
+import { toJourneyProgressViewModel } from '@/modules/journey/view-models/JourneyProgressViewModelAdapter';
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
@@ -18,8 +19,6 @@ export const GET = apiHandler(async (request: NextRequest) => {
       name: true,
       userProgress: {
         select: {
-          currentStageId: true,
-          completedChecks: true,
           lastActivityAt: true,
         },
       },
@@ -29,24 +28,15 @@ export const GET = apiHandler(async (request: NextRequest) => {
   });
 
   const now = Date.now();
-  const data = members.map((member) => {
-    const progress = member.userProgress;
-    const currentStage = progress?.currentStageId ? getStageById(progress.currentStageId as never) : null;
-    const progressPercent = progress ? getProgressPercent(progress.completedChecks as CompletedChecksValue) : 0;
-    const daysSinceLastActivity = progress
-      ? Math.floor((now - progress.lastActivityAt.getTime()) / 86_400_000)
-      : null;
-
-    return {
+  const data = await Promise.all(members.map(async (member) => {
+    const journeyState = await journeyStateService.getJourneyState(member.id);
+    return toJourneyProgressViewModel(journeyState, {
       userId: member.id,
       name: member.name,
-      progressPercent,
-      currentStageId: progress?.currentStageId ?? null,
-      currentStageName: currentStage?.name_zh ?? '尚未开始',
-      daysSinceLastActivity,
-      stalled: typeof daysSinceLastActivity === 'number' && daysSinceLastActivity > 3,
-    };
-  });
+      lastActivityAt: member.userProgress?.lastActivityAt ?? null,
+      now,
+    });
+  }));
 
   return NextResponse.json({ data });
 });

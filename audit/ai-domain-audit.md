@@ -1,7 +1,7 @@
 # AI Domain Audit — V4 → V5 Architecture
 
-**Date:** 2026-06-14  
-**Scope:** `src/modules/ai`, `ai-router`, `ai-agents`  
+**Date:** 2026-06-14
+**Scope:** `src/modules/ai`, `ai-router`, `ai-agents`
 **Method:** Full file-by-file export analysis + cross-module dependency mapping
 
 ---

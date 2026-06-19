@@ -63,7 +63,7 @@ const MISSIONS: Record<string, Omit<Mission, 'tasks' | 'completed'>> = {
 const TASK_MAP: Record<string, MissionTask[]> = {
   brand_foundation: [
     { key: 'brand_interview', label: '品牌访谈', route: '/brand-builder/step/interview', completed: false },
-    { key: 'brand_dna', label: '品牌 DNA', route: '/brand-dna', completed: false },
+    { key: 'brand_dna', label: '品牌 DNA', route: '/brand-builder/step/profile', completed: false },
     { key: 'social_setup', label: '社交媒体设置', route: '/social-setup', completed: false },
   ],
   content_creation: [
@@ -73,7 +73,7 @@ const TASK_MAP: Record<string, MissionTask[]> = {
   ],
   lead_generation: [
     { key: 'lead_magnet', label: '引流磁铁', route: '/lead-magnet', completed: false },
-    { key: 'landing_page', label: '着陆页', route: '/funnel-builder', completed: false },
+    { key: 'landing_page', label: '着陆页', route: '/funnel', completed: false },
     { key: 'lead_capture', label: '客户获取', route: '/traffic-engine', completed: false },
   ],
   customer_acquisition: [

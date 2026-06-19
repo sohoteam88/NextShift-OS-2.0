@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
+import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { brandDnaService } from '@/modules/brand-dna/services/brandDnaService';
 import prisma from '@/lib/prisma';
@@ -10,6 +11,7 @@ import prisma from '@/lib/prisma';
  */
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  await sharedAiRateLimitGuard(user, { feature: 'generation' });
 
   // Find latest extracted/confirmed interview
   const interview = await prisma.brandInterview.findFirst({

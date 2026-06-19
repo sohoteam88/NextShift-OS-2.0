@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMissionState } from '@/modules/mission/hooks/use-mission';
 import { evolutionProjection } from '../projections/evolution-projection';
 import { buildLegacyEvolutionSnapshot } from '@/modules/user-evolution/adapters/legacy-evolution-bridge';
+import { resolveJourneyCompletion } from '@/modules/journey/services/JourneyCompletionResolver';
 import { deriveLevel } from '../core/derive-level';
 import { deriveUnlocks } from '../core/derive-unlocks';
 import type { EvolutionSnapshot } from '../types/evolution-snapshot';
@@ -48,19 +49,22 @@ export function useEvolutionProjection(userId?: string): UseEvolutionProjectionR
 
   const legacySnapshot = React.useMemo(() => {
     const state = mission.data?.data;
-    const completedChecks = state?.completedChecks ?? [];
-    const pct = state?.progressPercent ?? 0;
+    const completion = resolveJourneyCompletion({
+      completedChecks: state?.completedChecks,
+      progressPercent: state?.progressPercent,
+    });
+    const pct = completion.progressPercent;
 
     const input = {
-      brandInterview: completedChecks.includes('brand_interview') || pct >= 10,
-      brandDNA: completedChecks.includes('brand_dna') || pct >= 25,
-      socialSetup: completedChecks.includes('social_setup') || pct >= 35,
+      brandInterview: completion.brandInterview,
+      brandDNA: completion.brandDNA,
+      socialSetup: completion.socialSetup,
       contentCount: pct >= 40 ? 3 : pct >= 30 ? 1 : 0,
       leadCount: pct >= 55 ? 1 : 0,
       customerCount: pct >= 70 ? 1 : 0,
       teamMemberCount: pct >= 90 ? 1 : 0,
-      crmActive: completedChecks.includes('crm_setup'),
-      followUpActive: completedChecks.includes('follow_up_active'),
+      crmActive: completion.followUpSystem,
+      followUpActive: completion.followUpSystem,
     };
 
     const levelState = deriveLevel(input);

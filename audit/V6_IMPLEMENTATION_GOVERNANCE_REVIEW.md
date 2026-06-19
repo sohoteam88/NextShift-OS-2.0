@@ -121,4 +121,3 @@ The only real risk is that it remains a policy document unless the repo adds enf
 - admin projection verification
 
 With those guardrails, this governance can actually hold the refactor in place.
-

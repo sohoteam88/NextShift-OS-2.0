@@ -16,7 +16,7 @@ const OverrideSchema = z.object({
 
 export const GET = apiHandler(async (req: NextRequest) => {
   const user = await requireAuthApi(req);
-  requireRoleApi(user, ['owner', 'admin']);
+  requireRoleApi(user, ['platform_admin']);
   const { searchParams } = new URL(req.url);
   const tenantId = searchParams.get('tenantId') || user.tenantId;
   const override = await saasService.getManualOverride(tenantId);
@@ -26,7 +26,7 @@ export const GET = apiHandler(async (req: NextRequest) => {
 
 export const POST = apiHandler(async (req: NextRequest) => {
   const user = await requireAuthApi(req);
-  requireRoleApi(user, ['owner', 'admin']);
+  requireRoleApi(user, ['platform_admin']);
   const body = OverrideSchema.parse(await req.json());
   const override = await saasService.setManualOverride(body.tenantId, {
     enabled: body.enabled,
@@ -44,7 +44,7 @@ export const POST = apiHandler(async (req: NextRequest) => {
 
 export const DELETE = apiHandler(async (req: NextRequest) => {
   const user = await requireAuthApi(req);
-  requireRoleApi(user, ['owner', 'admin']);
+  requireRoleApi(user, ['platform_admin']);
   const { tenantId } = z.object({ tenantId: z.string() }).parse(await req.json());
   await saasService.revokeOverride(tenantId, user.id);
   return NextResponse.json({ data: { revoked: true } });

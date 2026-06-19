@@ -72,7 +72,7 @@ export function LeadDashboard() {
             <div className="flex-1"><span className="text-sm font-semibold">创建引流磁铁</span><p className="text-xs text-[var(--color-text-muted)]">PDF、清单、测验、微课程</p></div>
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link href="/funnel-builder" className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:bg-[var(--color-surface)]">
+          <Link href="/funnel" className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:bg-[var(--color-surface)]">
             <Target className="h-5 w-5 text-[var(--color-primary)]" />
             <div className="flex-1"><span className="text-sm font-semibold">搭建落地页</span><p className="text-xs text-[var(--color-text-muted)]">高转化的获客页面</p></div>
             <ArrowRight className="h-4 w-4" />

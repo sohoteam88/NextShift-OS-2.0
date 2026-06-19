@@ -1,7 +1,7 @@
 # Phase 2d — DB Write Path Consolidation Report
 
-**Date:** 2026-06-14  
-**Scope:** Single canonical write path for all `Funnel` table inserts  
+**Date:** 2026-06-14
+**Scope:** Single canonical write path for all `Funnel` table inserts
 **Status:** ✅ Complete
 
 ---

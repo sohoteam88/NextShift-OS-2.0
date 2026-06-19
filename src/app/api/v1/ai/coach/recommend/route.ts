@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
+import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import prisma from '@/lib/prisma';
 
@@ -35,6 +36,7 @@ async function safeMetric<T>(label: string, fallback: T, loader: () => Promise<T
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  await sharedAiRateLimitGuard(user, { feature: 'ai-coo', userLimit: 120, tenantLimit: 600 });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -136,7 +138,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
       reason: '内容是建立信任的最快方式，AI 可以帮你 5 分钟完成。',
       estimatedMinutes: 15,
       actionLabel: '生成内容',
-      actionHref: '/ai',
+      actionHref: '/content-engine',
       urgency: 'medium',
     };
   } else if (publishedFunnels === 0) {

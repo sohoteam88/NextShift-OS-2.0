@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
 import { AppError } from '@/lib/errors';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
+import { completeBrandDiscovery } from '@/modules/brand-builder/services/brand-discovery-completion-service';
 import { brandInterviewService } from '@/modules/brand-builder/services/brand-interview-service';
 
 export const dynamic = 'force-dynamic';
@@ -20,5 +21,6 @@ export const POST = apiHandler(async (request: NextRequest, context) => {
   if (!interview) throw new AppError('NOT_FOUND', 404, 'Interview not found');
 
   const profile = await brandInterviewService.finishDialogue(id, user, endedBy);
-  return NextResponse.json({ data: profile });
+  const completion = await completeBrandDiscovery(user, id, profile);
+  return NextResponse.json({ data: completion.profile, meta: completion });
 });

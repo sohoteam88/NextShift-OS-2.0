@@ -1,7 +1,7 @@
 # V5-3 — ai-router → ai Merge Report
 
-**Date:** 2026-06-14  
-**Scope:** Merge `src/modules/ai-router` into unified `src/modules/ai`  
+**Date:** 2026-06-14
+**Scope:** Merge `src/modules/ai-router` into unified `src/modules/ai`
 **Status:** ✅ Complete
 
 ---

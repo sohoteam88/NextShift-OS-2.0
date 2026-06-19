@@ -1,3 +1,11 @@
+import { CANONICAL_ROUTES } from '@/config/canonical-routes';
+import {
+  extractCheckKeys,
+  getCompletionDate,
+  type CompletedCheckEntry,
+  type CompletedChecksValue,
+} from '@/modules/mission/utils/completed-checks';
+
 export type JourneyStageId =
   | 'register'
   | 'admin_approve'
@@ -47,24 +55,8 @@ export interface JourneyStage {
   xp_reward: number;
 }
 
-export type CompletedCheckEntry = {
-  check: string;
-  completed_at: string;
-};
-
-export type CompletedChecksValue = CompletedCheckEntry[] | string[];
-
-export function extractCheckKeys(completedChecks: CompletedChecksValue): string[] {
-  if (completedChecks.length === 0) return [];
-  if (typeof completedChecks[0] === 'string') return completedChecks as string[];
-  return (completedChecks as CompletedCheckEntry[]).map((entry) => entry.check);
-}
-
-export function getCompletionDate(completedChecks: CompletedChecksValue, checkKey: string): string | null {
-  if (completedChecks.length === 0 || typeof completedChecks[0] === 'string') return null;
-  const entry = (completedChecks as CompletedCheckEntry[]).find((item) => item.check === checkKey);
-  return entry?.completed_at ?? null;
-}
+export { extractCheckKeys, getCompletionDate };
+export type { CompletedCheckEntry, CompletedChecksValue };
 
 export const JOURNEY_MAP: JourneyStage[] = [
   {
@@ -112,7 +104,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'Tell AI your story by voice or text, AI will find your brand positioning',
     description_ms: 'Beritahu AI kisah anda, AI akan membantu mencari kedudukan jenama anda',
     estimated_minutes: 5,
-    route: '/brand-builder/step/interview',
+    route: CANONICAL_ROUTES.brandInterview,
     completion_check: 'brand_discovery_completed',
     prerequisites: ['admin_approve'],
     is_milestone: true,
@@ -129,7 +121,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'AI generated your positioning, story, and audience - confirm or adjust',
     description_ms: 'AI menjana kedudukan, kisah dan audiens anda - sahkan atau laraskan',
     estimated_minutes: 5,
-    route: '/brand-builder/step/profile',
+    route: CANONICAL_ROUTES.brandProfile,
     completion_check: 'brand_dna_confirmed',
     prerequisites: ['brand_discovery'],
     is_milestone: true,
@@ -231,7 +223,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'AI generates your first social media content based on your brand',
     description_ms: 'AI menjana kandungan media sosial pertama anda',
     estimated_minutes: 5,
-    route: '/ai',
+    route: CANONICAL_ROUTES.contentEngine,
     completion_check: 'first_content_generated',
     prerequisites: ['generate_avatar'],
     is_milestone: false,
@@ -282,7 +274,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'Create a free resource to attract leads to leave contact info',
     description_ms: 'Cipta sumber percuma untuk menarik bakal pelanggan',
     estimated_minutes: 10,
-    route: '/funnel',
+    route: CANONICAL_ROUTES.leadMagnet,
     completion_check: 'lead_magnet_created',
     prerequisites: ['publish_content'],
     is_milestone: false,
@@ -316,7 +308,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'Assemble your Lead Magnet and Webinar into a complete acquisition funnel',
     description_ms: 'Susun Magnet Pelanggan dan Webinar anda menjadi funnel lengkap',
     estimated_minutes: 15,
-    route: '/funnel',
+    route: CANONICAL_ROUTES.funnel,
     completion_check: 'funnel_published',
     prerequisites: ['webinar'],
     is_milestone: true,
@@ -333,7 +325,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'Push your funnel to your target audience and start getting real traffic',
     description_ms: 'Hantar funnel anda kepada audiens sasaran',
     estimated_minutes: 15,
-    route: '/traffic',
+    route: CANONICAL_ROUTES.trafficEngine,
     completion_check: 'campaign_launched',
     prerequisites: ['funnel'],
     is_milestone: false,
@@ -367,7 +359,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'Track every lead status in CRM so no one falls through the cracks',
     description_ms: 'Jejaki status setiap bakal pelanggan dalam CRM',
     estimated_minutes: 5,
-    route: '/crm',
+    route: CANONICAL_ROUTES.crm,
     completion_check: 'crm_active',
     prerequisites: ['whatsapp_followup'],
     is_milestone: false,
@@ -401,7 +393,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     description_en: 'You completed the core system! Now focus on scale - more content, more traffic, more team members',
     description_ms: 'Anda telah menyelesaikan sistem teras! Sekarang fokus pada skala',
     estimated_minutes: 0,
-    route: '/dashboard',
+    route: CANONICAL_ROUTES.dashboard,
     completion_check: 'growth_mode_active',
     prerequisites: ['first_sale'],
     is_milestone: true,

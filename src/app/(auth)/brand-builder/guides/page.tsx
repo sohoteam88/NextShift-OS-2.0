@@ -4,6 +4,10 @@ import { getTranslations } from 'next-intl/server';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import prisma from '@/lib/prisma';
 import { PlatformGuideStep } from '@/modules/brand-builder/components/PlatformGuideStep';
+import {
+  getBrandBuilderProfileViewModel,
+  hasBrandBuilderProfileViewModelData,
+} from '@/modules/brand-builder/adapters/InterviewAuthorityBrandProfileViewModel';
 
 export default async function BrandBuilderGuidesPage() {
   const user = await getAuthUser();
@@ -11,14 +15,16 @@ export default async function BrandBuilderGuidesPage() {
 
   const t = await getTranslations('brandBuilder');
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { metadata: true, phone: true },
-  });
+  const [brandProfile, dbUser] = await Promise.all([
+    getBrandBuilderProfileViewModel(user.id),
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { phone: true },
+    }),
+  ]);
 
-  const meta = (dbUser?.metadata as Record<string, unknown>) ?? {};
-  const brandProfile = (meta.brand_profile as Record<string, unknown>) ?? null;
-  const platforms = (brandProfile?.platforms as string[] | undefined) ?? ['facebook', 'instagram'];
+  const hasBrandProfile = hasBrandBuilderProfileViewModelData(brandProfile);
+  const platforms = (brandProfile.platforms as string[] | undefined) ?? ['facebook', 'instagram'];
   const phone = dbUser?.phone ?? '';
 
   const latestFunnel = await prisma.funnel.findFirst({
@@ -43,7 +49,7 @@ export default async function BrandBuilderGuidesPage() {
         </div>
       </div>
 
-      {!brandProfile ? (
+      {!hasBrandProfile ? (
         <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-8 text-center shadow-sm">
           <p className="text-sm text-[var(--color-text-muted)]">{t('noProfile')}</p>
           <Link

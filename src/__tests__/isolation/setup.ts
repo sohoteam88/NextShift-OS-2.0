@@ -13,7 +13,7 @@ type SeedUser = {
   phone: string | null;
   role: string;
   status: 'active' | 'pending' | 'suspended';
-  preferredLanguage: string;
+  languagePreference: string;
 };
 
 type SeedTenant = {
@@ -105,7 +105,7 @@ function createAuthUser(user: SeedUser): AuthUser {
     tenantId: user.tenantId,
     role: user.role,
     name: user.name,
-    preferredLanguage: user.preferredLanguage,
+    preferredLanguage: user.languagePreference,
     status: user.status,
   };
 }
@@ -119,7 +119,7 @@ function makeUser(tenantId: string, role: string, name: string, email: string): 
     phone: null,
     role,
     status: 'active',
-    preferredLanguage: 'zh',
+    languagePreference: 'zh',
   };
 }
 
@@ -397,6 +397,7 @@ export async function cleanupTestTenants(fixture: IsolationFixture) {
   await prisma.voiceProfile.deleteMany({ where: { tenantId: { in: tenantIds } } });
   await prisma.analyticsEvent.deleteMany({ where: { tenantId: { in: tenantIds } } });
   await prisma.scheduledMessage.deleteMany({ where: { tenantId: { in: tenantIds } } });
+  await prisma.lead.deleteMany({ where: { tenantId: { in: tenantIds } } });
   await prisma.inviteCode.deleteMany({ where: { tenantId: { in: tenantIds } } });
   await prisma.funnel.deleteMany({ where: { tenantId: { in: tenantIds } } });
   await prisma.funnelTemplate.deleteMany({ where: { tenantId: { in: tenantIds } } });
@@ -406,11 +407,7 @@ export async function cleanupTestTenants(fixture: IsolationFixture) {
   await prisma.pipelineStage.deleteMany({ where: { tenantId: { in: tenantIds } } });
   await prisma.auditLog.deleteMany({ where: { tenantId: { in: tenantIds } } });
 
-  await prisma.user.delete({ where: { id: fixture.dbUsers.memberA.id } });
-  await prisma.user.delete({ where: { id: fixture.dbUsers.memberB.id } });
-  await prisma.user.delete({ where: { id: fixture.dbUsers.leaderA.id } });
-  await prisma.user.delete({ where: { id: fixture.dbUsers.operatorB.id } });
-  await prisma.user.delete({ where: { id: fixture.dbUsers.operatorA.id } });
+  await prisma.user.deleteMany({ where: { tenantId: { in: tenantIds } } });
 
   await prisma.tenant.deleteMany({
     where: {

@@ -45,7 +45,7 @@ export function CompleteStepClient({ userName }: Props) {
             <span className="mt-1.5 text-xs font-medium text-[var(--color-text)]">查看内容日历</span>
           </Link>
           <Link
-            href="/ai"
+            href="/content-engine"
             className="flex flex-col items-center rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:border-[var(--color-primary)] hover:bg-blue-50"
           >
             <span className="text-2xl">✍️</span>

@@ -227,4 +227,3 @@ GO
 ### Required caution
 This is a **GO for Sprint 1**, not a claim that the system is already consistent.
 The current runtime still has duplicate consumers, but the pre-flight conditions are sufficient to start the consolidation sprint safely.
-

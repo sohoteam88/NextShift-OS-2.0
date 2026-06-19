@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as postAuth } from '@/app/api/v1/auth/route';
 import { POST as postContent } from '@/app/api/v1/ai/generate/content/route';
+import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { checkRateLimit, resetRateLimits } from '@/lib/rate-limit';
 
 const authMocks = vi.hoisted(() => ({
@@ -83,5 +84,21 @@ describe('Rate Limiting', () => {
     }
 
     expect(await checkRateLimit('submit:203.0.113.9', 10, 60 * 60 * 1000)).toBe(false);
+  });
+
+  it('blocks excessive AI usage by tenant even across users', async () => {
+    await sharedAiRateLimitGuard(
+      { id: 'tenant-user-1', tenantId: 'tenant-shared' },
+      { feature: 'tenant-test', userLimit: 10, tenantLimit: 2 },
+    );
+    await sharedAiRateLimitGuard(
+      { id: 'tenant-user-2', tenantId: 'tenant-shared' },
+      { feature: 'tenant-test', userLimit: 10, tenantLimit: 2 },
+    );
+
+    await expect(sharedAiRateLimitGuard(
+      { id: 'tenant-user-3', tenantId: 'tenant-shared' },
+      { feature: 'tenant-test', userLimit: 10, tenantLimit: 2 },
+    )).rejects.toMatchObject({ code: 'RATE_LIMITED', statusCode: 429 });
   });
 });

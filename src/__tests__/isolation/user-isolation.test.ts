@@ -6,7 +6,7 @@ import { teamService } from '@/modules/team/services/team-service';
 import { POST as REGISTER_MEMBER } from '@/app/api/v1/member/register/route';
 
 const authMocks = vi.hoisted(() => ({
-  createServerSupabaseClient: vi.fn(),
+  createServiceRoleSupabaseClient: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => authMocks);
@@ -54,19 +54,21 @@ run('User Isolation', () => {
     };
     const supabaseClient = {
       auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: {
-            user: authUser,
-          },
-        }),
+        admin: {
+          createUser: vi.fn().mockResolvedValue({ data: { user: authUser }, error: null }),
+          deleteUser: vi.fn().mockResolvedValue({ error: null }),
+        },
       },
     };
-    authMocks.createServerSupabaseClient.mockResolvedValue(supabaseClient);
+    authMocks.createServiceRoleSupabaseClient.mockReturnValue(supabaseClient);
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key');
 
     const response = await REGISTER_MEMBER(
       makeNextRequest('http://127.0.0.1/api/v1/member/register', {
         invite_code: fixture.inviteCodeA,
         name: 'Joined Member',
+        email: authUser.email,
+        password: 'test-password-123',
         phone: '+60123456789',
         preferred_language: 'zh',
       }),

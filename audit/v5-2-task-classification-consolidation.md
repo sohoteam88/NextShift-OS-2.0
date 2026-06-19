@@ -1,7 +1,7 @@
 # V5-2 — Task Classification Consolidation Report
 
-**Date:** 2026-06-14  
-**Scope:** Unify 2 competing task classification systems into 1 canonical source  
+**Date:** 2026-06-14
+**Scope:** Unify 2 competing task classification systems into 1 canonical source
 **Status:** ✅ Complete
 
 ---

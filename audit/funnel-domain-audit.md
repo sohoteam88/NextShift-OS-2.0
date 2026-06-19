@@ -1,7 +1,7 @@
 # Funnel Domain Audit — V3 → V4 Architecture Consolidation
 
-**Date:** 2026-06-14  
-**Scope:** `src/modules/funnel`, `funnel-builder`, `funnel-context`, `funnel-os`  
+**Date:** 2026-06-14
+**Scope:** `src/modules/funnel`, `funnel-builder`, `funnel-context`, `funnel-os`
 **Method:** Full file-by-file export analysis + cross-module dependency mapping
 
 ---

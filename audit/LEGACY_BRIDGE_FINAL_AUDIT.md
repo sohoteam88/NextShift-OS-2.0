@@ -105,4 +105,3 @@ The legacy bridge is now isolated enough to delete because:
 
 Repo-wide grep still finds historical references in architecture docs, but those are not runtime dependencies:
 - `docs/architecture/ADR-011-user-evolution-engine.md`
-

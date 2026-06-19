@@ -1,7 +1,7 @@
 # Phase 2a — FunnelType Disambiguation Report
 
-**Date:** 2026-06-14  
-**Scope:** Rename 3 conflicting `FunnelType` definitions across the funnel domain  
+**Date:** 2026-06-14
+**Scope:** Rename 3 conflicting `FunnelType` definitions across the funnel domain
 **Status:** ✅ Complete
 
 ---

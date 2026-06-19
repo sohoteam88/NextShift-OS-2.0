@@ -157,20 +157,6 @@ export function InterviewStepClient({ existingInterviewId }: Props) {
     };
   }, [existingInterviewId, t]);
 
-  async function completeWithProfile(profile: ExtractedProfile) {
-    await fetch('/api/v1/brand-builder/wizard/complete-step', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stepId: 'interview', interviewId }),
-    });
-    await fetch('/api/v1/brand-builder/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profile),
-    });
-    router.push('/brand-builder/step/profile');
-  }
-
   async function finish(endedBy: 'ai' | 'user' | 'hardcap') {
     if (!interviewId || analyzing) return;
     setAnalyzing(true);
@@ -182,8 +168,8 @@ export function InterviewStepClient({ existingInterviewId }: Props) {
         body: JSON.stringify({ ended_by: endedBy }),
       });
       if (!res.ok) throw new Error('分析失败，请稍后再试');
-      const json = (await res.json()) as { data: ExtractedProfile };
-      await completeWithProfile(json.data);
+      await res.json() as { data: ExtractedProfile };
+      router.push('/brand-builder/step/profile');
     } catch (err) {
       setError(err instanceof Error ? err.message : '分析失败，请稍后再试');
       setAnalyzing(false);

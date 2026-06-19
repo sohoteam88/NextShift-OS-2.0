@@ -1,7 +1,7 @@
 # V6-3A — Performance Quick Wins Report
 
-**Date:** 2026-06-14  
-**Scope:** Implement the 4 highest-impact low-effort performance optimizations  
+**Date:** 2026-06-14
+**Scope:** Implement the 4 highest-impact low-effort performance optimizations
 **Status:** ✅ Complete
 
 ---

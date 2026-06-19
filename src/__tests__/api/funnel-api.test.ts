@@ -5,10 +5,10 @@ vi.mock('@/modules/auth/services/auth-service', () => authMocks);
 
 const serviceMocks = vi.hoisted(() => ({
   funnelService: { list: vi.fn(), getById: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
-  funnelHealthService: { calculate: vi.fn() },
+  businessStateService: { getBusinessState: vi.fn() },
 }));
 vi.mock('@/modules/funnel/services/funnel-service', () => ({ funnelService: serviceMocks.funnelService }));
-vi.mock('@/modules/funnel/services/funnel-health-service', () => ({ funnelHealthService: serviceMocks.funnelHealthService }));
+vi.mock('@/modules/business-state/services/BusinessStateService', () => ({ businessStateService: serviceMocks.businessStateService }));
 
 import { GET as getFunnels, POST as postFunnel } from '@/app/api/v1/funnel/funnels/route';
 import { GET as getFunnel, PATCH as patchFunnel, DELETE as deleteFunnel } from '@/app/api/v1/funnel/funnels/[id]/route';
@@ -48,11 +48,25 @@ describe('Funnel API Smoke', () => {
 
   it('GET /funnel/funnels/:id/health → 200', async () => {
     authMocks.getAuthUser.mockResolvedValue(authUser);
-    serviceMocks.funnelHealthService.calculate.mockResolvedValue({ overall: 85, status: 'excellent' });
+    serviceMocks.businessStateService.getBusinessState.mockResolvedValue({
+      stage: 'lead_generation',
+      readiness: {
+        source: 'test',
+        scope: 'user',
+        confidence: 'derived',
+        fallback: 'none',
+        score: 85,
+        maxScore: 100,
+        percentage: 85,
+      },
+      bottlenecks: [],
+      opportunities: [],
+    });
     const res = await getHealth(makeReq('/api/v1/funnel/funnels/f1/health') as any, { params: Promise.resolve({ id: 'f1' }) } as any);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data).toBeDefined();
+    expect(body.data.overall).toBe(85);
   });
 
   it('DELETE /funnel/funnels/:id → 200', async () => {

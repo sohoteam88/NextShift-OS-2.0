@@ -143,7 +143,7 @@ export const funnelHealthService = {
     if (scores.ctaConsistency < 100) return { action: '统一所有 CTA 的目标', reason: '不同区块的按钮指向不同地方，会让用户困惑', route: '/funnel' };
     if (scores.performance === null) return { action: '发布漏斗并开始获取流量', reason: '还没有数据，发布后才能优化', route: '/funnel' };
     if (scores.performance < 50) return { action: '优化 Hero 标题和 CTA 文案', reason: '转化率偏低，建议先测试不同的标题角度', route: '/funnel' };
-    return { action: '准备启动流量 campaign', reason: '漏斗表现良好，可以开始投放', route: '/traffic' };
+    return { action: '准备启动流量 campaign', reason: '漏斗表现良好，可以开始投放', route: '/traffic-engine' };
   },
 
   // ── Adapter: Package advisor actions (ex funnel-builder/funnelAdvisor) ─────

@@ -78,7 +78,7 @@ const TOOLS: ToolCard[] = [
       en: 'AI writes posts, copy and content calendar',
       ms: 'AI tulis pos, salinan dan kalendar kandungan',
     },
-    route: '/ai',
+    route: '/content-engine',
     unlocksAfter: 'first_bio_completed',
   },
   {

@@ -1,7 +1,7 @@
 # Phase 4 — funnel-context → funnel Merge Report
 
-**Date:** 2026-06-14  
-**Scope:** Merge `src/modules/funnel-context` into unified `src/modules/funnel`  
+**Date:** 2026-06-14
+**Scope:** Merge `src/modules/funnel-context` into unified `src/modules/funnel`
 **Status:** ✅ Complete
 
 ---

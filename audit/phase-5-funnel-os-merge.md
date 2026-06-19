@@ -1,7 +1,7 @@
 # Phase 5 — funnel-os → funnel Merge Report
 
-**Date:** 2026-06-14  
-**Scope:** Merge `src/modules/funnel-os` into unified `src/modules/funnel`  
+**Date:** 2026-06-14
+**Scope:** Merge `src/modules/funnel-os` into unified `src/modules/funnel`
 **Status:** ✅ Complete — FINAL PHASE
 
 ---

@@ -3,7 +3,7 @@ import type { GrowthRoadmapState, RoadmapMissionGroup, RoadmapStep, RoadmapStepS
 
 const STEPS: Omit<RoadmapStep, 'status'>[] = [
   { id: 'brand_interview', stepNumber: 1, title: '品牌访谈', description: '告诉 AI 你的故事、目标和受众。', missionId: 'brand_foundation', route: '/brand-builder/step/interview', estimatedTime: '10 分钟', rewards: ['品牌定位', '内容方向'] },
-  { id: 'brand_dna', stepNumber: 2, title: '品牌 DNA', description: '生成你完整的品牌身份。', missionId: 'brand_foundation', route: '/brand-dna', estimatedTime: '5 分钟', rewards: ['品牌身份', 'AI 个性化'] },
+  { id: 'brand_dna', stepNumber: 2, title: '品牌 DNA', description: '生成你完整的品牌身份。', missionId: 'brand_foundation', route: '/brand-builder/step/profile', estimatedTime: '5 分钟', rewards: ['品牌身份', 'AI 个性化'] },
   { id: 'social_setup', stepNumber: 3, title: '社交媒体设置', description: '建立你的社交媒体存在。', missionId: 'brand_foundation', route: '/social-setup', estimatedTime: '15 分钟', rewards: ['社交资料', '简介与封面'] },
   { id: 'first_content', stepNumber: 4, title: '第一篇内容', description: '发布你的第一篇内容。', missionId: 'content_creation', route: '/content-engine', estimatedTime: '10 分钟', rewards: ['曝光度', '受众增长'] },
   { id: 'content_engine', stepNumber: 5, title: '内容引擎', description: '用 AI 规模化内容生产。', missionId: 'content_creation', route: '/content-engine', estimatedTime: '20 分钟', rewards: ['内容日历', '多平台'] },

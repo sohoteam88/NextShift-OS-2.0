@@ -1,3 +1,5 @@
+import { CANONICAL_ROUTES } from '@/config/canonical-routes';
+
 export type MissionSidebarItem = {
   icon: string;
   label_zh: string;
@@ -20,11 +22,24 @@ export const GUIDED_SIDEBAR = EXPLORER_SIDEBAR;
 export const BUILDER_SIDEBAR: MissionSidebarItem[] = [
   ...EXPLORER_SIDEBAR,
   {
+    icon: 'Target',
+    label_zh: '品牌建设',
+    label_en: 'Brand Builder',
+    label_ms: 'Bina Jenama',
+    route: '/brand-builder/profile',
+    children: [
+      { icon: 'UserCog', label_zh: '品牌画像', label_en: 'Brand Profile', label_ms: 'Profil Jenama', route: '/brand-builder/profile' },
+      { icon: 'MessagesSquare', label_zh: '重新访谈', label_en: 'Restart Interview', label_ms: 'Temu Bual Semula', route: '/brand-builder/step/interview' },
+      { icon: 'MapPin', label_zh: '设置指南', label_en: 'Setup Guides', label_ms: 'Panduan', route: '/brand-builder/guides' },
+      { icon: 'Sparkles', label_zh: '品牌洞察', label_en: 'Brand Intelligence', label_ms: 'Kecerdasan Jenama', route: '/brand-builder/intelligence' },
+    ],
+  },
+  {
     icon: 'FileText', label_zh: '内容引擎', label_en: 'Content Engine', label_ms: 'Enjin Kandungan',
     route: '/content-engine',
     children: [
       { icon: 'Zap', label_zh: '内容指挥中心', label_en: 'Command Center', label_ms: 'Pusat Kawalan', route: '/content-engine' },
-      { icon: 'Wand2', label_zh: 'AI 工具', label_en: 'AI Tools', label_ms: 'Alat AI', route: '/ai' },
+      { icon: 'Wand2', label_zh: 'AI 工具', label_en: 'AI Tools', label_ms: 'Alat AI', route: '/content-engine' },
       { icon: 'Clapperboard', label_zh: '视频工作室', label_en: 'Video Studio', label_ms: 'Studio Video', route: '/video' },
     ],
   },
@@ -35,17 +50,18 @@ export const OPERATOR_SIDEBAR: MissionSidebarItem[] = [
   ...BUILDER_SIDEBAR,
   {
     icon: 'Megaphone', label_zh: '获客', label_en: 'Acquisition', label_ms: 'Pemerolehan',
-    route: '/leads',
+    route: CANONICAL_ROUTES.leadMagnet,
     children: [
-      { icon: 'Target', label_zh: '客户开发', label_en: 'Lead Engine', label_ms: 'Enjin Lead', route: '/leads' },
-      { icon: 'LayoutTemplate', label_zh: '漏斗', label_en: 'Funnels', label_ms: 'Funnel', route: '/funnel' },
+      { icon: 'Target', label_zh: '引流磁铁', label_en: 'Lead Magnet', label_ms: 'Magnet Lead', route: CANONICAL_ROUTES.leadMagnet },
+      { icon: 'LayoutTemplate', label_zh: '漏斗', label_en: 'Funnels', label_ms: 'Funnel', route: CANONICAL_ROUTES.funnel },
+      { icon: 'Zap', label_zh: '流量引擎', label_en: 'Traffic Engine', label_ms: 'Enjin Trafik', route: CANONICAL_ROUTES.trafficEngine },
     ],
   },
   {
     icon: 'MessageCircle', label_zh: '转化', label_en: 'Conversion', label_ms: 'Penukaran',
-    route: '/customers',
+    route: '/crm',
     children: [
-      { icon: 'UserCheck', label_zh: 'CRM 引擎', label_en: 'CRM Engine', label_ms: 'Enjin CRM', route: '/customers' },
+      { icon: 'UserCheck', label_zh: 'CRM 引擎', label_en: 'CRM Engine', label_ms: 'Enjin CRM', route: '/crm' },
       { icon: 'DollarSign', label_zh: '销售引擎', label_en: 'Sales Engine', label_ms: 'Enjin Jualan', route: '/sales' },
     ],
   },
@@ -64,6 +80,7 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
       { icon: 'UserCog', label_zh: '品牌画像', label_en: 'Brand Profile', label_ms: 'Profil Jenama', route: '/brand-builder/profile' },
       { icon: 'MessagesSquare', label_zh: '重新访谈', label_en: 'Restart Interview', label_ms: 'Temu Bual Semula', route: '/brand-builder/step/interview' },
       { icon: 'MapPin', label_zh: '设置指南', label_en: 'Setup Guides', label_ms: 'Panduan', route: '/brand-builder/guides' },
+      { icon: 'Sparkles', label_zh: '品牌洞察', label_en: 'Brand Intelligence', label_ms: 'Kecerdasan Jenama', route: '/brand-builder/intelligence' },
     ],
   },
   {
@@ -73,7 +90,7 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
     label_ms: 'Enjin Kandungan',
     route: '/content-engine',
     children: [
-      { icon: 'Wand2', label_zh: 'AI 工具', label_en: 'AI Tools', label_ms: 'Alat AI', route: '/ai' },
+      { icon: 'Wand2', label_zh: 'AI 工具', label_en: 'AI Tools', label_ms: 'Alat AI', route: '/content-engine' },
       { icon: 'Zap', label_zh: '内容指挥中心', label_en: 'Command Center', label_ms: 'Pusat Kawalan', route: '/content-engine' },
       { icon: 'Calendar', label_zh: '内容日历', label_en: 'Content Calendar', label_ms: 'Kalendar Kandungan', route: '/brand-builder/calendar' },
       { icon: 'Clapperboard', label_zh: '视频工作室', label_en: 'Video Studio', label_ms: 'Studio Video', route: '/video' },
@@ -85,10 +102,11 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
     label_zh: '获客',
     label_en: 'Acquisition',
     label_ms: 'Pemerolehan',
-    route: '/leads',
+    route: CANONICAL_ROUTES.leadMagnet,
     children: [
-      { icon: 'Target', label_zh: '客户开发', label_en: 'Lead Engine', label_ms: 'Enjin Lead', route: '/leads' },
-      { icon: 'LayoutTemplate', label_zh: '漏斗页面', label_en: 'Funnels', label_ms: 'Funnel', route: '/funnel' },
+      { icon: 'Target', label_zh: '引流磁铁', label_en: 'Lead Magnet', label_ms: 'Magnet Lead', route: CANONICAL_ROUTES.leadMagnet },
+      { icon: 'LayoutTemplate', label_zh: '漏斗页面', label_en: 'Funnels', label_ms: 'Funnel', route: CANONICAL_ROUTES.funnel },
+      { icon: 'Zap', label_zh: '流量引擎', label_en: 'Traffic Engine', label_ms: 'Enjin Trafik', route: CANONICAL_ROUTES.trafficEngine },
       { icon: 'Zap', label_zh: '漏斗生成器', label_en: 'Funnel Builder', label_ms: 'Pembina Funnel', route: '/ai/funnel-builder' },
     ],
   },
@@ -97,9 +115,9 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
     label_zh: '客户转化',
     label_en: 'Conversion',
     label_ms: 'Penukaran',
-    route: '/customers',
+    route: '/crm',
     children: [
-      { icon: 'UserCheck', label_zh: 'CRM 引擎', label_en: 'CRM Engine', label_ms: 'Enjin CRM', route: '/customers' },
+      { icon: 'UserCheck', label_zh: 'CRM 引擎', label_en: 'CRM Engine', label_ms: 'Enjin CRM', route: '/crm' },
       { icon: 'DollarSign', label_zh: '销售引擎', label_en: 'Sales Engine', label_ms: 'Enjin Jualan', route: '/sales' },
       { icon: 'ClipboardList', label_zh: '潜在客户列表', label_en: 'Lead List', label_ms: 'Senarai Lead', route: '/crm' },
       { icon: 'KanbanSquare', label_zh: '销售管道', label_en: 'Pipeline', label_ms: 'Pipeline', route: '/crm/pipeline' },
@@ -110,9 +128,10 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
     label_zh: '分析成长',
     label_en: 'Analytics & Growth',
     label_ms: 'Analitik',
-    route: '/team/growth',
+    route: '/team',
     children: [
-      { icon: 'Users', label_zh: '团队成长', label_en: 'Team Growth', label_ms: 'Pertumbuhan Pasukan', route: '/team/growth' },
+      { icon: 'Brain', label_zh: 'AI COO', label_en: 'AI COO', label_ms: 'AI COO', route: CANONICAL_ROUTES.ceoMode },
+      { icon: 'Users', label_zh: '团队成长', label_en: 'Team Growth', label_ms: 'Pertumbuhan Pasukan', route: '/team' },
       { icon: 'BarChart3', label_zh: '数据分析', label_en: 'Analytics', label_ms: 'Analitik', route: '/analytics' },
       { icon: 'BookOpenCheck', label_zh: '培训', label_en: 'Training', label_ms: 'Latihan', route: '/member?view=training' },
       { icon: 'Activity', label_zh: '每日行动', label_en: 'Daily Actions', label_ms: 'Tindakan Harian', route: '/member/daily-actions' },

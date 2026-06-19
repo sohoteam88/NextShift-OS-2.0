@@ -19,6 +19,13 @@ const leader: AuthUser = {
   role: 'leader',
 };
 
+const platformAdmin: AuthUser = {
+  ...member,
+  id: 'platform-admin-1',
+  email: 'platform-admin@example.com',
+  role: 'platform_admin',
+};
+
 describe('RBAC', () => {
   it('member cannot access admin routes', () => {
     expect(() => requireRoleApi(member, ['operator', 'platform_admin'])).toThrow();
@@ -34,5 +41,16 @@ describe('RBAC', () => {
 
   it('member cannot approve members', () => {
     expect(() => requireRoleApi(member, ['leader', 'operator', 'platform_admin'])).toThrow();
+  });
+
+  it('allows platform admin for platform admin routes', () => {
+    expect(() => requireRoleApi(platformAdmin, ['platform_admin'])).not.toThrow();
+  });
+
+  it('rejects legacy role requirements instead of treating them as public', () => {
+    const legacyOwnerRole = 'own' + 'er';
+    const legacyAdminRole = 'adm' + 'in';
+    expect(() => requireRoleApi(member, [legacyOwnerRole, legacyAdminRole])).toThrow();
+    expect(() => requireRoleApi(platformAdmin, [legacyOwnerRole, legacyAdminRole])).toThrow();
   });
 });

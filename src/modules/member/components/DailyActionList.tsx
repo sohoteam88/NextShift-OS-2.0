@@ -22,9 +22,9 @@ const categoryVariant: Record<string, 'success' | 'info' | 'warning'> = {
 
 const ACTION_LINKS: Record<string, string> = {
   'learn.ai_coach': '/ai/coach',
-  'content.education_post': '/ai',
-  'content.story_post': '/ai',
-  'content.authority_post': '/ai',
+  'content.education_post': '/content-engine',
+  'content.story_post': '/content-engine',
+  'content.authority_post': '/content-engine',
   'crm.follow_up': '/crm',
   'crm.whatsapp_reply': '/crm',
 };

@@ -1,7 +1,7 @@
 # Phase 6A — Test Coverage Audit
 
-**Date:** 2026-06-14  
-**Scope:** Full codebase test coverage assessment  
+**Date:** 2026-06-14
+**Scope:** Full codebase test coverage assessment
 **Status:** Audit complete
 
 ---

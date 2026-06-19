@@ -41,6 +41,7 @@ import {
   MessageCircle,
   Trophy,
   MessagesSquare,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ADVANCED_SIDEBAR, EXPLORER_SIDEBAR, BUILDER_SIDEBAR, OPERATOR_SIDEBAR, type MissionSidebarItem } from '@/modules/mission/constants/sidebar-config';
@@ -86,6 +87,7 @@ const ICONS: Record<string, React.ElementType> = {
   Megaphone,
   MessageCircle,
   MessagesSquare,
+  Sparkles,
   Settings,
   Target,
   Trophy,
@@ -126,7 +128,7 @@ const MEMBER_SECTIONS: NavSection[] = [
     title: 'AI 与内容',
     minRole: 'member',
     items: [
-      { href: '/ai', label: 'aiTools', icon: Wand2 },
+      { href: '/content-engine', label: 'aiTools', icon: Wand2 },
       { href: '/ai/content-plan', label: 'contentPlan', icon: Calendar },
       { href: '/ai/image', label: 'aiImage', icon: ImageIcon },
       { href: '/member/voice', label: 'voiceCapture', icon: Mic },
@@ -149,7 +151,7 @@ const MEMBER_SECTIONS: NavSection[] = [
     minRole: 'member',
     items: [
       { href: '/crm/pipeline', label: 'pipeline', icon: KanbanSquare },
-      { href: '/crm/customers', label: 'customers', icon: UserCheck },
+      { href: '/crm', label: 'customers', icon: UserCheck },
     ],
   },
   {

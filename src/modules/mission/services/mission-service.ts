@@ -2,17 +2,19 @@ import prisma from '@/lib/prisma';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import {
   JOURNEY_MAP,
-  extractCheckKeys,
-  getCompletionDate,
   getNextStage,
   getProgressPercent,
   getStageById,
   getTotalXP,
-  type CompletedCheckEntry,
-  type CompletedChecksValue,
   type JourneyStage,
   type JourneyStageId,
 } from '../constants/journey-map';
+import {
+  extractCheckKeys,
+  getCompletionDate,
+  toCompletedCheckEntries,
+  toCompletedChecksValue,
+} from '../utils/completed-checks';
 import { checkAndUnlockAchievements } from './achievement-service';
 
 export interface MissionState {
@@ -26,29 +28,6 @@ export interface MissionState {
   estimatedTimeToNext: string;
   estimatedTimeToFirstLead: string | null;
   estimatedTimeToFirstSale: string | null;
-}
-
-function toCompletedChecks(value: unknown): CompletedChecksValue {
-  if (!Array.isArray(value)) return [];
-  if (value.length === 0) return [];
-  if (typeof value[0] === 'string') {
-    return value.filter((item): item is string => typeof item === 'string');
-  }
-  return value.filter((item): item is CompletedCheckEntry => {
-    if (!item || typeof item !== 'object') return false;
-    const entry = item as Record<string, unknown>;
-    return typeof entry.check === 'string' && typeof entry.completed_at === 'string';
-  });
-}
-
-function toCompletedCheckEntries(value: unknown): CompletedCheckEntry[] {
-  const checks = toCompletedChecks(value);
-  if (checks.length === 0) return [];
-  if (typeof checks[0] !== 'string') return checks as CompletedCheckEntry[];
-  return (checks as string[]).map((check) => ({
-    check,
-    completed_at: new Date().toISOString(),
-  }));
 }
 
 export const missionService = {
@@ -78,7 +57,7 @@ export const missionService = {
 
   async getState(user: AuthUser): Promise<MissionState> {
     const progress = await this.getProgress(user);
-    const completedChecks = toCompletedChecks(progress.completedChecks);
+    const completedChecks = toCompletedChecksValue(progress.completedChecks);
     const checkKeys = extractCheckKeys(completedChecks);
     const nextStage = getNextStage(completedChecks);
     const currentStage = nextStage ?? getStageById('growth_mode') ?? null;
@@ -199,7 +178,7 @@ export const missionService = {
 
   async getJourneyMap(user: AuthUser) {
     const progress = await this.getProgress(user);
-    const completedChecks = toCompletedChecks(progress.completedChecks);
+    const completedChecks = toCompletedChecksValue(progress.completedChecks);
     const checkKeys = extractCheckKeys(completedChecks);
 
     return JOURNEY_MAP.map((stage) => ({

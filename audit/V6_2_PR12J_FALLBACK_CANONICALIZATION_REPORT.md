@@ -72,4 +72,3 @@ Why:
 Residual risk:
 - The fallback still depends on `buildLegacyEvolutionSnapshot`, so the compatibility layer remains in place until the bridge is retired.
 - Any future removal of the fallback would need consumer-by-consumer loading verification.
-

@@ -118,7 +118,7 @@ export const adminCommandService = {
         whatsappAI: tenant.plan !== 'free',
         crm: true,
         analytics: tenant.plan !== 'free',
-        admin: ['owner', 'admin'].includes(tenant.plan) || true,
+        admin: true,
       },
       customFeatures: settings.features ?? {},
     };

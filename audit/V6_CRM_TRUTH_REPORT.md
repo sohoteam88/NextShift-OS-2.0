@@ -241,4 +241,3 @@ Evidence:
 | Database table | Service | Reason |
 |---|---|---|
 | `lead` + `customer` as the CRM domain, with `crmCenterService` as the read projection | `crmCenterService` | It is the only place that already unifies live leads, customers, follow-ups, opportunities, and forecast data into one operational view |
-

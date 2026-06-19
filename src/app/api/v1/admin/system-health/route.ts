@@ -13,6 +13,7 @@ async function checkEnv() {
     SENTRY_DSN: !!process.env.SENTRY_DSN,
     POSTHOG_KEY: !!process.env.NEXT_PUBLIC_POSTHOG_KEY,
     BILLPLZ_API_KEY: !!process.env.BILLPLZ_API_KEY,
+    BILLPLZ_X_SIGNATURE_KEY: !!process.env.BILLPLZ_X_SIGNATURE_KEY,
   };
   const ok = Object.values(checks).filter(Boolean).length;
   const total = Object.keys(checks).length;

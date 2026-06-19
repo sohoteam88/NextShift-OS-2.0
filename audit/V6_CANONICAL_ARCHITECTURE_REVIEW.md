@@ -131,4 +131,3 @@ What is missing:
 - a rule for when admin projections are allowed to diverge from domain projections
 
 Net: the direction is correct, but execution still needs to be staged carefully to avoid another layer of hidden truth.
-

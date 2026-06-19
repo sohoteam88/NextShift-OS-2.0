@@ -4,6 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useEvolutionProjection } from '@/modules/evolution/hooks/use-evolution-projection';
 import { useMissionState } from '@/modules/mission/hooks/use-mission';
 import { getNextJourneyAction } from '@/modules/journey/utils/getNextJourneyAction';
+import {
+  resolveJourneyCompletion,
+  toJourneyNextActionInput,
+  toMissionInput,
+} from '@/modules/journey/services/JourneyCompletionResolver';
 import { getCurrentMission } from '@/modules/mission-engine/services/mission-service';
 import { getAICoachAdvice } from '@/modules/ai-coach/ai-coach-service';
 import type { JourneyNextAction } from '@/modules/journey/utils/getNextJourneyAction';
@@ -46,9 +51,10 @@ export function useDashboardMission(): DashboardMission {
   const { snapshot, isLoading: evolutionIsLoading } = useEvolutionProjection();
   const stats = useQuickStats();
   const state = mission.data?.data;
-  const completedChecks = state?.completedChecks ?? [];
-  const checkSet = new Set(completedChecks);
-  const pct = state?.progressPercent ?? 0;
+  const completion = resolveJourneyCompletion({
+    completedChecks: state?.completedChecks,
+    progressPercent: state?.progressPercent,
+  });
   const levelSnapshot = snapshot ?? {
     level: 'explorer',
     progressPercentage: 0,
@@ -59,26 +65,9 @@ export function useDashboardMission(): DashboardMission {
     totalMissions: 0,
   };
 
-  const nextAction = getNextJourneyAction({
-    brandInterview: checkSet.has('brand_interview') || pct >= 10,
-    brandDNA: checkSet.has('brand_dna') || pct >= 25,
-    firstContent: checkSet.has('first_content') || pct >= 40,
-    firstLead: checkSet.has('first_lead') || pct >= 55,
-    firstCustomer: checkSet.has('first_customer') || pct >= 70,
-    followUpSystem: checkSet.has('follow_up_system') || pct >= 85,
-    firstMember: checkSet.has('first_member') || pct >= 95,
-  });
+  const nextAction = getNextJourneyAction(toJourneyNextActionInput(completion));
 
-  const currentMission = getCurrentMission({
-    level: levelSnapshot.level,
-    brandInterview: checkSet.has('brand_interview') || pct >= 10,
-    brandDNA: checkSet.has('brand_dna') || pct >= 25,
-    socialSetup: checkSet.has('social_setup') || pct >= 35,
-    hasContent: pct >= 40,
-    hasLead: pct >= 55,
-    hasCustomer: pct >= 70,
-    teamMemberCount: pct >= 90 ? 1 : 0,
-  });
+  const currentMission = getCurrentMission(toMissionInput(completion, levelSnapshot.level));
 
   const coach = getAICoachAdvice(currentMission.id);
 

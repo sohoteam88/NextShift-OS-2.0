@@ -180,7 +180,7 @@ function isProviderConfigured(provider: AIProviderName) {
     case 'minimax':
       return !!process.env.MINIMAX_API_KEY;
     case 'gemini':
-      return !!process.env.GEMINI_API_KEY;
+      return !!(process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY);
   }
 }
 

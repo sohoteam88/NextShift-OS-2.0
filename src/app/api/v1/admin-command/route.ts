@@ -5,6 +5,6 @@ import { adminCommandService } from '@/modules/admin/services/adminCommandServic
 
 export const GET = apiHandler(async (req: NextRequest) => {
   const user = await requireAuthApi(req);
-  requireRoleApi(user, ['owner', 'admin']);
+  requireRoleApi(user, ['platform_admin']);
   return NextResponse.json({ data: await adminCommandService.getOverview() });
 });

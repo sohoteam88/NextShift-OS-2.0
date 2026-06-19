@@ -75,7 +75,7 @@ export const ceoAdvisorEngine = {
       if (top.length > 1) actions.push({ priority: 2, action: top[1].opportunity, expectedImpact: '中期增长机会', agentRecommended: top[1].agentRecommended ?? 'content_director', route: '/ai-workforce' });
       if (top.length > 2) actions.push({ priority: 3, action: top[2].opportunity, expectedImpact: '长期增长基础', agentRecommended: top[2].agentRecommended ?? 'funnel_architect', route: '/ai-workforce' });
     } else {
-      actions.push({ priority: 1, action: '继续完善品牌基础', expectedImpact: '为后续增长打基础', agentRecommended: 'brand_strategist', route: '/brand-dna' });
+      actions.push({ priority: 1, action: '继续完善品牌基础', expectedImpact: '为后续增长打基础', agentRecommended: 'brand_strategist', route: '/brand-builder/profile' });
     }
 
     // ---- Forecast ----

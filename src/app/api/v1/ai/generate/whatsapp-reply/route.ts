@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
+import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { whatsappReplyService } from '@/modules/ai/services/whatsapp-reply-service';
 
@@ -12,6 +13,7 @@ const WhatsAppReplySchema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  await sharedAiRateLimitGuard(user, { feature: 'generation' });
   const body = await request.json();
   const input = WhatsAppReplySchema.parse(body);
   const result = await whatsappReplyService.suggest(user, input);

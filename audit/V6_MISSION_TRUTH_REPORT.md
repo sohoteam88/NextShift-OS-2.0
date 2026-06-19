@@ -333,4 +333,3 @@ Real examples:
 | File | Function | Database table | Reason |
 |---|---|---|---|
 | `src/modules/mission/services/mission-service.ts` | `missionService.getState`, `completeCheck` | `public.userProgress` | It is the only persisted progression record and already powers the new mission state |
-

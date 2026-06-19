@@ -1,7 +1,7 @@
 # V5-1 — Model Registry Consolidation Report
 
-**Date:** 2026-06-14  
-**Scope:** Deduplicate model/provider metadata into single canonical source  
+**Date:** 2026-06-14
+**Scope:** Deduplicate model/provider metadata into single canonical source
 **Status:** ✅ Complete
 
 ---

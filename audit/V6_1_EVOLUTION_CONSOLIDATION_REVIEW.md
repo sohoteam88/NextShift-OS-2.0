@@ -163,4 +163,3 @@ The only missing pieces are operational:
 - explicit verification list for hidden progression consumers
 
 Once those are clarified, the sprint is ready to execute.
-

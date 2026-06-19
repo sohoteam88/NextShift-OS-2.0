@@ -1,7 +1,7 @@
 # Phase 2b — Health Engine Consolidation Report
 
-**Date:** 2026-06-14  
-**Scope:** Merge 3 health scoring engines into 1 canonical service  
+**Date:** 2026-06-14
+**Scope:** Merge 3 health scoring engines into 1 canonical service
 **Status:** ✅ Complete
 
 ---
@@ -96,7 +96,7 @@ Bundle impact:
 
 ```
 Before (3 scattered engines):                After (1 canonical):
-                                             
+
  funnel/                                     funnel/
  └── services/                               └── services/
       └── funnel-health-service.ts ◄──────────── funnel-health-service.ts  ← CANONICAL

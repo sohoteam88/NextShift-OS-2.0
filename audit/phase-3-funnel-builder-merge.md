@@ -1,7 +1,7 @@
 # Phase 3 — funnel-builder → funnel Merge Report
 
-**Date:** 2026-06-14  
-**Scope:** Merge `src/modules/funnel-builder` into `src/modules/funnel`  
+**Date:** 2026-06-14
+**Scope:** Merge `src/modules/funnel-builder` into `src/modules/funnel`
 **Status:** ✅ Complete
 
 ---

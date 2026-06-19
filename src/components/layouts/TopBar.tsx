@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
+import { CANONICAL_ROUTES } from '@/config/canonical-routes';
 
 type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
 
@@ -24,8 +25,8 @@ type TopBarProps = {
 
 function getBusinessHref(role: Role) {
   if (role === 'platform_admin') return '/platform-admin';
-  if (role === 'operator') return '/workspace';
-  return '/analytics-center';
+  if (role === 'operator') return '/admin';
+  return CANONICAL_ROUTES.ceoMode;
 }
 
 function UserMenu({ userName }: { userName: string }) {

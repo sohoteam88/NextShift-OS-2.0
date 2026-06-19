@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
+import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import prisma from '@/lib/prisma';
@@ -32,6 +33,7 @@ const STYLE_SUFFIX: Record<string, string> = {
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  await sharedAiRateLimitGuard(user, { feature: 'generation' });
   await enforceQuota(user.tenantId);
 
   const body = await request.json();

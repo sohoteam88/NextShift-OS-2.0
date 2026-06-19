@@ -47,4 +47,3 @@
 
 - Delete `src/modules/evolution/hooks/use-evolution-projection.ts`
 - No additional rollback steps required
-

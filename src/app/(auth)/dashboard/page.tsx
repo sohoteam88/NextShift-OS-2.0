@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { OperatorDashboard } from '@/modules/admin/components/OperatorDashboard';
 import { DashboardV4 } from '@/modules/dashboard/components/DashboardV4';
+import { missionService } from '@/modules/mission/services/mission-service';
 import { LeaderDashboard } from '@/modules/team/components/LeaderDashboard';
 
 function DashboardPlaceholder({
@@ -53,6 +54,11 @@ export default async function DashboardPage() {
   }
 
   if (user.role === 'operator') {
+    const mission = await missionService.getState(user);
+    if (!mission.isJourneyComplete) {
+      return <DashboardV4 />;
+    }
+
     return <OperatorDashboard user={user} />;
   }
 

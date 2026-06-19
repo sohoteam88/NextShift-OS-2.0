@@ -12,7 +12,7 @@ export interface RevenueMilestone {
 const REVENUE_MILESTONES: RevenueMilestone[] = [
   { day: 8, title: '发送第一份提案', route: '/sales', reward: 'Proposal Creator 徽章', score: 10 },
   { day: 10, title: '完成第一次销售对话', route: '/sales', reward: 'Sales Starter 徽章', score: 20 },
-  { day: 15, title: '成交第一位客户', route: '/customers', reward: 'Customer Closer 徽章', score: 30 },
+  { day: 15, title: '成交第一位客户', route: '/crm', reward: 'Customer Closer 徽章', score: 30 },
   { day: 20, title: '创造第一笔 RM100 收入', route: '/sales', reward: 'Revenue Generator 徽章', score: 40, revenueTarget: 100 },
   { day: 30, title: '创造第一笔 RM1000 收入', route: '/sales', reward: 'First Revenue 里程碑', score: 60, revenueTarget: 1000 },
 ];

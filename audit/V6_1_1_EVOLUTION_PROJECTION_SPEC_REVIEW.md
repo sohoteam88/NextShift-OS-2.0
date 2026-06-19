@@ -135,4 +135,3 @@ It is stricter and better than the earlier projection plan because it removes am
 - hidden consumer inventory
 
 The remaining work is execution, not architecture.
-

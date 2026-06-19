@@ -1,7 +1,7 @@
 # Phase 1 — Funnel Builder Refactor Report
 
-**Date:** 2026-06-14  
-**Target:** `src/app/(auth)/ai/funnel-builder/page.tsx`  
+**Date:** 2026-06-14
+**Target:** `src/app/(auth)/ai/funnel-builder/page.tsx`
 **Strategy:** Extract UI → components, logic → hooks, types/constants → dedicated files into `src/modules/funnel-builder/`
 
 ---

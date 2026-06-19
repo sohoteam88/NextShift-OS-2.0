@@ -121,7 +121,7 @@ export function DNAHealthCard({ locale = 'zh', className }: DNAHealthCardProps) 
       )}
 
       <Link
-        href="/brand-dna"
+        href="/brand-builder/profile"
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700"
       >
         {viewStudio} <ArrowRight className="h-3 w-3" />

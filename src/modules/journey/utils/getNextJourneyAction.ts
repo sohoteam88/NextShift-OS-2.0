@@ -1,6 +1,8 @@
 // Journey V3 — Dynamic next-action resolver
 // Maps user progress to the correct next mission with context-specific CTA
 
+import { CANONICAL_ROUTES } from '@/config/canonical-routes';
+
 export interface JourneyNextAction {
   title: string;
   description: string;
@@ -60,7 +62,7 @@ export function getNextJourneyAction(completed: {
     title: '恭喜完成全部旅程！',
     description: '你已经完成了所有 7 个阶段。继续优化你的业务，探索高级功能。',
     ctaLabel: '查看高级模式',
-    route: '/journey?mode=advanced',
+    route: `${CANONICAL_ROUTES.journey}?mode=advanced`,
     progressStep: 7,
     totalSteps: TOTAL_STEPS,
     stageName: '全部完成',
@@ -76,7 +78,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '品牌探索访谈',
         description: '让 AI 了解你的故事、背景和目标客户。这是所有内容生成和客户开发的基础。不用担心选错，系统会一步一步带你完成。',
         ctaLabel: '开始品牌访谈',
-        route: '/brand-builder/step/interview',
+        route: CANONICAL_ROUTES.brandInterview,
         progressStep: 1,
         totalSteps: TOTAL_STEPS,
         stageName: stage.stageName,
@@ -88,7 +90,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '生成品牌 DNA',
         description: 'AI 会根据你的访谈结果，生成完整的品牌身份：定位、受众、内容策略和产品方向。',
         ctaLabel: '生成品牌 DNA',
-        route: '/brand-dna',
+        route: CANONICAL_ROUTES.brandProfile,
         progressStep: 2,
         totalSteps: TOTAL_STEPS,
         stageName: stage.stageName,
@@ -100,7 +102,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '发布第一篇内容',
         description: '根据你的品牌 DNA，AI 会帮你生成第一篇社交媒体内容。选择平台，一键生成。',
         ctaLabel: '生成第一篇内容',
-        route: '/content-engine',
+        route: CANONICAL_ROUTES.contentEngine,
         progressStep: 3,
         totalSteps: TOTAL_STEPS,
         stageName: stage.stageName,
@@ -112,7 +114,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '开始客户开发',
         description: '创建你的第一个引流磁铁和漏斗页面，让潜在客户能找到你。',
         ctaLabel: '创建引流磁铁',
-        route: '/lead-magnet',
+        route: CANONICAL_ROUTES.leadMagnet,
         progressStep: 4,
         totalSteps: TOTAL_STEPS,
         stageName: stage.stageName,
@@ -124,7 +126,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '跟进潜在客户',
         description: '使用 AI 跟进系统，自动发送个性化消息，推动第一次成交。',
         ctaLabel: '开始客户跟进',
-        route: '/crm',
+        route: CANONICAL_ROUTES.crm,
         progressStep: 5,
         totalSteps: TOTAL_STEPS,
         stageName: stage.stageName,
@@ -136,7 +138,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '建立自动跟进系统',
         description: '设置自动化的客户跟进流程，让系统帮你持续维护客户关系。',
         ctaLabel: '设置自动跟进',
-        route: '/whatsapp-ai',
+        route: CANONICAL_ROUTES.whatsappAi,
         progressStep: 6,
         totalSteps: TOTAL_STEPS,
         stageName: stage.stageName,
@@ -148,7 +150,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '邀请第一位团队成员',
         description: '生成邀请链接，开始复制你的成功模式。',
         ctaLabel: '邀请团队成员',
-        route: '/team',
+        route: CANONICAL_ROUTES.team,
         progressStep: 7,
         totalSteps: TOTAL_STEPS,
         stageName: stage.stageName,
@@ -160,7 +162,7 @@ function getActionForStage(stage: (typeof STAGES)[number]): JourneyNextAction {
         title: '开始你的旅程',
         description: '从品牌访谈开始，一步一步建立你的线上业务。',
         ctaLabel: '开始品牌访谈',
-        route: '/brand-builder/step/interview',
+        route: CANONICAL_ROUTES.brandInterview,
         progressStep: 1,
         totalSteps: TOTAL_STEPS,
         stageName: '建立品牌身份',

@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
-import { agentManager } from '@/modules/ai/services/agent-manager';
-import { agentMemoryService } from '@/modules/ai/services/agent-memory';
-import prisma from '@/lib/prisma';
+import { runtimeStateService } from '@/modules/agent-runtime/services/RuntimeStateService';
+import { toWorkforceViewModel } from '@/modules/agent-runtime/view-models/WorkforceViewModelAdapter';
 
 export const GET = apiHandler(async (req: NextRequest) => {
   const user = await requireAuthApi(req);
-  const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { plan: true } });
-  const progress = await prisma.userProgress.findUnique({ where: { userId: user.id }, select: { currentStageId: true } });
-  const [state, reports] = await Promise.all([
-    agentManager.getWorkforceState(user.id, user.tenantId, tenant?.plan ?? 'free', progress?.currentStageId ?? 'account_approved'),
-    agentMemoryService.recall(user.id),
-  ]);
-  return NextResponse.json({ data: { ...state, reports: reports.slice(-5) } });
+  const runtimeState = await runtimeStateService.getRuntimeState(user.id);
+  return NextResponse.json({ data: toWorkforceViewModel(runtimeState) });
 });

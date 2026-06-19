@@ -1,7 +1,7 @@
 # V5-4 — ai-agents → ai Merge Report
 
-**Date:** 2026-06-14  
-**Scope:** Merge `src/modules/ai-agents` into unified `src/modules/ai`  
+**Date:** 2026-06-14
+**Scope:** Merge `src/modules/ai-agents` into unified `src/modules/ai`
 **Status:** ✅ Complete — FINAL AI DOMAIN MERGE
 
 ---

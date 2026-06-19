@@ -124,7 +124,7 @@ export const BEGINNER_STAGES: MissionStage[] = [
     description: 'AI generates your first social media post based on your brand DNA — hook, body, and call-to-action.',
     whyItMatters: 'Content is how you attract. Your first post breaks the ice and puts your brand in front of real people.',
     estimatedMinutes: 8,
-    route: '/ai',
+    route: '/content-engine',
     xp: 25,
     mode: 'beginner',
     unlocksNextStage: true,

@@ -129,15 +129,7 @@ export default function SignupPage() {
       return;
     }
 
-    const onboardingResponse = await fetch('/api/v1/member/onboarding');
-    if (onboardingResponse.ok) {
-      const payload = (await onboardingResponse.json()) as {
-        data: { state: { completed: boolean } };
-      };
-      router.push(payload.data.state.completed ? '/dashboard' : '/onboarding');
-    } else {
-      router.push('/dashboard');
-    }
+    router.push('/dashboard');
     router.refresh();
   }
 

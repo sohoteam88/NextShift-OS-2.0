@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { socialSetupService } from '@/modules/social-setup/socialSetupService';
+import { businessStateService } from '@/modules/business-state/services/BusinessStateService';
+import { toSocialReadinessViewModel } from '@/modules/business-state/view-models/SocialReadinessViewModelAdapter';
 
 /**
  * GET /api/v1/social-setup
@@ -9,8 +11,11 @@ import { socialSetupService } from '@/modules/social-setup/socialSetupService';
  */
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  const setup = await socialSetupService.getSetup(user.id);
-  const readiness = await socialSetupService.getReadiness(user.id);
+  const [setup, businessState] = await Promise.all([
+    socialSetupService.getSetup(user.id),
+    businessStateService.getBusinessState(user.id),
+  ]);
+  const readiness = toSocialReadinessViewModel(businessState);
 
   return NextResponse.json({ data: setup, readiness });
 });

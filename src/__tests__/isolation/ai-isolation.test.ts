@@ -56,7 +56,7 @@ run('AI Isolation', () => {
 
     const tenantAUsage = await getUsageStats(fixture.tenantA.id);
     expect(tenantAUsage.totalCalls).toBe(4);
-    expect(tenantAUsage.byFeature.content_generator.calls).toBe(4);
+    expect(tenantAUsage.byFeature.content_generator.calls).toBe(2);
   });
 
   it('member_a AI quota checked against Tenant A, not Tenant B', async () => {

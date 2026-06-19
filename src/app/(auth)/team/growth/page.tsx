@@ -1,9 +1,5 @@
-import { TeamDashboard } from '@/modules/team-engine/components/TeamDashboard';
+import { redirect } from 'next/navigation';
 
 export default function TeamGrowthPage() {
-  return (
-    <div className="py-6">
-      <TeamDashboard />
-    </div>
-  );
+  redirect('/team');
 }

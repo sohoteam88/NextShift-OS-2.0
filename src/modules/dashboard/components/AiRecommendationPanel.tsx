@@ -115,7 +115,7 @@ function generateRecommendations(completedChecks: string[]): Recommendation[] {
         en: 'Empty social accounts? AI writes your first post. No content means nobody knows you exist.',
         ms: 'Akaun media sosial kosong? AI tulis pos pertama anda. Tiada kandungan bermakna tiada siapa tahu anda wujud.',
       },
-      route: '/ai',
+      route: '/content-engine',
       buttonLabel: { zh: '生成第一篇内容 →', en: 'Create Content →', ms: 'Cipta Kandungan →' },
     });
   }

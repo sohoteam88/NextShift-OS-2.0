@@ -36,8 +36,8 @@ export default function LaunchReadinessPage() {
         <section className="space-y-4">
           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3"><CreditCard className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-base font-semibold">Payments</h2></div>
-            <StatusBadge ok={!!process.env.NEXT_PUBLIC_BILLPLZ_API_KEY} label="Billplz API Key" />
-            <StatusBadge ok={!!process.env.NEXT_PUBLIC_BILLPLZ_X_SIGNATURE_KEY} label="Billplz Signature Key" />
+            <StatusBadge ok={!!d?.checks?.BILLPLZ_API_KEY} label="Billplz API Key" />
+            <StatusBadge ok={!!d?.checks?.BILLPLZ_X_SIGNATURE_KEY} label="Billplz Signature Key" />
           </div>
           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3"><Shield className="h-5 w-5 text-[var(--color-primary)]" /><h2 className="text-base font-semibold">Rate Limiting</h2></div>

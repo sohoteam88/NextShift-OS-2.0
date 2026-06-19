@@ -1,0 +1,15 @@
+export const CANONICAL_ROUTES = {
+  dashboard: '/dashboard',
+  journey: '/journey',
+  brandInterview: '/brand-builder/step/interview',
+  brandProfile: '/brand-builder/step/profile',
+  brandBuilderProfile: '/brand-builder/profile',
+  contentEngine: '/content-engine',
+  leadMagnet: '/lead-magnet',
+  funnel: '/funnel',
+  trafficEngine: '/traffic-engine',
+  crm: '/crm',
+  whatsappAi: '/whatsapp-ai',
+  ceoMode: '/ceo-mode',
+  team: '/team',
+} as const;
