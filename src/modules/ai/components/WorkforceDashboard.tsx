@@ -97,7 +97,7 @@ export function WorkforceDashboard() {
       <section className="rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white p-6">
         <div className="mb-4 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-purple-600" />
-          <h2 className="text-lg font-bold">Today's Assignments</h2>
+          <h2 className="text-lg font-bold">Today&apos;s Assignments</h2>
         </div>
         <div className="space-y-3">
           {assignments.length > 0 ? assignments.map((assignment) => (
