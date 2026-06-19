@@ -35,10 +35,11 @@
     "pendingApproval": "Akaun anda sedang menunggu kelulusan. Sila tunggu pentadbir meluluskan."
   },
   "nav": {
-    "dashboard": "Papan Pemuka",
+    "dashboard": "Laman Utama",
     "journey": "Perjalanan",
-    "growth": "Pertumbuhan",
-    "business": "Bisnes",
+    "content": "Kandungan",
+    "growth": "Kandungan",
+    "business": "Funnel",
     "leads": "Prospek",
     "pipeline": "Saluran Jualan",
     "funnels": "Funnel",

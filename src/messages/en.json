@@ -35,10 +35,11 @@
     "pendingApproval": "Your account is pending approval. Please wait for an admin to approve it."
   },
   "nav": {
-    "dashboard": "Dashboard",
+    "dashboard": "Home",
     "journey": "Journey",
-    "growth": "Growth",
-    "business": "Business",
+    "content": "Content",
+    "growth": "Content",
+    "business": "Funnels",
     "leads": "Leads",
     "pipeline": "Pipeline",
     "funnels": "Funnels",

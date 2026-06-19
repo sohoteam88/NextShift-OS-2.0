@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Brain, BriefcaseBusiness, ClipboardList, Gauge, Map } from 'lucide-react';
+import { BriefcaseBusiness, ClipboardList, Gauge, LayoutTemplate, Map } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { CANONICAL_ROUTES } from '@/config/canonical-routes';
 
 type MobileTabBarProps = {
   className?: string;
@@ -14,9 +13,9 @@ type MobileTabBarProps = {
 const tabs = [
   { href: '/dashboard', label: 'dashboard', icon: Gauge },
   { href: '/journey', label: 'journey', icon: Map },
-  { href: '/content-engine', label: 'growth', icon: BriefcaseBusiness },
-  { href: '/crm', label: 'leads', icon: ClipboardList },
-  { href: CANONICAL_ROUTES.ceoMode, label: 'business', icon: Brain },
+  { href: '/content-engine', label: 'content', icon: BriefcaseBusiness },
+  { href: '/funnel-builder', label: 'funnels', icon: LayoutTemplate },
+  { href: '/crm', label: 'customers', icon: ClipboardList },
 ] as const;
 
 export function MobileTabBar({ className }: MobileTabBarProps) {

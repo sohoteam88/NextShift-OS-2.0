@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/Button';
 import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
-import { CANONICAL_ROUTES } from '@/config/canonical-routes';
 
 type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
 
@@ -22,12 +21,6 @@ type TopBarProps = {
   tenantName?: string;
   tenantLogoUrl?: string | null;
 };
-
-function getBusinessHref(role: Role) {
-  if (role === 'platform_admin') return '/platform-admin';
-  if (role === 'operator') return '/admin';
-  return CANONICAL_ROUTES.ceoMode;
-}
 
 function UserMenu({ userName }: { userName: string }) {
   const [open, setOpen] = useState(false);
@@ -111,9 +104,9 @@ export function TopBar({
   const topNav = [
     { href: '/dashboard', label: 'dashboard' },
     { href: '/journey', label: 'journey' },
-    { href: '/content-engine', label: 'growth' },
-    { href: '/crm', label: 'leads' },
-    { href: getBusinessHref(userRole), label: 'business' },
+    { href: '/content-engine', label: 'content' },
+    { href: '/funnel-builder', label: 'funnels' },
+    { href: '/crm', label: 'customers' },
     { href: userRole === 'member' ? '/member' : '/team', label: 'team' },
     { href: '/settings', label: 'settings' },
   ] as const;
