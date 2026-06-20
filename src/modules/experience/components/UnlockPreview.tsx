@@ -11,7 +11,7 @@ export function UnlockPreview() {
 
   const previews: Record<string, { title: string; items: string[] }> = {
     builder: { title: '解锁内容引擎', items: ['内容策略自动生成', 'AI 内容创作助手', '内容表现分析'] },
-    operator: { title: '解锁获客与转化系统', items: ['Lead Magnet Builder', 'CRM 引擎', '销售引擎'] },
+    operator: { title: '解锁获客与转化系统', items: ['引流资源中心', '客户中心', '销售中心'] },
     leader: { title: '解锁团队扩展系统', items: ['团队成员管理', '自动化工作流程', '组织数据分析'] },
   };
 

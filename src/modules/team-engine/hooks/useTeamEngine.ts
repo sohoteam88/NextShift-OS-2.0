@@ -40,7 +40,7 @@ export function useTeamEngine() {
 
   return {
     isLocked,
-    lockReason: 'Unlocks at Leader Level. Complete Sales Engine first.',
+    lockReason: '团队系统会在 Leader 阶段解锁。先完成获客、客户跟进和第一笔成交。',
     showViewOnly: resolvedSnapshot.level === 'operator',
     showFull: resolvedSnapshot.level === 'leader',
     stats,

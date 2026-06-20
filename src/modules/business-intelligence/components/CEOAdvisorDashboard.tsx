@@ -70,25 +70,25 @@ export function CEOAdvisorDashboard() {
 
           {/* Next Best Actions */}
           <section className="rounded-xl border border-blue-200 bg-blue-50 p-5">
-            <h3 className="text-sm font-bold text-blue-700 mb-2 flex items-center gap-1"><Target className="h-4 w-4" />Next Best Actions</h3>
+            <h3 className="text-sm font-bold text-blue-700 mb-2 flex items-center gap-1"><Target className="h-4 w-4" />下一步行动</h3>
             {r.actions.map(a => (
               <div key={a.priority} className="flex items-center justify-between py-3 border-b border-blue-100 last:border-0">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center justify-center h-7 w-7 rounded-full bg-blue-600 text-white text-xs font-bold">{a.priority}</span>
                   <div><p className="text-sm font-bold">{a.action}</p><p className="text-xs text-gray-500">{a.expectedImpact}</p></div>
                 </div>
-                {a.route && <button onClick={() => router.push(a.route!)} className="text-xs font-bold text-blue-600 hover:text-blue-700">Go →</button>}
+                {a.route && <button onClick={() => router.push(a.route!)} className="text-xs font-bold text-blue-600 hover:text-blue-700">打开 →</button>}
               </div>
             ))}
           </section>
 
           {/* Forecast */}
           <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
-            <h3 className="text-sm font-bold mb-2 flex items-center gap-1"><TrendingUp className="h-4 w-4" />30天预测 (信心: {r.forecast.confidence}%)</h3>
+            <h3 className="text-sm font-bold mb-2 flex items-center gap-1"><TrendingUp className="h-4 w-4" />30天预测</h3>
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="bg-gray-50 rounded-lg p-3"><div className="text-xs text-gray-500">保守</div><div className="font-bold">{r.forecast.conservative.leads} Leads</div><div className="text-xs text-gray-400">RM {r.forecast.conservative.revenue.toLocaleString()}</div></div>
-              <div className="bg-blue-50 rounded-lg p-3"><div className="text-xs text-gray-500">预期</div><div className="font-bold">{r.forecast.expected.leads} Leads</div><div className="text-xs text-gray-400">RM {r.forecast.expected.revenue.toLocaleString()}</div></div>
-              <div className="bg-emerald-50 rounded-lg p-3"><div className="text-xs text-gray-500">乐观</div><div className="font-bold">{r.forecast.optimistic.leads} Leads</div><div className="text-xs text-gray-400">RM {r.forecast.optimistic.revenue.toLocaleString()}</div></div>
+              <div className="bg-gray-50 rounded-lg p-3"><div className="text-xs text-gray-500">保守</div><div className="font-bold">{r.forecast.conservative.leads} 位潜在客户</div><div className="text-xs text-gray-400">RM {r.forecast.conservative.revenue.toLocaleString()}</div></div>
+              <div className="bg-blue-50 rounded-lg p-3"><div className="text-xs text-gray-500">预期</div><div className="font-bold">{r.forecast.expected.leads} 位潜在客户</div><div className="text-xs text-gray-400">RM {r.forecast.expected.revenue.toLocaleString()}</div></div>
+              <div className="bg-emerald-50 rounded-lg p-3"><div className="text-xs text-gray-500">乐观</div><div className="font-bold">{r.forecast.optimistic.leads} 位潜在客户</div><div className="text-xs text-gray-400">RM {r.forecast.optimistic.revenue.toLocaleString()}</div></div>
             </div>
           </section>
 
@@ -96,7 +96,7 @@ export function CEOAdvisorDashboard() {
           <div className="grid gap-4 sm:grid-cols-2">
             {r.agentRecommendations.length > 0 && (
               <section className="rounded-xl border border-purple-200 bg-purple-50 p-5">
-                <h3 className="text-sm font-bold text-purple-700 mb-2 flex items-center gap-1"><Brain className="h-4 w-4" />推荐AI Agent</h3>
+                <h3 className="text-sm font-bold text-purple-700 mb-2 flex items-center gap-1"><Brain className="h-4 w-4" />推荐 AI 工作团队</h3>
                 {r.agentRecommendations.map(a => <p key={a} className="text-sm mb-1">🤖 {a}</p>)}
                 <button onClick={() => router.push('/ai-workforce')} className="mt-2 text-xs font-bold text-purple-600 hover:text-purple-700">启动AI工作团队 →</button>
               </section>

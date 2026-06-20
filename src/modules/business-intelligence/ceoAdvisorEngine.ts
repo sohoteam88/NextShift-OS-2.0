@@ -48,7 +48,7 @@ export const ceoAdvisorEngine = {
       overallScore, level: overallScore>=80?'excellent':overallScore>=60?'good':overallScore>=30?'attention':'critical',
       brandHealth, contentHealth, videoHealth, leadGenHealth, trafficHealth, funnelHealth, salesHealth, crmHealth, automationHealth,
       recommendations: [
-        brandHealth<50 ? '完成Brand DNA' : '', contentHealth<50 ? '发布更多内容' : '',
+        brandHealth<50 ? '完善品牌资料' : '', contentHealth<50 ? '发布更多内容' : '',
         funnelHealth<50 ? '建立转化漏斗' : '', salesHealth<30 ? '推动第一笔成交' : '',
       ].filter(Boolean),
     };
@@ -56,14 +56,14 @@ export const ceoAdvisorEngine = {
     // ---- Bottlenecks ----
     const bottlenecks: Bottleneck[] = [];
     if (contentHealth < 40 && ctx) bottlenecks.push({ id: 'b1', category: 'content', description: '内容产出偏低，获客渠道受限', severity: leadCount===0?'critical':'high', impact: '缺少吸引潜在客户的内容', recommendation: '每周至少发布3篇内容' });
-    if (funnelHealth < 30 && leadCount > 0) bottlenecks.push({ id: 'b2', category: 'funnel', description: '有Lead但没有漏斗转化', severity: 'critical', impact: 'Lead来了但没有系统转化', recommendation: '尽快完成Funnel Builder' });
-    if (salesHealth < 30 && leadCount > 5) bottlenecks.push({ id: 'b3', category: 'sales', description: '跟进效率偏低', severity: 'high', impact: '大量Lead未转化成客户', recommendation: '激活WhatsApp AI跟进系统' });
+    if (funnelHealth < 30 && leadCount > 0) bottlenecks.push({ id: 'b2', category: 'funnel', description: '有潜在客户但没有漏斗转化', severity: 'critical', impact: '潜在客户进来后没有系统承接', recommendation: '尽快完成漏斗页面中心' });
+    if (salesHealth < 30 && leadCount > 5) bottlenecks.push({ id: 'b3', category: 'sales', description: '跟进效率偏低', severity: 'high', impact: '大量潜在客户未转化成客户', recommendation: '启动客户跟进中心' });
     if (!hasAutomation && leadCount > 0) bottlenecks.push({ id: 'b4', category: 'automation', description: '没有自动化工作流', severity: 'medium', impact: '手动操作效率低', recommendation: '启用Assessment Follow-Up工作流' });
 
     // ---- Growth Opportunities ----
     const opportunities: GrowthOpportunity[] = [];
     if (contentCount < 10 && ctx) opportunities.push({ id: 'g1', opportunity: '增加内容产出', impactScore: 85, effortScore: 30, priorityScore: 85, explanation: '内容是一切获客的基础。AI可以帮你快速生成。', agentRecommended: 'content_director' });
-    if (!hasLM && ctx) opportunities.push({ id: 'g2', opportunity: '创建引流磁铁', impactScore: 80, effortScore: 40, priorityScore: 80, explanation: '引流磁铁把观众变成联系人。', agentRecommended: 'funnel_architect' });
+    if (!hasLM && ctx) opportunities.push({ id: 'g2', opportunity: '创建引流资源', impactScore: 80, effortScore: 40, priorityScore: 80, explanation: '引流资源把观众变成联系人。', agentRecommended: 'funnel_architect' });
     if (leadCount > 10 && salesHealth < 50) opportunities.push({ id: 'g3', opportunity: '优化跟进转化', impactScore: 90, effortScore: 50, priorityScore: 90, explanation: '跟进转化率提升空间很大。', agentRecommended: 'sales_coach' });
     if (videoCount < 5 && contentCount >= 5) opportunities.push({ id: 'g4', opportunity: '开始视频内容', impactScore: 75, effortScore: 45, priorityScore: 75, explanation: '视频是增长最快的格式。', agentRecommended: 'video_producer' });
 
@@ -90,8 +90,8 @@ export const ceoAdvisorEngine = {
 
     // ---- Risks ----
     const risks: BusinessRisk[] = [];
-    if (contentCount === 0 && leadCount === 0) risks.push({ id: 'r1', risk: '零内容零Lead', category: 'growth', severity: 'critical', impact: '没有增长引擎', recommendation: '立即开始发布内容和建立漏斗' });
-    if (customerCount === 0 && leadCount > 5) risks.push({ id: 'r2', risk: '有Lead无成交', category: 'sales', severity: 'high', impact: '投入成本无回报', recommendation: '重点跟进Hot Leads' });
+    if (contentCount === 0 && leadCount === 0) risks.push({ id: 'r1', risk: '还没有内容和潜在客户', category: 'growth', severity: 'critical', impact: '没有增长入口', recommendation: '立即开始发布内容和建立漏斗页面' });
+    if (customerCount === 0 && leadCount > 5) risks.push({ id: 'r2', risk: '有潜在客户但还没有成交', category: 'sales', severity: 'high', impact: '投入成本无回报', recommendation: '重点跟进高意向潜在客户' });
 
     // ---- Agent + Automation Recommendations ----
     const agentRecs: string[] = [];

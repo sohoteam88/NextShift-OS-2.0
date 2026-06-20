@@ -96,7 +96,7 @@ const TOOLS: ToolCard[] = [
   {
     id: 'lead_magnet',
     emoji: '🧲',
-    title: { zh: '引流磁铁', en: 'Lead Magnet', ms: 'Magnet Pelanggan' },
+    title: { zh: '引流资源', en: 'Lead Magnet', ms: 'Magnet Pelanggan' },
     description: {
       zh: '创建免费资源吸引潜在客户留联系方式',
       en: 'Create free resource to attract leads',
@@ -108,7 +108,7 @@ const TOOLS: ToolCard[] = [
   {
     id: 'funnel_builder',
     emoji: '🚀',
-    title: { zh: '漏斗构建器', en: 'Funnel Builder', ms: 'Pembina Funnel' },
+    title: { zh: '漏斗页面中心', en: 'Funnel Builder', ms: 'Pembina Funnel' },
     description: {
       zh: '组装完整的自动成交漏斗',
       en: 'Build a complete automated sales funnel',
@@ -120,7 +120,7 @@ const TOOLS: ToolCard[] = [
   {
     id: 'whatsapp_ai',
     emoji: '💬',
-    title: { zh: 'WhatsApp AI', en: 'WhatsApp AI', ms: 'WhatsApp AI' },
+    title: { zh: '客户跟进中心', en: 'WhatsApp AI', ms: 'WhatsApp AI' },
     description: {
       zh: 'AI 自动回复和跟进 WhatsApp 消息',
       en: 'AI auto-reply and follow-up for WhatsApp',

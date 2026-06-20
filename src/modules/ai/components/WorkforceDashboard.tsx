@@ -50,25 +50,31 @@ function useExecute() {
 }
 
 function assignmentLabel(assignment: RuntimeAssignment) {
-  if (assignment.objective.toLowerCase().includes('lead magnet') || assignment.objective.includes('引流')) return 'Generate Lead Magnet';
-  if (assignment.objective.toLowerCase().includes('landing')) return 'Generate Landing Page';
-  if (assignment.objective.toLowerCase().includes('content') || assignment.objective.includes('内容')) return 'Generate Content Calendar';
-  if (assignment.objective.toLowerCase().includes('funnel') || assignment.objective.includes('漏斗')) return 'Generate Funnel';
-  if (assignment.objective.toLowerCase().includes('audience') || assignment.objective.includes('受众')) return 'Research Audience';
+  if (assignment.objective.toLowerCase().includes('lead magnet') || assignment.objective.includes('引流')) return '创建引流资源';
+  if (assignment.objective.toLowerCase().includes('landing')) return '创建领取页';
+  if (assignment.objective.toLowerCase().includes('content') || assignment.objective.includes('内容')) return '生成内容计划';
+  if (assignment.objective.toLowerCase().includes('funnel') || assignment.objective.includes('漏斗')) return '创建漏斗页面';
+  if (assignment.objective.toLowerCase().includes('audience') || assignment.objective.includes('受众')) return '分析目标受众';
   return assignment.objective;
 }
 
 function basisLabel(basis: RuntimeAssignment['basis']) {
   switch (basis) {
     case 'coo_assignment':
-      return 'COO Assignment';
+      return 'AI COO 指派';
     case 'default_stage_fallback':
-      return 'Journey Assignment';
+      return 'Journey 指派';
     case 'direct_agent_request':
-      return 'Direct Assignment';
+      return '直接指派';
     case 'explicit_goal_request':
-      return 'Goal Assignment';
+      return '目标指派';
   }
+}
+
+function priorityLabel(score: number) {
+  if (score >= 80) return '高';
+  if (score >= 50) return '普通';
+  return '准备中';
 }
 
 export function WorkforceDashboard() {
@@ -92,7 +98,7 @@ export function WorkforceDashboard() {
         <button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button>
         <div>
           <h1 className="text-xl font-bold">AI 工作团队</h1>
-          <p className="text-xs text-gray-500">默认执行 Journey → AI COO → Runtime 产生的任务。</p>
+          <p className="text-xs text-gray-500">执行 Journey 和 AI COO 指派的下一步任务。</p>
         </div>
       </div>
 
@@ -119,7 +125,7 @@ export function WorkforceDashboard() {
             <div>
               <h2 className="text-base font-bold text-purple-950">AI 工作团队尚未激活</h2>
               <p className="mt-1 text-sm leading-6 text-purple-800">
-                先完成内容、引流磁铁和漏斗相关任务。等系统有明确任务可以交给 agent 执行后，工作团队会自动出现在这里。
+                先完成内容、引流资源和漏斗相关任务。等系统有明确任务可以交给 AI 工作团队执行后，这里会自动出现。
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button onClick={() => router.push('/journey')} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700">打开 Journey</button>
@@ -133,7 +139,7 @@ export function WorkforceDashboard() {
       {hasWorkforce ? <section className="rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white p-6">
         <div className="mb-4 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-purple-600" />
-          <h2 className="text-lg font-bold">Today&apos;s Assignments</h2>
+          <h2 className="text-lg font-bold">今日任务</h2>
         </div>
         <div className="space-y-3">
           {assignments.length > 0 ? assignments.map((assignment) => (
@@ -159,13 +165,13 @@ export function WorkforceDashboard() {
                   className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-50"
                 >
                   {exec.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  Execute
+                  执行
                 </button>
               </div>
             </div>
           )) : (
             <div className="rounded-xl border border-dashed border-purple-200 bg-white p-5 text-sm text-gray-500">
-              暂时没有 Runtime Assignment。系统会根据当前 Journey 阶段生成下一步任务。
+              暂时没有可执行任务。系统会根据当前 Journey 阶段生成下一步。
             </div>
           )}
         </div>
@@ -177,7 +183,7 @@ export function WorkforceDashboard() {
           onClick={() => setAdvancedOpen((value) => !value)}
           className="flex w-full items-center justify-between text-left"
         >
-          <span className="flex items-center gap-2 text-sm font-bold"><Brain className="h-4 w-4 text-purple-600" /> Advanced Override</span>
+          <span className="flex items-center gap-2 text-sm font-bold"><Brain className="h-4 w-4 text-purple-600" /> 手动指派</span>
           {advancedOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
         </button>
         {advancedOpen ? (
@@ -192,7 +198,7 @@ export function WorkforceDashboard() {
               value={overrideReason}
               onChange={e => setOverrideReason(e.target.value)}
               className="w-full rounded-xl border border-purple-200 bg-white px-4 py-3 text-sm focus:outline-none focus:border-purple-400"
-              placeholder="说明为什么要覆盖 Runtime Assignment"
+              placeholder="说明为什么要手动指派这次任务"
               rows={3}
             />
             <button
@@ -201,7 +207,7 @@ export function WorkforceDashboard() {
               className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-purple-700 disabled:opacity-50"
             >
               {exec.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              Run Manual Override
+              执行手动指派
             </button>
           </div>
         ) : null}
@@ -236,7 +242,7 @@ export function WorkforceDashboard() {
               <p className="text-xs text-gray-500 mb-2">目标: {r.objective}</p>
               {r.findings.map((f, j) => <p key={j} className="text-xs text-gray-700">• {f}</p>)}
               {r.recommendations.length > 0 && <p className="text-xs text-purple-600 mt-1">💡 {r.recommendations[0]}</p>}
-              <div className="flex items-center justify-between mt-2"><span className="text-xs text-gray-400">信心: {r.confidenceScore}%</span></div>
+              <div className="flex items-center justify-between mt-2"><span className="text-xs text-gray-400">优先级: {priorityLabel(r.confidenceScore)}</span></div>
             </div>
           ))}
         </section>

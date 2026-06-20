@@ -14,7 +14,7 @@ export function generateFacebookCampaign(ctx: BrandContext, goal: TrafficGoal, b
     headlines: [`${ctx.audience || '在职人士'}注意`, `${ctx.personalName || ''}: 我用了这个方法`, `免费${gi.recommendedCta}`],
     primaryText: `你是否也在想${ctx.audiencePainPoints?.[0] || '如何建立个人品牌'}？${ctx.personalName || '我'}花了很长时间才找到方法。现在你可以免费获取完整系统。${gi.recommendedCta} 👇`,
     cta: gi.recommendedCta,
-    funnelPath: 'Ad → Landing Page → Lead Magnet → WhatsApp → CRM',
+    funnelPath: '广告 → 领取页 → 引流资源 → 客户跟进 → CRM',
     trafficType: 'cold',
   };
 }
@@ -96,8 +96,8 @@ export function calculateReadiness(funnelExists: boolean, lmExists: boolean, con
   let contentAssetsReady = contentCount >= 5 ? 80 : contentCount >= 2 ? 50 : 10;
   let trackingReady = 30;
   const missing: string[] = []; const recs: string[] = [];
-  if (!funnelExists) { missing.push('funnel'); recs.push('先完成 Funnel Builder。'); }
-  if (!lmExists) { missing.push('lead_magnet'); recs.push('先完成 Lead Magnet Builder。'); }
+  if (!funnelExists) { missing.push('funnel'); recs.push('先完成漏斗页面。'); }
+  if (!lmExists) { missing.push('lead_magnet'); recs.push('先完成引流资源。'); }
   if (contentCount < 5) { recs.push('至少准备5支短视频再启动广告。'); }
   if (contentCount < 2) { recs.push('建议先做内容积累再投广告。'); }
   const score = Math.round(funnelReady*0.25+landingPageReady*0.1+thankYouReady*0.05+ctaReady*0.15+whatsappReady*0.1+leadMagnetReady*0.2+contentAssetsReady*0.1+trackingReady*0.05);

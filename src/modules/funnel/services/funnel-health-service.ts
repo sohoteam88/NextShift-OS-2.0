@@ -170,14 +170,14 @@ export const funnelHealthService = {
     contentCount: number, videoCount: number,
     funnelExists: boolean, leadCount: number, customerCount: number,
   ): FunnelNextAction {
-    if (contentCount === 0) return { action: 'Publish First Content', expectedImpact: 'Start building audience', route: '/content-engine' };
-    if (videoCount === 0) return { action: 'Generate First Video', expectedImpact: '+5 Leads', route: '/video-production' };
-    if (!funnelExists) return { action: 'Build Lead Magnet + Funnel', expectedImpact: 'Enable conversion', route: '/lead-magnet' };
-    if (leadCount === 0) return { action: 'Launch Traffic / Start Posting', expectedImpact: 'Generate first leads', route: '/traffic-engine' };
-    if (customerCount === 0) return { action: 'Follow Up Hot Leads', expectedImpact: '+1 Customer', route: '/whatsapp-ai' };
+    if (contentCount === 0) return { action: '发布第一篇内容', expectedImpact: '开始建立受众', route: '/content-engine' };
+    if (videoCount === 0) return { action: '生成第一支视频', expectedImpact: '+5 位潜在客户', route: '/video-production' };
+    if (!funnelExists) return { action: '创建引流资源和漏斗页面', expectedImpact: '开启转化承接', route: '/lead-magnet' };
+    if (leadCount === 0) return { action: '启动流量测试或开始发布内容', expectedImpact: '获得第一位潜在客户', route: '/traffic-engine' };
+    if (customerCount === 0) return { action: '跟进高意向潜在客户', expectedImpact: '+1 位客户', route: '/whatsapp-ai' };
 
-    if (funnelType === 'recruitment') return { action: 'Invite Leads To Webinar', expectedImpact: '+2 Calls', route: '/webinar-center' };
-    if (funnelType === 'upgrade') return { action: 'Invite Customer To Opportunity Webinar', expectedImpact: '+1 Member', route: '/webinar-center' };
-    return { action: 'Generate Video Content', expectedImpact: '+5 Leads', route: '/video-production' };
+    if (funnelType === 'recruitment') return { action: '邀请潜在客户参加线上讲座', expectedImpact: '+2 次通话', route: '/webinar-center' };
+    if (funnelType === 'upgrade') return { action: '邀请客户参加机会讲座', expectedImpact: '+1 位成员', route: '/webinar-center' };
+    return { action: '生成视频内容', expectedImpact: '+5 位潜在客户', route: '/video-production' };
   },
 };

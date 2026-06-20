@@ -7,7 +7,7 @@ import { generateSmartReplies, qualifyLead, scoreLead, generateObjectionResponse
 export const whatsappService = {
   async generate(userId: string, tenantId: string): Promise<WhatsAppPackage> {
     const ctx = await getBrandContext(userId);
-    if (!ctx) throw new Error('Brand DNA not found');
+    if (!ctx) throw new Error('请先完成品牌资料');
 
     // Get existing leads from CRM
     const leads = await prisma.lead.findMany({ where: { tenantId }, select: { id: true, name: true, score: true }, orderBy: { score: 'desc' } });

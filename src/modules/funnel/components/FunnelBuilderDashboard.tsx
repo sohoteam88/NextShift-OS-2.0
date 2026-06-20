@@ -22,6 +22,18 @@ function isRenderablePackage(pkg: FunnelPackage | null): pkg is FunnelPackage {
   );
 }
 
+function statusLabel(score: number) {
+  if (score >= 80) return '可以发布';
+  if (score >= 60) return '接近就绪';
+  return '需要补齐';
+}
+
+function healthState(value: number) {
+  if (value >= 70) return { label: '已准备', tone: 'text-emerald-700 bg-emerald-50' };
+  if (value >= 40) return { label: '可优化', tone: 'text-amber-700 bg-amber-50' };
+  return { label: '需补齐', tone: 'text-red-700 bg-red-50' };
+}
+
 export function FunnelBuilderDashboard() {
   const router = useRouter();
   const q = useFunnel(); const gen = useGenerate();
@@ -35,8 +47,8 @@ export function FunnelBuilderDashboard() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-12">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">Funnel Builder 2.0</h1><p className="text-xs text-gray-500">把引流磁铁、Webinar、WhatsApp串联成完整成交漏斗。</p></div></div>
-        {pkg && <div className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"><Trophy className="inline h-3 w-3 mr-1" />{pkg.healthScore}%</div>}
+        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">漏斗页面中心</h1><p className="text-xs text-gray-500">把引流资源、领取页和客户跟进串联成完整成交路径。</p></div></div>
+        {pkg && <div className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"><Trophy className="inline h-3 w-3 mr-1" />{statusLabel(pkg.healthScore)}</div>}
       </div>
 
       {!pkg && (
@@ -56,20 +68,23 @@ export function FunnelBuilderDashboard() {
 
       {pkg && health && (
         <>
-          <S title="📊 漏斗健康度">
+          <S title="📊 启动前检查">
             <div className="grid grid-cols-3 gap-2 text-xs">
-              {[{k:'受众匹配',v:health.audienceFit},{k:'Offer清晰',v:health.offerClarity},{k:'页面清晰',v:health.pageClarity},{k:'CTA强度',v:health.ctaStrength},{k:'信任元素',v:health.trustElements},{k:'跟进就绪',v:health.followUpReadiness},{k:'流量就绪',v:health.trafficReadiness}].map(d => <div key={d.k} className="bg-gray-50 rounded p-2"><div className="font-bold">{d.k}</div><div className={d.v>=70?'text-emerald-600':d.v>=40?'text-amber-600':'text-red-500'}>{d.v}%</div></div>)}
+              {[{k:'受众匹配',v:health.audienceFit},{k:'服务清晰',v:health.offerClarity},{k:'页面清晰',v:health.pageClarity},{k:'CTA',v:health.ctaStrength},{k:'信任元素',v:health.trustElements},{k:'跟进',v:health.followUpReadiness},{k:'流量承接',v:health.trafficReadiness}].map(d => {
+                const state = healthState(d.v);
+                return <div key={d.k} className={cn('rounded p-2 text-center', state.tone)}><div className="font-bold">{d.k}</div><div>{state.label}</div></div>;
+              })}
             </div>
-            <p className="text-sm mt-3"><strong>Next Best Action:</strong> {pkg.nextBestAction}</p>
+            <p className="text-sm mt-3"><strong>下一步行动:</strong> {pkg.nextBestAction}</p>
           </S>
 
           <button onClick={() => setCollapsed(!collapsed)} className="w-full flex items-center justify-between rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-sm font-bold">
-            📋 完整报告 {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+            📋 漏斗内容 {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </button>
 
           {!collapsed && (
             <>
-              <S title="📄 着陆页"><p className="text-lg font-bold">{pkg.landingPage.headline}</p><p className="text-sm text-blue-600">{pkg.landingPage.subheadline}</p><div className="mt-2 inline-block rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-bold">{pkg.landingPage.heroCta}</div><p className="text-sm mt-2"><strong>Problem:</strong> {pkg.landingPage.problem}</p><p className="text-sm"><strong>Solution:</strong> {pkg.landingPage.solution}</p>{pkg.landingPage.benefits.map((b,i)=><p key={i} className="text-sm">{b}</p>)}<p className="text-sm"><strong>FAQ:</strong> {pkg.landingPage.faq.map(f=><span key={f.q} className="block text-xs text-gray-500">Q: {f.q} → {f.a}</span>)}</p></S>
+              <S title="📄 领取页"><p className="text-lg font-bold">{pkg.landingPage.headline}</p><p className="text-sm text-blue-600">{pkg.landingPage.subheadline}</p><div className="mt-2 inline-block rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-bold">{pkg.landingPage.heroCta}</div><p className="text-sm mt-2"><strong>问题:</strong> {pkg.landingPage.problem}</p><p className="text-sm"><strong>方案:</strong> {pkg.landingPage.solution}</p>{pkg.landingPage.benefits.map((b,i)=><p key={i} className="text-sm">{b}</p>)}<p className="text-sm"><strong>常见问题:</strong> {pkg.landingPage.faq.map(f=><span key={f.q} className="block text-xs text-gray-500">问: {f.q} → {f.a}</span>)}</p></S>
               <S title="🙏 感谢页"><p className="font-bold">{pkg.thankYouPage.confirmation}</p><p className="text-sm">{pkg.thankYouPage.nextStep}</p><p className="text-sm text-blue-600">WhatsApp: {pkg.thankYouPage.whatsappCta}</p></S>
               <S title="💬 WhatsApp 流程"><p className="text-sm"><strong>预设:</strong> {pkg.whatsappFlow.prefilledMessage}</p><p className="text-sm"><strong>第一回复:</strong> {pkg.whatsappFlow.firstReply}</p>{pkg.whatsappFlow.qualificationQuestions.map((q,i)=><p key={i} className="text-xs text-gray-500">Q{i+1}: {q}</p>)}</S>
               <S title="📧 邮件序列 (7封)">{pkg.emailSequence.map(e=><div key={e.order} className="text-sm py-1.5 border-b last:border-0"><strong>{e.order}. {e.type}:</strong> {e.subject}<br /><span className="text-xs text-gray-500">{e.preview} | CTA: {e.cta}</span></div>)}</S>

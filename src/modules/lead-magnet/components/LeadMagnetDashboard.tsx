@@ -34,6 +34,13 @@ function usePublishLM() {
   }, onSuccess: () => qc.invalidateQueries({ queryKey: ['lead-magnet'] }) });
 }
 
+function authoritySourceLabel(source: string) {
+  if (source === 'interview_authority') return 'AI 访谈';
+  if (source === 'brand_dna') return '品牌资料';
+  if (source === 'business_state') return '当前业务状态';
+  return source;
+}
+
 export function LeadMagnetDashboard() {
   const router = useRouter();
   const query = useLeadMagnet();
@@ -50,7 +57,7 @@ export function LeadMagnetDashboard() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button>
-          <div><h1 className="text-xl font-bold">引流磁铁构建器</h1><p className="text-xs text-[var(--color-text-muted)]">创建吸引潜在客户的免费资源，收集联系方式。</p></div>
+          <div><h1 className="text-xl font-bold">引流资源中心</h1><p className="text-xs text-[var(--color-text-muted)]">创建能吸引潜在客户留下联系方式的免费资源。</p></div>
         </div>
         {lm && <div className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700">{lm.status === 'published' ? '已发布' : '已生成'}</div>}
       </div>
@@ -63,10 +70,10 @@ export function LeadMagnetDashboard() {
       <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
         <div className="mb-4 flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-blue-600" />
-          <h3 className="text-sm font-bold">创建引流资源 + Landing Page</h3>
+          <h3 className="text-sm font-bold">创建引流资源和领取页</h3>
         </div>
         <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800">
-          系统会直接使用 Interview Authority、Brand DNA 和 Business State。这里只需要选择资源类型。
+          系统会结合你的 AI 访谈、品牌资料和当前业务状态。这里只需要选择资源类型。
         </div>
         <div className="grid gap-2 sm:grid-cols-3">
           {([
@@ -90,14 +97,14 @@ export function LeadMagnetDashboard() {
       {lm && (
         <>
           <section className="rounded-xl border border-emerald-200 bg-white p-5">
-            <div className="flex items-center justify-between mb-2"><h3 className="text-sm font-bold">{lm.title}</h3><span className="text-xs font-bold text-emerald-600">Ready</span></div>
+            <div className="flex items-center justify-between mb-2"><h3 className="text-sm font-bold">{lm.title}</h3><span className="text-xs font-bold text-emerald-600">已就绪</span></div>
             <p className="text-sm text-[var(--color-text-muted)] mb-3">{lm.promise}</p>
             {lm.authorityContext && (
               <div className="mb-4 grid gap-2 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800 sm:grid-cols-2">
                 <p><strong>受众:</strong> {lm.authorityContext.audience}</p>
                 <p><strong>痛点:</strong> {lm.authorityContext.audiencePain}</p>
-                <p><strong>Offer:</strong> {lm.authorityContext.offer}</p>
-                <p><strong>资料来源:</strong> {lm.authorityContext.sources.join(' + ')}</p>
+                <p><strong>服务:</strong> {lm.authorityContext.offer}</p>
+                <p><strong>资料来源:</strong> {lm.authorityContext.sources.map(authoritySourceLabel).join(' + ')}</p>
               </div>
             )}
 
@@ -128,16 +135,16 @@ export function LeadMagnetDashboard() {
 
             {!lm.sections?.length && !lm.checklistItems?.length && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                这是旧版评估型引流磁铁。请选择上方资源类型，重新生成新版资源和 Landing Page。
+                这是旧版评估型引流资源。请选择上方资源类型，重新生成新版资源和领取页。
               </div>
             )}
           </section>
 
-          {/* Landing Page Preview */}
+          {/* Landing page preview */}
           <section className="rounded-xl border border-purple-200 bg-white p-5">
             <div className="mb-3 flex items-center gap-2">
               <FileText className="h-4 w-4 text-purple-600" />
-              <h3 className="text-sm font-bold">Landing Page 预览</h3>
+              <h3 className="text-sm font-bold">领取页预览</h3>
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-white rounded-lg p-4 text-center">
               <p className="text-2xl font-bold text-purple-700">{lm.landingPage?.headline ?? lm.title}</p>
@@ -160,7 +167,7 @@ export function LeadMagnetDashboard() {
               <div>
                 <h3 className="text-sm font-bold">发布领取页</h3>
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                  {lm.landingPage?.publicPath ? `已发布：${lm.landingPage.publicPath}` : '生成真实 Funnel landing page，并开放领取表单。'}
+                  {lm.landingPage?.publicPath ? `已发布：${lm.landingPage.publicPath}` : '生成真实领取页，并开放资料领取表单。'}
                 </p>
               </div>
               {lm.landingPage?.publicPath ? (
@@ -170,7 +177,7 @@ export function LeadMagnetDashboard() {
               ) : (
                 <button type="button" onClick={() => publish.mutate()} disabled={publish.isPending} className="inline-flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50">
                   {publish.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                  发布 Landing Page
+                  发布领取页
                 </button>
               )}
             </div>

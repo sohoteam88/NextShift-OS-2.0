@@ -54,15 +54,15 @@ export const OPERATOR_SIDEBAR: MissionSidebarItem[] = [
     children: [
       { icon: 'Target', label_zh: '引流磁铁', label_en: 'Lead Magnet', label_ms: 'Magnet Lead', route: CANONICAL_ROUTES.leadMagnet },
       { icon: 'LayoutTemplate', label_zh: '漏斗', label_en: 'Funnels', label_ms: 'Funnel', route: CANONICAL_ROUTES.funnel },
-      { icon: 'Zap', label_zh: '流量引擎', label_en: 'Traffic Engine', label_ms: 'Enjin Trafik', route: CANONICAL_ROUTES.trafficEngine },
+      { icon: 'Zap', label_zh: '流量行动中心', label_en: 'Traffic Engine', label_ms: 'Enjin Trafik', route: CANONICAL_ROUTES.trafficEngine },
     ],
   },
   {
     icon: 'MessageCircle', label_zh: '转化', label_en: 'Conversion', label_ms: 'Penukaran',
     route: '/crm',
     children: [
-      { icon: 'UserCheck', label_zh: 'CRM 引擎', label_en: 'CRM Engine', label_ms: 'Enjin CRM', route: '/crm' },
-      { icon: 'DollarSign', label_zh: '销售引擎', label_en: 'Sales Engine', label_ms: 'Enjin Jualan', route: '/sales' },
+      { icon: 'UserCheck', label_zh: '客户中心', label_en: 'CRM Engine', label_ms: 'Enjin CRM', route: '/crm' },
+      { icon: 'DollarSign', label_zh: '销售中心', label_en: 'Sales Engine', label_ms: 'Enjin Jualan', route: '/sales' },
     ],
   },
 ];
@@ -106,8 +106,8 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
     children: [
       { icon: 'Target', label_zh: '引流磁铁', label_en: 'Lead Magnet', label_ms: 'Magnet Lead', route: CANONICAL_ROUTES.leadMagnet },
       { icon: 'LayoutTemplate', label_zh: '漏斗页面', label_en: 'Funnels', label_ms: 'Funnel', route: CANONICAL_ROUTES.funnel },
-      { icon: 'Zap', label_zh: '流量引擎', label_en: 'Traffic Engine', label_ms: 'Enjin Trafik', route: CANONICAL_ROUTES.trafficEngine },
-      { icon: 'Zap', label_zh: '漏斗生成器', label_en: 'Funnel Builder', label_ms: 'Pembina Funnel', route: '/funnel' },
+      { icon: 'Zap', label_zh: '流量行动中心', label_en: 'Traffic Engine', label_ms: 'Enjin Trafik', route: CANONICAL_ROUTES.trafficEngine },
+      { icon: 'Zap', label_zh: '漏斗页面中心', label_en: 'Funnel Builder', label_ms: 'Pembina Funnel', route: '/funnel' },
     ],
   },
   {
@@ -117,8 +117,8 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
     label_ms: 'Penukaran',
     route: '/crm',
     children: [
-      { icon: 'UserCheck', label_zh: 'CRM 引擎', label_en: 'CRM Engine', label_ms: 'Enjin CRM', route: '/crm' },
-      { icon: 'DollarSign', label_zh: '销售引擎', label_en: 'Sales Engine', label_ms: 'Enjin Jualan', route: '/sales' },
+      { icon: 'UserCheck', label_zh: '客户中心', label_en: 'CRM Engine', label_ms: 'Enjin CRM', route: '/crm' },
+      { icon: 'DollarSign', label_zh: '销售中心', label_en: 'Sales Engine', label_ms: 'Enjin Jualan', route: '/sales' },
       { icon: 'ClipboardList', label_zh: '潜在客户列表', label_en: 'Lead List', label_ms: 'Senarai Lead', route: '/crm' },
       { icon: 'KanbanSquare', label_zh: '销售管道', label_en: 'Pipeline', label_ms: 'Pipeline', route: '/crm/pipeline' },
     ],

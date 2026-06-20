@@ -10,6 +10,19 @@ import { STAGE_LABELS } from '../types';
 
 function useCRM() { return useQuery({ queryKey: ['crm-center'], queryFn: async () => { const r = await fetch('/api/v1/crm-center'); if (!r.ok) throw new Error('Failed'); return r.json() as Promise<{ data: CRMCommandCenter }>; }, staleTime: 30_000 }); }
 
+function sourceLabel(source: string) {
+  if (source === 'assessment') return '评估';
+  if (source === 'quiz') return '测验';
+  if (source === 'checklist') return '清单';
+  if (source === 'webinar') return '线上讲座';
+  if (source === 'funnel') return '漏斗页面';
+  if (source === 'whatsapp') return '客户对话';
+  if (source === 'organic') return '自然流量';
+  if (source === 'referral') return '转介绍';
+  if (source === 'manual') return '手动添加';
+  return source;
+}
+
 export function CRMDashboard() {
   const router = useRouter(); const q = useCRM();
   const cc = q.data?.data;
@@ -19,13 +32,13 @@ export function CRMDashboard() {
   return (
     <div className="mx-auto max-w-4xl space-y-4 pb-12">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">Revenue Command Center</h1><p className="text-xs text-gray-500">不是联系人列表，是收入指挥中心。</p></div></div>
-        {cc && <div className="flex items-center gap-2"><span className="rounded-full bg-blue-100 px-3 py-1.5 text-xs font-bold text-blue-700"><Users className="inline h-3 w-3 mr-1" />{cc.leads.total} Leads</span></div>}
+        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">客户转化中心</h1><p className="text-xs text-gray-500">不是联系人列表，而是下一步跟进和成交判断。</p></div></div>
+        {cc && <div className="flex items-center gap-2"><span className="rounded-full bg-blue-100 px-3 py-1.5 text-xs font-bold text-blue-700"><Users className="inline h-3 w-3 mr-1" />{cc.leads.total} 位潜在客户</span></div>}
       </div>
 
       {cc && (
         <>
-          {/* Row 1: Revenue Snapshot + Hot Leads */}
+          {/* Row 1: Revenue Snapshot + priority follow-ups */}
           <div className="grid gap-4 lg:grid-cols-2">
             <S title="💰 收入快照">
               <div className="grid grid-cols-3 gap-2 text-center">
@@ -33,11 +46,11 @@ export function CRMDashboard() {
                 <div className="bg-amber-50 rounded-lg p-3"><p className="text-xs text-gray-500">保守估计</p><p className="text-xl font-bold text-amber-700">RM {cc.revenueForecast.conservativeRevenue.toLocaleString()}</p></div>
                 <div className="bg-blue-50 rounded-lg p-3"><p className="text-xs text-gray-500">乐观估计</p><p className="text-xl font-bold text-blue-700">RM {cc.revenueForecast.optimisticRevenue.toLocaleString()}</p></div>
               </div>
-              <div className="mt-2 flex items-center justify-between text-xs text-gray-500"><span>管道价值: RM {cc.revenueForecast.pipelineValue.toLocaleString()}</span><span>加权: RM {cc.revenueForecast.weightedValue.toLocaleString()}</span><span>信心: {cc.revenueForecast.confidenceScore}%</span></div>
+              <div className="mt-2 flex items-center justify-between text-xs text-gray-500"><span>管道价值: RM {cc.revenueForecast.pipelineValue.toLocaleString()}</span><span>加权: RM {cc.revenueForecast.weightedValue.toLocaleString()}</span><span>{cc.leads.total > 0 ? '基于当前管道' : '等待客户数据'}</span></div>
             </S>
 
-            <S title="🔥 Hot Lead 警报">
-              {cc.hotLeads.length === 0 ? <p className="text-sm text-gray-500">暂无Hot Lead</p> :
+            <S title="🔥 优先跟进">
+              {cc.hotLeads.length === 0 ? <p className="text-sm text-gray-500">暂无需要优先跟进的潜在客户</p> :
                 cc.hotLeads.slice(0, 5).map((hl, i) => (
                   <div key={i} className={cn('p-2 rounded-lg mb-1', hl.urgency === 'high' ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200')}>
                     <div className="flex items-center justify-between"><span className="text-sm font-bold">{hl.name}</span><span className="text-xs font-bold text-red-600">{hl.score}分</span></div>
@@ -92,10 +105,10 @@ export function CRMDashboard() {
           )}
 
           {/* Lead Sources */}
-          <S title="📥 Lead 来源">
+          <S title="📥 潜在客户来源">
             <div className="flex flex-wrap gap-2">
               {Object.entries(cc.leads.bySource).map(([src, count]) => (
-                <span key={src} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold">{src}: {count}</span>
+                <span key={src} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold">{sourceLabel(src)}: {count}</span>
               ))}
             </div>
           </S>

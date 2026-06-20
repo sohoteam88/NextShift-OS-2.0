@@ -117,7 +117,7 @@ export function GrowthModeDashboard() {
                 href="/crm"
                 className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-3 hover:bg-[var(--color-surface)]"
               >
-                <span className="text-sm font-medium text-[var(--color-text)]">🔥 Hot Lead 待跟进</span>
+                <span className="text-sm font-medium text-[var(--color-text)]">🔥 高意向客户待跟进</span>
                 <span className="text-sm font-semibold text-blue-600">{hotLeads}</span>
               </Link>
               <Link

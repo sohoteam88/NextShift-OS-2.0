@@ -69,7 +69,7 @@ function buildLandingPageConfig(config: LeadMagnetConfig): FunnelConfig {
 export const leadMagnetService = {
   async generate(userId: string, type: LeadMagnetType): Promise<LeadMagnetConfig> {
     const ctx = await getBrandContext(userId);
-    if (!ctx) throw new Error('Brand DNA not found');
+    if (!ctx) throw new Error('请先完成品牌资料');
 
     const config = generateLeadMagnet(ctx, type);
     config.qualityScore = validateLeadMagnet(config).score;

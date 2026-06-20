@@ -12,13 +12,13 @@ export type WorkforceSummaryItem = {
 
 const AGENT_NAMES: Record<WorkforceAgentType, string> = {
   coo_agent: 'AI COO',
-  content_agent: 'Content Agent',
-  lead_magnet_agent: 'Lead Magnet Agent',
-  funnel_agent: 'Funnel Agent',
-  landing_page_agent: 'Landing Page Agent',
-  traffic_agent: 'Traffic Agent',
-  analytics_agent: 'Analytics Agent',
-  crm_agent: 'CRM Agent',
+  content_agent: '内容助手',
+  lead_magnet_agent: '引流资源助手',
+  funnel_agent: '漏斗助手',
+  landing_page_agent: '领取页助手',
+  traffic_agent: '流量助手',
+  analytics_agent: '洞察助手',
+  crm_agent: '客户助手',
 };
 
 function workforceStatus(status: WorkforceTaskStatus): WorkforceSummaryItem['status'] {

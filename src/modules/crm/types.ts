@@ -17,5 +17,5 @@ export interface CRMCommandCenter {
 }
 
 export const PIPELINE_STAGES: PipelineStage[] = ['new_lead','qualified','appointment_scheduled','appointment_completed','offer_presented','negotiation','customer','inactive','lost'];
-export const STAGE_LABELS: Record<PipelineStage, string> = { new_lead:'新Lead', qualified:'已认证', appointment_scheduled:'已预约', appointment_completed:'已完成通话', offer_presented:'已提案', negotiation:'谈判中', customer:'客户', inactive:'不活跃', lost:'已流失' };
+export const STAGE_LABELS: Record<PipelineStage, string> = { new_lead:'新潜在客户', qualified:'已筛选', appointment_scheduled:'已预约', appointment_completed:'已完成通话', offer_presented:'已提案', negotiation:'谈判中', customer:'客户', inactive:'不活跃', lost:'已流失' };
 export const STAGE_PROBABILITIES: Record<PipelineStage, number> = { new_lead:0.05, qualified:0.15, appointment_scheduled:0.25, appointment_completed:0.40, offer_presented:0.55, negotiation:0.70, customer:1.0, inactive:0.02, lost:0 };

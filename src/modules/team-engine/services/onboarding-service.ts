@@ -1,11 +1,11 @@
 // Team Onboarding Engine — guides new members through the business system
 
 const ONBOARDING_STEPS = [
-  { step: 1, title: 'Brand Foundation', milestone: 'brand_foundation' },
-  { step: 2, title: 'Content Engine', milestone: 'content_creation' },
-  { step: 3, title: 'Lead Engine', milestone: 'lead_generation' },
-  { step: 4, title: 'CRM Engine', milestone: 'customer_acquisition' },
-  { step: 5, title: 'Sales Engine', milestone: 'system_building' },
+  { step: 1, title: '品牌基础', milestone: 'brand_foundation' },
+  { step: 2, title: '内容系统', milestone: 'content_creation' },
+  { step: 3, title: '获客系统', milestone: 'lead_generation' },
+  { step: 4, title: '客户跟进', milestone: 'customer_acquisition' },
+  { step: 5, title: '销售转化', milestone: 'system_building' },
 ];
 
 const TOTAL = ONBOARDING_STEPS.length;
@@ -26,7 +26,7 @@ export function getOnboardingProgress(completedMilestones: string[]): MemberProg
     completedSteps: count,
     currentStep: count + 1,
     percentage: Math.round((count / TOTAL) * 100),
-    currentTitle: count < TOTAL ? ONBOARDING_STEPS[currentIdx].title : 'Complete',
+    currentTitle: count < TOTAL ? ONBOARDING_STEPS[currentIdx].title : '已完成',
   };
 }
 
