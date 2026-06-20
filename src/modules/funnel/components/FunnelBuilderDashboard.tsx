@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ChevronDown, ChevronUp, Loader2, Rocket, Sparkles, Trophy } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink, Loader2, Pencil, Rocket, Sparkles, Trophy } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { FunnelBuilderType, FunnelPackage } from '../types/funnel-builder';
 import { FUNNEL_TYPES } from '../types/funnel-builder';
@@ -11,6 +11,7 @@ import { funnelHealthService } from '@/modules/funnel/services/funnel-health-ser
 
 function useFunnel() { return useQuery({ queryKey: ['funnel-builder'], queryFn: async () => { const r = await fetch('/api/v1/funnel-builder'); if (!r.ok) throw new Error('Failed'); return r.json() as Promise<{ data: FunnelPackage | null }>; }, staleTime: 30_000 }); }
 function useGenerate() { const qc = useQueryClient(); return useMutation({ mutationFn: async (funnelType: FunnelBuilderType) => { const r = await fetch('/api/v1/funnel-builder/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ funnelType }) }); if (!r.ok) throw new Error('Failed'); return r.json(); }, onSuccess: () => qc.invalidateQueries({ queryKey: ['funnel-builder'] }) }); }
+function usePublishLandingPage() { const qc = useQueryClient(); return useMutation({ mutationFn: async () => { const r = await fetch('/api/v1/funnel-builder/publish-landing-page', { method: 'POST' }); if (!r.ok) throw new Error('Failed'); return r.json() as Promise<{ data: FunnelPackage }>; }, onSuccess: () => qc.invalidateQueries({ queryKey: ['funnel-builder'] }) }); }
 function isRenderablePackage(pkg: FunnelPackage | null): pkg is FunnelPackage {
   return Boolean(
     pkg?.landingPage &&
@@ -37,6 +38,7 @@ function healthState(value: number) {
 export function FunnelBuilderDashboard() {
   const router = useRouter();
   const q = useFunnel(); const gen = useGenerate();
+  const publishLandingPage = usePublishLandingPage();
   const pkg = isRenderablePackage(q.data?.data ?? null) ? q.data?.data ?? null : null;
   const [type, setType] = React.useState<FunnelBuilderType>('lead_magnet');
   const [collapsed, setCollapsed] = React.useState(true);
@@ -74,6 +76,56 @@ export function FunnelBuilderDashboard() {
 
       {pkg && health && (
         <>
+          <S title="🧲 落地页发布">
+            <div className="space-y-3">
+              <div>
+                <p className="text-base font-bold text-gray-950">{pkg.landingPage.headline}</p>
+                <p className="mt-1 text-sm text-gray-600">{pkg.landingPage.subheadline}</p>
+              </div>
+              {pkg.landingPage.publicPath ? (
+                <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                  <div className="text-xs font-bold text-emerald-700">落地页已生成</div>
+                  <div className="mt-1 break-all text-sm font-semibold text-gray-950">{pkg.landingPage.publicPath}</div>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-gray-700">
+                  这里会生成真正可访问的落地页，包含 Hero、痛点、机制、资源领取表单、FAQ 和最终 CTA。
+                </div>
+              )}
+              {publishLandingPage.isError && (
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+                  无法生成落地页。请稍后重试，或先确认品牌资料和漏斗内容已存在。
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => publishLandingPage.mutate()}
+                  disabled={publishLandingPage.isPending}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {publishLandingPage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {pkg.landingPage.publicPath ? '重新生成落地页' : '生成落地页'}
+                </button>
+                {pkg.landingPage.publicPath && (
+                  <button
+                    onClick={() => window.open(pkg.landingPage.publicPath, '_blank', 'noopener,noreferrer')}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-bold text-gray-700 hover:bg-gray-50"
+                  >
+                    <ExternalLink className="h-4 w-4" /> 查看落地页
+                  </button>
+                )}
+                {pkg.landingPage.funnelId && (
+                  <button
+                    onClick={() => router.push(`/funnel/${pkg.landingPage.funnelId}/edit`)}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-bold text-gray-700 hover:bg-gray-50"
+                  >
+                    <Pencil className="h-4 w-4" /> 编辑落地页
+                  </button>
+                )}
+              </div>
+            </div>
+          </S>
+
           <S title="📊 启动前检查">
             <div className="grid grid-cols-3 gap-2 text-xs">
               {[{k:'受众匹配',v:health.audienceFit},{k:'服务清晰',v:health.offerClarity},{k:'页面清晰',v:health.pageClarity},{k:'CTA',v:health.ctaStrength},{k:'信任元素',v:health.trustElements},{k:'跟进',v:health.followUpReadiness},{k:'流量承接',v:health.trafficReadiness}].map(d => {

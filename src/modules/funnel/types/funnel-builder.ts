@@ -10,7 +10,21 @@ export interface FunnelPackage {
   status: FunnelStatus; createdAt: string; updatedAt: string;
 }
 
-export interface LandingPage { headline: string; subheadline: string; heroCta: string; problem: string; solution: string; benefits: string[]; credibility: string; leadBlock: string; faq: { q: string; a: string }[]; finalCta: string; }
+export interface LandingPage {
+  headline: string;
+  subheadline: string;
+  heroCta: string;
+  problem: string;
+  solution: string;
+  benefits: string[];
+  credibility: string;
+  leadBlock: string;
+  faq: { q: string; a: string }[];
+  finalCta: string;
+  funnelId?: string;
+  publicPath?: string;
+  publishedAt?: string;
+}
 export interface ThankYouPage { confirmation: string; nextStep: string; whatsappCta: string; calendarPlaceholder: string; expectation: string; bonusReminder: string; }
 export interface WhatsAppFlow { prefilledMessage: string; firstReply: string; qualificationQuestions: string[]; followUpFlow: string; objectionHandling: string[]; appointmentCta: string; }
 export interface EmailMessage { order: number; type: string; subject: string; preview: string; body: string; cta: string; }
