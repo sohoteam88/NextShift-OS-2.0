@@ -105,7 +105,7 @@ export function TopBar({
     { href: '/dashboard', label: 'dashboard' },
     { href: '/journey', label: 'journey' },
     { href: '/content-engine', label: 'content' },
-    { href: '/funnel-builder', label: 'funnels' },
+    { href: '/funnel', label: 'funnels' },
     { href: '/crm', label: 'customers' },
     { href: userRole === 'member' ? '/member' : '/team', label: 'team' },
     { href: '/settings', label: 'settings' },

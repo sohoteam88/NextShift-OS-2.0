@@ -14,7 +14,7 @@ const tabs = [
   { href: '/dashboard', label: 'dashboard', icon: Gauge },
   { href: '/journey', label: 'journey', icon: Map },
   { href: '/content-engine', label: 'content', icon: BriefcaseBusiness },
-  { href: '/funnel-builder', label: 'funnels', icon: LayoutTemplate },
+  { href: '/funnel', label: 'funnels', icon: LayoutTemplate },
   { href: '/crm', label: 'customers', icon: ClipboardList },
 ] as const;
 
