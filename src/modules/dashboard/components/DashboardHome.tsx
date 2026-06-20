@@ -1,20 +1,20 @@
 'use client';
 
+import Link from 'next/link';
 import { AICommandCard } from './AICommandCard';
+import type { DashboardPriorityLevel } from './AICommandCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
 import { MomentumCard } from './MomentumCard';
-import { buildWorkforceSummary, WorkforceCard } from './WorkforceCard';
-import { RecentWinsCard } from './RecentWinsCard';
 import { useDashboardMission } from '../hooks/useDashboardMission';
 
 function routeOrFallback(route?: string) {
   return route && route.length > 0 ? route : '/journey';
 }
 
-function confidenceLabel(confidence: 'low' | 'medium' | 'high') {
-  if (confidence === 'high') return '92%';
-  if (confidence === 'medium') return '78%';
-  return '58%';
+function priorityLabel(priority: 'low' | 'medium' | 'high' | 'critical'): DashboardPriorityLevel {
+  if (priority === 'critical') return 'Critical';
+  if (priority === 'high') return 'High';
+  return 'Normal';
 }
 
 function DashboardHomeSkeleton() {
@@ -24,9 +24,38 @@ function DashboardHomeSkeleton() {
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="h-80 animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white" />
         <div className="h-80 animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white" />
-        <div className="h-80 animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white" />
-        <div className="h-80 animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white" />
       </div>
+    </div>
+  );
+}
+
+function MissionEngineFailure({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="mx-auto max-w-5xl pb-8">
+      <section className="rounded-[var(--radius-lg)] border border-red-200 bg-white p-6 shadow-sm">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase text-red-700">Mission Engine Failure</p>
+          <h1 className="mt-2 text-2xl font-bold text-[var(--color-text)]">AI COO is temporarily unavailable.</h1>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">
+            We could not determine the next best action. You can continue manually using the Journey page.
+          </p>
+        </div>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Link
+            href="/journey"
+            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Open Journey
+          </Link>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+          >
+            Retry
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
@@ -39,52 +68,35 @@ export function DashboardHome() {
     return <DashboardHomeSkeleton />;
   }
 
-  if (!data) {
-    return (
-      <div className="mx-auto max-w-5xl pb-8">
-        <AICommandCard
-          currentStage="Brand Foundation"
-          currentBottleneck="品牌访谈尚未完成"
-          todayMission="Complete AI Interview"
-          missionReason="完成访谈后，AI COO 才能判断你的下一步业务任务。"
-          estimatedTime="10 分钟"
-          expectedOutcome="品牌基础完成"
-          confidenceLevel="92%"
-          executeRoute="/brand-builder/step/interview"
-        />
-      </div>
-    );
+  if (projection.isError || !data) {
+    return <MissionEngineFailure onRetry={() => void projection.refetch()} />;
   }
 
-  const bottleneck = data.aiDecision.primaryRisk?.title
+  const currentGap = data.aiDecision.primaryRisk?.title
     ?? data.growthProjection.primaryBottleneck?.title
     ?? '当前没有明显阻塞点';
   const executeRoute = routeOrFallback(data.aiDecision.nextBestAction.route ?? data.missionControl.route);
-  const missionRoute = routeOrFallback(data.missionControl.route);
-  const recentWins = [
-    ...data.retention.momentum.recentWins.map((win) => win.title),
-    ...(data.value.latestWin ? [data.value.latestWin.label] : []),
-    ...data.executions.completedExecutions.map((execution) => execution.title),
-    ...data.workforce.completedAgentTasks.map((task) => task.executionSummary),
-  ].filter(Boolean).slice(0, 6);
+  const completedItems = data.progressPath
+    .filter((step) => step.status === 'completed')
+    .map((step) => step.label)
+    .slice(-3);
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
       <AICommandCard
-        currentStage={data.currentJourney.title}
-        currentBottleneck={bottleneck}
+        completedItems={completedItems}
+        currentGap={currentGap}
         todayMission={data.missionControl.title}
         missionReason={data.missionControl.whyItMatters}
+        decisionReason={data.aiDecision.decisionReason}
+        priorityLevel={priorityLabel(data.aiDecision.priority)}
         estimatedTime={data.missionControl.estimatedTime}
         expectedOutcome={data.missionControl.expectedOutcome}
-        confidenceLevel={confidenceLabel(data.aiDecision.confidence)}
         executeRoute={executeRoute}
       />
       <div className="grid gap-5 lg:grid-cols-2">
         <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />
         <MomentumCard metrics={data.value.outcomeMetrics} />
-        <WorkforceCard agents={buildWorkforceSummary(data.workforce)} />
-        <RecentWinsCard wins={recentWins} missionRoute={missionRoute} />
       </div>
     </div>
   );

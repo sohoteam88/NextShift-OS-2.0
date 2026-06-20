@@ -1,42 +1,55 @@
-import { Check, Circle, Flag, Lock, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, Check, Circle, Flag, Sparkles } from 'lucide-react';
 import type { DashboardProjection } from '../adapters/DashboardProjectionAdapter';
 
 const STATUS_LABEL = {
   completed: '已完成',
   current: '当前',
-  available: '可执行',
-  locked: '未解锁',
+  next: '下一步',
 } as const;
 
-const JOURNEY_LABELS = [
-  '品牌基础',
-  '品牌定位',
-  '内容系统',
-  '引流磁铁',
-  '漏斗',
-  '潜在客户',
-  '销售',
-  '团队',
-];
-
-type JourneyStatus = DashboardProjection['progressPath'][number]['status'] | 'available';
+type JourneyStatus = 'completed' | 'current' | 'next';
 
 function statusClass(status: JourneyStatus) {
   if (status === 'completed') return 'border-emerald-200 bg-emerald-50 text-emerald-800';
   if (status === 'current') return 'border-blue-300 bg-blue-50 text-blue-800 shadow-sm';
-  if (status === 'available') return 'border-gray-300 bg-white text-gray-700';
-  return 'border-gray-200 bg-gray-50 text-gray-500';
+  return 'border-gray-300 bg-white text-gray-700';
 }
 
 export function buildJourneySteps(progressPath: DashboardProjection['progressPath']) {
+  const completed = progressPath
+    .filter((step) => step.status === 'completed')
+    .slice(-2)
+    .map((step) => ({ label: step.label, status: 'completed' as const }));
   const currentIndex = progressPath.findIndex((step) => step.status === 'current');
+  const currentStep = currentIndex >= 0 ? progressPath[currentIndex] : progressPath.find((step) => step.status !== 'completed');
+  const nextStep = currentIndex >= 0
+    ? progressPath.slice(currentIndex + 1).find((step) => step.status !== 'completed')
+    : progressPath.find((step) => step.status === 'locked');
+  const steps: Array<{ label: string; status: JourneyStatus }> = [];
 
-  return JOURNEY_LABELS.map((label, index) => ({
-    label,
-    status: progressPath[index]?.status === 'locked' && index === currentIndex + 1
-      ? 'available'
-      : progressPath[index]?.status ?? 'locked',
-  })) satisfies Array<{ label: string; status: JourneyStatus }>;
+  if (completed.length > 0) {
+    steps.push({
+      label: completed.map((step) => step.label).join(' + '),
+      status: 'completed',
+    });
+  }
+
+  if (currentStep) {
+    steps.push({
+      label: currentStep.label,
+      status: 'current',
+    });
+  }
+
+  if (nextStep && steps.length < 3) {
+    steps.push({
+      label: nextStep.label,
+      status: 'next',
+    });
+  }
+
+  return steps.slice(0, 3);
 }
 
 type JourneyProgressCardProps = {
@@ -49,22 +62,32 @@ type JourneyProgressCardProps = {
 export function JourneyProgressCard({ steps }: JourneyProgressCardProps) {
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2">
-        <Flag className="h-5 w-5 text-blue-600" />
-        <h2 className="text-base font-semibold text-[var(--color-text)]">成长旅程</h2>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Flag className="h-5 w-5 text-blue-600" />
+          <h2 className="text-base font-semibold text-[var(--color-text)]">Journey Snapshot</h2>
+        </div>
+        <Link href="/journey" className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700">
+          Open Journey <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-3">
         {steps.map((step, index) => (
           <div key={step.label} className={`rounded-[var(--radius-md)] border p-3 ${statusClass(step.status)}`}>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold">Step {index + 1}</span>
+              <span className="text-xs font-semibold">{STATUS_LABEL[step.status]}</span>
               {step.status === 'completed' ? <Check className="h-4 w-4" aria-hidden="true" /> : null}
               {step.status === 'current' ? <Sparkles className="h-4 w-4" aria-hidden="true" /> : null}
-              {step.status === 'available' ? <Circle className="h-4 w-4" aria-hidden="true" /> : null}
-              {step.status === 'locked' ? <Lock className="h-4 w-4" aria-hidden="true" /> : null}
+              {step.status === 'next' ? <Circle className="h-4 w-4" aria-hidden="true" /> : null}
             </div>
             <p className="mt-2 text-sm font-semibold">{step.label}</p>
-            <p className="mt-1 text-xs">{STATUS_LABEL[step.status]}</p>
+            <p className="mt-1 text-xs">
+              {index === 0 && step.status === 'completed'
+                ? 'Completed foundation'
+                : step.status === 'current'
+                  ? 'Focus here now'
+                  : 'Hidden until needed'}
+            </p>
           </div>
         ))}
       </div>
