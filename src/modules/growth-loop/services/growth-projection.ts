@@ -46,7 +46,7 @@ function actionFor(input: {
         return {
           title: 'Improve the conversion path',
           reason: 'Traffic or leads exist, but conversion is not visible yet.',
-          route: '/funnel-builder',
+          route: '/funnel',
           owner: 'growth-loop',
           expectedMetricLift: 'Increase funnel_conversions and customer_count.',
         };

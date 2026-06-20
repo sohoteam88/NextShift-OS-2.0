@@ -128,7 +128,7 @@ export const JOURNEY_PATHS: Record<AdaptiveJourneyType, JourneyPathDefinition> =
         priority: 60,
         unlockConditions: ['lead_magnet_created'],
         completionConditions: ['funnel_published'],
-        route: '/funnel-builder',
+        route: '/funnel',
       },
       {
         id: 'MISSION_006',
@@ -139,7 +139,7 @@ export const JOURNEY_PATHS: Record<AdaptiveJourneyType, JourneyPathDefinition> =
         priority: 50,
         unlockConditions: ['funnel_published'],
         completionConditions: ['traffic_campaign_launched'],
-        route: '/funnel-builder',
+        route: '/traffic-engine',
       },
     ],
   },
@@ -191,7 +191,7 @@ export const JOURNEY_PATHS: Record<AdaptiveJourneyType, JourneyPathDefinition> =
         priority: 50,
         unlockConditions: ['lead_magnet_created'],
         completionConditions: ['traffic_campaign_launched'],
-        route: '/funnel-builder',
+        route: '/traffic-engine',
       },
       {
         id: 'MISSION_007',
@@ -232,7 +232,7 @@ export const JOURNEY_PATHS: Record<AdaptiveJourneyType, JourneyPathDefinition> =
         priority: 70,
         unlockConditions: ['brand_dna_confirmed'],
         completionConditions: ['funnel_published'],
-        route: '/funnel-builder',
+        route: '/funnel',
       },
       {
         id: 'MISSION_005',
@@ -243,7 +243,7 @@ export const JOURNEY_PATHS: Record<AdaptiveJourneyType, JourneyPathDefinition> =
         priority: 60,
         unlockConditions: ['funnel_published'],
         completionConditions: ['traffic_campaign_launched'],
-        route: '/funnel-builder',
+        route: '/traffic-engine',
       },
       {
         id: 'MISSION_006',

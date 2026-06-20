@@ -157,7 +157,7 @@ function generateRecommendations(completedChecks: string[]): Recommendation[] {
         en: 'Funnel is built but meaningless without traffic. Launch your first campaign to push it to your target audience.',
         ms: 'Funnel dah siap tapi tiada makna tanpa trafik. Lancarkan kempen pertama untuk hantar pada audiens sasaran.',
       },
-      route: '/funnel-builder',
+      route: '/traffic-engine',
       buttonLabel: { zh: '启动流量 →', en: 'Launch Traffic →', ms: 'Lancarkan Trafik →' },
     });
   }
