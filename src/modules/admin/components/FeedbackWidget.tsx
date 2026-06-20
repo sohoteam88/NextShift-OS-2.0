@@ -37,14 +37,14 @@ export function FeedbackWidget() {
     <>
       <button
         onClick={() => { setOpen(!open); setSubmitted(false); setMessage(''); }}
-        className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg transition-transform hover:scale-105"
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-lg transition-transform hover:scale-105 lg:bottom-6 lg:right-6"
         aria-label="Feedback"
       >
         {open ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
       </button>
 
       {open && (
-        <div className="fixed bottom-20 right-6 z-50 w-80 rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-xl">
+        <div className="fixed bottom-[calc(8.5rem+env(safe-area-inset-bottom))] right-4 z-50 w-[calc(100vw-2rem)] max-w-80 rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-xl lg:bottom-20 lg:right-6">
           {submitted ? (
             <div className="py-4 text-center">
               <p className="text-sm font-semibold text-emerald-600">Thank you!</p>
