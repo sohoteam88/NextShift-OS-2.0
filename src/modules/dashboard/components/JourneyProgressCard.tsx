@@ -10,6 +10,10 @@ const STATUS_LABEL = {
 
 type JourneyStatus = 'completed' | 'current' | 'next';
 
+function journeyLabel(value: string) {
+  return value.replace(/引流磁铁/g, '引流资源');
+}
+
 function statusClass(status: JourneyStatus) {
   if (status === 'completed') return 'border-emerald-200 bg-emerald-50 text-emerald-800';
   if (status === 'current') return 'border-blue-300 bg-blue-50 text-blue-800 shadow-sm';
@@ -20,7 +24,7 @@ export function buildJourneySteps(progressPath: DashboardProjection['progressPat
   const completed = progressPath
     .filter((step) => step.status === 'completed')
     .slice(-2)
-    .map((step) => ({ label: step.label, status: 'completed' as const }));
+    .map((step) => ({ label: journeyLabel(step.label), status: 'completed' as const }));
   const currentIndex = progressPath.findIndex((step) => step.status === 'current');
   const currentStep = currentIndex >= 0 ? progressPath[currentIndex] : progressPath.find((step) => step.status !== 'completed');
   const nextStep = currentIndex >= 0
@@ -37,14 +41,14 @@ export function buildJourneySteps(progressPath: DashboardProjection['progressPat
 
   if (currentStep) {
     steps.push({
-      label: currentStep.label,
+      label: journeyLabel(currentStep.label),
       status: 'current',
     });
   }
 
   if (nextStep && steps.length < 3) {
     steps.push({
-      label: nextStep.label,
+      label: journeyLabel(nextStep.label),
       status: 'next',
     });
   }

@@ -29,7 +29,8 @@ const LABELS: Record<string, string> = {
 };
 
 function humanLabel(value: string) {
-  return LABELS[value] ?? value.replaceAll('_', ' ').toLowerCase().replace(/^\w/, (char) => char.toUpperCase());
+  const label = LABELS[value] ?? value.replaceAll('_', ' ').toLowerCase().replace(/^\w/, (char) => char.toUpperCase());
+  return label.replace(/引流磁铁/g, '引流资源');
 }
 
 function hasInternalReason(value: string) {
