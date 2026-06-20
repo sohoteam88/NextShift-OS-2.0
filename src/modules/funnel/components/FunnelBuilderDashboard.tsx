@@ -47,14 +47,15 @@ export function FunnelBuilderDashboard() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-12">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">漏斗页面中心</h1><p className="text-xs text-gray-500">把引流资源、领取页和客户跟进串联成完整成交路径。</p></div></div>
+        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">漏斗页面中心</h1><p className="text-xs text-gray-500">根据 AI 访谈和 Brand DNA 自动生成领取页、感谢页和跟进流程。</p></div></div>
         {pkg && <div className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"><Trophy className="inline h-3 w-3 mr-1" />{statusLabel(pkg.healthScore)}</div>}
       </div>
 
       {!pkg && (
         <div className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 p-8 text-center">
           <Rocket className="h-8 w-8 text-blue-500 mx-auto mb-3" />
-          <h2 className="text-lg font-bold mb-2">选择漏斗类型</h2>
+          <h2 className="text-lg font-bold mb-2">从品牌资料生成你的漏斗页面</h2>
+          <p className="mx-auto mb-4 max-w-xl text-sm text-gray-600">系统会读取你的受众、Offer、定位和核心信息，生成可以承接客户资料的完整路径。</p>
           <div className="flex flex-wrap justify-center gap-2 mb-4">
             {(Object.entries(FUNNEL_TYPES) as [FunnelBuilderType, typeof FUNNEL_TYPES[FunnelBuilderType]][]).map(([k, v]) => (
               <button key={k} onClick={() => setType(k)} className={cn('rounded-lg px-4 py-2 text-sm font-semibold text-left', type===k?'bg-blue-600 text-white':'bg-white border text-gray-600 hover:bg-blue-50')}>
@@ -62,6 +63,11 @@ export function FunnelBuilderDashboard() {
               </button>
             ))}
           </div>
+          {gen.isError && (
+            <p className="mx-auto mb-3 max-w-md rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
+              无法生成漏斗页面。请先完成 AI 访谈和品牌资料，再重试。
+            </p>
+          )}
           <button onClick={() => gen.mutate(type)} disabled={gen.isPending} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50">{gen.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}生成完整漏斗</button>
         </div>
       )}

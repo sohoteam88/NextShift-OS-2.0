@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CheckCircle2, Loader2, Rocket, Sparkles, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Rocket, Sparkles, Target } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import type { TrafficGoal, TrafficPlatform, BudgetTier, TrafficPackage } from '../types';
 import { TRAFFIC_GOALS } from '../types';
@@ -73,6 +73,7 @@ export function TrafficDashboard() {
   const trackingEntries = pkg ? Object.entries(pkg.analyticsConfig)
     .map(([key, value]) => ({ label: trackingLabel(key), value }))
     .filter((entry): entry is { label: string; value: string } => Boolean(entry.label)) : [];
+  const blockedByFoundation = Boolean(pkg && (pkg.readiness.funnelReady < 50 || pkg.readiness.leadMagnetReady < 50));
   const readinessItems = pkg ? [
     { k: '漏斗页面', v: pkg.readiness.funnelReady },
     { k: '着陆页', v: pkg.readiness.landingPageReady },
@@ -89,13 +90,50 @@ export function TrafficDashboard() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-12">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">流量行动中心</h1><p className="text-xs text-gray-500">先确认漏斗、内容和追踪，再启动流量测试。</p></div></div>
+        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">流量测试中心</h1><p className="text-xs text-gray-500">这里是后续测试步骤；先用品牌资料生成承接页和引流资源。</p></div></div>
         {pkg && <div className={cn('rounded-full px-3 py-1.5 text-xs font-bold', pkg.readiness.level === 'high' ? 'bg-emerald-100 text-emerald-700' : pkg.readiness.level === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')}>{statusLabel(pkg.readiness.level)}</div>}
       </div>
 
+      {blockedByFoundation && (
+        <section className="rounded-xl border border-blue-100 bg-blue-50 p-5">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-white p-2 text-blue-600">
+              <Target className="h-5 w-5" />
+            </div>
+            <div className="space-y-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-950">这里还不是第一步</h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  流量测试中心负责在承接页完成后生成测试渠道、预算和追踪设置。现在系统还缺少可接住客户的漏斗页面或引流资源，所以不建议直接启动广告。
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-lg border border-white bg-white p-3">
+                  <div className="text-xs font-bold text-gray-500">先完成</div>
+                  <div className="mt-1 text-sm font-semibold text-gray-950">根据品牌资料生成漏斗页面</div>
+                </div>
+                <div className="rounded-lg border border-white bg-white p-3">
+                  <div className="text-xs font-bold text-gray-500">再完成</div>
+                  <div className="mt-1 text-sm font-semibold text-gray-950">准备一个可领取的引流资源</div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => router.push('/funnel')} className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700">
+                  生成漏斗页面 <ArrowRight className="h-4 w-4" />
+                </button>
+                <button onClick={() => router.push('/lead-magnet')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-bold text-blue-700 hover:bg-blue-50">
+                  创建引流资源
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {!pkg && (
         <div className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 p-8 text-center">
-          <Rocket className="h-8 w-8 text-blue-500 mx-auto mb-3" /><h2 className="text-lg font-bold mb-4">准备你的流量策略</h2>
+          <Rocket className="h-8 w-8 text-blue-500 mx-auto mb-3" /><h2 className="text-lg font-bold mb-2">生成流量测试计划</h2>
+          <p className="mx-auto mb-4 max-w-xl text-sm text-gray-600">系统会读取你的品牌资料、漏斗页面、引流资源和内容资产，生成小预算测试建议。</p>
           <div className="space-y-3 mb-4">
             <div><label className="text-xs font-bold block mb-1">目标</label>
               <div className="flex flex-wrap gap-2">{Object.entries(TRAFFIC_GOALS).map(([k,v]) => <button key={k} onClick={() => setGoal(k as TrafficGoal)} className={cn('rounded-lg px-3 py-2 text-xs text-left', goal===k?'bg-blue-600 text-white':'bg-white border')}><div className="font-bold">{v.objective}</div><div className="opacity-70">{kpiLabel(v.expectedKpi)}</div></button>)}</div>
@@ -111,7 +149,7 @@ export function TrafficDashboard() {
         </div>
       )}
 
-      {pkg && (
+      {pkg && !blockedByFoundation && (
         <>
           <S title="📊 启动前检查">
             <div className="grid grid-cols-4 gap-2 text-xs">

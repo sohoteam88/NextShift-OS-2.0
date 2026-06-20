@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { FunnelBuilderType, FunnelPackage } from '../types/funnel-builder';
@@ -31,13 +32,27 @@ export const funnelBuilderService = {
     pkg.nextBestAction = funnelHealthService.getPackageAdvisor(health).nextAction;
 
     // Store in Funnel model via canonical write path
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { tenantId: true } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { tenantId: true, metadata: true } });
+    if (!user) throw new Error('User not found');
+
     await funnelService.createInternal({
-      tenantId: user!.tenantId,
+      tenantId: user.tenantId,
       ownerId: userId,
       title: pkg.title,
       config: pkg as unknown as Record<string, unknown>,
     });
+
+    const meta = (user.metadata as Record<string, unknown>) ?? {};
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        metadata: {
+          ...meta,
+          funnel_builder_2: pkg,
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+
     return pkg;
   },
 
