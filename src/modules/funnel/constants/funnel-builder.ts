@@ -43,7 +43,7 @@ export const LANGUAGE_OPTIONS = [
 export const OUTPUT_ITEMS = [
   '落地页完整文案',
   'WhatsApp 欢迎与跟进脚本',
-  '5 个引流磁铁方案',
+  '5 个引流资源方案',
   '5 封邮件序列',
   '10 个广告角度',
   '20 个短视频开头',
@@ -60,7 +60,7 @@ export const RESULT_SUMMARY_CARDS = [
   ['类型', 'funnelSummary.funnelType'],
   ['目标', 'funnelSummary.primaryGoal'],
   ['成交', 'funnelSummary.closingChannel'],
-  ['Lead Magnet', 'landingPage.leadMagnet.name'],
+  ['引流资源', 'landingPage.leadMagnet.name'],
 ] as const;
 
 // ─── Helper functions ─────────────────────────────────────────────────────────

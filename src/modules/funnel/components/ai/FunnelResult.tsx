@@ -90,7 +90,7 @@ export function FunnelResult({ funnel }: { funnel: FunnelBuilderOutput }) {
             <Field label="为何有效" value={funnel.landingPage.solution.whyItWorks} />
           </div>
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">引流磁铁</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-primary)]">引流资源</p>
             <Field label="名称" value={funnel.landingPage.leadMagnet.name} />
             <BulletList label="包含内容" items={funnel.landingPage.leadMagnet.whatTheyGet} />
             <Field label="价值说明" value={funnel.landingPage.leadMagnet.whyValuable} />
@@ -124,7 +124,7 @@ export function FunnelResult({ funnel }: { funnel: FunnelBuilderOutput }) {
       </Section>
 
       {/* Lead Magnets */}
-      <Section title="引流磁铁方案 (5个)" icon={<Zap className="h-4 w-4" />}>
+      <Section title="引流资源方案 (5个)" icon={<Zap className="h-4 w-4" />}>
         <div className="space-y-4">
           {funnel.leadMagnets.map((lm, i) => (
             <div key={i} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">

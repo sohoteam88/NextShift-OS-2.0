@@ -127,7 +127,7 @@ function generateRecommendations(completedChecks: string[]): Recommendation[] {
       priority: 4,
       emoji: '🧲',
       title: {
-        zh: '创建你的第一个引流磁铁',
+        zh: '创建你的第一个引流资源',
         en: 'Build Your First Lead Magnet',
         ms: 'Bina Magnet Pelanggan Pertama',
       },
@@ -137,7 +137,7 @@ function generateRecommendations(completedChecks: string[]): Recommendation[] {
         ms: 'Kandungan menarik orang — tapi bagaimana tukar penonton ke kontak? Cipta sumber percuma.',
       },
       route: '/funnel',
-      buttonLabel: { zh: '创建引流磁铁 →', en: 'Build Lead Magnet →', ms: 'Bina Magnet →' },
+      buttonLabel: { zh: '创建引流资源 →', en: 'Build Lead Magnet →', ms: 'Bina Magnet →' },
     });
   }
 

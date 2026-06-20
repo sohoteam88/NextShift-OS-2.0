@@ -48,13 +48,13 @@ export function FunnelContextDashboard() {
             </div>
             <div className="mt-2 grid gap-1 text-xs">
               <p><strong>Webinar:</strong> {ctx.webinarTheme}</p>
-              <p><strong>Lead Magnet:</strong> {ctx.leadMagnetTheme}</p>
+              <p><strong>引流资源:</strong> {ctx.leadMagnetTheme}</p>
               <p><strong>视频方向:</strong> {ctx.videoTheme}</p>
               <p><strong>销售方式:</strong> {ctx.salesApproach}</p>
             </div>
             <div className="mt-3 pt-2 border-t flex gap-2">
               <button onClick={() => router.push('/content-engine')} className="text-xs font-bold text-blue-600">生成内容 →</button>
-              <button onClick={() => router.push('/lead-magnet')} className="text-xs font-bold text-blue-600">创建Lead Magnet →</button>
+              <button onClick={() => router.push('/lead-magnet')} className="text-xs font-bold text-blue-600">创建引流资源 →</button>
               <button onClick={() => router.push('/webinar-center')} className="text-xs font-bold text-blue-600">准备Webinar →</button>
             </div>
           </section>

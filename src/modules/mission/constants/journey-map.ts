@@ -266,7 +266,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
   {
     id: 'lead_magnet',
     order: 13,
-    name_zh: '建立 Lead Magnet',
+    name_zh: '建立引流资源',
     name_en: 'Build Lead Magnet',
     name_ms: 'Bina Magnet Pelanggan',
     category: 'acquisition',
@@ -304,7 +304,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
     name_en: 'Build Funnel',
     name_ms: 'Bina Funnel',
     category: 'acquisition',
-    description_zh: '把 Lead Magnet 和 Webinar 组装成完整的获客漏斗',
+    description_zh: '把引流资源和 Webinar 组装成完整的获客漏斗',
     description_en: 'Assemble your Lead Magnet and Webinar into a complete acquisition funnel',
     description_ms: 'Susun Magnet Pelanggan dan Webinar anda menjadi funnel lengkap',
     estimated_minutes: 15,

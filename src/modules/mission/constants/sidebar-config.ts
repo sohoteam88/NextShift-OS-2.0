@@ -52,7 +52,7 @@ export const OPERATOR_SIDEBAR: MissionSidebarItem[] = [
     icon: 'Megaphone', label_zh: '获客', label_en: 'Acquisition', label_ms: 'Pemerolehan',
     route: CANONICAL_ROUTES.leadMagnet,
     children: [
-      { icon: 'Target', label_zh: '引流磁铁', label_en: 'Lead Magnet', label_ms: 'Magnet Lead', route: CANONICAL_ROUTES.leadMagnet },
+      { icon: 'Target', label_zh: '引流资源', label_en: 'Lead Magnet', label_ms: 'Magnet Lead', route: CANONICAL_ROUTES.leadMagnet },
       { icon: 'LayoutTemplate', label_zh: '漏斗', label_en: 'Funnels', label_ms: 'Funnel', route: CANONICAL_ROUTES.funnel },
       { icon: 'Zap', label_zh: '流量行动中心', label_en: 'Traffic Engine', label_ms: 'Enjin Trafik', route: CANONICAL_ROUTES.trafficEngine },
     ],
@@ -104,7 +104,7 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
     label_ms: 'Pemerolehan',
     route: CANONICAL_ROUTES.leadMagnet,
     children: [
-      { icon: 'Target', label_zh: '引流磁铁', label_en: 'Lead Magnet', label_ms: 'Magnet Lead', route: CANONICAL_ROUTES.leadMagnet },
+      { icon: 'Target', label_zh: '引流资源', label_en: 'Lead Magnet', label_ms: 'Magnet Lead', route: CANONICAL_ROUTES.leadMagnet },
       { icon: 'LayoutTemplate', label_zh: '漏斗页面', label_en: 'Funnels', label_ms: 'Funnel', route: CANONICAL_ROUTES.funnel },
       { icon: 'Zap', label_zh: '流量行动中心', label_en: 'Traffic Engine', label_ms: 'Enjin Trafik', route: CANONICAL_ROUTES.trafficEngine },
       { icon: 'Zap', label_zh: '漏斗页面中心', label_en: 'Funnel Builder', label_ms: 'Pembina Funnel', route: '/funnel' },

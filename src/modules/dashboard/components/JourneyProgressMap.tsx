@@ -32,7 +32,7 @@ const STAGE_LABELS: Record<MissionStageId, Record<Locale, string>> = {
   first_bio: { zh: '个人简介', en: 'First Bio', ms: 'Bio Pertama' },
   first_content: { zh: '第一篇内容', en: 'First Content', ms: 'Kandungan Pertama' },
   first_video: { zh: '第一支视频', en: 'First Video', ms: 'Video Pertama' },
-  lead_magnet: { zh: '引流磁铁', en: 'Lead Magnet', ms: 'Magnet Pelanggan' },
+  lead_magnet: { zh: '引流资源', en: 'Lead Magnet', ms: 'Magnet Pelanggan' },
   webinar: { zh: '线上讲座', en: 'Webinar', ms: 'Webinar' },
   funnel: { zh: '销售漏斗', en: 'Funnel', ms: 'Funnel Jualan' },
   traffic_campaign: { zh: '启动流量', en: 'Traffic Campaign', ms: 'Kempen Trafik' },

@@ -120,14 +120,14 @@ function getActionForStage(stage: MissionStage | null): DailyAction | null {
     },
     lead_magnet: {
       emoji: '🧲',
-      title: { zh: '创建你的引流磁铁', en: 'Create Lead Magnet', ms: 'Cipta Magnet Pelanggan' },
+      title: { zh: '创建你的引流资源', en: 'Create Lead Magnet', ms: 'Cipta Magnet Pelanggan' },
       description: {
         zh: '做一个免费但有价值的东西（指南/清单/模板），让人愿意留下联系方式。',
         en: 'Create something free but valuable (guide/checklist/template) people will trade their contact for.',
         ms: 'Cipta sesuatu percuma tapi bernilai (panduan/senarai semak) yang orang sanggup tukar dengan kontak.',
       },
       route: '/funnel',
-      buttonLabel: { zh: '创建引流磁铁 →', en: 'Create Lead Magnet →', ms: 'Cipta Magnet →' },
+      buttonLabel: { zh: '创建引流资源 →', en: 'Create Lead Magnet →', ms: 'Cipta Magnet →' },
     },
     webinar: {
       emoji: '🎙️',
@@ -144,7 +144,7 @@ function getActionForStage(stage: MissionStage | null): DailyAction | null {
       emoji: '🚀',
       title: { zh: '组装你的销售漏斗', en: 'Build Your Funnel', ms: 'Bina Funnel Anda' },
       description: {
-        zh: '把引流磁铁和 Webinar 串起来，变成一个 24 小时自动运转的成交机器。',
+        zh: '把引流资源和 Webinar 串起来，变成一个 24 小时自动运转的成交机器。',
         en: 'Connect your lead magnet and webinar into a 24/7 automated sales machine.',
         ms: 'Sambungkan magnet pelanggan dan webinar anda menjadi mesin jualan 24/7.',
       },

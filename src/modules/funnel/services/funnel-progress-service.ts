@@ -52,7 +52,7 @@ export const funnelProgressService = {
     // Bottleneck detection
     if (contentCount === 0) { bottleneck = 'Content Missing'; bottleneckFix = '发布3篇内容'; }
     else if (videoCount === 0) { bottleneck = 'No Video Content'; bottleneckFix = '生成第一支视频'; }
-    else if (!meta.lead_magnet && !meta.funnel_builder) { bottleneck = 'No Funnel'; bottleneckFix = '创建引流磁铁和漏斗'; }
+    else if (!meta.lead_magnet && !meta.funnel_builder) { bottleneck = 'No Funnel'; bottleneckFix = '创建引流资源和漏斗页面'; }
     else if (funnelType !== 'retail' && !meta.webinar && !meta.funnel_builder) { bottleneck = 'No Webinar'; bottleneckFix = '建立讲座或机会说明页面'; }
     else if (leadCount === 0) { bottleneck = 'No Leads'; bottleneckFix = '激活流量获取'; }
     else if (customerCount === 0 && leadCount > 5) { bottleneck = 'Leads But No Follow-Up'; bottleneckFix = '使用客户跟进中心跟进'; }
