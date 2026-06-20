@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { RotateCcw } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { BrandProfileStep } from '../BrandProfileStep';
@@ -26,7 +26,7 @@ export function ProfileStepClient({ initialProfile, interviewId }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stepId: 'profile' }),
     });
-    router.push('/brand-builder/step/accounts');
+    router.push('/dashboard');
   }
 
   async function handleSkip() {
@@ -35,7 +35,7 @@ export function ProfileStepClient({ initialProfile, interviewId }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stepId: 'profile' }),
     });
-    router.push('/brand-builder/step/accounts');
+    router.push('/dashboard');
   }
 
   async function handleRestartInterview() {
@@ -53,14 +53,16 @@ export function ProfileStepClient({ initialProfile, interviewId }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="mx-auto max-w-6xl space-y-5 pb-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">🎯 品牌画像</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            根据面试内容，AI 已为你生成品牌定位。请确认或调整。
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={() => router.push('/brand-builder/step/interview')}
+          className="inline-flex items-center gap-2 text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          回到 AI 访谈
+        </button>
         <Button
           type="button"
           variant="secondary"
@@ -68,7 +70,7 @@ export function ProfileStepClient({ initialProfile, interviewId }: Props) {
           onClick={() => void handleRestartInterview()}
           loading={restarting}
         >
-          重新跟 AI 聊一次
+          回到访谈补充
         </Button>
       </div>
       <BrandProfileStep
@@ -79,9 +81,9 @@ export function ProfileStepClient({ initialProfile, interviewId }: Props) {
       <button
         type="button"
         onClick={() => void handleSkip()}
-        className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+        className="text-sm font-medium text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
       >
-        跳过此步骤 →
+        暂时跳过，先进入 AI COO →
       </button>
     </div>
   );
