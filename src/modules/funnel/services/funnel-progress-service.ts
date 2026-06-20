@@ -55,7 +55,7 @@ export const funnelProgressService = {
     else if (!meta.lead_magnet && !meta.funnel_builder) { bottleneck = 'No Funnel'; bottleneckFix = '创建引流磁铁和漏斗'; }
     else if (funnelType !== 'retail' && !meta.webinar && !meta.funnel_builder) { bottleneck = 'No Webinar'; bottleneckFix = '建立讲座或机会说明页面'; }
     else if (leadCount === 0) { bottleneck = 'No Leads'; bottleneckFix = '激活流量获取'; }
-    else if (customerCount === 0 && leadCount > 5) { bottleneck = 'Leads But No Follow-Up'; bottleneckFix = '使用WhatsApp AI跟进'; }
+    else if (customerCount === 0 && leadCount > 5) { bottleneck = 'Leads But No Follow-Up'; bottleneckFix = '使用客户跟进中心跟进'; }
     else if (customerCount > 0 && funnelType === 'upgrade') { bottleneck = 'Customers Not Upgraded'; bottleneckFix = '邀请顾客参加机会讲座'; }
 
     return { funnelType, progress, currentStage, nextStage, bottleneck, bottleneckFix };

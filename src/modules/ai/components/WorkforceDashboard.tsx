@@ -55,7 +55,24 @@ function assignmentLabel(assignment: RuntimeAssignment) {
   if (assignment.objective.toLowerCase().includes('content') || assignment.objective.includes('内容')) return '生成内容计划';
   if (assignment.objective.toLowerCase().includes('funnel') || assignment.objective.includes('漏斗')) return '创建漏斗页面';
   if (assignment.objective.toLowerCase().includes('audience') || assignment.objective.includes('受众')) return '分析目标受众';
+  if (assignment.objective.toLowerCase().includes('brand')) return '完善品牌资料';
   return assignment.objective;
+}
+
+function objectiveDisplayText(objective: string) {
+  const normalized = objective.toLowerCase();
+  if (normalized.includes('business state') || normalized.includes('canonical')) {
+    return '根据当前业务缺口，执行系统建议的下一步。';
+  }
+  if (normalized.includes('journey stage') || normalized.includes('brand_discovery')) {
+    return '根据当前 Journey 阶段，完善品牌资料并推进下一步。';
+  }
+  if (normalized.includes('lead magnet')) return '创建能吸引潜在客户留下资料的引流资源。';
+  if (normalized.includes('landing')) return '创建清晰的领取页，让潜在客户可以留下联系方式。';
+  if (normalized.includes('content')) return '整理下一批内容任务，让客户更容易发现你的服务。';
+  if (normalized.includes('funnel')) return '完善从流量到客户跟进的转化路径。';
+  if (normalized.includes('audience')) return '梳理目标受众，让下一步营销更聚焦。';
+  return objective;
 }
 
 function basisLabel(basis: RuntimeAssignment['basis']) {
@@ -150,7 +167,7 @@ export function WorkforceDashboard() {
                     <span className="text-sm font-bold text-gray-900">{assignmentLabel(assignment)}</span>
                     <span className="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">{basisLabel(assignment.basis)}</span>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">{assignment.objective}</p>
+                  <p className="mt-1 text-xs text-gray-500">{objectiveDisplayText(assignment.objective)}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {assignment.selectedAgents.map((id) => (
                       <span key={id} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
@@ -239,7 +256,7 @@ export function WorkforceDashboard() {
           {reports.map((r, i) => (
             <div key={i} className="mb-3 p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center justify-between mb-2"><span className="text-sm font-bold">{AGENT_REGISTRY[r.agent]?.emoji} {AGENT_REGISTRY[r.agent]?.name}</span><span className="text-xs text-gray-400">{new Date(r.executedAt).toLocaleString()}</span></div>
-              <p className="text-xs text-gray-500 mb-2">目标: {r.objective}</p>
+              <p className="text-xs text-gray-500 mb-2">目标: {objectiveDisplayText(r.objective)}</p>
               {r.findings.map((f, j) => <p key={j} className="text-xs text-gray-700">• {f}</p>)}
               {r.recommendations.length > 0 && <p className="text-xs text-purple-600 mt-1">💡 {r.recommendations[0]}</p>}
               <div className="flex items-center justify-between mt-2"><span className="text-xs text-gray-400">优先级: {priorityLabel(r.confidenceScore)}</span></div>
