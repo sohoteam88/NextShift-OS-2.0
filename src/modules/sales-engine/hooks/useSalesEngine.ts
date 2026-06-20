@@ -14,7 +14,7 @@ export function useSalesEngine() {
 
   return {
     isLocked,
-    lockReason: 'Unlocks at Operator Level. Complete Lead Generation and CRM first.',
+    lockReason: '先完成获客和 CRM 跟进。等你有可跟进的潜在客户后，销售中心会自动解锁。',
     stats,
     forecast,
     identifyObjection,
