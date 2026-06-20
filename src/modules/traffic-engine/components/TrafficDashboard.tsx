@@ -45,6 +45,24 @@ function riskLabel(risk: TrafficPackage['budget']['riskLevel']) {
   return '低';
 }
 
+function checklistLabel(label: string) {
+  const lower = label.toLowerCase();
+  if (lower === 'funnel' || lower.includes('funnel')) return '确认漏斗页面已经可以收集客户资料';
+  if (lower === 'lead_magnet' || lower.includes('lead magnet') || lower.includes('lead_magnet')) return '准备一个可以吸引客户留下资料的资源';
+  if (lower.includes('traffic acquisition')) return '先完成流量来源设置，再启动广告测试';
+  if (lower.includes('success criteria')) return '目标是先获得第一位潜在客户';
+  if (lower.includes('tracking')) return '确认追踪参数已经设置';
+  return label;
+}
+
+function trackingLabel(key: string) {
+  const lower = key.toLowerCase();
+  if (lower.includes('utm')) return 'UTM';
+  if (lower.includes('pixel')) return '像素';
+  if (lower.includes('conversion')) return '转化事件';
+  return null;
+}
+
 export function TrafficDashboard() {
   const router = useRouter(); const q = useTraffic(); const gen = useGenerate();
   const pkg = q.data?.data ?? null;
@@ -52,6 +70,9 @@ export function TrafficDashboard() {
   const [platform, setPlatform] = React.useState<TrafficPlatform>('facebook');
   const [budget, setBudget] = React.useState<BudgetTier>('starter');
   const tips = pkg ? getTrafficAdvisorTips(pkg.readiness) : [];
+  const trackingEntries = pkg ? Object.entries(pkg.analyticsConfig)
+    .map(([key, value]) => ({ label: trackingLabel(key), value }))
+    .filter((entry): entry is { label: string; value: string } => Boolean(entry.label)) : [];
   const readinessItems = pkg ? [
     { k: '漏斗页面', v: pkg.readiness.funnelReady },
     { k: '着陆页', v: pkg.readiness.landingPageReady },
@@ -111,13 +132,17 @@ export function TrafficDashboard() {
           <S title="💰 预算"><p className="text-sm"><strong>{budgetLabel(pkg.budget.tier)}:</strong> {pkg.budget.dailyBudget} → {pkg.budget.monthlyBudget}</p><p className="text-sm"><strong>预计:</strong> {pkg.budget.expectedLeads.replaceAll('leads', '位潜在客户')}</p><p className="text-sm"><strong>风险:</strong> {riskLabel(pkg.budget.riskLevel)}</p></S>
 
           <S title="✅ 启动检查清单">
-            {pkg.checklist.map(item => <div key={item.id} className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-gray-300" /> {item.label}</div>)}
+            {pkg.checklist.map(item => <div key={item.id} className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-gray-300" /> {checklistLabel(item.label)}</div>)}
           </S>
 
           <S title="📈 追踪设置">
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              {Object.entries(pkg.analyticsConfig).map(([k,v]) => <div key={k} className="bg-gray-50 rounded p-2"><div className="font-bold text-gray-400">{k}</div><div>{v}</div></div>)}
-            </div>
+            {trackingEntries.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                {trackingEntries.map((entry) => <div key={entry.label} className="bg-gray-50 rounded p-2"><div className="font-bold text-gray-400">{entry.label}</div><div>{entry.value}</div></div>)}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">先完成漏斗页面和追踪设置，系统会在这里显示广告成效指标。</p>
+            )}
           </S>
         </>
       )}

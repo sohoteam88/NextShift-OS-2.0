@@ -47,6 +47,21 @@ function friendlyAction(insight: AIInsight) {
   return insight.action;
 }
 
+function benchmarkRequirementLabel(requirement: string) {
+  if (requirement.includes('Readiness')) return requirement.replace('Readiness', '业务基础');
+  if (requirement.includes('Progress')) return requirement.replace('Progress', 'Journey 进度');
+  if (requirement.includes('Growth')) return requirement.replace('Growth', '增长循环');
+  return requirement;
+}
+
+function platformLabel(platform: string) {
+  if (platform === 'facebook') return 'Facebook';
+  if (platform === 'instagram') return 'Instagram';
+  if (platform === 'tiktok') return 'TikTok';
+  if (platform === 'xhs') return '小红书';
+  return platform;
+}
+
 export function IntelligenceDashboard() {
   const router = useRouter(); const q = useIntel();
   const ac = q.data?.data;
@@ -134,14 +149,14 @@ export function IntelligenceDashboard() {
               </div>
             </div>
             <div className="mt-3 space-y-1">
-              {ac.benchmark.requirements.map((r,i) => <p key={i} className="text-xs text-gray-500">✓ {r}</p>)}
+              {ac.benchmark.requirements.map((r,i) => <p key={i} className="text-xs text-gray-500">✓ {benchmarkRequirementLabel(r)}</p>)}
             </div>
           </S>
 
           {/* Content breakdown */}
           <S title="📱 内容分布">
             <div className="flex flex-wrap gap-2">
-              {Object.entries(ac.contentBreakdown).map(([platform, count]) => <span key={platform} className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold">{platform}: {count}</span>)}
+              {Object.entries(ac.contentBreakdown).map(([platform, count]) => <span key={platform} className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold">{platformLabel(platform)}: {count}</span>)}
             </div>
           </S>
         </>
