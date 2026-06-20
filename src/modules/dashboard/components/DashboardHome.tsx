@@ -88,7 +88,7 @@ export function DashboardHome() {
       />
       <div className="grid gap-5 lg:grid-cols-2">
         <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />
-        <MomentumCard metrics={data.value.outcomeMetrics} />
+        <MomentumCard metrics={data.value.outcomeMetrics} setupHref={executeRoute} />
       </div>
     </div>
   );

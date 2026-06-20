@@ -4,9 +4,10 @@ import type { OutcomeMetrics } from '@/modules/value/contracts/ValueProjection';
 
 type MomentumCardProps = {
   metrics: OutcomeMetrics;
+  setupHref: string;
 };
 
-export function MomentumCard({ metrics }: MomentumCardProps) {
+export function MomentumCard({ metrics, setupHref }: MomentumCardProps) {
   const hasBusinessData = [
     metrics.contentPublished,
     metrics.leadsGenerated,
@@ -44,7 +45,7 @@ export function MomentumCard({ metrics }: MomentumCardProps) {
             Complete your AI Interview and first mission. Your business metrics will appear here automatically.
           </p>
           <Link
-            href="/onboarding"
+            href={setupHref}
             className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
           >
             Continue Setup <ArrowRight className="h-4 w-4" aria-hidden="true" />
