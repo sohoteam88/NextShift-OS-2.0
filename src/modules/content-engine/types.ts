@@ -4,6 +4,7 @@ export type Platform = 'facebook' | 'instagram' | 'tiktok' | 'xhs' | 'threads' |
 export type ContentFormat = 'text_post' | 'carousel' | 'reel' | 'short_video' | 'story' | 'email' | 'blog';
 export type FunnelStage = 'awareness' | 'consideration' | 'conversion' | 'retention';
 export type ContentStatus = 'draft' | 'generated' | 'copied' | 'published';
+export type ContentTrack = 'retail' | 'recruitment';
 
 export interface GeneratedPost {
   id: string;
@@ -24,12 +25,14 @@ export interface GeneratedPost {
 
 export interface ContentCalendar {
   days: number; // 30, 90, or 180
+  track?: ContentTrack;
   items: ContentCalendarItem[];
   generatedAt: string;
 }
 
 export interface ContentCalendarItem {
   date: string;
+  track?: ContentTrack;
   pillar: string;
   pillarEmoji: string;
   title: string;
@@ -56,5 +59,6 @@ export interface ContentEngineState {
   pillars: ContentPillar[];
   lastGeneratedPost: GeneratedPost | null;
   calendar: ContentCalendar | null;
+  trackCalendars?: Record<ContentTrack, ContentCalendar | null>;
   publishedCount: number;
 }

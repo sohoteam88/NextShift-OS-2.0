@@ -6,8 +6,14 @@ import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { ContentPillar } from '@/modules/brand-dna/types';
-import type { GeneratedPost, ContentCalendar, ContentCalendarItem, Platform, ContentFormat, FunnelStage } from './types';
+import type { GeneratedPost, ContentCalendar, ContentCalendarItem, Platform, ContentFormat, FunnelStage, ContentTrack } from './types';
 import { generateContentPillars, generateCalendar, generatePost } from './contentGenerators';
+
+const CONTENT_TRACKS: ContentTrack[] = ['retail', 'recruitment'];
+
+function isContentCalendar(value: unknown): value is ContentCalendar {
+  return Boolean(value && typeof value === 'object' && Array.isArray((value as Partial<ContentCalendar>).items));
+}
 
 export const contentEngineService = {
   // ---- Pillars (canonical: BrandProfile.content_pillars) ----
@@ -33,15 +39,20 @@ export const contentEngineService = {
   },
 
   // ---- Calendar ----
-  async generateCalendar(userId: string, days: 30 | 90 | 180): Promise<ContentCalendar> {
+  async generateCalendar(userId: string, days: 30 | 90 | 180, track: ContentTrack = 'retail'): Promise<ContentCalendar> {
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('Brand DNA not found');
 
     const pillars = await this.getPillars(userId);
     if (pillars.length === 0) throw new Error('Generate content pillars first');
 
-    const items = generateCalendar(ctx, pillars, days);
-    const calendar: ContentCalendar = { days, items, generatedAt: new Date().toISOString() };
+    const items = generateCalendar(ctx, pillars, days, track);
+    const calendar: ContentCalendar = { days, track, items, generatedAt: new Date().toISOString() };
+    await this.saveTrackCalendar(userId, track, calendar);
+
+    if (track !== 'retail') {
+      return calendar;
+    }
 
     // Replace future generated calendar rows so repeated clicks do not hit the unique constraint.
     const userRecord = await prisma.user.findUnique({ where: { id: userId }, select: { tenantId: true } });
@@ -75,10 +86,44 @@ export const contentEngineService = {
     return calendar;
   },
 
+  async saveTrackCalendar(userId: string, track: ContentTrack, calendar: ContentCalendar) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
+    const meta = (user?.metadata as Record<string, unknown>) ?? {};
+    const existing = (meta.content_engine_track_calendars && typeof meta.content_engine_track_calendars === 'object')
+      ? meta.content_engine_track_calendars as Record<string, unknown>
+      : {};
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        metadata: {
+          ...meta,
+          content_engine_track_calendars: {
+            ...existing,
+            [track]: calendar,
+          },
+        } as unknown as Prisma.InputJsonValue,
+      },
+    });
+  },
+
   async getCalendar(userId: string): Promise<ContentCalendar | null> {
     const items = await prisma.contentCalendar.findMany({ where: { userId }, orderBy: { date: 'asc' }, take: 180 });
     if (items.length === 0) return null;
     return { days: items.length, items: items as unknown as ContentCalendarItem[], generatedAt: items[0].createdAt.toISOString() };
+  },
+
+  async getTrackCalendars(userId: string): Promise<Record<ContentTrack, ContentCalendar | null>> {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
+    const meta = (user?.metadata as Record<string, unknown>) ?? {};
+    const stored = (meta.content_engine_track_calendars && typeof meta.content_engine_track_calendars === 'object')
+      ? meta.content_engine_track_calendars as Record<string, unknown>
+      : {};
+
+    return CONTENT_TRACKS.reduce((acc, track) => {
+      acc[track] = isContentCalendar(stored[track]) ? stored[track] : null;
+      return acc;
+    }, {} as Record<ContentTrack, ContentCalendar | null>);
   },
 
   // ---- Post Generation ----

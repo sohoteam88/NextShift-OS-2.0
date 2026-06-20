@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
-import type { FunnelBuilderType, FunnelPackage } from '../types/funnel-builder';
+import type { FunnelBuilderType, FunnelPackage, FunnelPortfolio, FunnelTrack } from '../types/funnel-builder';
 import { generateFullFunnel } from './funnel-generators';
 import { funnelHealthService } from '@/modules/funnel/services/funnel-health-service';
 import { funnelService } from '@/modules/funnel/services/funnel-service';
@@ -9,6 +9,7 @@ import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { FunnelConfig, FunnelSection, FunnelTheme } from '@/modules/funnel/types';
 
 const DEFAULT_THEME: FunnelTheme = { primary_color: '#2563eb', bg_color: '#ffffff', font: 'system' };
+const TRACKS: FunnelTrack[] = ['retail', 'recruitment'];
 
 function isFunnelPackage(value: unknown): value is FunnelPackage {
   if (!value || typeof value !== 'object') return false;
@@ -24,6 +25,14 @@ function isFunnelPackage(value: unknown): value is FunnelPackage {
     Array.isArray(pkg.adAngles) &&
     Array.isArray(pkg.launchPlan)
   );
+}
+
+function isFunnelTrack(value: unknown): value is FunnelTrack {
+  return value === 'retail' || value === 'recruitment';
+}
+
+function emptyPortfolio(activeTrack: FunnelTrack = 'retail'): FunnelPortfolio {
+  return { retail: null, recruitment: null, activeTrack };
 }
 
 function buildLandingPageConfig(pkg: FunnelPackage): FunnelConfig {
@@ -95,10 +104,10 @@ function buildLandingPageConfig(pkg: FunnelPackage): FunnelConfig {
 }
 
 export const funnelBuilderService = {
-  async generate(userId: string, funnelType: FunnelBuilderType): Promise<FunnelPackage> {
+  async generate(userId: string, funnelType: FunnelBuilderType, track: FunnelTrack = 'retail'): Promise<FunnelPackage> {
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('Brand DNA not found');
-    const pkg = generateFullFunnel(ctx, funnelType);
+    const pkg = generateFullFunnel(ctx, funnelType, undefined, undefined, track);
     const health = funnelHealthService.evaluatePackage(pkg);
     pkg.healthScore = health.score;
     pkg.nextBestAction = funnelHealthService.getPackageAdvisor(health).nextAction;
@@ -114,16 +123,34 @@ export const funnelBuilderService = {
       config: pkg as unknown as Record<string, unknown>,
     });
 
-    await this.savePackage(userId, pkg, user.metadata);
+    await this.savePackage(userId, pkg, user.metadata, track);
 
     return pkg;
   },
 
-  async get(userId: string): Promise<FunnelPackage | null> {
+  async get(userId: string, track?: FunnelTrack): Promise<FunnelPackage | null> {
+    const portfolio = await this.getPortfolio(userId);
+    if (track) return portfolio[track];
+    return portfolio[portfolio.activeTrack] ?? portfolio.retail ?? portfolio.recruitment;
+  },
+
+  async getPortfolio(userId: string): Promise<FunnelPortfolio> {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
     const meta = (user?.metadata as Record<string, unknown>) ?? {};
-    if (isFunnelPackage(meta.funnel_builder_2)) {
-      return meta.funnel_builder_2;
+    const activeTrack = isFunnelTrack(meta.funnel_builder_active_track) ? meta.funnel_builder_active_track : 'retail';
+    const portfolio = emptyPortfolio(activeTrack);
+    const storedTracks = (meta.funnel_builder_tracks && typeof meta.funnel_builder_tracks === 'object')
+      ? meta.funnel_builder_tracks as Record<string, unknown>
+      : {};
+
+    for (const item of TRACKS) {
+      if (isFunnelPackage(storedTracks[item])) {
+        portfolio[item] = storedTracks[item];
+      }
+    }
+
+    if (!portfolio.retail && isFunnelPackage(meta.funnel_builder_2)) {
+      portfolio.retail = { ...meta.funnel_builder_2, track: meta.funnel_builder_2.track ?? 'retail' };
     }
 
     const funnels = await prisma.funnel.findMany({
@@ -135,15 +162,16 @@ export const funnelBuilderService = {
 
     for (const funnel of funnels) {
       if (isFunnelPackage(funnel.config)) {
-        return funnel.config;
+        const pkgTrack = isFunnelTrack(funnel.config.track) ? funnel.config.track : 'retail';
+        if (!portfolio[pkgTrack]) portfolio[pkgTrack] = funnel.config;
       }
     }
 
-    return null;
+    return portfolio;
   },
 
-  async publishLandingPage(user: AuthUser): Promise<FunnelPackage> {
-    const pkg = await this.get(user.id);
+  async publishLandingPage(user: AuthUser, track: FunnelTrack = 'retail'): Promise<FunnelPackage> {
+    const pkg = await this.get(user.id, track);
     if (!pkg) throw new Error('Funnel package not generated');
 
     let funnel = pkg.landingPage.funnelId
@@ -184,20 +212,29 @@ export const funnelBuilderService = {
       updatedAt: new Date().toISOString(),
     };
 
-    await this.savePackage(user.id, nextPkg);
+    await this.savePackage(user.id, nextPkg, undefined, track);
     return nextPkg;
   },
 
-  async savePackage(userId: string, pkg: FunnelPackage, existingMetadata?: unknown) {
+  async savePackage(userId: string, pkg: FunnelPackage, existingMetadata?: unknown, track: FunnelTrack = pkg.track ?? 'retail') {
     const meta = existingMetadata
       ? (existingMetadata as Record<string, unknown>)
       : ((await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } }))?.metadata as Record<string, unknown>) ?? {};
+    const storedTracks = (meta.funnel_builder_tracks && typeof meta.funnel_builder_tracks === 'object')
+      ? meta.funnel_builder_tracks as Record<string, unknown>
+      : {};
+    const nextPkg = { ...pkg, track };
     await prisma.user.update({
       where: { id: userId },
       data: {
         metadata: {
           ...meta,
-          funnel_builder_2: pkg,
+          funnel_builder_2: nextPkg,
+          funnel_builder_active_track: track,
+          funnel_builder_tracks: {
+            ...storedTracks,
+            [track]: nextPkg,
+          },
         } as unknown as Prisma.InputJsonValue,
       },
     });

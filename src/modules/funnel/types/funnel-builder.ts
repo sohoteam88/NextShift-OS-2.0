@@ -1,13 +1,20 @@
 export type FunnelBuilderType = 'lead_magnet' | 'webinar' | 'whatsapp' | 'consultation' | 'challenge';
 export type FunnelStatus = 'draft' | 'ready' | 'launched' | 'optimizing';
+export type FunnelTrack = 'retail' | 'recruitment';
 
 export interface FunnelPackage {
-  id: string; funnelType: FunnelBuilderType; title: string;
+  id: string; funnelType: FunnelBuilderType; track?: FunnelTrack; title: string;
   landingPage: LandingPage; thankYouPage: ThankYouPage;
   whatsappFlow: WhatsAppFlow; emailSequence: EmailMessage[];
   adAngles: AdAngle[]; launchPlan: LaunchDay[];
   healthScore: number; nextBestAction: string;
   status: FunnelStatus; createdAt: string; updatedAt: string;
+}
+
+export interface FunnelPortfolio {
+  retail: FunnelPackage | null;
+  recruitment: FunnelPackage | null;
+  activeTrack: FunnelTrack;
 }
 
 export interface LandingPage {

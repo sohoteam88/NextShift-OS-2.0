@@ -5,5 +5,5 @@ import { funnelBuilderService } from '@/modules/funnel/services/funnel-builder-s
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  return NextResponse.json({ data: await funnelBuilderService.get(user.id) });
+  return NextResponse.json({ data: await funnelBuilderService.getPortfolio(user.id) });
 });

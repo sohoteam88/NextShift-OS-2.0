@@ -4,7 +4,7 @@
 // ============================================================
 
 import type { BrandContext, ContentPillar } from '@/modules/brand-dna/types';
-import type { Platform, ContentFormat, FunnelStage, GeneratedPost, ContentCalendarItem } from './types';
+import type { Platform, ContentFormat, FunnelStage, GeneratedPost, ContentCalendarItem, ContentTrack } from './types';
 
 // ---- Pillars ----
 export function generateContentPillars(ctx: BrandContext): ContentPillar[] {
@@ -32,17 +32,26 @@ export function generateCalendar(
   ctx: BrandContext,
   pillars: ContentPillar[],
   days: 30 | 90 | 180,
+  track: ContentTrack = 'retail',
 ): ContentCalendarItem[] {
   const items: ContentCalendarItem[] = [];
   const startDate = new Date();
 
-  const hooks = [
-    `你知道${ctx.audience || '很多人'}最大的困扰是什么吗？`,
-    `我花了很长时间才明白这个道理...`,
-    `${ctx.personalName || '我'}的故事，从一次失败开始。`,
-    `如果你也在${ctx.audience || '这个领域'}，这篇文章是写给你的。`,
-    `客户问我最多的问题之一是...`,
-  ];
+  const hooks = track === 'retail'
+    ? [
+      `你知道${ctx.audience || '很多人'}最大的困扰是什么吗？`,
+      '如果你想先了解适合自己的方案，先看这个。',
+      `${ctx.personalName || '我'}如何帮客户先判断问题，再给建议。`,
+      `客户问我最多的问题之一是...`,
+      '先别急着购买，先确认你真正需要什么。',
+    ]
+    : [
+      '想多一份收入，但不知道从哪里开始？',
+      '副业不是乱做，先看你适不适合这条路。',
+      `${ctx.personalName || '我'}为什么会认真看待团队复制系统。`,
+      '新手最怕没人带，所以系统比热情更重要。',
+      '如果你想加入团队，先问自己这3个问题。',
+    ];
 
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
@@ -55,13 +64,16 @@ export function generateCalendar(
 
     items.push({
       date: date.toISOString().split('T')[0],
+      track,
       pillar: pillar.name,
       pillarEmoji: pillar.emoji,
-      title: `${pillar.name}: ${hook.slice(0, 30)}...`,
+      title: `${track === 'retail' ? '零售' : '招募'}: ${hook.slice(0, 30)}...`,
       hook,
       format,
       platform,
-      cta: i % 3 === 0 ? '💬 你怎么看？评论区告诉我' : '🔗 想了解更多？私信我',
+      cta: track === 'retail'
+        ? (i % 3 === 0 ? '私信我领取客户建议' : '点击领取适合你的方案')
+        : (i % 3 === 0 ? '私信我了解团队机会' : '留言“机会”领取说明'),
       funnelStage,
     });
   }

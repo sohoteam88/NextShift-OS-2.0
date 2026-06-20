@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Calendar, CheckCircle2, Clock, FileText, Lightbulb, Sparkles, Target, Zap, TrendingUp } from 'lucide-react';
 import { useDashboardMission } from '@/modules/dashboard/hooks/useDashboardMission';
 import { usePublishingCenter } from '@/modules/content-publishing/hooks/usePublishingCenter';
+import type { ContentCalendar, ContentTrack } from '@/modules/content-engine/types';
 
 const CONTENT_MIX = [
   { type: '教育', ratio: '40%', reason: '让受众先理解问题和方法' },
@@ -15,17 +16,40 @@ const CONTENT_MIX = [
   { type: '社群', ratio: '10%', reason: '制造互动和持续触达' },
 ];
 
+const CONTENT_TRACKS: { id: ContentTrack; title: string; description: string; cta: string }[] = [
+  {
+    id: 'retail',
+    title: '零售客户文案',
+    description: '教育客户、建立产品/服务信任，并引导领取方案或咨询。',
+    cta: '生成零售文案',
+  },
+  {
+    id: 'recruitment',
+    title: '招募伙伴文案',
+    description: '教育机会、讲个人转变故事，并引导了解团队或副业路径。',
+    cta: '生成招募文案',
+  },
+];
+
 export function ContentCommandCenter() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { mission, nextAction, isLoading } = useDashboardMission();
   const publishing = usePublishingCenter();
+  const contentQuery = useQuery({
+    queryKey: ['content-engine'],
+    queryFn: async () => {
+      const response = await fetch('/api/v1/content-engine');
+      if (!response.ok) throw new Error('Failed');
+      return response.json() as Promise<{ data: { trackCalendars?: Record<ContentTrack, ContentCalendar | null> } }>;
+    },
+  });
   const generateCalendar = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (track: ContentTrack) => {
       const response = await fetch('/api/v1/content-engine/calendar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ days: 30 }),
+        body: JSON.stringify({ days: 30, track }),
       });
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as { error?: { message?: string }; message?: string };
@@ -43,6 +67,7 @@ export function ContentCommandCenter() {
   const hasQueuedContent = publishing.queue.length > 0;
   const hasPublishedContent = publishing.stats.published > 0;
   const nextMissionLabel = isLoading ? '读取当前 Journey...' : nextAction.title;
+  const trackCalendars = contentQuery.data?.data.trackCalendars ?? { retail: null, recruitment: null };
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
@@ -87,7 +112,7 @@ export function ContentCommandCenter() {
             <p className="text-xs text-[var(--color-text-muted)]">当前 Journey：{nextMissionLabel}</p>
             <p className="text-xs text-[var(--color-text-muted)]">任务进度：{completedTasks}/{totalTasks}</p>
             <button
-              onClick={() => generateCalendar.mutate()}
+              onClick={() => generateCalendar.mutate('retail')}
               disabled={generateCalendar.isPending}
               className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
             >
@@ -100,6 +125,43 @@ export function ContentCommandCenter() {
               <p className="text-xs font-medium text-red-600">{(generateCalendar.error as Error).message}</p>
             ) : null}
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+        <div className="mb-4">
+          <h2 className="text-base font-semibold text-[var(--color-text)]">双漏斗内容计划</h2>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">内容引擎会跟着漏斗分成两套文案，不再用同一批内容同时打客户和招募对象。</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {CONTENT_TRACKS.map((track) => {
+            const calendar = trackCalendars[track.id];
+            return (
+              <div key={track.id} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4">
+                <h3 className="text-sm font-semibold text-[var(--color-text)]">{track.title}</h3>
+                <p className="mt-1 min-h-[40px] text-xs leading-5 text-[var(--color-text-muted)]">{track.description}</p>
+                {calendar ? (
+                  <div className="mt-3 rounded-[var(--radius-md)] bg-emerald-50 p-3 text-xs text-emerald-700">
+                    已生成 {calendar.days} 天 · {calendar.items.length} 条内容
+                    <div className="mt-1 text-emerald-900">{calendar.items[0]?.title}</div>
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3 text-xs text-[var(--color-text-muted)]">
+                    尚未生成这条漏斗的文案。
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => generateCalendar.mutate(track.id)}
+                  disabled={generateCalendar.isPending}
+                  className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {generateCalendar.isPending ? '正在生成...' : track.cta}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -116,7 +178,7 @@ export function ContentCommandCenter() {
               <div
                 key={rec.href}
                 className="flex cursor-pointer items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 hover:bg-[var(--color-surface)]"
-                onClick={() => rec.href === 'generate-calendar' ? generateCalendar.mutate() : router.push(rec.href)}
+                onClick={() => rec.href === 'generate-calendar' ? generateCalendar.mutate('retail') : router.push(rec.href)}
               >
                 <div>
                   <p className="text-sm font-medium text-[var(--color-text)]">{rec.title}</p>
@@ -146,7 +208,7 @@ export function ContentCommandCenter() {
           </div>
           <button
             type="button"
-            onClick={() => generateCalendar.mutate()}
+            onClick={() => generateCalendar.mutate('retail')}
             disabled={generateCalendar.isPending}
             className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary)] disabled:opacity-60"
           >
@@ -223,7 +285,7 @@ export function ContentCommandCenter() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => generateCalendar.mutate()}
+            onClick={() => generateCalendar.mutate('retail')}
             disabled={generateCalendar.isPending}
             className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
           >

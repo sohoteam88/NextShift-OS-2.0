@@ -5,12 +5,13 @@ import { contentEngineService } from '@/modules/content-engine/contentEngineServ
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  const [pillars, lastPost, calendar, publishedCount] = await Promise.all([
+  const [pillars, lastPost, calendar, trackCalendars, publishedCount] = await Promise.all([
     contentEngineService.getPillars(user.id),
     contentEngineService.getLastPost(user.id),
     contentEngineService.getCalendar(user.id),
+    contentEngineService.getTrackCalendars(user.id),
     contentEngineService.getPublishedCount(user.id),
   ]);
 
-  return NextResponse.json({ data: { pillars, lastPost, calendar, publishedCount } });
+  return NextResponse.json({ data: { pillars, lastPost, calendar, trackCalendars, publishedCount } });
 });
