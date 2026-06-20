@@ -50,12 +50,14 @@ function useExecute() {
 }
 
 function assignmentLabel(assignment: RuntimeAssignment) {
-  if (assignment.objective.toLowerCase().includes('lead magnet') || assignment.objective.includes('引流')) return '创建引流资源';
-  if (assignment.objective.toLowerCase().includes('landing')) return '创建领取页';
-  if (assignment.objective.toLowerCase().includes('content') || assignment.objective.includes('内容')) return '生成内容计划';
-  if (assignment.objective.toLowerCase().includes('funnel') || assignment.objective.includes('漏斗')) return '创建漏斗页面';
-  if (assignment.objective.toLowerCase().includes('audience') || assignment.objective.includes('受众')) return '分析目标受众';
-  if (assignment.objective.toLowerCase().includes('brand')) return '完善品牌资料';
+  const normalized = assignment.objective.toLowerCase();
+  if (normalized.includes('business state') || normalized.includes('canonical')) return '执行当前业务建议';
+  if (normalized.includes('lead magnet') || assignment.objective.includes('引流')) return '创建引流资源';
+  if (normalized.includes('landing')) return '创建领取页';
+  if (normalized.includes('content') || assignment.objective.includes('内容')) return '生成内容计划';
+  if (normalized.includes('funnel') || assignment.objective.includes('漏斗')) return '创建漏斗页面';
+  if (normalized.includes('audience') || assignment.objective.includes('受众')) return '分析目标受众';
+  if (normalized.includes('brand')) return '完善品牌资料';
   return assignment.objective;
 }
 
@@ -73,6 +75,15 @@ function objectiveDisplayText(objective: string) {
   if (normalized.includes('funnel')) return '完善从流量到客户跟进的转化路径。';
   if (normalized.includes('audience')) return '梳理目标受众，让下一步营销更聚焦。';
   return objective;
+}
+
+function reportDisplayText(value: string) {
+  return value
+    .replace(/WhatsApp AI/g, '客户跟进中心')
+    .replace(/Hot Lead/g, '高意向客户')
+    .replace(/\bLead\b/g, '潜在客户')
+    .replace(/AI助理/g, 'AI 助理')
+    .replace(/引流磁铁/g, '引流资源');
 }
 
 function basisLabel(basis: RuntimeAssignment['basis']) {
@@ -257,8 +268,8 @@ export function WorkforceDashboard() {
             <div key={i} className="mb-3 p-4 bg-gray-50 rounded-xl">
               <div className="flex items-center justify-between mb-2"><span className="text-sm font-bold">{AGENT_REGISTRY[r.agent]?.emoji} {AGENT_REGISTRY[r.agent]?.name}</span><span className="text-xs text-gray-400">{new Date(r.executedAt).toLocaleString()}</span></div>
               <p className="text-xs text-gray-500 mb-2">目标: {objectiveDisplayText(r.objective)}</p>
-              {r.findings.map((f, j) => <p key={j} className="text-xs text-gray-700">• {f}</p>)}
-              {r.recommendations.length > 0 && <p className="text-xs text-purple-600 mt-1">💡 {r.recommendations[0]}</p>}
+              {r.findings.map((f, j) => <p key={j} className="text-xs text-gray-700">• {reportDisplayText(f)}</p>)}
+              {r.recommendations.length > 0 && <p className="text-xs text-purple-600 mt-1">💡 {reportDisplayText(r.recommendations[0])}</p>}
               <div className="flex items-center justify-between mt-2"><span className="text-xs text-gray-400">优先级: {priorityLabel(r.confidenceScore)}</span></div>
             </div>
           ))}
