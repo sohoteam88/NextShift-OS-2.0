@@ -13,6 +13,8 @@ const missionAuthority = {
     title: 'Creator Journey',
     reason: 'Selected from interview authority.',
   },
+  businessStage: 'LEAD_MAGNET' as const,
+  bottleneck: 'NO_LEAD_MAGNET' as const,
   currentMission: {
     id: 'MISSION_005',
     title: '创建第一个引流磁铁',
@@ -26,6 +28,29 @@ const missionAuthority = {
     route: '/lead-magnet',
   },
   nextMission: null,
+  priorityAction: {
+    missionType: 'LEAD_MAGNET' as const,
+    title: '创建第一个引流磁铁',
+    route: '/lead-magnet',
+    priority: 'High' as const,
+  },
+  explainability: {
+    completed: ['品牌访谈', '品牌 DNA', '内容'],
+    currentGap: 'NO_LEAD_MAGNET' as const,
+    reasoning: 'Completed: 品牌访谈, 品牌 DNA, 内容. Current gap: NO_LEAD_MAGNET. Because this is the first missing requirement preventing progress, the highest leverage action is "创建第一个引流磁铁". Why not something else: the AI COO fixes the bottleneck before optimizing, scaling, or automating.',
+    expectedOutcome: 'Capture the first qualified lead.',
+  },
+  dashboardCommandCenter: {
+    currentStage: 'LEAD_MAGNET' as const,
+    missionTitle: '创建第一个引流磁铁',
+    missionDescription: 'Create a lead magnet to capture qualified leads.',
+    reasoning: 'Completed: 品牌访谈, 品牌 DNA, 内容. Current gap: NO_LEAD_MAGNET. Because this is the first missing requirement preventing progress, the highest leverage action is "创建第一个引流磁铁". Why not something else: the AI COO fixes the bottleneck before optimizing, scaling, or automating.',
+    expectedOutcome: 'Capture the first qualified lead.',
+    estimatedTime: '20 分钟',
+    route: '/lead-magnet',
+    priority: 'High' as const,
+  },
+  lifecycle: 'ACTIVE' as const,
   progress: {
     completionPercentage: 57,
     completedMissions: 4,
@@ -192,7 +217,7 @@ describe('AI-003 AI COO decision engine', () => {
     });
   });
 
-  it('returns one primary decision and at most three supporting actions', () => {
+  it('returns exactly one primary decision with no supporting actions', () => {
     const risks: AICOODecisionSignal[] = [
       {
         code: 'traffic_missing',
@@ -236,7 +261,8 @@ describe('AI-003 AI COO decision engine', () => {
       title: '创建第一个引流磁铁',
       route: '/lead-magnet',
     });
-    expect(decision.supportingActions.length).toBeLessThanOrEqual(3);
+    expect(decision.supportingActions).toHaveLength(0);
     expect(decision.decisionReason).toContain('Why not something else');
+    expect(decision.decisionReason).toContain('one user gets one mission');
   });
 });

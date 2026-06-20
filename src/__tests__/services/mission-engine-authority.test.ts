@@ -55,6 +55,32 @@ function authorityFor(completedChecks: string[]) {
 }
 
 describe('UX-002 mission engine authority', () => {
+  it('returns Start AI Interview as the only valid mission when interview is missing', () => {
+    const authority = authorityFor(['registered', 'approved']);
+
+    expect(authority.currentMission).toMatchObject({
+      id: 'MISSION_AI_INTERVIEW',
+      title: 'Start AI Interview',
+      route: '/brand-builder/step/interview',
+      priority: 100,
+    });
+    expect(authority.nextMission).toBeNull();
+    expect(authority.businessStage).toBe('BRAND_FOUNDATION');
+    expect(authority.bottleneck).toBe('NO_BRAND');
+    expect(authority.lifecycle).toBe('ACTIVE');
+    expect(authority.priorityAction).toMatchObject({
+      missionType: 'BRAND',
+      title: 'Start AI Interview',
+      priority: 'Critical',
+    });
+    expect(authority.dashboardCommandCenter).toMatchObject({
+      missionTitle: 'Start AI Interview',
+      route: '/brand-builder/step/interview',
+      priority: 'Critical',
+    });
+    expect(authority.explainability.reasoning).toContain('Why not something else');
+  });
+
   it('selects exactly one active mission from completed checks', () => {
     const authority = authorityFor([
       'registered',
@@ -81,6 +107,14 @@ describe('UX-002 mission engine authority', () => {
     });
     expect(authority.currentJourney.type).toBe('retail');
     expect(authority.progress.progressPath.filter((item) => item.status === 'current')).toHaveLength(1);
+    expect(authority.businessStage).toBe('LEAD_MAGNET');
+    expect(authority.bottleneck).toBe('NO_LEAD_MAGNET');
+    expect(authority.priorityAction).toMatchObject({
+      missionType: 'LEAD_MAGNET',
+      title: '引流磁铁',
+      priority: 'High',
+    });
+    expect(authority.dashboardCommandCenter.missionTitle).toBe('引流磁铁');
   });
 
   it('returns launch as completed when the full sequence is done', () => {

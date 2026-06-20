@@ -18,6 +18,7 @@ import { referralEngine } from '@/modules/referral/services/referral-engine';
 import type { ReferralProjection } from '@/modules/referral/contracts/ReferralProjection';
 import { getAnalyticsProjection } from '@/modules/analytics/adapters/AnalyticsProjectionAdapter';
 import { missionEngineAuthorityService } from '@/modules/mission-engine/services/MissionEngineAuthorityService';
+import type { AICommandCenter, MissionBottleneck, MissionBusinessStage, MissionLifecycleStatus } from '@/modules/mission-engine/contracts/MissionAuthority';
 import { businessContextMemoryService } from '@/modules/business-context-memory/services/business-context-memory-service';
 import type { ExecutionPattern } from '@/modules/business-context-memory/contracts/BusinessContextMemory';
 import type { AICOODecisionPriority, AICOODecisionConfidence } from '@/modules/ai-coo/contracts/AICOODecision';
@@ -46,6 +47,13 @@ export type DashboardProjection = {
     estimatedTime: string;
     route: string;
     ctaLabel: string;
+  };
+  aiCommandCenter: AICommandCenter;
+  missionEngine: {
+    businessStage: MissionBusinessStage;
+    bottleneck: MissionBottleneck;
+    lifecycle: MissionLifecycleStatus;
+    reasoning: string;
   };
   currentMission: {
     id: string;
@@ -161,6 +169,19 @@ function quickAccessFor(input: { progress: number; readiness: number; growth: nu
   ];
 }
 
+function commandCenterFor(missionAuthority: Awaited<ReturnType<typeof missionEngineAuthorityService.getCurrentMission>>): AICommandCenter {
+  return missionAuthority.dashboardCommandCenter ?? {
+    currentStage: missionAuthority.businessStage ?? 'BRAND_FOUNDATION',
+    missionTitle: missionAuthority.currentMission.title,
+    missionDescription: missionAuthority.currentMission.description,
+    reasoning: missionAuthority.explainability?.reasoning ?? missionAuthority.currentMission.description,
+    expectedOutcome: missionAuthority.currentMission.expectedOutcome,
+    estimatedTime: missionAuthority.estimatedCompletion.label,
+    route: missionAuthority.currentMission.route,
+    priority: missionAuthority.priorityAction?.priority ?? (missionAuthority.currentMission.priority >= 90 ? 'Critical' : missionAuthority.currentMission.priority >= 50 ? 'High' : 'Normal'),
+  };
+}
+
 export async function getDashboardProjection(userId: string, tenantId?: string): Promise<DashboardProjection> {
   const [businessState, journeyState, missionAuthority, cooPlan, growthLoopState, analyticsProjection, businessContext, executions, workforce, growthProjection, optimization, activation, retention, value, expansion, referral] = await Promise.all([
     businessStateService.getBusinessState(userId),
@@ -187,6 +208,7 @@ export async function getDashboardProjection(userId: string, tenantId?: string):
   const leads = Math.max(0, Math.round(growthLoopState.acquisition?.leadCount ?? 0));
   const currentMission = missionAuthority.currentMission;
   const aiDecision = cooPlan.decision;
+  const aiCommandCenter = commandCenterFor(missionAuthority);
 
   const projection: DashboardProjection = {
     versions: {
@@ -197,12 +219,19 @@ export async function getDashboardProjection(userId: string, tenantId?: string):
     },
     currentJourney: missionAuthority.currentJourney,
     missionControl: {
-      title: currentMission.title,
-      whyItMatters: currentMission.description,
-      expectedOutcome: currentMission.expectedOutcome,
-      estimatedTime: missionAuthority.estimatedCompletion.label,
-      route: currentMission.route,
+      title: aiCommandCenter.missionTitle,
+      whyItMatters: aiCommandCenter.missionDescription,
+      expectedOutcome: aiCommandCenter.expectedOutcome,
+      estimatedTime: aiCommandCenter.estimatedTime,
+      route: aiCommandCenter.route,
       ctaLabel: '继续任务',
+    },
+    aiCommandCenter,
+    missionEngine: {
+      businessStage: missionAuthority.businessStage ?? aiCommandCenter.currentStage,
+      bottleneck: missionAuthority.bottleneck ?? 'NO_BRAND',
+      lifecycle: missionAuthority.lifecycle ?? 'ACTIVE',
+      reasoning: missionAuthority.explainability?.reasoning ?? aiCommandCenter.reasoning,
     },
     currentMission: {
       id: currentMission.id,

@@ -11,12 +11,6 @@ function routeOrFallback(route?: string) {
   return route && route.length > 0 ? route : '/journey';
 }
 
-function priorityLabel(priority: 'low' | 'medium' | 'high' | 'critical'): DashboardPriorityLevel {
-  if (priority === 'critical') return 'Critical';
-  if (priority === 'high') return 'High';
-  return 'Normal';
-}
-
 function DashboardHomeSkeleton() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
@@ -72,10 +66,8 @@ export function DashboardHome() {
     return <MissionEngineFailure onRetry={() => void projection.refetch()} />;
   }
 
-  const currentGap = data.aiDecision.primaryRisk?.title
-    ?? data.growthProjection.primaryBottleneck?.title
-    ?? '当前没有明显阻塞点';
-  const executeRoute = routeOrFallback(data.aiDecision.nextBestAction.route ?? data.missionControl.route);
+  const currentGap = data.missionEngine.bottleneck;
+  const executeRoute = routeOrFallback(data.aiCommandCenter.route);
   const completedItems = data.progressPath
     .filter((step) => step.status === 'completed')
     .map((step) => step.label)
@@ -86,12 +78,12 @@ export function DashboardHome() {
       <AICommandCard
         completedItems={completedItems}
         currentGap={currentGap}
-        todayMission={data.missionControl.title}
-        missionReason={data.missionControl.whyItMatters}
-        decisionReason={data.aiDecision.decisionReason}
-        priorityLevel={priorityLabel(data.aiDecision.priority)}
-        estimatedTime={data.missionControl.estimatedTime}
-        expectedOutcome={data.missionControl.expectedOutcome}
+        todayMission={data.aiCommandCenter.missionTitle}
+        missionReason={data.aiCommandCenter.missionDescription}
+        decisionReason={data.aiCommandCenter.reasoning}
+        priorityLevel={data.aiCommandCenter.priority as DashboardPriorityLevel}
+        estimatedTime={data.aiCommandCenter.estimatedTime}
+        expectedOutcome={data.aiCommandCenter.expectedOutcome}
         executeRoute={executeRoute}
       />
       <div className="grid gap-5 lg:grid-cols-2">
