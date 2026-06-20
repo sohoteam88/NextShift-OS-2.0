@@ -55,7 +55,7 @@ function routeForDomain(domain: COORecommendationDomain): string {
     case 'traffic':
       return '/traffic-engine';
     case 'funnel':
-      return '/funnel-builder';
+      return '/funnel';
     case 'crm':
       return '/crm';
     case 'sales':

@@ -177,8 +177,8 @@ function QuickWorkflow() {
   const t = useTranslations('aiCoach');
   const actions = [
     { label: t('addLead'), href: '/crm', icon: Users, helper: t('addLeadHelp') },
-    { label: t('createContent'), href: '/ai', icon: FileText, helper: t('createContentHelp') },
-    { label: t('buildFunnel'), href: '/funnel-builder', icon: LayoutTemplate, helper: t('buildFunnelHelp') },
+    { label: t('createContent'), href: '/content-engine', icon: FileText, helper: t('createContentHelp') },
+    { label: t('buildFunnel'), href: '/funnel', icon: LayoutTemplate, helper: t('buildFunnelHelp') },
     { label: t('planContent'), href: '/ai/content-plan', icon: Brain, helper: t('planContentHelp') },
   ];
 

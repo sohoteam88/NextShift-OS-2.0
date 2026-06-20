@@ -20,8 +20,8 @@ export function WebinarDashboard() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-12">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">Webinar Center</h1><p className="text-xs text-gray-500">创建教育型讲座，把兴趣变成信任和成交。</p></div></div>
-        {pkg && <div className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"><Trophy className="inline h-3 w-3 mr-1" />{pkg.qualityScore}%</div>}
+        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">线上讲座中心</h1><p className="text-xs text-gray-500">创建教育型讲座，把兴趣变成信任和成交。</p></div></div>
+        {pkg && <div className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"><Trophy className="inline h-3 w-3 mr-1" />已生成</div>}
       </div>
 
       {!pkg && (
@@ -35,7 +35,7 @@ export function WebinarDashboard() {
         <>
           <Section title="🎯 策略"><p className="text-sm"><strong>受众:</strong> {pkg.strategy.targetAudience}</p><p className="text-sm"><strong>目标:</strong> {pkg.strategy.desiredOutcome}</p><p className="text-sm"><strong>转化目标:</strong> {pkg.strategy.conversionObjective}</p></Section>
           <Section title="📝 主题"><p className="text-lg font-bold">{pkg.topic.title}</p><p className="text-sm text-blue-600">{pkg.topic.promise}</p><p className="text-xs text-gray-500">{pkg.topic.subtitle}</p></Section>
-          <Section title="📋 大纲 ({pkg.outline.recommendedDuration})">
+          <Section title={`📋 大纲 (${pkg.outline.recommendedDuration})`}>
             {['opening','story','problem','opportunity','framework','caseStudy','offer','qa','cta'].map(k => <p key={k} className="text-sm mb-1"><strong>{k}:</strong> {(pkg.outline as any)[k]}</p>)}
           </Section>
           <Section title="🎙️ Loom 脚本"><pre className="text-xs whitespace-pre-wrap bg-gray-50 rounded p-3 max-h-60 overflow-y-auto">{pkg.loomScript}</pre></Section>

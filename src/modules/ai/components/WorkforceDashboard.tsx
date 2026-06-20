@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Brain, ChevronDown, ChevronUp, Loader2, Play, Sparkles, Users } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Brain, ChevronDown, ChevronUp, Loader2, Play, Sparkles, Users } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { AGENT_REGISTRY } from '../services/agent-registry';
 import type { RuntimeAssignment } from '@/modules/agent-runtime/contracts/RuntimeAssignment';
@@ -81,6 +81,8 @@ export function WorkforceDashboard() {
   const [overrideReason, setOverrideReason] = React.useState('');
   const reports = d?.reports ?? [];
   const assignments = d?.pendingAssignments ?? [];
+  const availableAgents = d?.available ?? [];
+  const hasWorkforce = availableAgents.length > 0 || assignments.length > 0 || reports.length > 0;
 
   if (q.isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-purple-600" /></div>;
 
@@ -94,7 +96,41 @@ export function WorkforceDashboard() {
         </div>
       </div>
 
-      <section className="rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white p-6">
+      {q.isError ? (
+        <section className="rounded-xl border border-red-200 bg-red-50 p-5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+            <div>
+              <h2 className="text-sm font-bold text-red-900">AI 工作团队暂时不可用</h2>
+              <p className="mt-1 text-sm leading-6 text-red-800">系统暂时无法读取你的 AI agent 状态。你可以先回到 Journey 继续当前任务，或稍后再试。</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button onClick={() => router.push('/journey')} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700">打开 Journey</button>
+                <button onClick={() => q.refetch()} className="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100">重试</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {!q.isError && !hasWorkforce ? (
+        <section className="rounded-xl border border-dashed border-purple-200 bg-purple-50 p-6">
+          <div className="flex items-start gap-3">
+            <Users className="mt-0.5 h-5 w-5 shrink-0 text-purple-600" />
+            <div>
+              <h2 className="text-base font-bold text-purple-950">AI 工作团队尚未激活</h2>
+              <p className="mt-1 text-sm leading-6 text-purple-800">
+                先完成内容、引流磁铁和漏斗相关任务。等系统有明确任务可以交给 agent 执行后，工作团队会自动出现在这里。
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button onClick={() => router.push('/journey')} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-700">打开 Journey</button>
+                <button onClick={() => router.push('/content-engine')} className="rounded-lg border border-purple-200 bg-white px-4 py-2 text-sm font-bold text-purple-700 hover:bg-purple-100">继续内容任务</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {hasWorkforce ? <section className="rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white p-6">
         <div className="mb-4 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-purple-600" />
           <h2 className="text-lg font-bold">Today&apos;s Assignments</h2>
@@ -133,9 +169,9 @@ export function WorkforceDashboard() {
             </div>
           )}
         </div>
-      </section>
+      </section> : null}
 
-      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+      {hasWorkforce ? <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
         <button
           type="button"
           onClick={() => setAdvancedOpen((value) => !value)}
@@ -169,12 +205,12 @@ export function WorkforceDashboard() {
             </button>
           </div>
         ) : null}
-      </section>
+      </section> : null}
 
-      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+      {hasWorkforce ? <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
         <h3 className="text-sm font-bold mb-3">👥 你的团队</h3>
         <div className="grid gap-2 sm:grid-cols-2">
-          {(d?.available ?? []).map(id => {
+          {availableAgents.map(id => {
             const agent = AGENT_REGISTRY[id]; if (!agent) return null;
             const isRec = d?.recommended?.includes(id);
             return (
@@ -189,7 +225,7 @@ export function WorkforceDashboard() {
             );
           })}
         </div>
-      </section>
+      </section> : null}
 
       {reports.length > 0 && (
         <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">

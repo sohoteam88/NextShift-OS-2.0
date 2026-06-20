@@ -137,8 +137,8 @@ export const funnelHealthService = {
     ctaConsistency: number;
     performance: number | null;
   }): FunnelHealthScore['next_best_action'] {
-    if (scores.realMaterialUsed < 50) return { action: '添加真实学员案例', reason: '没有真实案例，内容会显得空泛', route: '/funnel-builder' };
-    if (scores.diversity < 80) return { action: '重新生成重复文案', reason: '部分 hooks、异议或跟进信息太相似', route: '/funnel-builder' };
+    if (scores.realMaterialUsed < 50) return { action: '添加真实学员案例', reason: '没有真实案例，内容会显得空泛', route: '/funnel' };
+    if (scores.diversity < 80) return { action: '重新生成重复文案', reason: '部分 hooks、异议或跟进信息太相似', route: '/funnel' };
     if (scores.completeness < 100) return { action: '补充缺失的页面区块', reason: '落地页缺少关键转化区块', route: '/funnel' };
     if (scores.ctaConsistency < 100) return { action: '统一所有 CTA 的目标', reason: '不同区块的按钮指向不同地方，会让用户困惑', route: '/funnel' };
     if (scores.performance === null) return { action: '发布漏斗并开始获取流量', reason: '还没有数据，发布后才能优化', route: '/funnel' };

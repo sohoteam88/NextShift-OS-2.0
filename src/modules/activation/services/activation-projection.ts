@@ -15,7 +15,7 @@ const STEP_DEFINITIONS: Array<Omit<ActivationStep, 'status' | 'completedAt'>> = 
   { id: 'interview_started', label: '开始品牌访谈', route: '/brand-builder/step/interview', estimatedMinutes: 2 },
   { id: 'interview_completed', label: '完成品牌访谈', route: '/brand-builder/step/interview', estimatedMinutes: 8 },
   { id: 'brand_dna_generated', label: '生成品牌 DNA', route: '/brand-builder/profile', estimatedMinutes: 3 },
-  { id: 'first_content_generated', label: '生成第一篇内容', route: '/content-engine?mode=generator&generate=smart&platform=facebook', estimatedMinutes: 5 },
+  { id: 'first_content_generated', label: '生成第一篇内容', route: '/content-engine', estimatedMinutes: 5 },
   { id: 'first_lead_captured', label: '获得第一位潜在客户', route: '/lead-magnet', estimatedMinutes: 10 },
 ];
 
