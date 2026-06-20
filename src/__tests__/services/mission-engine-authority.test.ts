@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { BusinessState } from '@/modules/business-state/contracts/BusinessState';
+import type { BusinessStateResult } from '@/modules/business-state/contracts/BusinessStateResult';
 import type { InterviewAuthorityProjection } from '@/modules/interview-authority/contracts/InterviewAuthorityProjection';
 import { projectAdaptiveJourney } from '@/modules/journey-engine/journey-engine-service';
 import { resolveMissionAuthorityFromJourney } from '@/modules/mission-engine/services/MissionEngineAuthorityService';
@@ -18,6 +19,18 @@ function businessState(): BusinessState {
     },
     bottlenecks: [],
     opportunities: [],
+    stateResult: {
+      currentState: 'BRAND_FOUNDATION',
+      completedStates: [],
+      missingRequirements: ['AI Interview Completed'],
+      nextState: 'BRAND_POSITIONING',
+      readinessScore: 50,
+      explainability: {
+        completed: [],
+        missing: [{ id: 'interviewCompleted', label: 'AI Interview Completed', completed: false }],
+        reason: 'Business profile incomplete.',
+      },
+    },
   };
 }
 
@@ -52,6 +65,22 @@ function authorityFor(completedChecks: string[]) {
     interview: interview(),
     completedChecks,
   }));
+}
+
+function stateResult(overrides: Partial<BusinessStateResult> = {}): BusinessStateResult {
+  return {
+    currentState: 'FUNNEL',
+    completedStates: ['BRAND_FOUNDATION', 'BRAND_POSITIONING', 'CONTENT_SYSTEM', 'LEAD_MAGNET'],
+    missingRequirements: ['Landing Page Created'],
+    nextState: 'LEAD_GENERATION',
+    readinessScore: 72,
+    explainability: {
+      completed: ['BRAND_FOUNDATION', 'BRAND_POSITIONING', 'CONTENT_SYSTEM', 'LEAD_MAGNET'],
+      missing: [{ id: 'landingPageCreated', label: 'Landing Page Created', completed: false }],
+      reason: 'Lead conversion journey is incomplete.',
+    },
+    ...overrides,
+  };
 }
 
 describe('UX-002 mission engine authority', () => {
@@ -115,6 +144,27 @@ describe('UX-002 mission engine authority', () => {
       priority: 'High',
     });
     expect(authority.dashboardCommandCenter.missionTitle).toBe('引流磁铁');
+  });
+
+  it('uses resolved Business State for stage and bottleneck before mission projection', () => {
+    const journey = projectAdaptiveJourney({
+      businessState: businessState(),
+      interview: interview(),
+      completedChecks: [
+        'registered',
+        'approved',
+        'brand_discovery_completed',
+        'brand_dna_confirmed',
+        'first_content_generated',
+        'lead_magnet_created',
+      ],
+    });
+    const authority = resolveMissionAuthorityFromJourney(journey, stateResult());
+
+    expect(authority.businessStage).toBe('FUNNEL');
+    expect(authority.bottleneck).toBe('NO_FUNNEL');
+    expect(authority.explainability.currentGap).toBe('NO_FUNNEL');
+    expect(authority.explainability.reasoning).toContain('Business State resolved FUNNEL');
   });
 
   it('returns launch as completed when the full sequence is done', () => {

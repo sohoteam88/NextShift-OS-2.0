@@ -1,10 +1,13 @@
+import prisma from '@/lib/prisma';
 import { getInterviewAuthorityProjection } from '@/modules/interview-authority/services/interview-authority-service';
 import type { BusinessMode } from '@/modules/interview-authority/contracts/BusinessContextSnapshot';
 import type { InterviewAuthorityProjection } from '@/modules/interview-authority/contracts/InterviewAuthorityProjection';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
+import { extractCheckKeys } from '@/modules/mission/utils/completed-checks';
 import type { BusinessState } from '../contracts/BusinessState';
 import type { BusinessBottleneck } from '../contracts/BusinessBottleneck';
 import type { BusinessOpportunity } from '../contracts/BusinessOpportunity';
+import type { BusinessCapabilityState, BusinessStateResult } from '../contracts/BusinessStateResult';
 import type { ReadinessScore } from '../contracts/ReadinessScore';
 import type { BusinessStateAdapterResult } from './business-state-adapter-diagnostics';
 import { createReadinessScore } from './business-state-adapter-diagnostics';
@@ -13,6 +16,7 @@ import { adaptFunnelReadiness } from './FunnelReadinessAdapter';
 import { adaptMissionStage } from './MissionStageAdapter';
 import { adaptSocialReadiness } from './SocialReadinessAdapter';
 import { adaptTrafficReadiness } from './TrafficReadinessAdapter';
+import { resolveBusinessStateResult, type BusinessStateCapabilityFacts } from '../services/business-state-capability-engine';
 
 const SEVERITY_RANK: Record<BusinessBottleneck['severity'], number> = {
   high: 3,
@@ -69,19 +73,128 @@ function toFunnelBusinessMode(projection: InterviewAuthorityProjection): Busines
   return 'retail';
 }
 
+function hasAny(checks: Set<string>, values: string[]) {
+  return values.some((value) => checks.has(value));
+}
+
+function toCanonicalBottleneck(stateResult: BusinessStateResult): BusinessBottleneck {
+  const firstMissing = stateResult.missingRequirements[0] ?? 'Next capability';
+  const domainByState: Record<BusinessCapabilityState, BusinessBottleneck['domain']> = {
+    BRAND_FOUNDATION: 'brand',
+    BRAND_POSITIONING: 'brand',
+    CONTENT_SYSTEM: 'content',
+    LEAD_MAGNET: 'funnel',
+    FUNNEL: 'funnel',
+    LEAD_GENERATION: 'traffic',
+    SALES: 'sales',
+    TEAM_BUILDING: 'sales',
+  };
+
+  return {
+    source: 'BusinessStateCapabilityEngine',
+    scope: 'user',
+    confidence: 'derived',
+    fallback: 'none',
+    code: `capability_${stateResult.currentState.toLowerCase()}`,
+    title: `Complete ${stateResult.currentState.replaceAll('_', ' ').toLowerCase()}`,
+    description: stateResult.explainability.reason || `Missing requirement: ${firstMissing}.`,
+    severity: stateResult.currentState === 'BRAND_FOUNDATION' ? 'high' : 'medium',
+    domain: domainByState[stateResult.currentState],
+  };
+}
+
+async function readCapabilityFacts(
+  user: AuthUser,
+  interviewAuthority: InterviewAuthorityProjection,
+): Promise<BusinessStateCapabilityFacts> {
+  const [progress, contentCount, publishedFunnel, leadCount, customerCount] = await Promise.all([
+    prisma.userProgress.findUnique({
+      where: { userId: user.id },
+      select: { completedChecks: true },
+    }),
+    prisma.content.count({
+      where: { ownerId: user.id, tenantId: user.tenantId },
+    }),
+    prisma.funnel.findFirst({
+      where: {
+        ownerId: user.id,
+        tenantId: user.tenantId,
+        OR: [
+          { status: 'published' },
+          { publishedAt: { not: null } },
+          { conversions: { gt: 0 } },
+        ],
+      },
+      select: { id: true },
+    }),
+    prisma.lead.count({
+      where: { ownerId: user.id, tenantId: user.tenantId, deletedAt: null },
+    }),
+    prisma.customer.count({
+      where: { ownerId: user.id, tenantId: user.tenantId },
+    }),
+  ]);
+  const completedChecks = extractCheckKeys(progress?.completedChecks);
+  const checks = new Set(completedChecks);
+  const interviewCompleted = checks.has('brand_discovery_completed');
+  const brandPositioned = hasAny(checks, ['brand_dna_confirmed', 'positioning_completed']);
+  const contentCreated = hasAny(checks, ['first_content_generated', 'content_published']) || contentCount > 0;
+  const leadMagnetReady = checks.has('lead_magnet_created');
+  const funnelReady = Boolean(publishedFunnel) || hasAny(checks, ['funnel_published', 'lead_flow_tested']) || leadMagnetReady;
+  const trafficReady = hasAny(checks, ['traffic_campaign_launched', 'campaign_launched']);
+  const firstCustomer = checks.has('first_sale_completed') || customerCount > 0;
+
+  return {
+    completedChecks,
+    interviewCompleted,
+    businessContextCreated: interviewCompleted || interviewAuthority.fallback === 'none',
+    personalStoryCaptured: interviewCompleted || interviewAuthority.personalStoryVector.length > 0,
+    targetAudienceDefined: interviewAuthority.audienceStatus === 'defined' || interviewCompleted,
+    nicheSelected: brandPositioned,
+    audiencePainDefined: brandPositioned || interviewAuthority.audienceStatus === 'defined',
+    transformationDefined: brandPositioned,
+    offerDirectionDefined: brandPositioned || interviewAuthority.offerStatus === 'defined',
+    contentPillarsCreated: contentCreated || brandPositioned,
+    contentCalendarGenerated: contentCreated || checks.has('content_calendar_generated'),
+    minimumContentAssetsCreated: contentCreated,
+    contentEngineActivated: contentCreated,
+    leadMagnetCreated: leadMagnetReady,
+    leadMagnetPublished: leadMagnetReady,
+    leadMagnetCtaActive: leadMagnetReady,
+    landingPageCreated: funnelReady,
+    thankYouPageCreated: funnelReady,
+    ctaRoutingActive: funnelReady,
+    leadFlowTested: funnelReady,
+    leadSourceActive: funnelReady || leadCount > 0,
+    trafficSourceActive: trafficReady,
+    firstLeadGenerated: leadCount > 0,
+    leadExists: leadCount > 0,
+    offerExists: brandPositioned || interviewAuthority.offerStatus === 'defined',
+    salesProcessExists: hasAny(checks, ['crm_active', 'whatsapp_ai_configured', 'whatsapp_followup_configured']),
+    firstCustomerAcquired: firstCustomer,
+    revenueExists: firstCustomer || interviewAuthority.revenueStatus === 'started',
+    processDocumented: hasAny(checks, ['growth_mode_active', 'process_documented']),
+    delegationReady: hasAny(checks, ['growth_mode_active', 'delegation_ready']),
+    agentWorkforceActive: hasAny(checks, ['content_agent_activated', 'lead_magnet_agent_activated', 'funnel_agent_activated', 'agent_completed_work']),
+    humanTeamAdded: hasAny(checks, ['human_team_added', 'team_member_added', 'growth_mode_active']),
+  };
+}
+
 export async function assembleBusinessState(user: AuthUser): Promise<BusinessState> {
   const interviewAuthority = await getInterviewAuthorityProjection(user.id);
   const businessMode = toFunnelBusinessMode(interviewAuthority);
-  const adapterResults = await Promise.all([
+  const [capabilityFacts, ...adapterResults] = await Promise.all([
+    readCapabilityFacts(user, interviewAuthority),
     adaptMissionStage(user),
     adaptFunnelReadiness(user.id, user.tenantId, businessMode),
     adaptSocialReadiness(user.id),
     adaptTrafficReadiness(user.id),
     adaptCEOAdvisorState(user.id, user.tenantId),
   ]);
+  const stateResult = resolveBusinessStateResult(capabilityFacts);
 
   const stage = adapterResults.find((result) => result.stage)?.stage ?? 'foundation';
-  const bottlenecks = mergeByCode(adapterResults.flatMap((result) => result.bottlenecks))
+  const bottlenecks = mergeByCode([toCanonicalBottleneck(stateResult), ...adapterResults.flatMap((result) => result.bottlenecks)])
     .sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   const opportunities = mergeByCode(adapterResults.flatMap((result) => result.opportunities))
     .sort((a, b) => IMPACT_RANK[b.impact] - IMPACT_RANK[a.impact]);
@@ -91,5 +204,6 @@ export async function assembleBusinessState(user: AuthUser): Promise<BusinessSta
     readiness: mergeReadiness(adapterResults),
     bottlenecks,
     opportunities,
+    stateResult,
   };
 }

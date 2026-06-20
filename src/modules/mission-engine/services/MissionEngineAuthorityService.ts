@@ -1,5 +1,7 @@
 import { journeyEngineService } from '@/modules/journey-engine/journey-engine-service';
 import type { AdaptiveJourneyProjection } from '@/modules/journey-engine/journey-projection';
+import { businessStateService } from '@/modules/business-state/services/BusinessStateService';
+import type { BusinessStateResult } from '@/modules/business-state/contracts/BusinessStateResult';
 import type {
   DashboardPriority,
   MissionBottleneck,
@@ -93,6 +95,31 @@ function bottleneckFor(mission: MissionAuthorityDefinition): MissionBottleneck {
   return 'NO_BRAND';
 }
 
+function bottleneckForBusinessState(stateResult: BusinessStateResult): MissionBottleneck {
+  const missing = new Set(stateResult.missingRequirements);
+
+  switch (stateResult.currentState) {
+    case 'BRAND_FOUNDATION':
+      return 'NO_BRAND';
+    case 'BRAND_POSITIONING':
+      return 'NO_POSITIONING';
+    case 'CONTENT_SYSTEM':
+      return 'NO_CONTENT';
+    case 'LEAD_MAGNET':
+      return 'NO_LEAD_MAGNET';
+    case 'FUNNEL':
+      return 'NO_FUNNEL';
+    case 'LEAD_GENERATION':
+      return missing.has('First Lead Generated') ? 'NO_LEADS' : 'NO_TRAFFIC';
+    case 'SALES':
+      if (missing.has('Lead Exists')) return 'NO_LEADS';
+      if (missing.has('First Customer Acquired')) return 'NO_CUSTOMERS';
+      return 'NO_APPOINTMENTS';
+    case 'TEAM_BUILDING':
+      return 'NO_TEAM';
+  }
+}
+
 function missionTypeFor(mission: MissionAuthorityDefinition): MissionType {
   if (mission.route.includes('/content')) return 'CONTENT';
   if (mission.route.includes('/lead-magnet')) return 'LEAD_MAGNET';
@@ -124,14 +151,19 @@ function reasoningFor(input: {
   mission: MissionAuthorityDefinition;
   bottleneck: MissionBottleneck;
   completed: string[];
+  businessState?: BusinessStateResult;
 }) {
   const completedText = input.completed.length > 0
     ? `Completed: ${input.completed.join(', ')}.`
     : 'Completed: no prior business foundation has been confirmed yet.';
+  const stateReason = input.businessState
+    ? `Business State resolved ${input.businessState.currentState}. Missing: ${input.businessState.missingRequirements.join(', ') || 'none'}. ${input.businessState.explainability.reason}`
+    : 'Business State resolved from Journey mission requirements.';
 
   return [
     completedText,
     `Current gap: ${input.bottleneck}.`,
+    stateReason,
     `Because this is the first missing requirement preventing progress, the highest leverage action is "${input.mission.title}".`,
     'Why not something else: the AI COO fixes the bottleneck before optimizing, scaling, or automating.',
   ].join(' ');
@@ -146,16 +178,25 @@ function buildPriorityAction(mission: MissionAuthorityDefinition): MissionPriori
   };
 }
 
-export function resolveMissionAuthorityFromJourney(journey: AdaptiveJourneyProjection): MissionAuthoritySnapshot {
+export function resolveMissionAuthorityFromJourney(
+  journey: AdaptiveJourneyProjection,
+  businessState?: BusinessStateResult,
+): MissionAuthoritySnapshot {
   const interviewCompleted = hasCompleted(journey, 'brand_discovery_completed');
-  const currentMission = interviewCompleted
+  const requiresInterview = businessState?.currentState === 'BRAND_FOUNDATION'
+    && businessState.missingRequirements.includes('AI Interview Completed');
+  const currentMission = interviewCompleted && !requiresInterview
     ? toMissionDefinition(journey.currentMission)
     : AI_INTERVIEW_MISSION;
-  const nextMission = interviewCompleted && journey.nextMission ? toMissionDefinition(journey.nextMission) : null;
-  const businessStage = businessStageFor(currentMission);
-  const bottleneck = bottleneckFor(currentMission);
-  const completed = interviewCompleted ? completedLabels(journey) : [];
-  const reasoning = reasoningFor({ mission: currentMission, bottleneck, completed });
+  const nextMission = interviewCompleted && !requiresInterview && journey.nextMission ? toMissionDefinition(journey.nextMission) : null;
+  const businessStage = businessState?.currentState ?? businessStageFor(currentMission);
+  const bottleneck = businessState ? bottleneckForBusinessState(businessState) : bottleneckFor(currentMission);
+  const completed = businessState
+    ? businessState.completedStates
+    : interviewCompleted
+      ? completedLabels(journey)
+      : [];
+  const reasoning = reasoningFor({ mission: currentMission, bottleneck, completed, businessState });
   const priorityAction = buildPriorityAction(currentMission);
   const estimatedCompletion = {
     minutes: currentMission.estimatedMinutes,
@@ -203,7 +244,8 @@ export function resolveMissionAuthorityFromJourney(journey: AdaptiveJourneyProje
 
 export const missionEngineAuthorityService = {
   async getCurrentMission(userId: string): Promise<MissionAuthoritySnapshot> {
+    const businessState = await businessStateService.getBusinessState(userId);
     const journey = await journeyEngineService.getJourneyProjection(userId);
-    return resolveMissionAuthorityFromJourney(journey);
+    return resolveMissionAuthorityFromJourney(journey, businessState.stateResult);
   },
 };

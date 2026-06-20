@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { BusinessState } from '../contracts/BusinessState';
+import type { BusinessStateResult } from '../contracts/BusinessStateResult';
 import { assembleBusinessState } from '../adapters/BusinessStateAssembler';
 
 function toAuthUser(user: {
@@ -41,8 +42,17 @@ export const businessStateService = {
     if (!user) throw new Error('User not found');
     return assembleBusinessState(toAuthUser(user));
   },
+
+  async getBusinessStateResult(userId: string): Promise<BusinessStateResult> {
+    const state = await this.getBusinessState(userId);
+    return state.stateResult;
+  },
 };
 
 export async function getBusinessState(userId: string): Promise<BusinessState> {
   return businessStateService.getBusinessState(userId);
+}
+
+export async function getBusinessStateResult(userId: string): Promise<BusinessStateResult> {
+  return businessStateService.getBusinessStateResult(userId);
 }

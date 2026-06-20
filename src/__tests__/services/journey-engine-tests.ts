@@ -17,6 +17,18 @@ function businessState(): BusinessState {
     },
     bottlenecks: [],
     opportunities: [],
+    stateResult: {
+      currentState: 'BRAND_FOUNDATION',
+      completedStates: [],
+      missingRequirements: ['AI Interview Completed'],
+      nextState: 'BRAND_POSITIONING',
+      readinessScore: 50,
+      explainability: {
+        completed: [],
+        missing: [{ id: 'interviewCompleted', label: 'AI Interview Completed', completed: false }],
+        reason: 'Business profile incomplete.',
+      },
+    },
   };
 }
 

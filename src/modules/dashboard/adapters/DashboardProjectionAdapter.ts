@@ -55,6 +55,13 @@ export type DashboardProjection = {
     lifecycle: MissionLifecycleStatus;
     reasoning: string;
   };
+  businessState: {
+    currentState: string;
+    completedStates: string[];
+    missingRequirements: string[];
+    nextState: string;
+    reasoning: string;
+  };
   currentMission: {
     id: string;
     title: string;
@@ -182,6 +189,29 @@ function commandCenterFor(missionAuthority: Awaited<ReturnType<typeof missionEng
   };
 }
 
+function dashboardBusinessStateFor(
+  businessState: Awaited<ReturnType<typeof businessStateService.getBusinessState>>,
+  missionAuthority: Awaited<ReturnType<typeof missionEngineAuthorityService.getCurrentMission>>,
+): DashboardProjection['businessState'] {
+  if (businessState.stateResult) {
+    return {
+      currentState: businessState.stateResult.currentState,
+      completedStates: businessState.stateResult.completedStates,
+      missingRequirements: businessState.stateResult.missingRequirements,
+      nextState: businessState.stateResult.nextState,
+      reasoning: businessState.stateResult.explainability.reason,
+    };
+  }
+
+  return {
+    currentState: missionAuthority.businessStage,
+    completedStates: missionAuthority.explainability?.completed ?? [],
+    missingRequirements: [missionAuthority.explainability?.currentGap ?? missionAuthority.bottleneck ?? 'NO_BRAND'],
+    nextState: missionAuthority.businessStage,
+    reasoning: missionAuthority.explainability?.reasoning ?? missionAuthority.dashboardCommandCenter?.reasoning ?? missionAuthority.currentMission.description,
+  };
+}
+
 export async function getDashboardProjection(userId: string, tenantId?: string): Promise<DashboardProjection> {
   const [businessState, journeyState, missionAuthority, cooPlan, growthLoopState, analyticsProjection, businessContext, executions, workforce, growthProjection, optimization, activation, retention, value, expansion, referral] = await Promise.all([
     businessStateService.getBusinessState(userId),
@@ -233,6 +263,7 @@ export async function getDashboardProjection(userId: string, tenantId?: string):
       lifecycle: missionAuthority.lifecycle ?? 'ACTIVE',
       reasoning: missionAuthority.explainability?.reasoning ?? aiCommandCenter.reasoning,
     },
+    businessState: dashboardBusinessStateFor(businessState, missionAuthority),
     currentMission: {
       id: currentMission.id,
       title: currentMission.title,
