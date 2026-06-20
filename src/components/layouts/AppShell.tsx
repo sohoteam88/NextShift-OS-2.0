@@ -11,6 +11,7 @@ import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { OnboardingState } from '@/modules/member/types';
 import { TenantBranding } from '@/modules/tenant/components/TenantBranding';
 import { PLAN_TIERS, type PlanTier } from '@/modules/tenant/constants/plans';
+import { ExecutionRoadmapRail } from '@/modules/mission/components/ExecutionRoadmapRail';
 import { MissionListener } from '@/modules/mission/components/MissionListener';
 
 type AppShellProps = {
@@ -80,6 +81,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
         tenantName={tenant?.name}
         tenantLogoUrl={branding?.logoUrl}
       />
+      <ExecutionRoadmapRail />
       <main className="mx-auto min-w-0 max-w-[1440px] p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:p-6 lg:pb-6">
         {children}
       </main>

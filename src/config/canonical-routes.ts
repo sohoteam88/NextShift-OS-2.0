@@ -8,8 +8,11 @@ export const CANONICAL_ROUTES = {
   leadMagnet: '/lead-magnet',
   funnel: '/funnel',
   trafficEngine: '/traffic-engine',
+  leads: '/leads',
   crm: '/crm',
+  sales: '/sales',
   whatsappAi: '/whatsapp-ai',
   ceoMode: '/ceo-mode',
   team: '/team',
+  aiWorkforce: '/ai-workforce',
 } as const;

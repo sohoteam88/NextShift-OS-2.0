@@ -5,12 +5,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
+import {
+  EXECUTION_ROADMAP_STEPS,
+  getExecutionRoadmapLabel,
+  isExecutionRoadmapStepActive,
+} from '@/modules/mission/constants/execution-roadmap';
 
 type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
 
@@ -99,17 +104,11 @@ export function TopBar({
   tenantLogoUrl,
 }: TopBarProps) {
   const nav = useTranslations('nav');
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
-  const topNav = [
-    { href: '/dashboard', label: 'dashboard' },
-    { href: '/journey', label: 'journey' },
-    { href: '/content-engine', label: 'content' },
-    { href: '/funnel', label: 'funnels' },
-    { href: '/crm', label: 'customers' },
-    { href: userRole === 'member' ? '/member' : '/team', label: 'team' },
-    { href: '/settings', label: 'settings' },
-  ] as const;
+  void userRole;
+  const topNav = EXECUTION_ROADMAP_STEPS;
 
   return (
     <header
@@ -133,21 +132,21 @@ export function TopBar({
         </span>
       </Link>
 
-      <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex" aria-label="Primary navigation">
+      <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto xl:flex" aria-label="Primary navigation">
         {topNav.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active = isExecutionRoadmapStepActive(item, pathname);
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.id}
+              href={item.route}
               className={cn(
-                'inline-flex h-10 items-center rounded-[var(--radius-md)] px-3 text-sm font-semibold transition-colors',
+                'inline-flex h-10 shrink-0 items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold transition-colors',
                 active
                   ? 'bg-blue-50 text-[var(--color-primary)]'
                   : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
               )}
             >
-              {nav(item.label)}
+              {getExecutionRoadmapLabel(item, locale, true)}
             </Link>
           );
         })}
@@ -162,7 +161,7 @@ export function TopBar({
           icon={<Settings className="h-4 w-4" aria-hidden="true" />}
           aria-label={nav('settings')}
           onClick={() => router.push('/settings')}
-          className="hidden h-10 w-10 sm:inline-flex lg:hidden"
+          className="hidden h-10 w-10 sm:inline-flex xl:hidden"
         />
         <UserMenu userName={userName} />
       </div>

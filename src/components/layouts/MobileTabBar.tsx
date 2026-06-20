@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { BriefcaseBusiness, ClipboardList, Gauge, LayoutTemplate, Map } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { Bot, FileText, Gauge, LayoutTemplate, UsersRound } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 type MobileTabBarProps = {
@@ -11,16 +11,22 @@ type MobileTabBarProps = {
 };
 
 const tabs = [
-  { href: '/dashboard', label: 'dashboard', icon: Gauge },
-  { href: '/journey', label: 'journey', icon: Map },
-  { href: '/content-engine', label: 'content', icon: BriefcaseBusiness },
-  { href: '/funnel', label: 'funnels', icon: LayoutTemplate },
-  { href: '/crm', label: 'customers', icon: ClipboardList },
+  { href: '/dashboard', label_zh: '首页', label_en: 'Home', label_ms: 'Utama', icon: Gauge },
+  { href: '/content-engine', label_zh: '内容', label_en: 'Content', label_ms: 'Kandungan', icon: FileText },
+  { href: '/funnel', label_zh: '漏斗', label_en: 'Funnel', label_ms: 'Funnel', icon: LayoutTemplate },
+  { href: '/leads', label_zh: 'Leads', label_en: 'Leads', label_ms: 'Prospek', icon: UsersRound },
+  { href: '/ai-workforce', label_zh: 'Team', label_en: 'Team', label_ms: 'Pasukan', icon: Bot },
 ] as const;
+
+function labelFor(item: (typeof tabs)[number], locale: string) {
+  if (locale.startsWith('ms')) return item.label_ms;
+  if (locale.startsWith('en')) return item.label_en;
+  return item.label_zh;
+}
 
 export function MobileTabBar({ className }: MobileTabBarProps) {
   const pathname = usePathname();
-  const t = useTranslations('nav');
+  const locale = useLocale();
 
   return (
     <nav
@@ -43,7 +49,7 @@ export function MobileTabBar({ className }: MobileTabBarProps) {
             )}
           >
             <Icon className="h-5 w-5" aria-hidden="true" />
-            <span className="max-w-full truncate">{t(item.label)}</span>
+            <span className="max-w-full truncate">{labelFor(item, locale)}</span>
           </Link>
         );
       })}
