@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Calendar, CheckCircle2, Clock, FileText, Lightbulb, Sparkles, Target, Zap, TrendingUp } from 'lucide-react';
 import { useDashboardMission } from '@/modules/dashboard/hooks/useDashboardMission';
 import { usePublishingCenter } from '@/modules/content-publishing/hooks/usePublishingCenter';
@@ -16,8 +17,26 @@ const CONTENT_MIX = [
 
 export function ContentCommandCenter() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { mission, nextAction, isLoading } = useDashboardMission();
   const publishing = usePublishingCenter();
+  const generateCalendar = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/v1/content-engine/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: 30 }),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: { message?: string }; message?: string };
+        throw new Error(payload.error?.message ?? payload.message ?? '生成失败，请先完成 AI 访谈和品牌资料。');
+      }
+      return response.json() as Promise<{ data: { days: number; items: unknown[] } }>;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
+    },
+  });
 
   const completedTasks = mission.tasks.filter(t => t.completed).length;
   const totalTasks = mission.tasks.length;
@@ -68,11 +87,18 @@ export function ContentCommandCenter() {
             <p className="text-xs text-[var(--color-text-muted)]">当前 Journey：{nextMissionLabel}</p>
             <p className="text-xs text-[var(--color-text-muted)]">任务进度：{completedTasks}/{totalTasks}</p>
             <button
-              onClick={() => router.push('/ai/content-plan')}
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+              onClick={() => generateCalendar.mutate()}
+              disabled={generateCalendar.isPending}
+              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
             >
-              规划内容日历 <ArrowRight className="h-4 w-4" />
+              {generateCalendar.isPending ? '正在读取品牌资料...' : '自动生成内容日历'} <ArrowRight className="h-4 w-4" />
             </button>
+            {generateCalendar.isSuccess ? (
+              <p className="text-xs font-medium text-emerald-700">已根据品牌资料生成 30 天内容日历。</p>
+            ) : null}
+            {generateCalendar.isError ? (
+              <p className="text-xs font-medium text-red-600">{(generateCalendar.error as Error).message}</p>
+            ) : null}
           </div>
         </div>
       </section>
@@ -83,11 +109,15 @@ export function ContentCommandCenter() {
           <h2 className="text-base font-semibold mb-3">AI 推荐下一步</h2>
           <div className="space-y-2">
             {[
-              { title: '生成 30 天内容计划', meta: '先把每天要发什么定下来', href: '/ai/content-plan' },
+              { title: '生成 30 天内容计划', meta: '根据 AI 访谈和品牌资料自动生成', href: 'generate-calendar' },
               { title: '查看内容日历', meta: '确认已生成内容和发布节奏', href: '/brand-builder/calendar' },
               { title: '回到 Journey', meta: '确认内容动作是否推进当前阶段', href: '/journey' },
             ].map((rec) => (
-              <div key={rec.href} className="flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 hover:bg-[var(--color-surface)] cursor-pointer" onClick={() => router.push(rec.href)}>
+              <div
+                key={rec.href}
+                className="flex cursor-pointer items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 hover:bg-[var(--color-surface)]"
+                onClick={() => rec.href === 'generate-calendar' ? generateCalendar.mutate() : router.push(rec.href)}
+              >
                 <div>
                   <p className="text-sm font-medium text-[var(--color-text)]">{rec.title}</p>
                   <p className="text-xs text-[var(--color-text-muted)]">{rec.meta}</p>
@@ -114,7 +144,14 @@ export function ContentCommandCenter() {
               </div>
             ))}
           </div>
-          <Link href="/ai/content-plan" className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary)]">生成内容计划 →</Link>
+          <button
+            type="button"
+            onClick={() => generateCalendar.mutate()}
+            disabled={generateCalendar.isPending}
+            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary)] disabled:opacity-60"
+          >
+            {generateCalendar.isPending ? '正在生成...' : '生成内容计划'} →
+          </button>
         </section>
       </div>
 
@@ -184,9 +221,14 @@ export function ContentCommandCenter() {
           先不要同时打开太多工具。今天最重要的是把内容节奏定下来，然后从第一篇可发布内容开始执行。
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Link href="/ai/content-plan" className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700">
-            规划内容 <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          <button
+            type="button"
+            onClick={() => generateCalendar.mutate()}
+            disabled={generateCalendar.isPending}
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+          >
+            {generateCalendar.isPending ? '正在规划' : '规划内容'} <ArrowRight className="h-3.5 w-3.5" />
+          </button>
           <Link href="/journey" className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">
             查看 Journey <CheckCircle2 className="h-3.5 w-3.5" />
           </Link>

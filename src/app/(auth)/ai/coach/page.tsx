@@ -179,7 +179,7 @@ function QuickWorkflow() {
     { label: t('addLead'), href: '/crm', icon: Users, helper: t('addLeadHelp') },
     { label: t('createContent'), href: '/content-engine', icon: FileText, helper: t('createContentHelp') },
     { label: t('buildFunnel'), href: '/funnel', icon: LayoutTemplate, helper: t('buildFunnelHelp') },
-    { label: t('planContent'), href: '/ai/content-plan', icon: Brain, helper: t('planContentHelp') },
+    { label: t('planContent'), href: '/content-engine', icon: Brain, helper: t('planContentHelp') },
   ];
 
   return (
