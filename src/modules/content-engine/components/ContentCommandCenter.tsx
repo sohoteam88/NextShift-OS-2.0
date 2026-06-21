@@ -1,298 +1,689 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Calendar, CheckCircle2, Clock, FileText, Lightbulb, Sparkles, Target, Zap, TrendingUp } from 'lucide-react';
-import { useDashboardMission } from '@/modules/dashboard/hooks/useDashboardMission';
-import { usePublishingCenter } from '@/modules/content-publishing/hooks/usePublishingCenter';
-import type { ContentCalendar, ContentTrack } from '@/modules/content-engine/types';
+import {
+  AlertCircle,
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  Check,
+  FileText,
+  Fingerprint,
+  Loader2,
+  MessageCircle,
+  PenLine,
+  RefreshCw,
+  Sparkles,
+  Target,
+} from 'lucide-react';
+import type {
+  ContentCalendar,
+  ContentTrack,
+} from '@/modules/content-engine/types';
+
+type BrandProfile = Record<string, unknown>;
+
+type ContentEngineResponse = {
+  data: {
+    trackCalendars?: Record<ContentTrack, ContentCalendar | null>;
+  };
+};
 
 const CONTENT_MIX = [
-  { type: '教育', ratio: '40%', reason: '让受众先理解问题和方法' },
-  { type: '故事', ratio: '20%', reason: '建立信任和个人连接' },
-  { type: '权威', ratio: '20%', reason: '证明你有能力带他们前进' },
-  { type: '邀约', ratio: '10%', reason: '把兴趣转成私聊或表单' },
-  { type: '社群', ratio: '10%', reason: '制造互动和持续触达' },
+  { type: '教育', ratio: '40%', reason: '解释问题、方法和正确观念。' },
+  { type: '故事', ratio: '20%', reason: '建立个人信任和情感连接。' },
+  { type: '权威', ratio: '20%', reason: '证明你有能力带他们前进。' },
+  { type: '推广', ratio: '10%', reason: '把兴趣引导到领取、私聊或预约。' },
+  { type: '社群', ratio: '10%', reason: '制造互动、回应和持续触达。' },
 ];
 
-const CONTENT_TRACKS: { id: ContentTrack; title: string; description: string; cta: string }[] = [
+const PLATFORMS = ['Facebook', 'Instagram', 'TikTok', '小红书'];
+
+const OUTPUTS = [
+  '30 天内容日历',
+  '内容支柱',
+  'Hook 素材库',
+  'CTA 话术库',
+  'Retail 文案方向',
+  'Recruitment 文案方向',
+  '前 7 天立即执行内容',
+];
+
+const TRACKS: Array<{
+  id: ContentTrack;
+  title: string;
+  goal: string;
+  copy: string;
+  cta: string;
+}> = [
   {
     id: 'retail',
-    title: '零售客户文案',
-    description: '教育客户、建立产品/服务信任，并引导领取方案或咨询。',
-    cta: '生成零售文案',
+    title: 'Retail Content',
+    goal: '吸引客户、教育市场、建立信任、推动购买。',
+    copy: '围绕产品、服务、方案、真实问题和购买理由来生成内容。',
+    cta: '领取资源 / 预约咨询 / 加 WhatsApp',
   },
   {
     id: 'recruitment',
-    title: '招募伙伴文案',
-    description: '教育机会、讲个人转变故事，并引导了解团队或副业路径。',
-    cta: '生成招募文案',
+    title: 'Recruitment Content',
+    goal: '吸引伙伴、展示机会、建立团队复制信任。',
+    copy: '围绕副业路径、个人成长、团队支持和机会判断来生成内容。',
+    cta: '了解合作 / 申请加入 / 加 WhatsApp',
   },
 ];
 
+function valueOf(
+  profile: BrandProfile | null | undefined,
+  keys: string[],
+  fallback = '等待 Brand DNA 确认',
+) {
+  if (!profile) return fallback;
+
+  for (const key of keys) {
+    const value = profile[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (Array.isArray(value) && value.length > 0) {
+      return value
+        .map((item) => {
+          if (typeof item === 'string') return item;
+          if (item && typeof item === 'object' && 'name' in item)
+            return String((item as { name: unknown }).name);
+          return '';
+        })
+        .filter(Boolean)
+        .slice(0, 3)
+        .join('、');
+    }
+  }
+
+  return fallback;
+}
+
+function hasBrandDNA(profile: BrandProfile | null | undefined) {
+  if (!profile) return false;
+  const audience = valueOf(profile, ['target_audience', 'targetAudience'], '');
+  const offer = valueOf(
+    profile,
+    ['offer', 'primaryOffer', 'value_proposition', 'coreMessage'],
+    '',
+  );
+  const positioning = valueOf(
+    profile,
+    ['identity', 'brandName', 'brandPositioning', 'positioning'],
+    '',
+  );
+  return Boolean(audience && offer && positioning);
+}
+
+function firstSevenDays(calendar?: ContentCalendar | null) {
+  return calendar?.items.slice(0, 7) ?? [];
+}
+
+function BrandDNAGate({ isError }: { isError: boolean }) {
+  return (
+    <div className="mx-auto max-w-5xl pb-12">
+      <section className="rounded-[var(--radius-lg)] border border-amber-200 bg-white p-6 shadow-sm">
+        <div className="flex items-start gap-3">
+          <AlertCircle
+            className="mt-1 h-5 w-5 shrink-0 text-amber-600"
+            aria-hidden="true"
+          />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
+              Brand DNA Required
+            </p>
+            <h1 className="mt-2 text-2xl font-bold text-[var(--color-text)]">
+              Brand DNA 还不完整。
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-text-muted)]">
+              内容引擎需要先知道你的受众、Offer、品牌方向和信任证明，才可以自动生成
+              Retail 与 Recruitment 两套内容计划。
+              {isError
+                ? ' 目前读取 Brand DNA 时出现问题，你可以先回到确认页检查资料。'
+                : ''}
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/brand-builder/step/profile"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                返回确认 Brand DNA{' '}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/dashboard"
+                className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+              >
+                回到 AI COO
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="mx-auto max-w-5xl space-y-5 pb-12">
+      <div className="h-[340px] animate-pulse rounded-[var(--radius-lg)] border border-blue-100 bg-blue-50" />
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="h-72 animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white" />
+        <div className="h-72 animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white" />
+      </div>
+    </div>
+  );
+}
+
 export function ContentCommandCenter() {
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { mission, nextAction, isLoading } = useDashboardMission();
-  const publishing = usePublishingCenter();
+  const brandProfileQuery = useQuery({
+    queryKey: ['brand-builder-profile'],
+    queryFn: async () => {
+      const response = await fetch('/api/v1/brand-builder/profile');
+      if (!response.ok) throw new Error('Failed to load Brand DNA');
+      const payload = (await response.json()) as { data: BrandProfile | null };
+      return payload.data;
+    },
+  });
+
   const contentQuery = useQuery({
     queryKey: ['content-engine'],
     queryFn: async () => {
       const response = await fetch('/api/v1/content-engine');
-      if (!response.ok) throw new Error('Failed');
-      return response.json() as Promise<{ data: { trackCalendars?: Record<ContentTrack, ContentCalendar | null> } }>;
+      if (!response.ok) throw new Error('Failed to load content engine');
+      return response.json() as Promise<ContentEngineResponse>;
     },
   });
-  const generateCalendar = useMutation({
-    mutationFn: async (track: ContentTrack) => {
-      const response = await fetch('/api/v1/content-engine/calendar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ days: 30, track }),
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: { message?: string }; message?: string };
-        throw new Error(payload.error?.message ?? payload.message ?? '生成失败，请先完成 AI 访谈和品牌资料。');
-      }
-      return response.json() as Promise<{ data: { days: number; items: unknown[] } }>;
+
+  const generatePlan = useMutation({
+    mutationFn: async () => {
+      const responses = await Promise.all(
+        TRACKS.map(async (track) => {
+          const response = await fetch('/api/v1/content-engine/calendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days: 30, track: track.id }),
+          });
+
+          if (!response.ok) {
+            const payload = (await response.json().catch(() => ({}))) as {
+              error?: { message?: string };
+              message?: string;
+            };
+            throw new Error(
+              payload.error?.message ??
+                payload.message ??
+                '内容计划暂时无法生成。',
+            );
+          }
+
+          return response.json() as Promise<{ data: ContentCalendar }>;
+        }),
+      );
+
+      return responses.map((response) => response.data);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
+      void queryClient.invalidateQueries({
+        queryKey: ['dashboard-projection'],
+      });
     },
   });
 
-  const completedTasks = mission.tasks.filter(t => t.completed).length;
-  const totalTasks = mission.tasks.length;
-  const hasQueuedContent = publishing.queue.length > 0;
-  const hasPublishedContent = publishing.stats.published > 0;
-  const nextMissionLabel = isLoading ? '读取当前 Journey...' : nextAction.title;
-  const trackCalendars = contentQuery.data?.data.trackCalendars ?? { retail: null, recruitment: null };
+  if (brandProfileQuery.isLoading || contentQuery.isLoading) {
+    return <LoadingState />;
+  }
+
+  const profile = brandProfileQuery.data;
+
+  if (brandProfileQuery.isError || !hasBrandDNA(profile)) {
+    return <BrandDNAGate isError={brandProfileQuery.isError} />;
+  }
+
+  const trackCalendars = contentQuery.data?.data.trackCalendars ?? {
+    retail: null,
+    recruitment: null,
+  };
+  const retailCalendar = trackCalendars.retail;
+  const recruitmentCalendar = trackCalendars.recruitment;
+  const hasGeneratedPlan = Boolean(retailCalendar && recruitmentCalendar);
+  const previewItems = [
+    ...firstSevenDays(retailCalendar).map((item) => ({
+      ...item,
+      trackLabel: 'Retail',
+    })),
+    ...firstSevenDays(recruitmentCalendar).map((item) => ({
+      ...item,
+      trackLabel: 'Recruitment',
+    })),
+  ].slice(0, 7);
+
+  const brandSummary = [
+    {
+      label: '用户是谁',
+      value: valueOf(profile, ['identity', 'personalName', 'brandName']),
+    },
+    {
+      label: '目标受众',
+      value: valueOf(profile, ['target_audience', 'targetAudience']),
+    },
+    {
+      label: '核心痛点',
+      value: valueOf(profile, [
+        'audience_pain_points',
+        'painPoints',
+        'audiencePainPoints',
+      ]),
+    },
+    {
+      label: 'Offer / 产品 / 服务',
+      value: valueOf(profile, [
+        'offer',
+        'primaryOffer',
+        'value_proposition',
+        'coreMessage',
+      ]),
+    },
+    {
+      label: '信任证明',
+      value: valueOf(profile, [
+        'trust_proof',
+        'differentiator',
+        'uniqueAngle',
+        'expertise',
+      ]),
+    },
+    {
+      label: '品牌语气',
+      value: valueOf(
+        profile,
+        ['personality', 'contentTone', 'tone'],
+        '温暖、清楚、有行动感',
+      ),
+    },
+    {
+      label: 'Retail 方向',
+      value: valueOf(profile, [
+        'primaryOffer',
+        'transformationPromise',
+        'value_proposition',
+      ]),
+    },
+    {
+      label: 'Recruitment 方向',
+      value: valueOf(
+        profile,
+        ['teamOpportunity', 'secondaryOffer', 'story'],
+        '用个人故事、成长路径和团队支持建立合作信任',
+      ),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">内容指挥中心</p>
-          <h1 className="mt-2 text-2xl font-semibold text-[var(--color-text)]">AI 内容引擎</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">系统知道你是谁、你的受众、你应该发布什么。只需要决定生成、编辑、发布。</p>
-        </div>
-        <Link href="/brand-builder/calendar" className="inline-flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 py-2 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)]">
-          <Calendar className="h-4 w-4" />查看内容日历
-        </Link>
-      </div>
+      <section className="rounded-[var(--radius-lg)] border border-blue-200 bg-white shadow-sm">
+        <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="flex min-h-[360px] flex-col justify-between p-5 md:p-7">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                AI COO 任务
+              </div>
+              <h1 className="mt-5 max-w-2xl text-3xl font-bold leading-tight text-[var(--color-text)] md:text-4xl">
+                生成你的内容计划
+              </h1>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-text-muted)]">
+                AI COO
+                判断你目前缺少稳定内容系统。先生成内容计划，后面才能生成引流资源、漏斗落地页和流量测试。
+              </p>
+            </div>
 
-      {/* Section 1: Today's Content Mission */}
-      <section className="rounded-[var(--radius-lg)] border-2 border-blue-200 bg-gradient-to-b from-blue-50 to-white p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Zap className="h-5 w-5 text-blue-600" />
-          <h2 className="text-base font-semibold text-blue-800">今日内容任务</h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm">
-              <Target className="h-4 w-4 text-[var(--color-text-muted)]" />
-              <span className="text-[var(--color-text-muted)]">目标：<span className="font-medium text-[var(--color-text)]">建立稳定内容节奏</span></span>
+            <div className="mt-8 space-y-4 border-l-2 border-blue-100 pl-4">
+              <div>
+                <p className="text-xs font-semibold uppercase text-blue-700">
+                  根据什么生成
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                  根据已确认的 Brand DNA 自动生成，不重新问基础资料。
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-blue-700">
+                  当前目标
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                  建立稳定内容节奏，并为 Retail 与 Recruitment
+                  两条漏斗准备可发布内容。
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-blue-700">
+                  生成后下一步
+                </p>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                  确认内容计划后进入引流资源，开始设计可领取的 Lead Magnet。
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Sparkles className="h-4 w-4 text-[var(--color-text-muted)]" />
-              <span className="text-[var(--color-text-muted)]">建议行动：<span className="font-medium text-[var(--color-text)]">先规划你的内容日历</span></span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <FileText className="h-4 w-4 text-[var(--color-text-muted)]" />
-              <span className="text-[var(--color-text-muted)]">为什么现在：<span className="font-medium text-[var(--color-text)]">没有持续内容，漏斗不会有新触点</span></span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-[var(--color-text-muted)]" />
-              <span className="text-[var(--color-text-muted)]">预计时间：<span className="font-medium text-[var(--color-text)]">10-15 分钟</span></span>
-            </div>
-          </div>
-          <div className="flex flex-col justify-center gap-2">
-            <p className="text-xs text-[var(--color-text-muted)]">当前 Journey：{nextMissionLabel}</p>
-            <p className="text-xs text-[var(--color-text-muted)]">任务进度：{completedTasks}/{totalTasks}</p>
-            <button
-              onClick={() => generateCalendar.mutate('retail')}
-              disabled={generateCalendar.isPending}
-              className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
-            >
-              {generateCalendar.isPending ? '正在读取品牌资料...' : '自动生成内容日历'} <ArrowRight className="h-4 w-4" />
-            </button>
-            {generateCalendar.isSuccess ? (
-              <p className="text-xs font-medium text-emerald-700">已根据品牌资料生成 30 天内容日历。</p>
-            ) : null}
-            {generateCalendar.isError ? (
-              <p className="text-xs font-medium text-red-600">{(generateCalendar.error as Error).message}</p>
-            ) : null}
-          </div>
-        </div>
-      </section>
 
-      <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-base font-semibold text-[var(--color-text)]">双漏斗内容计划</h2>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">内容引擎会跟着漏斗分成两套文案，不再用同一批内容同时打客户和招募对象。</p>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {CONTENT_TRACKS.map((track) => {
-            const calendar = trackCalendars[track.id];
-            return (
-              <div key={track.id} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4">
-                <h3 className="text-sm font-semibold text-[var(--color-text)]">{track.title}</h3>
-                <p className="mt-1 min-h-[40px] text-xs leading-5 text-[var(--color-text-muted)]">{track.description}</p>
-                {calendar ? (
-                  <div className="mt-3 rounded-[var(--radius-md)] bg-emerald-50 p-3 text-xs text-emerald-700">
-                    已生成 {calendar.days} 天 · {calendar.items.length} 条内容
-                    <div className="mt-1 text-emerald-900">{calendar.items[0]?.title}</div>
-                  </div>
-                ) : (
-                  <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3 text-xs text-[var(--color-text-muted)]">
-                    尚未生成这条漏斗的文案。
-                  </div>
-                )}
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {hasGeneratedPlan ? (
+                <Link
+                  href="/lead-magnet"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                >
+                  确认并进入引流资源{' '}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              ) : (
                 <button
                   type="button"
-                  onClick={() => generateCalendar.mutate(track.id)}
-                  disabled={generateCalendar.isPending}
-                  className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-3 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                  onClick={() => generatePlan.mutate()}
+                  disabled={generatePlan.isPending}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
                 >
-                  {generateCalendar.isPending ? '正在生成...' : track.cta}
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  {generatePlan.isPending ? (
+                    <>
+                      <Loader2
+                        className="h-4 w-4 animate-spin"
+                        aria-hidden="true"
+                      />
+                      正在生成内容计划
+                    </>
+                  ) : (
+                    <>
+                      生成内容计划{' '}
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </>
+                  )}
+                </button>
+              )}
+              <Link
+                href="/dashboard"
+                className="inline-flex h-12 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+              >
+                回到 AI COO
+              </Link>
+            </div>
+
+            {generatePlan.isError ? (
+              <div className="mt-4 rounded-[var(--radius-md)] border border-red-100 bg-red-50 p-4">
+                <p className="text-sm font-semibold text-red-800">
+                  内容计划暂时无法生成。
+                </p>
+                <p className="mt-1 text-xs leading-5 text-red-700">
+                  {(generatePlan.error as Error).message} 你可以重试，或回到 AI
+                  COO 继续当前任务。
+                </p>
+                <button
+                  type="button"
+                  onClick={() => generatePlan.mutate()}
+                  className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-red-700"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  重试
                 </button>
               </div>
-            );
-          })}
+            ) : null}
+          </div>
+
+          <aside className="border-t border-blue-100 bg-blue-50/40 p-5 lg:border-l lg:border-t-0 md:p-6">
+            <div className="flex items-center gap-2">
+              <Fingerprint
+                className="h-4 w-4 text-blue-700"
+                aria-hidden="true"
+              />
+              <p className="text-xs font-semibold text-blue-700">
+                Brand DNA 输入摘要
+              </p>
+            </div>
+            <div className="mt-4 space-y-3">
+              {brandSummary.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-[var(--radius-md)] border border-blue-100 bg-white p-3"
+                >
+                  <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-[var(--color-text)]">
+                    {item.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
       </section>
 
-      {/* Section 2: AI Recommendations + Weekly Calendar */}
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold mb-3">AI 推荐下一步</h2>
-          <div className="space-y-2">
-            {[
-              { title: '生成 30 天内容计划', meta: '根据 AI 访谈和品牌资料自动生成', href: 'generate-calendar' },
-              { title: '查看内容日历', meta: '确认已生成内容和发布节奏', href: '/brand-builder/calendar' },
-              { title: '回到 Journey', meta: '确认内容动作是否推进当前阶段', href: '/journey' },
-            ].map((rec) => (
+          <div className="mb-4 flex items-center gap-2">
+            <Target className="h-5 w-5 text-blue-600" aria-hidden="true" />
+            <h2 className="text-base font-semibold text-[var(--color-text)]">
+              双内容方向
+            </h2>
+          </div>
+          <div className="grid gap-3">
+            {TRACKS.map((track) => {
+              const calendar = trackCalendars[track.id];
+              return (
+                <div
+                  key={track.id}
+                  className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                        {track.title}
+                      </h3>
+                      <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                        {track.goal}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        calendar
+                          ? 'bg-emerald-50 text-emerald-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {calendar ? '已生成' : '待生成'}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[var(--color-text)]">
+                    {track.copy}
+                  </p>
+                  <div className="mt-3 rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3">
+                    <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                      CTA
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">
+                      {track.cta}
+                    </p>
+                  </div>
+                  {calendar ? (
+                    <div className="mt-3 text-xs text-emerald-700">
+                      {calendar.days} 天 · {calendar.items.length} 条内容 ·
+                      第一条：{calendar.items[0]?.title}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <CalendarDays
+              className="h-5 w-5 text-emerald-600"
+              aria-hidden="true"
+            />
+            <h2 className="text-base font-semibold text-[var(--color-text)]">
+              内容比例
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {CONTENT_MIX.map((item) => (
               <div
-                key={rec.href}
-                className="flex cursor-pointer items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] p-3 hover:bg-[var(--color-surface)]"
-                onClick={() => rec.href === 'generate-calendar' ? generateCalendar.mutate('retail') : router.push(rec.href)}
+                key={item.type}
+                className="flex items-start gap-3 rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3"
+              >
+                <span className="w-12 shrink-0 text-sm font-bold text-[var(--color-text)]">
+                  {item.ratio}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-text)]">
+                    {item.type}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                    {item.reason}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+              默认平台
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {PLATFORMS.map((platform) => (
+                <span
+                  key={platform}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700"
+                >
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  {platform}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <FileText className="h-5 w-5 text-blue-600" aria-hidden="true" />
+          <h2 className="text-base font-semibold text-[var(--color-text)]">
+            输出内容
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {OUTPUTS.map((output) => (
+            <div
+              key={output}
+              className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+            >
+              <p className="text-sm font-semibold text-[var(--color-text)]">
+                {output}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {previewItems.length > 0 ? (
+        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <PenLine className="h-5 w-5 text-blue-600" aria-hidden="true" />
+              <h2 className="text-base font-semibold text-[var(--color-text)]">
+                前 7 天立即执行内容
+              </h2>
+            </div>
+            <Link
+              href="/brand-builder/calendar"
+              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+            >
+              查看完整日历
+            </Link>
+          </div>
+          <div className="grid gap-3">
+            {previewItems.map((item, index) => (
+              <div
+                key={`${item.trackLabel}-${item.date}-${item.title}`}
+                className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-4 md:grid-cols-[120px_1fr_180px]"
               >
                 <div>
-                  <p className="text-sm font-medium text-[var(--color-text)]">{rec.title}</p>
-                  <p className="text-xs text-[var(--color-text-muted)]">{rec.meta}</p>
+                  <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                    Day {index + 1}
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-blue-700">
+                    {item.trackLabel}
+                  </p>
                 </div>
-                <Sparkles className="h-4 w-4 text-[var(--color-primary)] shrink-0" />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar className="h-5 w-5 text-[var(--color-primary)]" />
-            <h2 className="text-base font-semibold">内容比例</h2>
-          </div>
-          <div className="space-y-2">
-            {CONTENT_MIX.map((item) => (
-              <div key={item.type} className="flex items-start gap-3 text-sm">
-                <span className="w-12 font-semibold text-[var(--color-text)]">{item.ratio}</span>
                 <div>
-                  <p className="font-medium text-[var(--color-text)]">{item.type}</p>
-                  <p className="text-xs text-[var(--color-text-muted)]">{item.reason}</p>
+                  <p className="text-sm font-semibold text-[var(--color-text)]">
+                    {item.title}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                    {item.hook}
+                  </p>
+                </div>
+                <div className="text-xs text-[var(--color-text-muted)]">
+                  <p className="font-semibold text-[var(--color-text)]">
+                    {item.platform}
+                  </p>
+                  <p className="mt-1">{item.format}</p>
+                  <p className="mt-1">{item.cta}</p>
                 </div>
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => generateCalendar.mutate('retail')}
-            disabled={generateCalendar.isPending}
-            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary)] disabled:opacity-60"
-          >
-            {generateCalendar.isPending ? '正在生成...' : '生成内容计划'} →
-          </button>
         </section>
-      </div>
-
-      {/* Section 3: Queue + Performance */}
-      <div className="grid gap-5 md:grid-cols-2">
-        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold mb-3">内容队列</h2>
-          {hasQueuedContent ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                <div className="rounded bg-gray-50 p-2"><span className="font-semibold text-gray-600">{publishing.stats.drafts}</span><br /><span className="text-gray-400">草稿</span></div>
-                <div className="rounded bg-blue-50 p-2"><span className="font-semibold text-blue-600">{publishing.stats.approved}</span><br /><span className="text-blue-400">待审核</span></div>
-                <div className="rounded bg-purple-50 p-2"><span className="font-semibold text-purple-600">{publishing.stats.scheduled}</span><br /><span className="text-purple-400">已排程</span></div>
-                <div className="rounded bg-emerald-50 p-2"><span className="font-semibold text-emerald-600">{publishing.stats.published}</span><br /><span className="text-emerald-400">已发布</span></div>
-              </div>
-              <div className="space-y-2">
-                {publishing.queue.slice(0, 3).map((item) => (
-                  <div key={item.id} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-3">
-                    <p className="text-sm font-medium text-[var(--color-text)]">{item.title}</p>
-                    <p className="text-xs capitalize text-[var(--color-text-muted)]">{item.platform} · {item.status}</p>
-                  </div>
-                ))}
-              </div>
+      ) : (
+        <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <BookOpen
+              className="mt-1 h-5 w-5 text-blue-600"
+              aria-hidden="true"
+            />
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">
+                内容计划还没有生成
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
+                点击生成后，这里会显示前 7 天立即执行内容。完整 30
+                天日历会同步到内容日历。
+              </p>
             </div>
-          ) : (
-            <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-              <p className="text-sm font-medium text-[var(--color-text)]">还没有内容队列</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">先完成内容计划。生成后的草稿、审核和排程状态会出现在这里。</p>
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-5 w-5 text-[var(--color-primary)]" />
-            <h2 className="text-base font-semibold">表现快照</h2>
           </div>
-          {hasPublishedContent ? (
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-medium text-[var(--color-text)]">已发布内容</p>
-                <div className="flex gap-4 mt-1 text-xs">
-                  <span className="text-emerald-600">{publishing.stats.published} 篇已发布</span>
-                  <span className="text-blue-600">{publishing.stats.successRate}% 发布成功率</span>
-                </div>
-              </div>
-              <div className="h-1 w-full rounded-full bg-[var(--color-surface)]">
-                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${publishing.stats.successRate}%` }} />
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-              <p className="text-sm font-medium text-[var(--color-text)]">还没有表现数据</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">发布第一篇内容后，互动、线索和转化表现会自动出现在这里。</p>
-            </div>
-          )}
         </section>
-      </div>
+      )}
 
-      {/* AI Coach */}
-      <section className="rounded-[var(--radius-lg)] border border-amber-100 bg-amber-50 p-5 shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className="h-5 w-5 text-amber-600" />
-          <h2 className="text-base font-semibold text-[var(--color-text)]">AI 教练建议</h2>
-        </div>
-        <p className="text-sm text-[var(--color-text)]">
-          先不要同时打开太多工具。今天最重要的是把内容节奏定下来，然后从第一篇可发布内容开始执行。
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => generateCalendar.mutate('retail')}
-            disabled={generateCalendar.isPending}
-            className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+      <section className="rounded-[var(--radius-lg)] border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <MessageCircle
+              className="mt-1 h-5 w-5 text-emerald-700"
+              aria-hidden="true"
+            />
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">
+                下一步：引流资源
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
+                内容计划确认后，系统会用同一份 Brand DNA
+                生成可领取资源，承接内容带来的兴趣。
+              </p>
+            </div>
+          </div>
+          <Link
+            href={hasGeneratedPlan ? '/lead-magnet' : '#'}
+            aria-disabled={!hasGeneratedPlan}
+            className={`inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] px-5 text-sm font-semibold ${
+              hasGeneratedPlan
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                : 'pointer-events-none bg-emerald-100 text-emerald-400'
+            }`}
           >
-            {generateCalendar.isPending ? '正在规划' : '规划内容'} <ArrowRight className="h-3.5 w-3.5" />
-          </button>
-          <Link href="/journey" className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100">
-            查看 Journey <CheckCircle2 className="h-3.5 w-3.5" />
+            进入引流资源 <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       </section>
