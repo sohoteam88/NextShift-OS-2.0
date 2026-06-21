@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -40,14 +41,23 @@ const CONTENT_MIX = [
 
 const PLATFORMS = ['Facebook', 'Instagram', 'TikTok', '小红书'];
 
-const OUTPUTS = [
-  '30 天内容日历',
-  '内容支柱',
-  'Hook 素材库',
-  'CTA 话术库',
-  'Retail 文案方向',
-  'Recruitment 文案方向',
-  '前 7 天立即执行内容',
+type OutputTabId =
+  | 'calendar'
+  | 'pillars'
+  | 'hooks'
+  | 'cta'
+  | 'retail'
+  | 'recruitment'
+  | 'first-seven';
+
+const OUTPUTS: Array<{ id: OutputTabId; label: string }> = [
+  { id: 'calendar', label: '30 天内容日历' },
+  { id: 'pillars', label: '内容支柱' },
+  { id: 'hooks', label: 'Hook 素材库' },
+  { id: 'cta', label: 'CTA 话术库' },
+  { id: 'retail', label: 'Retail 文案方向' },
+  { id: 'recruitment', label: 'Recruitment 文案方向' },
+  { id: 'first-seven', label: '前 7 天立即执行内容' },
 ];
 
 const TRACKS: Array<{
@@ -120,6 +130,10 @@ function firstSevenDays(calendar?: ContentCalendar | null) {
   return calendar?.items.slice(0, 7) ?? [];
 }
 
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
 function BrandDNAGate({ isError }: { isError: boolean }) {
   return (
     <div className="mx-auto max-w-5xl pb-12">
@@ -179,6 +193,8 @@ function LoadingState() {
 
 export function ContentCommandCenter() {
   const queryClient = useQueryClient();
+  const [activeOutputTab, setActiveOutputTab] =
+    useState<OutputTabId>('calendar');
   const brandProfileQuery = useQuery({
     queryKey: ['brand-builder-profile'],
     queryFn: async () => {
@@ -251,6 +267,15 @@ export function ContentCommandCenter() {
   const retailCalendar = trackCalendars.retail;
   const recruitmentCalendar = trackCalendars.recruitment;
   const hasGeneratedPlan = Boolean(retailCalendar && recruitmentCalendar);
+  const retailItems = retailCalendar?.items ?? [];
+  const recruitmentItems = recruitmentCalendar?.items ?? [];
+  const allCalendarItems = [
+    ...retailItems.map((item) => ({ ...item, trackLabel: 'Retail' })),
+    ...recruitmentItems.map((item) => ({
+      ...item,
+      trackLabel: 'Recruitment',
+    })),
+  ];
   const previewItems = [
     ...firstSevenDays(retailCalendar).map((item) => ({
       ...item,
@@ -261,6 +286,21 @@ export function ContentCommandCenter() {
       trackLabel: 'Recruitment',
     })),
   ].slice(0, 7);
+  const pillarSummary = uniqueValues(
+    allCalendarItems.map((item) => item.pillar),
+  ).map((pillar) => {
+    const matchingItems = allCalendarItems.filter(
+      (item) => item.pillar === pillar,
+    );
+    return {
+      pillar,
+      emoji: matchingItems[0]?.pillarEmoji ?? '',
+      count: matchingItems.length,
+      sample: matchingItems[0]?.title ?? '',
+    };
+  });
+  const hookBank = uniqueValues(allCalendarItems.map((item) => item.hook));
+  const ctaLibrary = uniqueValues(allCalendarItems.map((item) => item.cta));
 
   const brandSummary = [
     {
@@ -574,88 +614,313 @@ export function ContentCommandCenter() {
             输出内容
           </h2>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          role="tablist"
+          aria-label="内容引擎输出"
+        >
           {OUTPUTS.map((output) => (
-            <div
-              key={output}
-              className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3"
+            <button
+              key={output.id}
+              type="button"
+              role="tab"
+              aria-selected={activeOutputTab === output.id}
+              aria-controls="content-engine-output-panel"
+              onClick={() => setActiveOutputTab(output.id)}
+              className={`min-h-12 rounded-[var(--radius-md)] border p-3 text-left text-sm font-semibold transition ${
+                activeOutputTab === output.id
+                  ? 'border-blue-200 bg-blue-50 text-blue-700'
+                  : 'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:border-blue-200 hover:bg-blue-50/60'
+              }`}
             >
-              <p className="text-sm font-semibold text-[var(--color-text)]">
-                {output}
-              </p>
-            </div>
+              {output.label}
+            </button>
           ))}
         </div>
-      </section>
 
-      {previewItems.length > 0 ? (
-        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <PenLine className="h-5 w-5 text-blue-600" aria-hidden="true" />
-              <h2 className="text-base font-semibold text-[var(--color-text)]">
-                前 7 天立即执行内容
-              </h2>
-            </div>
-            <Link
-              href="/brand-builder/calendar"
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-            >
-              查看完整日历
-            </Link>
-          </div>
-          <div className="grid gap-3">
-            {previewItems.map((item, index) => (
-              <div
-                key={`${item.trackLabel}-${item.date}-${item.title}`}
-                className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-4 md:grid-cols-[120px_1fr_180px]"
-              >
-                <div>
-                  <p className="text-xs font-semibold text-[var(--color-text-muted)]">
-                    Day {index + 1}
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-blue-700">
-                    {item.trackLabel}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-[var(--color-text)]">
-                    {item.title}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
-                    {item.hook}
-                  </p>
-                </div>
-                <div className="text-xs text-[var(--color-text-muted)]">
-                  <p className="font-semibold text-[var(--color-text)]">
-                    {item.platform}
-                  </p>
-                  <p className="mt-1">{item.format}</p>
-                  <p className="mt-1">{item.cta}</p>
-                </div>
+        <div
+          id="content-engine-output-panel"
+          role="tabpanel"
+          className="mt-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white p-4"
+        >
+          {!hasGeneratedPlan ? (
+            <div className="flex items-start gap-3">
+              <BookOpen
+                className="mt-1 h-5 w-5 text-blue-600"
+                aria-hidden="true"
+              />
+              <div>
+                <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                  内容计划还没有生成
+                </h3>
+                <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
+                  点击生成后，这里会显示 30 天日历、内容支柱、Hook
+                  素材库、CTA 话术库、Retail 与 Recruitment 两套文案方向。
+                </p>
+                <button
+                  type="button"
+                  onClick={() => generatePlan.mutate()}
+                  disabled={generatePlan.isPending}
+                  className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {generatePlan.isPending ? (
+                    <>
+                      <Loader2
+                        className="h-4 w-4 animate-spin"
+                        aria-hidden="true"
+                      />
+                      正在生成
+                    </>
+                  ) : (
+                    '生成内容计划'
+                  )}
+                </button>
               </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <div className="flex items-start gap-3">
-            <BookOpen
-              className="mt-1 h-5 w-5 text-blue-600"
-              aria-hidden="true"
-            />
-            <div>
-              <h2 className="text-base font-semibold text-[var(--color-text)]">
-                内容计划还没有生成
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
-                点击生成后，这里会显示前 7 天立即执行内容。完整 30
-                天日历会同步到内容日历。
-              </p>
             </div>
-          </div>
-        </section>
-      )}
+          ) : null}
+
+          {hasGeneratedPlan && activeOutputTab === 'calendar' ? (
+            <div>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                    30 天内容日历
+                  </h3>
+                  <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                    Retail 与 Recruitment 两条内容线已自动生成。
+                  </p>
+                </div>
+                <Link
+                  href="/brand-builder/calendar"
+                  className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  查看完整日历
+                </Link>
+              </div>
+              <div className="grid max-h-[520px] gap-3 overflow-y-auto pr-1">
+                {allCalendarItems.slice(0, 30).map((item, index) => (
+                  <div
+                    key={`${item.trackLabel}-${item.date}-${item.title}`}
+                    className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-4 md:grid-cols-[120px_1fr_170px]"
+                  >
+                    <div>
+                      <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                        Day {index + 1}
+                      </p>
+                      <p className="mt-1 text-sm font-bold text-blue-700">
+                        {item.trackLabel}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--color-text)]">
+                        {item.title}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                        {item.hook}
+                      </p>
+                    </div>
+                    <div className="text-xs text-[var(--color-text-muted)]">
+                      <p className="font-semibold text-[var(--color-text)]">
+                        {item.platform}
+                      </p>
+                      <p className="mt-1">{item.format}</p>
+                      <p className="mt-1">{item.cta}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {hasGeneratedPlan && activeOutputTab === 'pillars' ? (
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                内容支柱
+              </h3>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                内容支柱来自 Brand DNA，并用于分配 30 天日历。
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {pillarSummary.map((item) => (
+                  <div
+                    key={item.pillar}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-[var(--color-text)]">
+                        {item.emoji} {item.pillar}
+                      </p>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-700">
+                        {item.count} 条
+                      </span>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--color-text-muted)]">
+                      {item.sample}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {hasGeneratedPlan && activeOutputTab === 'hooks' ? (
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                Hook 素材库
+              </h3>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                这些开头句会用于 Facebook、Instagram、TikTok 和小红书内容。
+              </p>
+              <div className="mt-4 grid gap-3">
+                {hookBank.map((hook, index) => (
+                  <div
+                    key={hook}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4"
+                  >
+                    <p className="text-xs font-semibold text-blue-700">
+                      Hook {index + 1}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold leading-6 text-[var(--color-text)]">
+                      {hook}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {hasGeneratedPlan && activeOutputTab === 'cta' ? (
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                CTA 话术库
+              </h3>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                CTA 会根据内容目标自动指向私信、领取资源或了解机会。
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {ctaLibrary.map((cta) => (
+                  <div
+                    key={cta}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-sm font-semibold leading-6 text-[var(--color-text)]"
+                  >
+                    {cta}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {hasGeneratedPlan && activeOutputTab === 'retail' ? (
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                Retail 文案方向
+              </h3>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                用于吸引客户、教育市场、推动领取资源或咨询。
+              </p>
+              <div className="mt-4 grid gap-3">
+                {retailItems.slice(0, 8).map((item, index) => (
+                  <div
+                    key={`${item.date}-${item.title}`}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4"
+                  >
+                    <p className="text-xs font-semibold text-blue-700">
+                      Retail {index + 1} · {item.platform}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                      {item.hook}
+                    </p>
+                    <p className="mt-2 text-xs font-semibold text-[var(--color-text)]">
+                      CTA: {item.cta}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {hasGeneratedPlan && activeOutputTab === 'recruitment' ? (
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                Recruitment 文案方向
+              </h3>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                用于吸引伙伴、说明机会、建立团队复制信任。
+              </p>
+              <div className="mt-4 grid gap-3">
+                {recruitmentItems.slice(0, 8).map((item, index) => (
+                  <div
+                    key={`${item.date}-${item.title}`}
+                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4"
+                  >
+                    <p className="text-xs font-semibold text-blue-700">
+                      Recruitment {index + 1} · {item.platform}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                      {item.hook}
+                    </p>
+                    <p className="mt-2 text-xs font-semibold text-[var(--color-text)]">
+                      CTA: {item.cta}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {hasGeneratedPlan && activeOutputTab === 'first-seven' ? (
+            <div>
+              <div className="mb-4 flex items-center gap-2">
+                <PenLine
+                  className="h-5 w-5 text-blue-600"
+                  aria-hidden="true"
+                />
+                <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                  前 7 天立即执行内容
+                </h3>
+              </div>
+              <div className="grid gap-3">
+                {previewItems.map((item, index) => (
+                  <div
+                    key={`${item.trackLabel}-${item.date}-${item.title}`}
+                    className="grid gap-3 rounded-[var(--radius-md)] border border-[var(--color-border)] p-4 md:grid-cols-[120px_1fr_180px]"
+                  >
+                    <div>
+                      <p className="text-xs font-semibold text-[var(--color-text-muted)]">
+                        Day {index + 1}
+                      </p>
+                      <p className="mt-1 text-sm font-bold text-blue-700">
+                        {item.trackLabel}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--color-text)]">
+                        {item.title}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
+                        {item.hook}
+                      </p>
+                    </div>
+                    <div className="text-xs text-[var(--color-text-muted)]">
+                      <p className="font-semibold text-[var(--color-text)]">
+                        {item.platform}
+                      </p>
+                      <p className="mt-1">{item.format}</p>
+                      <p className="mt-1">{item.cta}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
 
       <section className="rounded-[var(--radius-lg)] border border-emerald-100 bg-emerald-50 p-5 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
