@@ -88,7 +88,7 @@ function bottleneckFor(mission: MissionAuthorityDefinition): MissionBottleneck {
   if (mission.completionConditions.includes('lead_magnet_created')) return 'NO_LEAD_MAGNET';
   if (mission.completionConditions.includes('funnel_published')) return 'NO_FUNNEL';
   if (mission.completionConditions.includes('traffic_campaign_launched')) return 'NO_TRAFFIC';
-  if (mission.completionConditions.includes('whatsapp_followup_configured')) return 'NO_LEADS';
+  if (mission.completionConditions.includes('whatsapp_followup_configured')) return 'NO_APPOINTMENTS';
   if (mission.completionConditions.includes('crm_setup_completed')) return 'NO_APPOINTMENTS';
   if (mission.completionConditions.includes('first_sale_completed')) return 'NO_CUSTOMERS';
   if (mission.route.includes('/team')) return 'NO_TEAM';

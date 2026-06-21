@@ -28,7 +28,7 @@ const LABELS: Record<string, string> = {
   NO_FUNNEL: '还没有漏斗落地页',
   NO_TRAFFIC: '还没有流量测试',
   NO_LEADS: '还没有潜在客户进入漏斗',
-  NO_APPOINTMENTS: '还没有预约跟进',
+  NO_APPOINTMENTS: 'Leads 尚未跟进',
   NO_CUSTOMERS: '还没有第一位客户',
   NO_SALES: '还没有第一笔成交',
   NO_TEAM: '还没有团队复制系统',
@@ -82,6 +82,8 @@ function missionReasonFor(
     return '你已经有内容计划和引流资源，但还没有可以承接真实访问的落地页。先生成零售客户漏斗和招募伙伴漏斗，后面的流量测试才有地方转化。';
   if (currentGap === 'NO_TRAFFIC')
     return '漏斗已经可以承接线索，下一步要用小流量测试验证信息、CTA 和跟进路径，而不是继续堆功能。';
+  if (currentGap === 'NO_APPOINTMENTS')
+    return '你已经开始有 Leads，最大的风险是没有及时联系、没有记录状态、没有安排下一次跟进。现在最有杠杆的动作是处理新 Leads。';
   if (currentGap === 'NO_SALES')
     return '你已经开始有潜在客户，下一步要把跟进推进到第一次成交。';
   return '我根据你当前完成的系统和缺口，选择了最能推动下一步结果的任务。';
@@ -97,6 +99,8 @@ function decisionReasonFor(rawReason: string, currentGap: string) {
     return '现在先不优先做团队、报表或复杂自动化，因为没有潜在客户之前，这些动作不会直接带来第一位真实客户。';
   if (currentGap === 'NO_FUNNEL')
     return '现在不应该先启动流量测试，因为没有落地页时，流量来了也没有清楚的领取入口、感谢页或 WhatsApp 跟进路径。';
+  if (currentGap === 'NO_APPOINTMENTS')
+    return '现在不应该继续加流量或做复杂报表，因为现有 Leads 还没有进入可追踪的跟进节奏。';
   return '我会先处理最影响进展的缺口，再安排其他优化动作。';
 }
 
