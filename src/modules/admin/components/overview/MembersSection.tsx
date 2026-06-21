@@ -16,6 +16,7 @@ import type {
   WorkspaceMemberHealth,
 } from '@/modules/admin/services/workspaceHealthService';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { MemberInvitePanel } from '@/modules/member/components/MemberInvitePanel';
 import { useFormatters } from './helpers';
 
 function priorityTone(priority: WorkspaceMemberHealth['priority']) {
@@ -172,7 +173,13 @@ function RouteDistribution({ data }: { data: WorkspaceCommandData }) {
   );
 }
 
-export function AdminMembersCenter({ data }: { data: WorkspaceCommandData }) {
+export function AdminMembersCenter({
+  data,
+  role,
+}: {
+  data: WorkspaceCommandData;
+  role: string;
+}) {
   const priorityMembers = data.members
     .filter((member) => member.priority !== 'normal' || member.needsHelp)
     .sort((a, b) => {
@@ -253,6 +260,27 @@ export function AdminMembersCenter({ data }: { data: WorkspaceCommandData }) {
           helper="Brand DNA 后还没有生成内容系统。"
           icon={ShieldCheck}
           tone={contentPlanUsers.length > 0 ? 'warning' : 'neutral'}
+        />
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="rounded-[var(--radius-md)] border border-blue-100 bg-blue-50 p-2 text-blue-700">
+              <Users className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">
+                成员管理入口
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">
+                新成员从邀请链接进入工作区，完成加入后再进入用户执行路线。这里保留邀请链接、分享和重新生成动作，避免 admin 需要回到用户端 Team 页面。
+              </p>
+            </div>
+          </div>
+        </section>
+        <MemberInvitePanel
+          role={role as 'member' | 'leader' | 'operator' | 'platform_admin' | 'admin'}
         />
       </section>
 

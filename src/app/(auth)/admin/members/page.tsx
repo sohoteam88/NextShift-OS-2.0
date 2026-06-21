@@ -11,5 +11,5 @@ export default async function AdminMembersPage() {
 
   const data = await workspaceHealthService.getCommandData(user.tenantId);
 
-  return <AdminMembersCenter data={data} />;
+  return <AdminMembersCenter data={data} role={user.role} />;
 }
