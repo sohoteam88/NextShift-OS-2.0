@@ -140,7 +140,7 @@ async function readCapabilityFacts(
   const brandPositioned = hasAny(checks, ['brand_dna_confirmed', 'positioning_completed']);
   const contentCreated = hasAny(checks, ['first_content_generated', 'content_published']) || contentCount > 0;
   const leadMagnetReady = checks.has('lead_magnet_created');
-  const funnelReady = Boolean(publishedFunnel) || hasAny(checks, ['funnel_published', 'lead_flow_tested']) || leadMagnetReady;
+  const funnelReady = Boolean(publishedFunnel) || hasAny(checks, ['funnel_published', 'lead_flow_tested']);
   const trafficReady = hasAny(checks, ['traffic_campaign_launched', 'campaign_launched']);
   const firstCustomer = checks.has('first_sale_completed') || customerCount > 0;
 

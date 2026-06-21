@@ -1,28 +1,58 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink, Loader2, Pencil, Rocket, Sparkles, Trophy } from 'lucide-react';
-import { cn } from '@/lib/cn';
-import type { FunnelBuilderType, FunnelPackage, FunnelPortfolio, FunnelTrack } from '../types/funnel-builder';
-import { FUNNEL_TYPES } from '../types/funnel-builder';
-import { funnelHealthService } from '@/modules/funnel/services/funnel-health-service';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Circle,
+  ExternalLink,
+  FileText,
+  GitBranch,
+  LayoutTemplate,
+  Loader2,
+  MessageCircle,
+  RefreshCw,
+  Rocket,
+  Sparkles,
+  Target,
+} from 'lucide-react';
+import type {
+  FunnelBuilderType,
+  FunnelPackage,
+  FunnelPortfolio,
+  FunnelTrack,
+} from '../types/funnel-builder';
 
-const TRACKS: { id: FunnelTrack; title: string; description: string; defaultType: FunnelBuilderType; action: string }[] = [
+const TRACKS: Array<{
+  id: FunnelTrack;
+  title: string;
+  shortTitle: string;
+  description: string;
+  defaultType: FunnelBuilderType;
+  audience: string;
+  outcome: string;
+}> = [
   {
     id: 'retail',
-    title: '零售客户漏斗',
-    description: '给想了解产品、服务或改善方案的潜在客户。',
+    title: '零售客户落地页',
+    shortTitle: 'Retail',
+    description: '给想了解产品、服务或解决方案的潜在客户。',
     defaultType: 'lead_magnet',
-    action: '生成零售漏斗',
+    audience: '客户 / 买家 / 咨询者',
+    outcome: '领取资源并进入 WhatsApp 跟进',
   },
   {
     id: 'recruitment',
-    title: '招募伙伴漏斗',
-    description: '给想了解副业、团队机会和收入路径的人。',
+    title: '招募伙伴落地页',
+    shortTitle: 'Recruitment',
+    description: '给想了解副业、团队机会和复制系统的人。',
     defaultType: 'consultation',
-    action: '生成招募漏斗',
+    audience: '伙伴 / 团队候选人',
+    outcome: '了解机会并进入合作对话',
   },
 ];
 
@@ -31,241 +61,483 @@ function useFunnelPortfolio() {
     queryKey: ['funnel-builder'],
     queryFn: async () => {
       const r = await fetch('/api/v1/funnel-builder');
-      if (!r.ok) throw new Error('Failed');
+      if (!r.ok) throw new Error('Failed to load funnel portfolio');
       return r.json() as Promise<{ data: FunnelPortfolio }>;
     },
     staleTime: 30_000,
   });
 }
 
-function useGenerate() {
+async function generateTrack(track: FunnelTrack, funnelType: FunnelBuilderType) {
+  const r = await fetch('/api/v1/funnel-builder/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ funnelType, track }),
+  });
+  if (!r.ok) throw new Error('Failed to generate funnel package');
+  return r.json() as Promise<{ data: FunnelPackage }>;
+}
+
+async function publishTrack(track: FunnelTrack) {
+  const r = await fetch('/api/v1/funnel-builder/publish-landing-page', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ track }),
+  });
+  if (!r.ok) throw new Error('Failed to publish landing page');
+  return r.json() as Promise<{ data: FunnelPackage }>;
+}
+
+function useGenerateDualLandingPages(portfolio: FunnelPortfolio) {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (input: { funnelType: FunnelBuilderType; track: FunnelTrack }) => {
-      const r = await fetch('/api/v1/funnel-builder/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
-      if (!r.ok) throw new Error('Failed');
-      return r.json() as Promise<{ data: FunnelPackage }>;
+    mutationFn: async () => {
+      const output: FunnelPackage[] = [];
+
+      for (const track of TRACKS) {
+        const current = portfolio[track.id];
+        if (!current) {
+          await generateTrack(track.id, track.defaultType);
+        }
+        const published = await publishTrack(track.id);
+        output.push(published.data);
+      }
+
+      return output;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['funnel-builder'] }),
   });
 }
 
-function usePublishLandingPage() {
+function usePublishSingleTrack() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (track: FunnelTrack) => {
-      const r = await fetch('/api/v1/funnel-builder/publish-landing-page', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ track }),
-      });
-      if (!r.ok) throw new Error('Failed');
-      return r.json() as Promise<{ data: FunnelPackage }>;
-    },
+    mutationFn: async (track: FunnelTrack) => publishTrack(track),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['funnel-builder'] }),
   });
 }
 
-function isRenderablePackage(pkg: FunnelPackage | null | undefined): pkg is FunnelPackage {
+function readyLabel(ready: boolean) {
+  return ready ? '已准备' : '需补齐';
+}
+
+function defaultPortfolio(): FunnelPortfolio {
+  return {
+    retail: null,
+    recruitment: null,
+    activeTrack: 'retail',
+    readiness: {
+      brandDnaReady: false,
+      contentPlanReady: false,
+      leadMagnetReady: false,
+      retailLandingPageReady: false,
+      recruitmentLandingPageReady: false,
+    },
+  };
+}
+
+function hasRequiredInputs(portfolio: FunnelPortfolio) {
+  const readiness = portfolio.readiness;
   return Boolean(
-    pkg?.landingPage &&
-    pkg.thankYouPage &&
-    pkg.whatsappFlow &&
-    Array.isArray(pkg.emailSequence) &&
-    Array.isArray(pkg.adAngles) &&
-    Array.isArray(pkg.launchPlan),
+    readiness?.brandDnaReady &&
+      readiness.contentPlanReady &&
+      readiness.leadMagnetReady,
   );
 }
 
-function statusLabel(score: number) {
-  if (score >= 80) return '可以发布';
-  if (score >= 60) return '接近就绪';
-  return '需要补齐';
+function hasBothLandingPages(portfolio: FunnelPortfolio) {
+  return Boolean(
+    portfolio.readiness?.retailLandingPageReady &&
+      portfolio.readiness.recruitmentLandingPageReady,
+  );
 }
 
-function healthState(value: number) {
-  if (value >= 70) return { label: '已准备', tone: 'text-emerald-700 bg-emerald-50' };
-  if (value >= 40) return { label: '可优化', tone: 'text-amber-700 bg-amber-50' };
-  return { label: '需补齐', tone: 'text-red-700 bg-red-50' };
-}
-
-export function FunnelBuilderDashboard() {
-  const router = useRouter();
-  const q = useFunnelPortfolio();
-  const gen = useGenerate();
-  const publishLandingPage = usePublishLandingPage();
-  const [collapsed, setCollapsed] = React.useState<Record<FunnelTrack, boolean>>({ retail: true, recruitment: true });
-  const portfolio = q.data?.data ?? { retail: null, recruitment: null, activeTrack: 'retail' as FunnelTrack };
-
-  if (q.isLoading) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>;
-  }
-
+function ReadinessItem({
+  label,
+  detail,
+  ready,
+}: {
+  label: string;
+  detail: string;
+  ready: boolean;
+}) {
   return (
-    <div className="mx-auto max-w-4xl space-y-4 pb-12">
-      <div className="flex items-center gap-3">
-        <button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button>
-        <div>
-          <h1 className="text-xl font-bold">漏斗页面中心</h1>
-          <p className="text-xs text-gray-500">根据 AI 访谈和 Brand DNA 同时生成零售客户漏斗与招募伙伴漏斗。</p>
-        </div>
-      </div>
-
-      <section className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-        <h2 className="text-sm font-bold text-blue-900">双漏斗逻辑</h2>
-        <p className="mt-1 text-sm text-blue-800">
-          零售漏斗负责把陌生人变成客户；招募漏斗负责把有兴趣的人变成团队伙伴。两条漏斗可以同时存在、同时发布、同时接不同内容和流量。
+    <div
+      className={`flex items-start gap-3 rounded-[var(--radius-md)] border p-4 ${
+        ready
+          ? 'border-emerald-100 bg-emerald-50'
+          : 'border-amber-100 bg-amber-50'
+      }`}
+    >
+      {ready ? (
+        <CheckCircle2
+          className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700"
+          aria-hidden="true"
+        />
+      ) : (
+        <Circle
+          className="mt-0.5 h-5 w-5 shrink-0 text-amber-700"
+          aria-hidden="true"
+        />
+      )}
+      <div>
+        <p
+          className={`text-sm font-bold ${
+            ready ? 'text-emerald-950' : 'text-amber-950'
+          }`}
+        >
+          {label}
         </p>
-      </section>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        {TRACKS.map((track) => (
-          <FunnelTrackCard
-            key={track.id}
-            track={track}
-            pkg={isRenderablePackage(portfolio[track.id]) ? portfolio[track.id] : null}
-            generating={gen.isPending}
-            publishing={publishLandingPage.isPending}
-            generateError={gen.isError}
-            publishError={publishLandingPage.isError}
-            collapsed={collapsed[track.id]}
-            onToggle={() => setCollapsed((state) => ({ ...state, [track.id]: !state[track.id] }))}
-            onGenerate={() => gen.mutate({ funnelType: track.defaultType, track: track.id })}
-            onPublish={() => publishLandingPage.mutate(track.id)}
-            onEdit={(id) => router.push(`/funnel/${id}/edit`)}
-          />
-        ))}
+        <p
+          className={`mt-1 text-xs font-semibold ${
+            ready ? 'text-emerald-700' : 'text-amber-700'
+          }`}
+        >
+          {readyLabel(ready)}
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+          {detail}
+        </p>
       </div>
     </div>
   );
 }
 
-function FunnelTrackCard({
+function TrackSummary({
   track,
   pkg,
-  generating,
   publishing,
-  generateError,
-  publishError,
-  collapsed,
-  onToggle,
-  onGenerate,
   onPublish,
-  onEdit,
 }: {
-  track: typeof TRACKS[number];
+  track: (typeof TRACKS)[number];
   pkg: FunnelPackage | null;
-  generating: boolean;
   publishing: boolean;
-  generateError: boolean;
-  publishError: boolean;
-  collapsed: boolean;
-  onToggle: () => void;
-  onGenerate: () => void;
-  onPublish: () => void;
-  onEdit: (id: string) => void;
+  onPublish: (track: FunnelTrack) => void;
 }) {
-  const health = pkg ? funnelHealthService.evaluatePackage(pkg) : null;
-  const healthItems = health ? [
-    { k: '受众匹配', v: health.audienceFit },
-    { k: '服务清晰', v: health.offerClarity },
-    { k: '页面清晰', v: health.pageClarity },
-    { k: 'CTA', v: health.ctaStrength },
-    { k: '信任元素', v: health.trustElements },
-    { k: '跟进', v: health.followUpReadiness },
-  ] : [];
+  const publicPath = pkg?.landingPage.publicPath;
 
   return (
-    <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-bold text-gray-950">{track.title}</h2>
-          <p className="mt-1 text-sm text-gray-600">{track.description}</p>
+          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+            <GitBranch className="h-3.5 w-3.5" aria-hidden="true" />
+            {track.shortTitle}
+          </div>
+          <h2 className="mt-3 text-lg font-bold text-[var(--color-text)]">
+            {track.title}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+            {track.description}
+          </p>
         </div>
-        {pkg && <div className="shrink-0 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"><Trophy className="mr-1 inline h-3 w-3" />{statusLabel(pkg.healthScore)}</div>}
+        <div
+          className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${
+            publicPath
+              ? 'bg-emerald-100 text-emerald-700'
+              : pkg
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-amber-100 text-amber-700'
+          }`}
+        >
+          {publicPath ? '已发布' : pkg ? '待发布' : '未生成'}
+        </div>
       </div>
 
-      {!pkg ? (
-        <div className="mt-4 rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 p-5 text-center">
-          <Rocket className="mx-auto mb-3 h-7 w-7 text-blue-500" />
-          <p className="text-sm font-bold text-gray-950">还没有生成</p>
-          <p className="mt-1 text-xs text-gray-600">系统会读取 Brand DNA，自动写出对应的落地页、感谢页、WhatsApp 跟进和邮件序列。</p>
-          {generateError && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">无法生成漏斗，请先完成 AI 访谈和品牌资料。</p>}
-          <button onClick={onGenerate} disabled={generating} className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50">
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {track.action}
-          </button>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-[var(--radius-md)] border border-blue-100 bg-blue-50 p-4">
+          <div className="flex items-center gap-2 text-xs font-bold text-blue-700">
+            <Target className="h-4 w-4" aria-hidden="true" />
+            目标受众
+          </div>
+          <p className="mt-2 text-sm font-semibold text-blue-950">
+            {track.audience}
+          </p>
         </div>
-      ) : (
-        <div className="mt-4 space-y-4">
-          <S title="落地页发布">
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-bold text-gray-950">{pkg.landingPage.headline}</p>
-                <p className="mt-1 text-xs text-gray-600">{pkg.landingPage.subheadline}</p>
-              </div>
-              {pkg.landingPage.publicPath ? (
-                <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-                  <div className="text-xs font-bold text-emerald-700">落地页已生成</div>
-                  <div className="mt-1 break-all text-sm font-semibold text-gray-950">{pkg.landingPage.publicPath}</div>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-gray-700">生成真正可访问的 landing page，不只是文案报告。</div>
-              )}
-              {publishError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">无法发布落地页，请稍后重试。</p>}
-              <div className="flex flex-wrap gap-2">
-                <button onClick={onPublish} disabled={publishing} className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50">
-                  {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {pkg.landingPage.publicPath ? '重新生成落地页' : '生成落地页'}
-                </button>
-                {pkg.landingPage.publicPath && (
-                  <button onClick={() => window.open(pkg.landingPage.publicPath, '_blank', 'noopener,noreferrer')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-bold text-gray-700 hover:bg-gray-50">
-                    <ExternalLink className="h-4 w-4" /> 查看
-                  </button>
-                )}
-                {pkg.landingPage.funnelId && (
-                  <button onClick={() => onEdit(pkg.landingPage.funnelId!)} className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-sm font-bold text-gray-700 hover:bg-gray-50">
-                    <Pencil className="h-4 w-4" /> 编辑
-                  </button>
-                )}
-              </div>
-            </div>
-          </S>
-
-          {health && (
-            <S title="启动前检查">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {healthItems.map((item) => {
-                  const state = healthState(item.v);
-                  return <div key={item.k} className={cn('rounded p-2 text-center', state.tone)}><div className="font-bold">{item.k}</div><div>{state.label}</div></div>;
-                })}
-              </div>
-              <p className="mt-3 text-sm"><strong>下一步行动:</strong> {pkg.nextBestAction}</p>
-            </S>
-          )}
-
-          <button onClick={onToggle} className="flex w-full items-center justify-between rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-sm font-bold">
-            漏斗内容 {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-          </button>
-
-          {!collapsed && (
-            <div className="space-y-3">
-              <S title="领取页"><p className="text-sm font-bold">{pkg.landingPage.headline}</p><p className="text-xs text-blue-600">{pkg.landingPage.subheadline}</p><p className="mt-2 text-xs"><strong>问题:</strong> {pkg.landingPage.problem}</p><p className="text-xs"><strong>方案:</strong> {pkg.landingPage.solution}</p></S>
-              <S title="感谢页"><p className="text-sm font-bold">{pkg.thankYouPage.confirmation}</p><p className="text-xs">{pkg.thankYouPage.nextStep}</p></S>
-              <S title="WhatsApp 流程">{pkg.whatsappFlow.qualificationQuestions.map((q, i) => <p key={i} className="text-xs text-gray-600">Q{i + 1}: {q}</p>)}</S>
-              <S title="邮件序列">{pkg.emailSequence.map((e) => <p key={e.order} className="border-b py-1.5 text-xs last:border-0"><strong>{e.order}. {e.type}:</strong> {e.subject}</p>)}</S>
-            </div>
-          )}
+        <div className="rounded-[var(--radius-md)] border border-emerald-100 bg-emerald-50 p-4">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
+            <MessageCircle className="h-4 w-4" aria-hidden="true" />
+            转化动作
+          </div>
+          <p className="mt-2 text-sm font-semibold text-emerald-950">
+            {track.outcome}
+          </p>
         </div>
-      )}
+      </div>
+
+      <div className="mt-5 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <div className="flex items-start gap-3">
+          <LayoutTemplate
+            className="mt-0.5 h-5 w-5 shrink-0 text-blue-700"
+            aria-hidden="true"
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-[var(--color-text)]">
+              {pkg?.landingPage.headline ?? '等待 AI 生成落地页标题'}
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+              {pkg?.landingPage.subheadline ??
+                '系统会根据 Brand DNA、内容方向和引流资源生成 Hero、痛点、机制、表单、感谢页和 WhatsApp 跟进。'}
+            </p>
+            {publicPath && (
+              <p className="mt-3 break-all text-xs font-semibold text-emerald-700">
+                {publicPath}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+        {pkg && !publicPath && (
+          <button
+            type="button"
+            onClick={() => onPublish(track.id)}
+            disabled={publishing}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {publishing ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+            )}
+            发布这条落地页
+          </button>
+        )}
+        {publicPath && (
+          <button
+            type="button"
+            onClick={() => window.open(publicPath, '_blank', 'noopener,noreferrer')}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-bold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            查看落地页
+          </button>
+        )}
+        {pkg?.landingPage.funnelId && (
+          <Link
+            href={`/funnel/${pkg.landingPage.funnelId}/edit`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-bold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+          >
+            <FileText className="h-4 w-4" aria-hidden="true" />
+            编辑页面
+          </Link>
+        )}
+      </div>
     </section>
   );
 }
 
-function S({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="rounded-xl border border-[var(--color-border)] bg-white p-4"><h3 className="mb-3 text-sm font-bold">{title}</h3>{children}</section>;
+function LoadingState() {
+  return (
+    <div className="mx-auto flex min-h-[380px] max-w-5xl items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-blue-600" aria-hidden="true" />
+    </div>
+  );
+}
+
+export function FunnelBuilderDashboard() {
+  const router = useRouter();
+  const q = useFunnelPortfolio();
+  const portfolio = q.data?.data ?? defaultPortfolio();
+  const generateDual = useGenerateDualLandingPages(portfolio);
+  const publishSingle = usePublishSingleTrack();
+  const requiredInputsReady = hasRequiredInputs(portfolio);
+  const bothPagesReady = hasBothLandingPages(portfolio);
+  const readiness = portfolio.readiness ?? defaultPortfolio().readiness!;
+
+  if (q.isLoading) {
+    return <LoadingState />;
+  }
+
+  if (q.isError) {
+    return (
+      <div className="mx-auto max-w-5xl pb-12">
+        <section className="rounded-[var(--radius-lg)] border border-red-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-bold text-red-700">Funnel Engine Failure</p>
+          <h1 className="mt-2 text-2xl font-bold text-[var(--color-text)]">
+            漏斗落地页暂时无法载入。
+          </h1>
+          <p className="mt-3 text-sm text-[var(--color-text-muted)]">
+            系统无法读取当前漏斗状态。请稍后重试，或回到 AI COO 首页继续。
+          </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => void q.refetch()}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-5 text-sm font-bold text-white hover:bg-blue-700"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+              重试
+            </button>
+            <Link
+              href="/dashboard"
+              className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-bold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+            >
+              回到 AI COO
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-5 pb-12">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard')}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]"
+          aria-label="Back to dashboard"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+        </button>
+        <div>
+          <p className="text-xs font-bold uppercase text-blue-700">
+            AI COO Mission
+          </p>
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+            生成双漏斗落地页
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            把 Brand DNA、内容计划和引流资源，转换成零售客户页与招募伙伴页。
+          </p>
+        </div>
+      </div>
+
+      <section className="rounded-[var(--radius-lg)] border border-blue-200 bg-white shadow-sm">
+        <div className="grid gap-0 lg:grid-cols-[1.25fr_0.75fr]">
+          <div className="p-5 md:p-7">
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+              <Rocket className="h-4 w-4" aria-hidden="true" />
+              Funnel Required
+            </div>
+            <h2 className="mt-4 max-w-3xl text-3xl font-bold leading-tight text-[var(--color-text)]">
+              你还没有可以承接流量的落地页。
+            </h2>
+            <div className="mt-5 space-y-4 border-l-2 border-blue-100 pl-4">
+              <div>
+                <p className="text-xs font-bold uppercase text-blue-700">
+                  为什么是这个
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+                  内容和引流资源已经负责吸引注意力，落地页负责把注意力变成资料提交、WhatsApp 对话和后续跟进。
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase text-blue-700">
+                  为什么现在
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+                  在启动流量测试之前，系统必须先有两个明确入口：一个卖给客户，一个招募伙伴。
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase text-blue-700">
+                  为什么不是其他任务
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+                  现在先不做流量或 CRM，因为没有落地页时，访问者没有清楚的领取路径，后续数据也无法判断。
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {!bothPagesReady ? (
+                <button
+                  type="button"
+                  onClick={() => generateDual.mutate()}
+                  disabled={!requiredInputsReady || generateDual.isPending}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {generateDual.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  生成双漏斗落地页
+                </button>
+              ) : (
+                <Link
+                  href="/traffic-engine"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-bold text-white shadow-sm hover:bg-blue-700"
+                >
+                  进入流量测试
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              )}
+              {generateDual.isError && (
+                <p className="text-sm font-semibold text-red-700">
+                  无法生成双漏斗，请先确认前置资料是否完成。
+                </p>
+              )}
+              {!requiredInputsReady && (
+                <p className="text-sm font-semibold text-amber-700">
+                  先补齐 Brand DNA、内容计划和引流资源。
+                </p>
+              )}
+            </div>
+          </div>
+
+          <aside className="border-t border-blue-100 bg-blue-50/40 p-5 lg:border-l lg:border-t-0 md:p-6">
+            <p className="text-xs font-bold text-blue-700">生成内容</p>
+            <div className="mt-4 space-y-3">
+              {[
+                '零售客户落地页',
+                '招募伙伴落地页',
+                '感谢页与确认文案',
+                'WhatsApp 预设开场',
+                '7 封邮件跟进',
+                '流量测试角度',
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-2 text-sm font-semibold text-blue-950"
+                >
+                  <CheckCircle2
+                    className="h-4 w-4 shrink-0 text-blue-700"
+                    aria-hidden="true"
+                  />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-3">
+        <ReadinessItem
+          label="Brand DNA"
+          detail="确认受众、痛点、Offer、故事和信任元素。"
+          ready={readiness.brandDnaReady}
+        />
+        <ReadinessItem
+          label="内容计划"
+          detail="确认零售与招募两种内容方向。"
+          ready={readiness.contentPlanReady}
+        />
+        <ReadinessItem
+          label="引流资源"
+          detail="确认受众愿意领取的免费资源。"
+          ready={readiness.leadMagnetReady}
+        />
+      </section>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        {TRACKS.map((track) => (
+          <TrackSummary
+            key={track.id}
+            track={track}
+            pkg={portfolio[track.id]}
+            publishing={publishSingle.isPending}
+            onPublish={(item) => publishSingle.mutate(item)}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }

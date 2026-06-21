@@ -16,7 +16,7 @@ const LABELS: Record<string, string> = {
   BRAND_POSITIONING: '品牌定位',
   CONTENT_SYSTEM: '内容系统',
   LEAD_MAGNET: '引流资源',
-  FUNNEL: '漏斗页面',
+  FUNNEL: '双漏斗落地页',
   LEAD_GENERATION: '获客',
   SALES_CONVERSION: '销售转化',
   SALES: '销售转化',
@@ -79,7 +79,7 @@ function missionReasonFor(
   if (currentGap === 'NO_LEAD_MAGNET')
     return '内容方向已经开始成形，但还缺少一个让陌生受众愿意留下联系方式的引流资源。先生成它，后面的落地页和流量测试才有入口。';
   if (currentGap === 'NO_FUNNEL')
-    return '你已经有引流方向，但还没有可以承接流量的落地页。先生成 Retail 与 Recruitment 的领取页、感谢页和跟进流程。';
+    return '你已经有内容计划和引流资源，但还没有可以承接真实访问的落地页。先生成零售客户漏斗和招募伙伴漏斗，后面的流量测试才有地方转化。';
   if (currentGap === 'NO_TRAFFIC')
     return '漏斗已经可以承接线索，下一步要用小流量测试验证信息、CTA 和跟进路径，而不是继续堆功能。';
   if (currentGap === 'NO_SALES')
@@ -95,6 +95,8 @@ function decisionReasonFor(rawReason: string, currentGap: string) {
     return '现在不应该跳去内容或漏斗，因为没有确认 Brand DNA 时，系统生成出来的文案和页面很容易偏离真实业务。';
   if (currentGap === 'NO_LEADS')
     return '现在先不优先做团队、报表或复杂自动化，因为没有潜在客户之前，这些动作不会直接带来第一位真实客户。';
+  if (currentGap === 'NO_FUNNEL')
+    return '现在不应该先启动流量测试，因为没有落地页时，流量来了也没有清楚的领取入口、感谢页或 WhatsApp 跟进路径。';
   return '我会先处理最影响进展的缺口，再安排其他优化动作。';
 }
 
@@ -116,7 +118,7 @@ function primaryActionLabel(route: string, currentGap: string) {
     return '确认 Brand DNA';
   if (route.includes('/content')) return '打开内容引擎';
   if (route.includes('/lead-magnet')) return '生成引流资源';
-  if (route.includes('/funnel')) return '生成漏斗落地页';
+  if (route.includes('/funnel')) return '生成双漏斗落地页';
   if (route.includes('/traffic')) return '启动流量测试';
   if (route.includes('/crm') || route.includes('/customer'))
     return '处理 Leads';

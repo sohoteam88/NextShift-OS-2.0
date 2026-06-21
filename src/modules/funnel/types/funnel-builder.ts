@@ -15,6 +15,15 @@ export interface FunnelPortfolio {
   retail: FunnelPackage | null;
   recruitment: FunnelPackage | null;
   activeTrack: FunnelTrack;
+  readiness?: FunnelBuilderReadiness;
+}
+
+export interface FunnelBuilderReadiness {
+  brandDnaReady: boolean;
+  contentPlanReady: boolean;
+  leadMagnetReady: boolean;
+  retailLandingPageReady: boolean;
+  recruitmentLandingPageReady: boolean;
 }
 
 export interface LandingPage {

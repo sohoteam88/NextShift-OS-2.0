@@ -7,6 +7,7 @@ import { funnelHealthService } from '@/modules/funnel/services/funnel-health-ser
 import { funnelService } from '@/modules/funnel/services/funnel-service';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { FunnelConfig, FunnelSection, FunnelTheme } from '@/modules/funnel/types';
+import { extractCheckKeys } from '@/modules/mission/utils/completed-checks';
 
 const DEFAULT_THEME: FunnelTheme = { primary_color: '#2563eb', bg_color: '#ffffff', font: 'system' };
 const TRACKS: FunnelTrack[] = ['retail', 'recruitment'];
@@ -135,8 +136,12 @@ export const funnelBuilderService = {
   },
 
   async getPortfolio(userId: string): Promise<FunnelPortfolio> {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
+    const [user, progress] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } }),
+      prisma.userProgress.findUnique({ where: { userId }, select: { completedChecks: true } }),
+    ]);
     const meta = (user?.metadata as Record<string, unknown>) ?? {};
+    const checks = new Set(extractCheckKeys(progress?.completedChecks));
     const activeTrack = isFunnelTrack(meta.funnel_builder_active_track) ? meta.funnel_builder_active_track : 'retail';
     const portfolio = emptyPortfolio(activeTrack);
     const storedTracks = (meta.funnel_builder_tracks && typeof meta.funnel_builder_tracks === 'object')
@@ -166,6 +171,17 @@ export const funnelBuilderService = {
         if (!portfolio[pkgTrack]) portfolio[pkgTrack] = funnel.config;
       }
     }
+
+    const leadMagnetTracks = (meta.lead_magnet_tracks && typeof meta.lead_magnet_tracks === 'object')
+      ? meta.lead_magnet_tracks as Record<string, unknown>
+      : {};
+    portfolio.readiness = {
+      brandDnaReady: checks.has('brand_dna_confirmed') || checks.has('positioning_completed'),
+      contentPlanReady: checks.has('content_calendar_generated') || checks.has('first_content_generated') || checks.has('content_published'),
+      leadMagnetReady: checks.has('lead_magnet_created') || Boolean(leadMagnetTracks.retail || leadMagnetTracks.recruitment || meta.lead_magnet),
+      retailLandingPageReady: Boolean(portfolio.retail?.landingPage.publicPath),
+      recruitmentLandingPageReady: Boolean(portfolio.recruitment?.landingPage.publicPath),
+    };
 
     return portfolio;
   },
