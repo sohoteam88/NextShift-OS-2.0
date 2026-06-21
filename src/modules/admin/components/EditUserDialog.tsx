@@ -3,9 +3,11 @@
 import * as React from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { X } from 'lucide-react';
+import { KeyRound, Trash2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { useToast } from '@/stores/toast-store';
 import type { AdminUserRecord, AdminUserRole, AdminUserStatus } from '../types';
 
 type Props = {
@@ -24,13 +26,18 @@ export function EditUserDialog({ open, currentUserId, currentUserRole, user, onC
   const t = useTranslations('admin');
   const common = useTranslations('common');
   const qc = useQueryClient();
+  const { toast } = useToast();
   const [role, setRole] = React.useState<AdminUserRole>('member');
   const [status, setStatus] = React.useState<AdminUserStatus>('active');
+  const [password, setPassword] = React.useState('');
+  const [deleteConfirm, setDeleteConfirm] = React.useState('');
 
   React.useEffect(() => {
     if (user) {
       setRole(user.role);
       setStatus(user.status);
+      setPassword('');
+      setDeleteConfirm('');
     }
   }, [user]);
 
@@ -63,8 +70,59 @@ export function EditUserDialog({ open, currentUserId, currentUserRole, user, onC
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['admin-users'] });
+      toast('success', common('save'));
       onSaved();
       onClose();
+    },
+  });
+
+  const passwordMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new Error('No user selected');
+      }
+
+      const res = await fetch(`/api/v1/admin/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error?.message ?? 'Failed to reset password');
+      }
+      return res.json();
+    },
+    onSuccess: async () => {
+      setPassword('');
+      toast('success', t('passwordResetSuccess'));
+    },
+    onError: (error) => {
+      toast('error', error instanceof Error ? error.message : 'Failed to reset password');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new Error('No user selected');
+      }
+
+      const res = await fetch(`/api/v1/admin/users/${user.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null);
+        throw new Error(payload?.error?.message ?? 'Failed to delete user');
+      }
+      return res.json();
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['admin-users'] });
+      toast('success', t('userDeletedSuccess'));
+      onSaved();
+      onClose();
+    },
+    onError: (error) => {
+      toast('error', error instanceof Error ? error.message : 'Failed to delete user');
     },
   });
 
@@ -72,6 +130,9 @@ export function EditUserDialog({ open, currentUserId, currentUserRole, user, onC
 
   const roleChanged = role !== user.role;
   const statusChanged = status !== user.status;
+  const canSecurityAction =
+    user.id !== currentUserId &&
+    (currentUserRole === 'platform_admin' || (user.role !== 'operator' && user.role !== 'platform_admin'));
 
   async function handleSave() {
     if (roleChanged || statusChanged) {
@@ -85,6 +146,28 @@ export function EditUserDialog({ open, currentUserId, currentUserRole, user, onC
       if (!confirmation) return;
     }
     await mutation.mutateAsync();
+  }
+
+  async function handlePasswordReset() {
+    if (password.length < 8) {
+      toast('error', t('passwordMinLength'));
+      return;
+    }
+
+    const confirmation = window.confirm(t('confirmPasswordReset'));
+    if (!confirmation) return;
+    await passwordMutation.mutateAsync();
+  }
+
+  async function handleDelete() {
+    if (deleteConfirm !== 'DELETE') {
+      toast('error', t('deleteConfirmRequired'));
+      return;
+    }
+
+    const confirmation = window.confirm(t('confirmUserDelete'));
+    if (!confirmation) return;
+    await deleteMutation.mutateAsync();
   }
 
   return (
@@ -153,6 +236,76 @@ export function EditUserDialog({ open, currentUserId, currentUserRole, user, onC
             <p className="mt-1">
               {t('currentUserHint', { name: user.name, role: user.role, status: user.status })}
             </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <section className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-4 w-4 text-[var(--color-primary)]" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-[var(--color-text)]">
+                  {t('resetPassword')}
+                </h3>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-[var(--color-text-muted)]">
+                {t('resetPasswordHelp')}
+              </p>
+              <div className="mt-3 space-y-2">
+                <Input
+                  label={t('newPassword')}
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  disabled={!canSecurityAction}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  loading={passwordMutation.isPending}
+                  disabled={!canSecurityAction || password.length < 8}
+                  onClick={handlePasswordReset}
+                >
+                  {t('resetPassword')}
+                </Button>
+                {!canSecurityAction && (
+                  <p className="text-xs text-[var(--color-text-muted)]">{t('securityActionLocked')}</p>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-[var(--radius-md)] border border-rose-200 bg-rose-50 p-4">
+              <div className="flex items-center gap-2">
+                <Trash2 className="h-4 w-4 text-rose-700" aria-hidden="true" />
+                <h3 className="text-sm font-semibold text-rose-900">
+                  {t('deleteUser')}
+                </h3>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-rose-700">
+                {t('deleteUserHelp')}
+              </p>
+              <div className="mt-3 space-y-2">
+                <Input
+                  label={t('deleteConfirmLabel')}
+                  value={deleteConfirm}
+                  onChange={(event) => setDeleteConfirm(event.target.value)}
+                  disabled={!canSecurityAction}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  loading={deleteMutation.isPending}
+                  disabled={!canSecurityAction || deleteConfirm !== 'DELETE'}
+                  onClick={handleDelete}
+                  className="border-rose-200 text-rose-700 hover:bg-rose-100"
+                >
+                  {t('deleteUser')}
+                </Button>
+                {!canSecurityAction && (
+                  <p className="text-xs text-rose-700">{t('securityActionLocked')}</p>
+                )}
+              </div>
+            </section>
           </div>
         </div>
 

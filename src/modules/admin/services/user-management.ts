@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
+import { createServiceRoleSupabaseClient } from '@/lib/supabase/server';
 import type { AdminUserRecord, AdminUserRole, AdminUserStatus, AdminUsersResponse } from '../types';
 
 const VALID_ROLES: AdminUserRole[] = ['member', 'leader', 'operator', 'platform_admin'];
@@ -24,6 +25,49 @@ async function logAudit(tenantId: string, actorId: string, action: string, targe
   await prisma.auditLog.create({ data: { tenantId, actorId, action, targetType, targetId, metadata: metadata as Prisma.InputJsonValue } });
 }
 
+async function loadActor(operatorId: string) {
+  const actor = await prisma.user.findFirst({
+    where: { id: operatorId, deletedAt: null },
+    select: { id: true, tenantId: true, name: true, role: true },
+  });
+  if (!actor) throw new AppError('UNAUTHORIZED', 401, 'Authentication required');
+  if (!['operator', 'platform_admin'].includes(actor.role)) {
+    throw new AppError('FORBIDDEN', 403, 'Insufficient permissions');
+  }
+  return actor;
+}
+
+async function loadTarget(actor: Awaited<ReturnType<typeof loadActor>>, userId: string) {
+  const target = await prisma.user.findFirst({
+    where: {
+      id: userId,
+      deletedAt: null,
+      ...(actor.role === 'platform_admin' ? {} : { tenantId: actor.tenantId }),
+    },
+    select: { id: true, tenantId: true, name: true, email: true, role: true, status: true },
+  });
+  if (!target) throw new AppError('NOT_FOUND', 404, 'User not found');
+  return target;
+}
+
+async function assertCanManageTarget(
+  actor: Awaited<ReturnType<typeof loadActor>>,
+  target: Awaited<ReturnType<typeof loadTarget>>,
+  data: { role?: string; status?: string } = {},
+) {
+  if (data.role !== undefined && !VALID_ROLES.includes(data.role as AdminUserRole)) throw new AppError('VALIDATION_ERROR', 400, 'Invalid role');
+  if (data.status !== undefined && !VALID_STATUSES.includes(data.status as AdminUserStatus)) throw new AppError('VALIDATION_ERROR', 400, 'Invalid status');
+  if (data.role === 'operator' && actor.role !== 'platform_admin') throw new AppError('FORBIDDEN', 403, 'Only platform admins can assign operator roles');
+  if (data.role === 'platform_admin' && actor.role !== 'platform_admin') throw new AppError('FORBIDDEN', 403, 'Only platform admins can assign platform admin roles');
+  if (actor.id === target.id && data.role !== undefined && data.role !== target.role) throw new AppError('FORBIDDEN', 403, 'You cannot change your own role');
+  if (target.role === 'platform_admin' && actor.role !== 'platform_admin') throw new AppError('FORBIDDEN', 403, 'Only platform admins can manage platform admin users');
+  if (target.role === 'operator' && actor.role !== 'platform_admin' && data.role !== undefined && data.role !== 'operator') throw new AppError('FORBIDDEN', 403, 'Only platform admins can change operator roles');
+
+  const operatorCount = await prisma.user.count({ where: { tenantId: target.tenantId, deletedAt: null, role: 'operator' } });
+  if (target.role === 'operator' && data.role !== undefined && data.role !== 'operator' && operatorCount <= 1) throw new AppError('CONFLICT', 409, 'Cannot demote the last operator');
+  if (target.role === 'operator' && data.status === 'suspended' && operatorCount <= 1) throw new AppError('CONFLICT', 409, 'Cannot suspend the last operator');
+}
+
 export async function listUsers(
   tenantId: string,
   query: { search?: string; role?: string; status?: string; page?: number; limit?: number },
@@ -45,26 +89,13 @@ export async function listUsers(
 }
 
 export async function updateUser(operatorId: string, tenantId: string, userId: string, data: { role?: string; status?: string }) {
-  const actor = await prisma.user.findFirst({ where: { id: operatorId, tenantId, deletedAt: null }, select: { id: true, name: true, role: true } });
-  if (!actor) throw new AppError('UNAUTHORIZED', 401, 'Authentication required');
-
-  const target = await prisma.user.findFirst({ where: { id: userId, tenantId, deletedAt: null }, select: { id: true, name: true, role: true, status: true } });
-  if (!target) throw new AppError('NOT_FOUND', 404, 'User not found');
+  const actor = await loadActor(operatorId);
+  const target = await loadTarget(actor, userId);
 
   const nextRole = data.role ?? target.role;
   const nextStatus = data.status ?? target.status;
 
-  if (data.role !== undefined && !VALID_ROLES.includes(data.role as AdminUserRole)) throw new AppError('VALIDATION_ERROR', 400, 'Invalid role');
-  if (data.status !== undefined && !VALID_STATUSES.includes(data.status as AdminUserStatus)) throw new AppError('VALIDATION_ERROR', 400, 'Invalid status');
-  if (data.role === 'operator' && actor.role !== 'platform_admin') throw new AppError('FORBIDDEN', 403, 'Only platform admins can assign operator roles');
-  if (data.role === 'platform_admin' && actor.role !== 'platform_admin') throw new AppError('FORBIDDEN', 403, 'Only platform admins can assign platform admin roles');
-  if (operatorId === userId && data.role !== undefined && data.role !== target.role) throw new AppError('FORBIDDEN', 403, 'You cannot change your own role');
-  if (target.role === 'platform_admin' && actor.role !== 'platform_admin') throw new AppError('FORBIDDEN', 403, 'Only platform admins can manage platform admin users');
-  if (target.role === 'operator' && actor.role !== 'platform_admin' && data.role !== undefined && data.role !== 'operator') throw new AppError('FORBIDDEN', 403, 'Only platform admins can change operator roles');
-
-  const operatorCount = await prisma.user.count({ where: { tenantId, deletedAt: null, role: 'operator' } });
-  if (target.role === 'operator' && data.role !== undefined && data.role !== 'operator' && operatorCount <= 1) throw new AppError('CONFLICT', 409, 'Cannot demote the last operator');
-  if (target.role === 'operator' && data.status === 'suspended' && operatorCount <= 1) throw new AppError('CONFLICT', 409, 'Cannot suspend the last operator');
+  await assertCanManageTarget(actor, target, data);
 
   const updated = await prisma.user.update({
     where: { id: userId },
@@ -77,13 +108,62 @@ export async function updateUser(operatorId: string, tenantId: string, userId: s
   if (data.status !== undefined && data.status !== target.status) changeParts.push(`Status changed: ${target.status} → ${data.status}`);
 
   if (changeParts.length > 0) {
-    await logAudit(tenantId, actor.id, `${changeParts.join('; ')} by ${actor.name}`, 'user', userId, {
+    await logAudit(target.tenantId, actor.id, `${changeParts.join('; ')} by ${actor.name}`, 'user', userId, {
       actor: { id: actor.id, name: actor.name, role: actor.role },
       target: { id: target.id, name: target.name },
       from: { role: target.role, status: target.status },
       to: { role: nextRole, status: nextStatus },
     });
   }
+
+  return toUserRecord(updated);
+}
+
+export async function resetUserPassword(operatorId: string, userId: string, password: string) {
+  const actor = await loadActor(operatorId);
+  const target = await loadTarget(actor, userId);
+  await assertCanManageTarget(actor, target);
+
+  if (actor.id === target.id) {
+    throw new AppError('FORBIDDEN', 403, 'Use settings to update your own password');
+  }
+
+  const supabaseAdmin = createServiceRoleSupabaseClient();
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(target.id, { password });
+  if (error) throw new AppError('AUTH_UPDATE_FAILED', 400, error.message);
+
+  await logAudit(target.tenantId, actor.id, `Password reset by ${actor.name}`, 'user', userId, {
+    actor: { id: actor.id, name: actor.name, role: actor.role },
+    target: { id: target.id, name: target.name, email: target.email },
+  });
+
+  return { ok: true };
+}
+
+export async function deleteUser(operatorId: string, userId: string) {
+  const actor = await loadActor(operatorId);
+  const target = await loadTarget(actor, userId);
+  await assertCanManageTarget(actor, target, { status: 'suspended' });
+
+  if (actor.id === target.id) {
+    throw new AppError('FORBIDDEN', 403, 'You cannot delete your own account');
+  }
+
+  const supabaseAdmin = createServiceRoleSupabaseClient();
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id, true);
+  if (error) throw new AppError('AUTH_DELETE_FAILED', 400, error.message);
+
+  const updated = await prisma.user.update({
+    where: { id: target.id },
+    data: { status: 'suspended', deletedAt: new Date(), updatedAt: new Date() },
+    select: { id: true, tenantId: true, name: true, email: true, phone: true, role: true, status: true, avatarUrl: true, languagePreference: true, createdAt: true, updatedAt: true },
+  });
+
+  await logAudit(target.tenantId, actor.id, `User deleted by ${actor.name}`, 'user', userId, {
+    actor: { id: actor.id, name: actor.name, role: actor.role },
+    target: { id: target.id, name: target.name, email: target.email, role: target.role, status: target.status },
+    deletion: 'soft_delete_auth_and_app_user',
+  });
 
   return toUserRecord(updated);
 }

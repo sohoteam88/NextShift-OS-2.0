@@ -99,7 +99,7 @@ export function UserManagementPanel({ currentUserId, currentUserRole }: Props) {
           <option value="suspended">{t('statusSuspended')}</option>
         </select>
         <Link
-          href="/team"
+          href="/admin/members"
           className="inline-flex h-10 items-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)]"
         >
           {t('inviteMember')}
