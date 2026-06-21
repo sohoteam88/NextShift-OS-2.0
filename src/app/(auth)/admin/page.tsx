@@ -11,5 +11,5 @@ export default async function AdminPage() {
 
   const data = await workspaceHealthService.getCommandData(user.tenantId);
 
-  return <AdminOverview data={data} />;
+  return <AdminOverview data={data} isPlatformAdmin={user.role === 'platform_admin'} />;
 }

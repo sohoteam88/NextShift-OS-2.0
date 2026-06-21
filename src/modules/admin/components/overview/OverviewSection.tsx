@@ -6,6 +6,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock3,
+  Crown,
   Route,
   ShieldAlert,
   UserRoundCheck,
@@ -203,7 +204,13 @@ function MemberProgressDistribution({ steps }: { steps: WorkspaceExecutionStep[]
   );
 }
 
-export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
+export function AdminOverview({
+  data,
+  isPlatformAdmin = false,
+}: {
+  data: WorkspaceCommandData;
+  isPlatformAdmin?: boolean;
+}) {
   const hasPriorityUsers = data.execution.priorityUsers.length > 0;
 
   return (
@@ -213,13 +220,24 @@ export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
         title="Workspace Operator Console"
         description="管理一个工作区或团队：查看成员卡点、系统异常、内容/漏斗/Leads 状态，并决定今天需要人工介入哪里。"
         action={(
-          <Link
-            href={data.execution.primaryActionHref}
-            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white"
-          >
-            {data.execution.primaryAction}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {isPlatformAdmin ? (
+              <Link
+                href="/platform-admin"
+                className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+              >
+                <Crown className="h-4 w-4 text-amber-500" aria-hidden="true" />
+                Founder Platform
+              </Link>
+            ) : null}
+            <Link
+              href={data.execution.primaryActionHref}
+              className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white"
+            >
+              {data.execution.primaryAction}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
         )}
       />
 
@@ -245,6 +263,15 @@ export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
             {data.execution.primaryAction}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
+          {isPlatformAdmin ? (
+            <Link
+              href="/platform-admin"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-blue-200 bg-white px-5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              <Crown className="h-4 w-4" aria-hidden="true" />
+              打开 Founder Platform Console
+            </Link>
+          ) : null}
         </div>
       </section>
 
