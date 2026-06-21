@@ -9,7 +9,7 @@ export default async function BrandBuilderEntryPage() {
   const state = await getWizardState(user.id);
 
   if (isWizardComplete(state)) {
-    redirect('/brand-builder/calendar');
+    redirect('/dashboard');
   }
 
   redirect(getCurrentStepPath(state));

@@ -14,8 +14,6 @@ export const WIZARD_STEPS = [
   { id: 'profile', name: '品牌画像', path: '/brand-builder/step/profile' },
   { id: 'accounts', name: '社交资料设置', path: '/brand-builder/step/accounts' },
   { id: 'platform_guide', name: '平台指引', path: '/brand-builder/step/guides' },
-  { id: 'content_strategy', name: '内容策略', path: '/brand-builder/step/strategy' },
-  { id: 'content_calendar', name: '内容日历', path: '/brand-builder/step/calendar' },
   { id: 'complete', name: '完成', path: '/brand-builder/step/complete' },
 ];
 

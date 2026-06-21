@@ -9,7 +9,7 @@ export default async function WizardLayout({ children }: { children: ReactNode }
   if (!user) redirect('/login');
 
   const state = await getWizardState(user.id);
-  const currentStepNum = state.current_step;
+  const currentStepNum = Math.min(state.current_step, WIZARD_STEPS.length);
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-surface)]">

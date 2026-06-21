@@ -19,7 +19,7 @@ export function GuidesStepClient({ brandProfile, platforms, phone, funnelUrl }: 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stepId: 'platform_guide' }),
     });
-    router.push('/brand-builder/step/strategy');
+    router.push('/brand-builder/step/complete');
   }
 
   async function handleSkip() {
@@ -28,7 +28,7 @@ export function GuidesStepClient({ brandProfile, platforms, phone, funnelUrl }: 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stepId: 'platform_guide' }),
     });
-    router.push('/brand-builder/step/strategy');
+    router.push('/brand-builder/step/complete');
   }
 
   return (

@@ -23,7 +23,7 @@ export function ProfilePageClient({ initialProfile }: Props) {
       body: JSON.stringify(profile),
     });
     toast('success', '品牌画像已保存');
-    router.push('/brand-builder/calendar');
+    router.push('/brand-builder/step/accounts');
   }
 
   async function handleRestartInterview() {
@@ -46,7 +46,7 @@ export function ProfilePageClient({ initialProfile }: Props) {
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-text)]">品牌画像</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            查看和编辑你的品牌定位、受众群体和内容策略。
+            查看和编辑你的品牌定位、受众群体和价值主张。
           </p>
         </div>
         <Button
