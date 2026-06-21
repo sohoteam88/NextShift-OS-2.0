@@ -154,6 +154,67 @@ function hasBothLandingPages(portfolio: FunnelPortfolio) {
   );
 }
 
+function funnelMissionCopy(portfolio: FunnelPortfolio) {
+  const retailReady = Boolean(portfolio.readiness?.retailLandingPageReady);
+  const recruitmentReady = Boolean(
+    portfolio.readiness?.recruitmentLandingPageReady,
+  );
+
+  if (retailReady && recruitmentReady) {
+    return {
+      badge: 'Funnel Ready',
+      title: '双漏斗落地页已经完成。',
+      whyThis:
+        '零售客户页和招募伙伴页都已经可以承接访问、收集资料，并把线索带到 WhatsApp 跟进。',
+      whyNow:
+        '现在最重要的不是继续生成页面，而是进入流量测试，用真实访问验证标题、CTA 和跟进路径。',
+      whyNot:
+        '现在先不做更多页面版本，因为没有流量数据之前，优化会变成猜测。',
+      actionLabel: '进入流量测试',
+    };
+  }
+
+  if (retailReady && !recruitmentReady) {
+    return {
+      badge: 'Funnel Incomplete',
+      title: '你的招募伙伴落地页还没完成。',
+      whyThis:
+        '零售客户页已经发布，但系统还缺少招募伙伴页。少了这条路径，想了解副业、团队和合作机会的人没有专属入口。',
+      whyNow:
+        '在启动流量测试之前，先补齐招募伙伴页，内容引擎里的招募文案才有正确承接点。',
+      whyNot:
+        '现在不应该只用零售页承接所有流量，因为客户购买动机和伙伴加入动机不同，混在一起会降低转化清晰度。',
+      actionLabel: '生成招募伙伴落地页',
+    };
+  }
+
+  if (!retailReady && recruitmentReady) {
+    return {
+      badge: 'Funnel Incomplete',
+      title: '你的零售客户落地页还没完成。',
+      whyThis:
+        '招募伙伴页已经发布，但系统还缺少零售客户页。少了这条路径，想了解产品或服务的人没有清楚的领取入口。',
+      whyNow:
+        '在启动流量测试之前，先补齐零售客户页，零售内容和引流资源才有地方收集潜在客户资料。',
+      whyNot:
+        '现在不应该让客户流量进入招募页，因为购买需求和合作需求不同，页面承诺、CTA 和跟进问题都应该分开。',
+      actionLabel: '生成零售客户落地页',
+    };
+  }
+
+  return {
+    badge: 'Funnel Required',
+    title: '你还没有可以承接流量的落地页。',
+    whyThis:
+      '内容和引流资源已经负责吸引注意力，落地页负责把注意力变成资料提交、WhatsApp 对话和后续跟进。',
+    whyNow:
+      '在启动流量测试之前，系统必须先有两个明确入口：一个卖给客户，一个招募伙伴。',
+    whyNot:
+      '现在先不做流量或 CRM，因为没有落地页时，访问者没有清楚的领取路径，后续数据也无法判断。',
+    actionLabel: '生成双漏斗落地页',
+  };
+}
+
 function ReadinessItem({
   label,
   detail,
@@ -347,6 +408,7 @@ export function FunnelBuilderDashboard() {
   const requiredInputsReady = hasRequiredInputs(portfolio);
   const bothPagesReady = hasBothLandingPages(portfolio);
   const readiness = portfolio.readiness ?? defaultPortfolio().readiness!;
+  const missionCopy = funnelMissionCopy(portfolio);
 
   if (q.isLoading) {
     return <LoadingState />;
@@ -413,10 +475,10 @@ export function FunnelBuilderDashboard() {
           <div className="p-5 md:p-7">
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
               <Rocket className="h-4 w-4" aria-hidden="true" />
-              Funnel Required
+              {missionCopy.badge}
             </div>
             <h2 className="mt-4 max-w-3xl text-3xl font-bold leading-tight text-[var(--color-text)]">
-              你还没有可以承接流量的落地页。
+              {missionCopy.title}
             </h2>
             <div className="mt-5 space-y-4 border-l-2 border-blue-100 pl-4">
               <div>
@@ -424,7 +486,7 @@ export function FunnelBuilderDashboard() {
                   为什么是这个
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
-                  内容和引流资源已经负责吸引注意力，落地页负责把注意力变成资料提交、WhatsApp 对话和后续跟进。
+                  {missionCopy.whyThis}
                 </p>
               </div>
               <div>
@@ -432,7 +494,7 @@ export function FunnelBuilderDashboard() {
                   为什么现在
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
-                  在启动流量测试之前，系统必须先有两个明确入口：一个卖给客户，一个招募伙伴。
+                  {missionCopy.whyNow}
                 </p>
               </div>
               <div>
@@ -440,7 +502,7 @@ export function FunnelBuilderDashboard() {
                   为什么不是其他任务
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
-                  现在先不做流量或 CRM，因为没有落地页时，访问者没有清楚的领取路径，后续数据也无法判断。
+                  {missionCopy.whyNot}
                 </p>
               </div>
             </div>
@@ -458,7 +520,7 @@ export function FunnelBuilderDashboard() {
                   ) : (
                     <Sparkles className="h-4 w-4" aria-hidden="true" />
                   )}
-                  生成双漏斗落地页
+                  {missionCopy.actionLabel}
                 </button>
               ) : (
                 <Link
