@@ -63,6 +63,8 @@ const FALLBACK_STAGE_LABELS: Record<string, string> = {
   已转化: '已转化',
 };
 
+const EMPTY_LEADS: LeadRow[] = [];
+
 function stageLabel(stage: string) {
   return STAGE_LABELS[stage as PipelineStage] ?? FALLBACK_STAGE_LABELS[stage] ?? stage;
 }
@@ -247,7 +249,7 @@ export function SalesDashboard() {
   const setFollowup = useSetFollowup();
   const { toast } = useToast();
 
-  const leads = leadsQuery.data?.data ?? [];
+  const leads = leadsQuery.data?.data ?? EMPTY_LEADS;
   const salesQueue = useMemo(
     () =>
       leads
