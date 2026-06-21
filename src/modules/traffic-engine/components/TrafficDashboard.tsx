@@ -135,7 +135,7 @@ export function TrafficDashboard() {
   const pkg = query.data?.data ?? null;
   const prerequisites = pkg?.prerequisites ?? query.data?.prerequisites ?? emptyPrerequisites();
   const readyToGenerate = prerequisitesComplete(prerequisites);
-  const savedPlan = isSavedTrafficPlan(pkg);
+  const savedPlan = isSavedTrafficPlan(pkg) && readyToGenerate;
   const nextLink = nextPrerequisiteLink(prerequisites);
   const tips = savedPlan && pkg ? getTrafficAdvisorTips(pkg.readiness) : [];
 
