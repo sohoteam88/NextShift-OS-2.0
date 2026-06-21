@@ -62,7 +62,7 @@ export function ExecutionRoadmapRail({ className }: ExecutionRoadmapRailProps) {
           执行路线
         </div>
         <div className="min-w-0 flex-1 overflow-x-auto">
-          <div className="flex min-w-max items-center gap-1.5">
+          <div className="flex min-w-max items-center gap-1.5 pr-3">
             {EXECUTION_ROADMAP_STEPS.map((step) => {
               const Icon = ICONS[step.id];
               const active = isExecutionRoadmapStepActive(step, pathname);
@@ -89,7 +89,9 @@ export function ExecutionRoadmapRail({ className }: ExecutionRoadmapRailProps) {
                     {step.order}
                   </span>
                   <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  <span className="whitespace-nowrap">{getExecutionRoadmapLabel(step, locale)}</span>
+                  <span className="whitespace-nowrap">
+                    {getExecutionRoadmapLabel(step, locale, true)}
+                  </span>
                 </Link>
               );
             })}
