@@ -88,6 +88,8 @@ function missionReasonFor(
     return '你已经有潜在客户或成交机会，下一步不是继续堆流量，而是把最接近购买的人推进到预约、方案、付款或明确不适合。';
   if (currentGap === 'NO_SALES')
     return '你已经开始有潜在客户，下一步要把跟进推进到第一次成交。';
+  if (currentGap === 'NO_TEAM')
+    return '你的核心系统已经进入可复制阶段。现在要把有效的内容、引流、漏斗、CRM 和 Sales 动作整理成 AI agent 与团队成员可以重复执行的工作流。';
   return '我根据你当前完成的系统和缺口，选择了最能推动下一步结果的任务。';
 }
 
@@ -105,6 +107,8 @@ function decisionReasonFor(rawReason: string, currentGap: string) {
     return '现在不应该继续加流量或做复杂报表，因为现有 Leads 还没有进入可追踪的跟进节奏。';
   if (currentGap === 'NO_CUSTOMERS')
     return '现在不应该先做团队、报表或新的漏斗，因为成交机会需要及时跟进，拖太久会变冷。';
+  if (currentGap === 'NO_TEAM')
+    return '现在不应该继续只靠创办人手动执行，因为已经验证过的动作需要被记录、委派和复制。';
   return '我会先处理最影响进展的缺口，再安排其他优化动作。';
 }
 
@@ -129,6 +133,8 @@ function primaryActionLabel(route: string, currentGap: string) {
   if (route.includes('/funnel')) return '生成双漏斗落地页';
   if (route.includes('/traffic')) return '启动流量测试';
   if (route.includes('/sales')) return '进入 Sales 跟进';
+  if (route.includes('/ai-workforce') || route.includes('/team'))
+    return '启动 Team / Workforce';
   if (route.includes('/crm') || route.includes('/customer'))
     return '处理 Leads';
   return '开始任务';

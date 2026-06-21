@@ -127,7 +127,7 @@ function missionTypeFor(mission: MissionAuthorityDefinition): MissionType {
   if (mission.route.includes('/funnel')) return 'FUNNEL';
   if (mission.route.includes('/traffic')) return 'TRAFFIC';
   if (mission.route.includes('/customer') || mission.route.includes('/crm')) return 'CUSTOMERS';
-  if (mission.route.includes('/team')) return 'TEAM';
+  if (mission.route.includes('/team') || mission.route.includes('/ai-workforce')) return 'TEAM';
   if (
     mission.completionConditions.includes('brand_dna_confirmed')
     || mission.completionConditions.includes('positioning_completed')
@@ -179,6 +179,17 @@ function buildPriorityAction(mission: MissionAuthorityDefinition): MissionPriori
   };
 }
 
+function teamWorkforceMission(baseMission: MissionAuthorityDefinition): MissionAuthorityDefinition {
+  return {
+    ...baseMission,
+    title: 'Activate Team / Workforce',
+    description: 'Your core business system has reached the team-building stage. Turn the proven workflow into repeatable team and AI workforce actions.',
+    expectedOutcome: 'Business operates beyond founder',
+    estimatedMinutes: 20,
+    route: '/ai-workforce',
+  };
+}
+
 export function resolveMissionAuthorityFromJourney(
   journey: AdaptiveJourneyProjection,
   businessState?: BusinessStateResult,
@@ -192,16 +203,17 @@ export function resolveMissionAuthorityFromJourney(
   const nextMission = interviewCompleted && !requiresInterview && journey.nextMission ? toMissionDefinition(journey.nextMission) : null;
   const businessStage = businessState?.currentState ?? businessStageFor(currentMission);
   const bottleneck = businessState ? bottleneckForBusinessState(businessState) : bottleneckFor(currentMission);
+  const actionMission = bottleneck === 'NO_TEAM' ? teamWorkforceMission(currentMission) : currentMission;
   const completed = businessState
     ? businessState.completedStates
     : interviewCompleted
       ? completedLabels(journey)
       : [];
-  const reasoning = reasoningFor({ mission: currentMission, bottleneck, completed, businessState });
-  const priorityAction = buildPriorityAction(currentMission);
+  const reasoning = reasoningFor({ mission: actionMission, bottleneck, completed, businessState });
+  const priorityAction = buildPriorityAction(actionMission);
   const estimatedCompletion = {
-    minutes: currentMission.estimatedMinutes,
-    label: formatMinutes(currentMission.estimatedMinutes),
+    minutes: actionMission.estimatedMinutes,
+    label: formatMinutes(actionMission.estimatedMinutes),
   };
 
   return {
@@ -223,12 +235,12 @@ export function resolveMissionAuthorityFromJourney(
     },
     dashboardCommandCenter: {
       currentStage: businessStage,
-      missionTitle: currentMission.title,
-      missionDescription: currentMission.description,
+      missionTitle: actionMission.title,
+      missionDescription: actionMission.description,
       reasoning,
-      expectedOutcome: currentMission.expectedOutcome,
+      expectedOutcome: actionMission.expectedOutcome,
       estimatedTime: estimatedCompletion.label,
-      route: currentMission.route,
+      route: actionMission.route,
       priority: priorityAction.priority,
     },
     lifecycle: lifecycleFor(currentMission.status),
