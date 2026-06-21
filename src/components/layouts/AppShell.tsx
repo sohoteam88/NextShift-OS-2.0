@@ -51,6 +51,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   const pathname = usePathname();
   const isOnboardingPath = pathname.startsWith('/onboarding');
   const isWizardPath = pathname.startsWith('/brand-builder/step');
+  const isAdminExperience = pathname.startsWith('/admin') || pathname.startsWith('/workspace');
   void onboarding;
   const branding = extractBranding(tenant);
 
@@ -80,12 +81,14 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
         userRole={user.role as 'member' | 'leader' | 'operator' | 'platform_admin'}
         tenantName={tenant?.name}
         tenantLogoUrl={branding?.logoUrl}
+        showExecutionRoadmap={!isAdminExperience}
+        homeHref={isAdminExperience ? '/admin' : '/dashboard'}
       />
-      <ExecutionRoadmapRail />
+      {isAdminExperience ? null : <ExecutionRoadmapRail />}
       <main className="mx-auto min-w-0 max-w-[1440px] p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:p-6 lg:pb-6">
         {children}
       </main>
-      <MobileTabBar className="lg:hidden" />
+      {isAdminExperience ? null : <MobileTabBar className="lg:hidden" />}
       <MissionListener />
     </div>
   );

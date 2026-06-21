@@ -25,6 +25,8 @@ type TopBarProps = {
   userRole?: Role;
   tenantName?: string;
   tenantLogoUrl?: string | null;
+  showExecutionRoadmap?: boolean;
+  homeHref?: string;
 };
 
 function UserMenu({ userName }: { userName: string }) {
@@ -102,6 +104,8 @@ export function TopBar({
   userRole = 'member',
   tenantName = 'NextShift',
   tenantLogoUrl,
+  showExecutionRoadmap = true,
+  homeHref = '/dashboard',
 }: TopBarProps) {
   const nav = useTranslations('nav');
   const locale = useLocale();
@@ -117,7 +121,7 @@ export function TopBar({
         className,
       )}
     >
-      <Link href="/dashboard" className="flex min-w-0 shrink-0 items-center gap-2">
+      <Link href={homeHref} className="flex min-w-0 shrink-0 items-center gap-2">
         {tenantLogoUrl ? (
           <span className="relative h-8 w-8 overflow-hidden rounded-[var(--radius-md)]">
             <Image src={tenantLogoUrl} alt={`${tenantName} logo`} fill unoptimized sizes="32px" className="object-cover" />
@@ -132,25 +136,29 @@ export function TopBar({
         </span>
       </Link>
 
-      <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto xl:flex" aria-label="Primary navigation">
-        {topNav.map((item) => {
-          const active = isExecutionRoadmapStepActive(item, pathname);
-          return (
-            <Link
-              key={item.id}
-              href={item.route}
-              className={cn(
-                'inline-flex h-10 shrink-0 items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold transition-colors',
-                active
-                  ? 'bg-blue-50 text-[var(--color-primary)]'
-                  : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
-              )}
-            >
-              {getExecutionRoadmapLabel(item, locale, true)}
-            </Link>
-          );
-        })}
-      </nav>
+      {showExecutionRoadmap ? (
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto xl:flex" aria-label="Primary navigation">
+          {topNav.map((item) => {
+            const active = isExecutionRoadmapStepActive(item, pathname);
+            return (
+              <Link
+                key={item.id}
+                href={item.route}
+                className={cn(
+                  'inline-flex h-10 shrink-0 items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold transition-colors',
+                  active
+                    ? 'bg-blue-50 text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
+                )}
+              >
+                {getExecutionRoadmapLabel(item, locale, true)}
+              </Link>
+            );
+          })}
+        </nav>
+      ) : (
+        <div className="min-w-0 flex-1" />
+      )}
 
       <div className="ml-auto flex items-center gap-2">
         <LanguageSwitcher />
