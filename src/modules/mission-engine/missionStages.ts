@@ -228,7 +228,7 @@ export const BEGINNER_STAGES: MissionStage[] = [
     description: 'Close your first customer through the system you built and mark the deal as won.',
     whyItMatters: 'This is the milestone that separates builders from business owners. Your first sale proves the entire system works.',
     estimatedMinutes: 0,
-    route: '/crm/pipeline',
+    route: '/sales',
     xp: 100,
     mode: 'beginner',
     unlocksNextStage: true,

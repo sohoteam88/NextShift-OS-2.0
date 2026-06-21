@@ -29,7 +29,7 @@ const LABELS: Record<string, string> = {
   NO_TRAFFIC: '还没有流量测试',
   NO_LEADS: '还没有潜在客户进入漏斗',
   NO_APPOINTMENTS: 'Leads 尚未跟进',
-  NO_CUSTOMERS: '还没有第一位客户',
+  NO_CUSTOMERS: '有成交机会尚未完成',
   NO_SALES: '还没有第一笔成交',
   NO_TEAM: '还没有团队复制系统',
   Traffic: '流量',
@@ -84,6 +84,8 @@ function missionReasonFor(
     return '漏斗已经可以承接线索，下一步要用小流量测试验证信息、CTA 和跟进路径，而不是继续堆功能。';
   if (currentGap === 'NO_APPOINTMENTS')
     return '你已经开始有 Leads，最大的风险是没有及时联系、没有记录状态、没有安排下一次跟进。现在最有杠杆的动作是处理新 Leads。';
+  if (currentGap === 'NO_CUSTOMERS')
+    return '你已经有潜在客户或成交机会，下一步不是继续堆流量，而是把最接近购买的人推进到预约、方案、付款或明确不适合。';
   if (currentGap === 'NO_SALES')
     return '你已经开始有潜在客户，下一步要把跟进推进到第一次成交。';
   return '我根据你当前完成的系统和缺口，选择了最能推动下一步结果的任务。';
@@ -101,6 +103,8 @@ function decisionReasonFor(rawReason: string, currentGap: string) {
     return '现在不应该先启动流量测试，因为没有落地页时，流量来了也没有清楚的领取入口、感谢页或 WhatsApp 跟进路径。';
   if (currentGap === 'NO_APPOINTMENTS')
     return '现在不应该继续加流量或做复杂报表，因为现有 Leads 还没有进入可追踪的跟进节奏。';
+  if (currentGap === 'NO_CUSTOMERS')
+    return '现在不应该先做团队、报表或新的漏斗，因为成交机会需要及时跟进，拖太久会变冷。';
   return '我会先处理最影响进展的缺口，再安排其他优化动作。';
 }
 
@@ -124,6 +128,7 @@ function primaryActionLabel(route: string, currentGap: string) {
   if (route.includes('/lead-magnet')) return '生成引流资源';
   if (route.includes('/funnel')) return '生成双漏斗落地页';
   if (route.includes('/traffic')) return '启动流量测试';
+  if (route.includes('/sales')) return '进入 Sales 跟进';
   if (route.includes('/crm') || route.includes('/customer'))
     return '处理 Leads';
   return '开始任务';
