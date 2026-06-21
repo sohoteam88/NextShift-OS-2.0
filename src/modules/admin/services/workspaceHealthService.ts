@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { EXECUTION_ROADMAP_STEPS, type ExecutionRoadmapStepId } from '@/modules/mission/constants/execution-roadmap';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -45,6 +46,29 @@ export type WorkspaceJourneyStage = {
   users: number;
 };
 
+export type WorkspaceExecutionStep = {
+  id: ExecutionRoadmapStepId;
+  order: number;
+  label: string;
+  route: string;
+  outcome: string;
+  users: number;
+  completed: number;
+  blocked: number;
+};
+
+export type WorkspacePriorityUser = {
+  id: string;
+  name: string;
+  email: string;
+  currentStep: string;
+  missingRequirement: string;
+  recommendedAction: string;
+  route: string;
+  inactiveDays: number;
+  priority: AttentionSeverity;
+};
+
 export type WorkspaceContentStats = {
   postsGenerated: number;
   videosGenerated: number;
@@ -74,6 +98,17 @@ export type WorkspaceCommandData = {
     conversionRate: number;
     healthScore: number;
     healthTone: 'green' | 'yellow' | 'red';
+  };
+  execution: {
+    activeUsers: number;
+    usersStuck: number;
+    missionEngineFailures: number;
+    leadsUnfollowed: number;
+    currentStep: string;
+    primaryAction: string;
+    primaryActionHref: string;
+    steps: WorkspaceExecutionStep[];
+    priorityUsers: WorkspacePriorityUser[];
   };
   attention: WorkspaceAttention[];
   members: WorkspaceMemberHealth[];
@@ -145,6 +180,99 @@ function appointmentWhere(tenantId: string) {
   };
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function hasMetadataObject(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  return Boolean(value && typeof value === 'object');
+}
+
+function hasAny(checks: Set<string>, keys: string[]) {
+  return keys.some((key) => checks.has(key));
+}
+
+function hasBrandProfile(profile: {
+  brandPositioning: string;
+  targetAudience: string;
+  primaryOffer: string;
+  coreMessage: string;
+} | null) {
+  if (!profile) return false;
+  return Boolean(
+    profile.brandPositioning.trim()
+      && profile.targetAudience.trim()
+      && (profile.primaryOffer.trim() || profile.coreMessage.trim()),
+  );
+}
+
+function executionStatusFor(input: {
+  user: {
+    metadata: unknown;
+    onboardingCompleted: boolean;
+    brandProfile: {
+      brandPositioning: string;
+      targetAudience: string;
+      primaryOffer: string;
+      coreMessage: string;
+    } | null;
+    brandInterviews: { status: string }[];
+    contentCalendars: { id: string }[];
+    userProgress: { completedChecks: unknown } | null;
+  };
+  funnels: { status: string; publishedAt: Date | null }[];
+  leads: { pipelineStage: string; lastContacted: Date | null; score: number }[];
+  customers: { id: string }[];
+  sponsoredMembers: number;
+}) {
+  const metadata = asRecord(input.user.metadata);
+  const checks = new Set(
+    Array.isArray(input.user.userProgress?.completedChecks)
+      ? input.user.userProgress.completedChecks.map((item) => String(item))
+      : [],
+  );
+  const trackCalendars = asRecord(metadata.content_engine_track_calendars);
+  const leadMagnetTracks = asRecord(metadata.lead_magnet_tracks);
+  const hasRetailAndRecruitmentCalendar = Boolean(trackCalendars.retail && trackCalendars.recruitment);
+  const hasLeadMagnetTracks = Boolean(leadMagnetTracks.retail || leadMagnetTracks.recruitment);
+  const hasPublishedFunnel = input.funnels.some((funnel) => funnel.status === 'published' || funnel.publishedAt);
+  const hasHandledLead = input.leads.some((lead) => lead.lastContacted || lead.score > 0 || lead.pipelineStage !== 'new');
+
+  const completed: Record<ExecutionRoadmapStepId, boolean> = {
+    brand_interview: input.user.brandInterviews.some((item) => item.status === 'completed' || item.status === 'finished')
+      || hasAny(checks, ['brand_discovery_completed', 'ai_interview_completed'])
+      || input.user.onboardingCompleted,
+    brand_dna: hasBrandProfile(input.user.brandProfile)
+      || hasMetadataObject(metadata, 'brand_profile')
+      || hasAny(checks, ['brand_dna_confirmed', 'positioning_completed']),
+    ai_coo: hasBrandProfile(input.user.brandProfile) || hasAny(checks, ['brand_dna_confirmed']),
+    content_engine: hasRetailAndRecruitmentCalendar
+      || input.user.contentCalendars.length > 0
+      || hasAny(checks, ['content_calendar_generated', 'first_content_generated']),
+    lead_magnet: hasMetadataObject(metadata, 'lead_magnet')
+      || hasLeadMagnetTracks
+      || hasAny(checks, ['lead_magnet_created']),
+    funnel_landing_page: input.funnels.length > 0
+      || hasPublishedFunnel
+      || hasAny(checks, ['funnel_published', 'landing_page_created']),
+    traffic_test: hasMetadataObject(metadata, 'traffic_engine')
+      || hasAny(checks, ['campaign_launched', 'traffic_campaign_launched']),
+    leads: input.leads.length > 0 || hasAny(checks, ['first_lead_generated']),
+    crm: hasHandledLead || hasAny(checks, ['crm_setup_completed', 'lead_followed_up']),
+    sales: input.customers.length > 0 || hasAny(checks, ['first_sale_completed']),
+    workforce: hasMetadataObject(metadata, 'agent_memory')
+      || hasAny(checks, ['content_agent_activated', 'lead_magnet_agent_activated', 'funnel_agent_activated', 'agent_completed_work'])
+      || input.sponsoredMembers > 0,
+  };
+
+  const current = EXECUTION_ROADMAP_STEPS.find((step) => !completed[step.id]) ?? EXECUTION_ROADMAP_STEPS[EXECUTION_ROADMAP_STEPS.length - 1]!;
+
+  return { completed, current };
+}
+
 class WorkspaceHealthService {
   async getCommandData(tenantId: string): Promise<WorkspaceCommandData> {
     const weekAgo = new Date(Date.now() - 7 * DAY_MS);
@@ -156,24 +284,59 @@ class WorkspaceHealthService {
       leadCount,
       appointmentCount,
       customerCount,
+      leadRows,
+      customerRows,
       contents,
       videos,
       activity,
-      inviteCount,
     ] = await Promise.all([
       prisma.user.findMany({
         where: { tenantId, deletedAt: null },
-        include: { userProgress: true, funnels: { take: 1, orderBy: { updatedAt: 'desc' } } },
+        include: {
+          userProgress: true,
+          brandProfile: {
+            select: {
+              brandPositioning: true,
+              targetAudience: true,
+              primaryOffer: true,
+              coreMessage: true,
+            },
+          },
+          brandInterviews: {
+            select: { status: true },
+            take: 1,
+            orderBy: { updatedAt: 'desc' },
+          },
+          contentCalendars: {
+            select: { id: true },
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+          },
+          funnels: { take: 1, orderBy: { updatedAt: 'desc' } },
+        },
         orderBy: { updatedAt: 'desc' },
       }),
       prisma.funnel.findMany({ where: { tenantId }, orderBy: { updatedAt: 'desc' } }),
       prisma.lead.count({ where: { tenantId, deletedAt: null } }),
       prisma.lead.count({ where: appointmentWhere(tenantId) }),
       prisma.customer.count({ where: { tenantId } }),
+      prisma.lead.findMany({
+        where: { tenantId, deletedAt: null },
+        select: {
+          ownerId: true,
+          pipelineStage: true,
+          lastContacted: true,
+          score: true,
+          createdAt: true,
+        },
+      }),
+      prisma.customer.findMany({
+        where: { tenantId },
+        select: { id: true, ownerId: true },
+      }),
       prisma.content.findMany({ where: { tenantId, createdAt: { gte: monthAgo } }, orderBy: { createdAt: 'desc' } }),
       prisma.videoProject.findMany({ where: { tenantId, createdAt: { gte: monthAgo } }, orderBy: { createdAt: 'desc' } }),
       prisma.activity.findMany({ where: { tenantId }, take: 8, orderBy: { createdAt: 'desc' } }),
-      prisma.inviteCode.count({ where: { tenantId } }),
     ]);
 
     const members = users.filter((user) => user.role !== 'platform_admin');
@@ -191,17 +354,50 @@ class WorkspaceHealthService {
       return stage.toLowerCase().includes('brand') && daysSince(user.userProgress?.lastActivityAt ?? user.updatedAt) > 3;
     }).length;
 
+    const funnelsByOwner = new Map<string, typeof funnels>();
+    for (const funnel of funnels) {
+      funnelsByOwner.set(funnel.ownerId, [...(funnelsByOwner.get(funnel.ownerId) ?? []), funnel]);
+    }
+
+    const leadsByOwner = new Map<string, typeof leadRows>();
+    for (const lead of leadRows) {
+      leadsByOwner.set(lead.ownerId, [...(leadsByOwner.get(lead.ownerId) ?? []), lead]);
+    }
+
+    const customersByOwner = new Map<string, typeof customerRows>();
+    for (const customer of customerRows) {
+      customersByOwner.set(customer.ownerId, [...(customersByOwner.get(customer.ownerId) ?? []), customer]);
+    }
+
+    const sponsoredMembersByOwner = new Map<string, number>();
+    for (const member of members) {
+      if (!member.sponsorId) continue;
+      sponsoredMembersByOwner.set(member.sponsorId, (sponsoredMembersByOwner.get(member.sponsorId) ?? 0) + 1);
+    }
+
+    const executionByUser = new Map<string, ReturnType<typeof executionStatusFor>>();
+    for (const user of members) {
+      executionByUser.set(user.id, executionStatusFor({
+        user,
+        funnels: funnelsByOwner.get(user.id) ?? [],
+        leads: leadsByOwner.get(user.id) ?? [],
+        customers: customersByOwner.get(user.id) ?? [],
+        sponsoredMembers: sponsoredMembersByOwner.get(user.id) ?? 0,
+      }));
+    }
+
     const memberRows: WorkspaceMemberHealth[] = members.slice(0, 50).map((user) => {
       const lastActive = user.userProgress?.lastActivityAt ?? user.updatedAt;
       const progress = estimateJourneyProgress(user.userProgress?.currentStageId, user.userProgress?.completedChecks);
       const score = memberHealth(progress, lastActive, user.onboardingCompleted);
+      const execution = executionByUser.get(user.id);
       return {
         id: user.id,
         name: user.name || 'Unnamed member',
         email: user.email,
         role: user.role,
         journeyProgress: progress,
-        currentStage: stageLabel(user.userProgress?.currentStageId),
+        currentStage: execution?.current.label_zh ?? stageLabel(user.userProgress?.currentStageId),
         currentFunnel: user.funnels[0]?.title ?? 'No funnel',
         lastActiveAt: lastActive.toISOString(),
         healthScore: score,
@@ -231,7 +427,7 @@ class WorkspaceHealthService {
 
     const journeyMap = new Map<string, number>();
     for (const member of members) {
-      const label = stageLabel(member.userProgress?.currentStageId);
+      const label = executionByUser.get(member.id)?.current.label_zh ?? stageLabel(member.userProgress?.currentStageId);
       journeyMap.set(label, (journeyMap.get(label) ?? 0) + 1);
     }
 
@@ -249,6 +445,45 @@ class WorkspaceHealthService {
     const inactiveFunnels = funnelRows.filter((funnel) => funnel.inactive).length;
     const contentPublished = contents.filter((item) => item.status === 'published').length;
     const conversionRate = leadCount > 0 ? Math.round((customerCount / leadCount) * 1000) / 10 : 0;
+    const leadsUnfollowed = leadRows.filter((lead) => !lead.lastContacted && daysSince(lead.createdAt) >= 1).length;
+    const executionSteps: WorkspaceExecutionStep[] = EXECUTION_ROADMAP_STEPS.map((step) => {
+      const usersInStep = members.filter((member) => executionByUser.get(member.id)?.current.id === step.id);
+      return {
+        id: step.id,
+        order: step.order,
+        label: step.label_zh,
+        route: step.route,
+        outcome: step.outcome_zh,
+        users: usersInStep.length,
+        completed: members.filter((member) => Boolean(executionByUser.get(member.id)?.completed[step.id])).length,
+        blocked: usersInStep.filter((member) => daysSince(member.userProgress?.lastActivityAt ?? member.updatedAt) > 3).length,
+      };
+    });
+    const priorityUsers: WorkspacePriorityUser[] = members
+      .map((member) => {
+        const execution = executionByUser.get(member.id);
+        const lastActive = member.userProgress?.lastActivityAt ?? member.updatedAt;
+        const inactiveDays = daysSince(lastActive);
+        const priority: AttentionSeverity = inactiveDays > 7 ? 'critical' : inactiveDays > 3 ? 'high' : 'normal';
+        return {
+          id: member.id,
+          name: member.name || 'Unnamed member',
+          email: member.email,
+          currentStep: execution?.current.label_zh ?? '未开始',
+          missingRequirement: execution?.current.outcome_zh ?? '等待系统资料',
+          recommendedAction: `打开 ${execution?.current.short_zh ?? '当前步骤'}`,
+          route: execution?.current.route ?? '/admin/members',
+          inactiveDays,
+          priority,
+        };
+      })
+      .filter((item) => item.priority !== 'normal')
+      .sort((a, b) => {
+        const severityRank: Record<AttentionSeverity, number> = { critical: 0, high: 1, normal: 2 };
+        return severityRank[a.priority] - severityRank[b.priority] || b.inactiveDays - a.inactiveDays;
+      })
+      .slice(0, 6);
+    const mostCrowdedStep = [...executionSteps].sort((a, b) => b.users - a.users)[0];
     const healthScore = clampScore(
       (members.length ? (activeThisWeek / members.length) * 30 : 30) +
         (totalFunnels ? ((totalFunnels - inactiveFunnels) / totalFunnels) * 25 : 15) +
@@ -284,6 +519,17 @@ class WorkspaceHealthService {
         conversionRate,
         healthScore,
         healthTone: healthTone(healthScore),
+      },
+      execution: {
+        activeUsers: activeThisWeek,
+        usersStuck: priorityUsers.length,
+        missionEngineFailures: 0,
+        leadsUnfollowed,
+        currentStep: mostCrowdedStep?.label ?? 'AI 访谈',
+        primaryAction: priorityUsers.length > 0 ? '处理卡住用户' : '查看执行路线健康',
+        primaryActionHref: priorityUsers.length > 0 ? '/admin/members' : '/admin/journey',
+        steps: executionSteps,
+        priorityUsers,
       },
       attention,
       members: memberRows,
