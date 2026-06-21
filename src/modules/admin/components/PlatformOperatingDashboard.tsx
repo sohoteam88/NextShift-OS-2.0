@@ -16,8 +16,6 @@ import {
   ExternalLink,
   Gauge,
   LineChart,
-  LockKeyhole,
-  Rocket,
   ShieldAlert,
   ShieldCheck,
   Users,
@@ -144,7 +142,12 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
   const highAlerts = data.alerts.filter((alert) => alert.priority === 'High');
   const atRiskTenants = data.tenants.filter((tenant) => tenant.churnRisk === 'Critical' || tenant.churnRisk === 'High');
   const inactiveTenants = Math.max(0, data.summary.totalTenants - data.summary.activeTenants);
-  const launchScore = Math.max(0, Math.min(100, Math.round((data.growth.thirtyDays.activationPercent + data.growth.thirtyDays.leadPercent + data.growth.thirtyDays.customerPercent) / 3)));
+  const riskOrder: Record<TenantHealthRecord['churnRisk'], number> = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+  const tenantRiskRows = [...data.tenants]
+    .sort((a, b) => riskOrder[a.churnRisk] - riskOrder[b.churnRisk] || a.healthScore - b.healthScore)
+    .slice(0, 5);
+  const aiMarginTone = data.ai.margin >= 70 ? 'text-emerald-700' : data.ai.margin >= 50 ? 'text-amber-700' : 'text-rose-700';
+  const grossMarginTone = data.summary.grossMargin >= 70 ? 'text-emerald-700' : data.summary.grossMargin >= 50 ? 'text-amber-700' : 'text-rose-700';
   const platformStatus = criticalAlerts.length > 0 ? t('v3Critical') : highAlerts.length > 0 || atRiskTenants.length > 0 ? t('v3Watch') : t('v3Operational');
   const platformTone = criticalAlerts.length > 0 ? 'border-rose-200 bg-rose-50 text-rose-700' : highAlerts.length > 0 || atRiskTenants.length > 0 ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700';
   const queue = [
@@ -153,12 +156,12 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
       .slice(0, 4)
       .map((alert) => ({ id: toTrackingId(`${alert.priority}-${alert.title}`), title: alert.title, description: alert.description, priority: alert.priority, href: alert.href })),
     ...(atRiskTenants.length > 0 ? [{ id: 'tenant-risk-review', title: t('v3ReviewTenantRisk'), description: t('v3ReviewTenantRiskHelp', { count: atRiskTenants.length }), priority: 'High' as FounderAlertPriority, href: '/platform-admin/tenant-health' }] : []),
-    ...(data.summary.grossMargin > 0 && data.summary.grossMargin < 65 ? [{ id: 'ai-margin-review', title: t('v3ReviewAiMargin'), description: t('v3ReviewAiMarginHelp', { margin: data.summary.grossMargin }), priority: 'Medium' as FounderAlertPriority, href: '/platform-admin/ai-profitability' }] : []),
+    ...(data.ai.margin > 0 && data.ai.margin < 65 ? [{ id: 'ai-margin-review', title: t('v3ReviewAiMargin'), description: t('v3ReviewAiMarginHelp', { margin: data.ai.margin }), priority: 'Medium' as FounderAlertPriority, href: '/platform-admin/ai-profitability' }] : []),
   ].slice(0, 5);
   const visibleQueue = queue.length > 0 ? queue : [{ id: 'stable-review', title: t('v3NoImmediateAction'), description: t('v3NoImmediateActionHelp'), priority: 'Low' as FounderAlertPriority, href: '/platform-admin/health' }];
 
   useEffect(() => {
-    trackAdminDashboardUsage('view', 'platform-admin-v3', 'dashboard', 'homepage');
+    trackAdminDashboardUsage('view', 'founder-platform-console', 'dashboard', 'homepage');
   }, []);
 
   function onTrackClick(targetId: string, targetKind: 'card' | 'action' | 'queue', section: string) {
@@ -179,7 +182,7 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
         )}
       />
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
         <div className="grid gap-4 md:grid-cols-2">
           <Link
             href="/platform-admin/health"
@@ -201,39 +204,47 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
           </Link>
 
           <Link
-            href="/platform-admin/growth"
-            onClick={() => onTrackClick('launch-metrics', 'card', 'primary-card')}
+            href="/platform-admin/tenant-health"
+            onClick={() => onTrackClick('tenant-portfolio', 'card', 'primary-card')}
             className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3LaunchMetrics')}</p>
-                <p className="mt-2 text-3xl font-semibold text-[var(--color-text)]">{launchScore}%</p>
+                <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3TenantPortfolio')}</p>
+                <p className="mt-2 text-3xl font-semibold text-[var(--color-text)]">{number(data.summary.totalTenants)}</p>
               </div>
-              <Rocket className="h-5 w-5 text-[var(--color-primary)]" />
+              <Building2 className="h-5 w-5 text-[var(--color-primary)]" />
             </div>
-            <div className="mt-4 h-2 rounded-full bg-slate-100">
-              <div className="h-2 rounded-full bg-blue-600" style={{ width: `${launchScore}%` }} />
+            <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-[var(--color-text-muted)]">
+              <span>{t('activeTenants')}: <strong className="text-[var(--color-text)]">{number(data.summary.activeTenants)}</strong></span>
+              <span>{t('v3AtRisk')}: <strong className="text-[var(--color-text)]">{number(atRiskTenants.length)}</strong></span>
+              <span>{t('v3Inactive')}: <strong className="text-[var(--color-text)]">{number(inactiveTenants)}</strong></span>
             </div>
-            <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t('v3LaunchMetricsHelp')}</p>
           </Link>
 
           <Link
-            href="/platform-admin/audit-logs"
-            onClick={() => onTrackClick('security-risk', 'card', 'primary-card')}
+            href="/platform-admin/ai-profitability"
+            onClick={() => onTrackClick('ai-cost-control', 'card', 'primary-card')}
             className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3SecurityRisk')}</p>
-                <p className="mt-2 text-3xl font-semibold text-[var(--color-text)]">{atRiskTenants.length + inactiveTenants}</p>
+                <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3AiCostControl')}</p>
+                <p className="mt-2 text-3xl font-semibold text-[var(--color-text)]">{currency(data.ai.cost)}</p>
               </div>
-              <ShieldAlert className="h-5 w-5 text-[var(--color-primary)]" />
+              <Brain className="h-5 w-5 text-[var(--color-primary)]" />
             </div>
-            <p className="mt-3 text-xs text-[var(--color-text-muted)]">{t('v3SecurityRiskHelp', { tenants: atRiskTenants.length, inactive: inactiveTenants })}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-[var(--color-text-muted)]">
+              <span>{t('marginMetric')}: <strong className={aiMarginTone}>{data.ai.margin}%</strong></span>
+              <span>{t('mostExpensiveTenant')}: <strong className="text-[var(--color-text)]">{data.ai.mostExpensiveTenant}</strong></span>
+            </div>
           </Link>
 
-          <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <Link
+            href="/platform-admin/revenue"
+            onClick={() => onTrackClick('revenue-margin', 'card', 'primary-card')}
+            className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+          >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-[var(--color-text-muted)]">{t('v3RevenueControl')}</p>
@@ -242,10 +253,10 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
               <CircleDollarSign className="h-5 w-5 text-[var(--color-primary)]" />
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-[var(--color-text-muted)]">
-              <span>{t('grossMargin')}: <strong className="text-[var(--color-text)]">{data.summary.grossMargin}%</strong></span>
+              <span>{t('grossMargin')}: <strong className={grossMarginTone}>{data.summary.grossMargin}%</strong></span>
               <span>{t('aiCost')}: <strong className="text-[var(--color-text)]">{currency(data.summary.aiCost)}</strong></span>
             </div>
-          </div>
+          </Link>
 
           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm md:col-span-2">
             <div className="flex items-center justify-between gap-3">
@@ -256,7 +267,7 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
               {[
                 { id: 'review-tenants', href: '/platform-admin/tenant-health', label: t('reviewTenantUsage'), icon: Building2 },
                 { id: 'check-ai-spend', href: '/platform-admin/ai-profitability', label: t('checkAiSpend'), icon: Brain },
-                { id: 'open-audit-logs', href: '/platform-admin/audit-logs', label: t('openAuditLogs'), icon: LockKeyhole },
+                { id: 'review-billing', href: '/platform-admin/billing', label: t('v3ReviewBilling'), icon: CircleDollarSign },
                 { id: 'system-health', href: '/platform-admin/health', label: t('systemHealth'), icon: Gauge },
               ].map((action) => {
                 const Icon = action.icon;
@@ -276,34 +287,73 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
           </div>
         </div>
 
-        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-[var(--color-text)]">{t('v3ActionQueue')}</h2>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t('v3ActionQueueHelp')}</p>
+        <div className="space-y-4">
+          <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--color-text)]">{t('v3ActionQueue')}</h2>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t('v3ActionQueueHelp')}</p>
+              </div>
+              <Clock className="h-5 w-5 text-[var(--color-primary)]" />
             </div>
-            <Clock className="h-5 w-5 text-[var(--color-primary)]" />
-          </div>
-          <div className="mt-4 divide-y divide-[var(--color-border)]">
-            {visibleQueue.map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={() => onTrackClick(item.id, 'queue', 'action-queue')}
-                className="flex items-start justify-between gap-3 py-3 hover:bg-[var(--color-surface)]"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${priorityTone(item.priority)}`}>{item.priority}</span>
-                    <span className="text-sm font-semibold text-[var(--color-text)]">{item.title}</span>
+            <div className="mt-4 divide-y divide-[var(--color-border)]">
+              {visibleQueue.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => onTrackClick(item.id, 'queue', 'action-queue')}
+                  className="flex items-start justify-between gap-3 py-3 hover:bg-[var(--color-surface)]"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${priorityTone(item.priority)}`}>{item.priority}</span>
+                      <span className="text-sm font-semibold text-[var(--color-text)]">{item.title}</span>
+                    </div>
+                    <p className="mt-1 text-sm text-[var(--color-text-muted)]">{item.description}</p>
                   </div>
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">{item.description}</p>
+                  <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--color-text)]">{t('v3TenantRiskSnapshot')}</h2>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t('v3TenantRiskSnapshotHelp')}</p>
+              </div>
+              <ShieldAlert className="h-5 w-5 text-[var(--color-primary)]" />
+            </div>
+            <div className="mt-4 space-y-2">
+              {tenantRiskRows.length === 0 ? (
+                <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-4 text-sm text-[var(--color-text-muted)]">
+                  {t('v3NoTenantRiskData')}
                 </div>
-                <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[var(--color-text-muted)]" />
-              </Link>
-            ))}
-          </div>
-        </section>
+              ) : tenantRiskRows.map((tenant) => (
+                <Link
+                  key={tenant.id}
+                  href="/platform-admin/tenant-health"
+                  onClick={() => onTrackClick(`tenant-${tenant.id}`, 'queue', 'tenant-risk')}
+                  className="block rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-3 hover:bg-[var(--color-surface)]"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--color-text)]">{tenant.name}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{tenant.slug} · {tenant.plan}</p>
+                    </div>
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold ${riskTone(tenant.churnRisk)}`}>{tenant.churnRisk}</span>
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-[var(--color-text-muted)]">
+                    <span>{t('tenantHealth')}: <strong className="text-[var(--color-text)]">{tenant.healthScore}</strong></span>
+                    <span>{t('usersCol')}: <strong className="text-[var(--color-text)]">{tenant.users}</strong></span>
+                    <span>{t('leadsCol')}: <strong className="text-[var(--color-text)]">{tenant.leads}</strong></span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
       </section>
     </div>
   );

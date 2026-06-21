@@ -29,7 +29,7 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/platform-admin',                  label: 'CEO Dashboard',     icon: LayoutDashboard, exact: true },
+  { href: '/platform-admin',                  label: 'Founder Console',   icon: LayoutDashboard, exact: true },
   { href: '/platform-admin/revenue',          label: 'Revenue',          icon: CircleDollarSign },
   { href: '/platform-admin/tenant-health',    label: 'Tenant Health',    icon: HeartPulse },
   { href: '/platform-admin/growth',           label: 'Growth',           icon: LineChart },
@@ -82,7 +82,7 @@ export function AdminSidebar({ userName }: { userName: string }) {
           N
         </div>
         {!collapsed && (
-          <span className="text-sm font-semibold text-white">Admin Console</span>
+          <span className="text-sm font-semibold text-white">Founder Console</span>
         )}
       </div>
 
