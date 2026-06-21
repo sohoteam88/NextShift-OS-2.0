@@ -6,14 +6,24 @@ import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { leadMagnetService } from '@/modules/lead-magnet/leadMagnetService';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 
-const Schema = z.object({ type: z.enum(['guide', 'checklist', 'template']) });
+const Schema = z.object({
+  type: z.enum(['guide', 'checklist', 'template']),
+  track: z.enum(['retail', 'recruitment']).default('retail'),
+});
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
   await sharedAiRateLimitGuard(user, { feature: 'generation' });
   const body = await request.json();
   const input = Schema.parse(body);
-  const data = await leadMagnetService.generate(user.id, input.type);
-  if (data.qualityScore >= 80) await notifyMissionProgress(user, 'lead_magnet_created');
-  return NextResponse.json({ data });
+  const data = await leadMagnetService.generate(
+    user.id,
+    input.type,
+    input.track,
+  );
+  const mission =
+    data.qualityScore >= 70
+      ? await notifyMissionProgress(user, 'lead_magnet_created')
+      : undefined;
+  return NextResponse.json({ data, mission });
 });

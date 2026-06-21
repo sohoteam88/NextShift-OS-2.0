@@ -5,6 +5,9 @@ import { leadMagnetService } from '@/modules/lead-magnet/leadMagnetService';
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  const data = await leadMagnetService.get(user.id);
-  return NextResponse.json({ data });
+  const [data, trackLeadMagnets] = await Promise.all([
+    leadMagnetService.get(user.id),
+    leadMagnetService.getTracks(user.id),
+  ]);
+  return NextResponse.json({ data, trackLeadMagnets });
 });
