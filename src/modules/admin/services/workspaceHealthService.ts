@@ -19,6 +19,12 @@ export type WorkspaceMemberHealth = {
   role: string;
   journeyProgress: number;
   currentStage: string;
+  currentStepId: ExecutionRoadmapStepId;
+  missingRequirement: string;
+  recommendedAction: string;
+  recommendedRoute: string;
+  inactiveDays: number;
+  priority: AttentionSeverity;
   currentFunnel: string;
   lastActiveAt: string;
   healthScore: number;
@@ -388,9 +394,11 @@ class WorkspaceHealthService {
 
     const memberRows: WorkspaceMemberHealth[] = members.slice(0, 50).map((user) => {
       const lastActive = user.userProgress?.lastActivityAt ?? user.updatedAt;
+      const inactiveDays = daysSince(lastActive);
       const progress = estimateJourneyProgress(user.userProgress?.currentStageId, user.userProgress?.completedChecks);
       const score = memberHealth(progress, lastActive, user.onboardingCompleted);
       const execution = executionByUser.get(user.id);
+      const priority: AttentionSeverity = inactiveDays > 7 ? 'critical' : inactiveDays > 3 ? 'high' : 'normal';
       return {
         id: user.id,
         name: user.name || 'Unnamed member',
@@ -398,10 +406,16 @@ class WorkspaceHealthService {
         role: user.role,
         journeyProgress: progress,
         currentStage: execution?.current.label_zh ?? stageLabel(user.userProgress?.currentStageId),
+        currentStepId: execution?.current.id ?? 'brand_interview',
+        missingRequirement: execution?.current.outcome_zh ?? '等待系统资料',
+        recommendedAction: `推进 ${execution?.current.short_zh ?? '当前步骤'}`,
+        recommendedRoute: execution?.current.route ?? '/admin/members',
+        inactiveDays,
+        priority,
         currentFunnel: user.funnels[0]?.title ?? 'No funnel',
         lastActiveAt: lastActive.toISOString(),
         healthScore: score,
-        needsHelp: score < 50 || daysSince(lastActive) > 7,
+        needsHelp: score < 50 || inactiveDays > 3,
       };
     });
 
