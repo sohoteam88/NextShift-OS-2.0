@@ -118,7 +118,8 @@ export default function CrmPage() {
     setFilters((current) => ({ ...current, [key]: value, page: 1 }));
   }, []);
 
-  const leads = leadsQuery.data?.data ?? [];
+  const leadsData = leadsQuery.data?.data;
+  const leads = useMemo(() => leadsData ?? [], [leadsData]);
   const meta = leadsQuery.data?.meta;
   const allTags = tagsQuery.data?.data ?? [];
   const totalLeads = meta?.total ?? leads.length;
