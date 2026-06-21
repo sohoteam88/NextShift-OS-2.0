@@ -36,8 +36,12 @@ export const PATCH = apiHandler(async (request: NextRequest) => {
   if (updates.contentStrategy) {
     missionResults.push(await notifyMissionProgress(user, 'positioning_completed'));
   }
+  if (updates.username || updates.bios) {
+    missionResults.push(await notifyMissionProgress(user, 'social_setup_completed'));
+  }
   if (updates.bios) {
     missionResults.push(await notifyMissionProgress(user, 'bio_generated'));
+    missionResults.push(await notifyMissionProgress(user, 'first_bio_completed'));
   }
   if (updates.avatar_completed || updates.avatarCompleted) {
     missionResults.push(await notifyMissionProgress(user, 'avatar_completed'));

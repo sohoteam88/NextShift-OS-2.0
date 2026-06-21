@@ -1,9 +1,5 @@
-import { SocialSetupWizard } from '@/modules/social-setup/components/SocialSetupWizard';
+import { redirect } from 'next/navigation';
 
 export default function SocialSetupPage() {
-  return (
-    <div className="py-6 px-4">
-      <SocialSetupWizard />
-    </div>
-  );
+  redirect('/brand-builder/step/accounts');
 }

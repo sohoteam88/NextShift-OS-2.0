@@ -12,7 +12,7 @@ export interface BrandBuilderState {
 export const WIZARD_STEPS = [
   { id: 'interview', name: '了解你', path: '/brand-builder/step/interview' },
   { id: 'profile', name: '品牌画像', path: '/brand-builder/step/profile' },
-  { id: 'accounts', name: '账号设置', path: '/brand-builder/step/accounts' },
+  { id: 'accounts', name: '社交资料设置', path: '/brand-builder/step/accounts' },
   { id: 'platform_guide', name: '平台指引', path: '/brand-builder/step/guides' },
   { id: 'content_strategy', name: '内容策略', path: '/brand-builder/step/strategy' },
   { id: 'content_calendar', name: '内容日历', path: '/brand-builder/step/calendar' },

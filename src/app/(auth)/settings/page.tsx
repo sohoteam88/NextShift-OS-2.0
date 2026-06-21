@@ -2,8 +2,9 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building2, Globe, Lock, LogOut, Shield, User } from 'lucide-react';
+import { ArrowRight, Building2, Globe, Lock, LogOut, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { createClient } from '@/lib/supabase/client';
@@ -185,6 +186,28 @@ export default function SettingsPage() {
           </dl>
         </Section>
       </div>
+
+      <Section
+        title="Brand & Social Profiles"
+        description="Edit the social profile assets generated after Brand DNA confirmation."
+        icon={<Globe className="h-5 w-5" />}
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-[var(--color-text)]">Social Profile Setup</p>
+            <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
+              Update Facebook, Instagram, TikTok username ideas, Bio copy, avatar guidance, and cover direction used by the content engine and funnel CTA.
+            </p>
+          </div>
+          <Link
+            href="/brand-builder/step/accounts"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface)]"
+          >
+            Edit social profiles
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </Section>
 
       <Section
         title="Language"

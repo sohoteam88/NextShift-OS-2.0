@@ -16,7 +16,7 @@ interface MissionStatusCardProps {
 }
 
 const CATEGORY_LABEL: Record<JourneyCategory, Record<Locale, string>> = {
-  setup: { zh: '账号设置', en: 'Setup', ms: 'Persediaan' },
+  setup: { zh: '基础设置', en: 'Setup', ms: 'Persediaan' },
   brand: { zh: '品牌建设', en: 'Brand Building', ms: 'Bina Jenama' },
   social: { zh: '社交设置', en: 'Social Setup', ms: 'Media Sosial' },
   content: { zh: '内容引擎', en: 'Content Engine', ms: 'Kandungan' },

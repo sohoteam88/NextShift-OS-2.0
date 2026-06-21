@@ -60,13 +60,13 @@ const TOOLS: ToolCard[] = [
   {
     id: 'social_setup',
     emoji: '📱',
-    title: { zh: '社交媒体设置', en: 'Social Setup', ms: 'Persediaan Sosial' },
+    title: { zh: '社交资料设置', en: 'Social Profile Setup', ms: 'Persediaan Profil Sosial' },
     description: {
-      zh: '创建 FB Page 和 IG 专业账号',
-      en: 'Set up FB Page and IG professional account',
-      ms: 'Sediakan FB Page dan akaun profesional IG',
+      zh: '生成用户名、平台 Bio、头像和封面方向',
+      en: 'Generate username, platform bios, avatar, and cover direction',
+      ms: 'Jana nama pengguna, bio platform, avatar dan arah cover',
     },
-    route: '/brand-builder/step/guides',
+    route: '/brand-builder/step/accounts',
     unlocksAfter: 'brand_dna_confirmed',
   },
   {

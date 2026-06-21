@@ -189,8 +189,10 @@ export function AccountSetupStep({ brandProfile, onSave }: Props) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-[var(--color-text)]">社交账号设置</h2>
-        <p className="mt-1 text-sm text-[var(--color-text-muted)]">选择平台、用户名和简介</p>
+        <h2 className="text-xl font-semibold text-[var(--color-text)]">社交资料设置</h2>
+        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+          选择主要平台，准备用户名、Bio、头像和封面方向。内容引擎和漏斗 CTA 会优先使用这里的资料。
+        </p>
       </div>
 
       {/* Platform selector */}
@@ -218,7 +220,7 @@ export function AccountSetupStep({ brandProfile, onSave }: Props) {
 
       {/* Username */}
       <div className={sectionClass}>
-        <p className={labelClass}>用户名</p>
+        <p className={labelClass}>社交用户名</p>
 
         {loadingUsernames ? (
           <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
@@ -412,7 +414,7 @@ export function AccountSetupStep({ brandProfile, onSave }: Props) {
 
       <div className="flex justify-end pt-2">
         <Button onClick={() => void handleSave()} loading={saving}>
-          保存并继续 →
+          保存社交资料
         </Button>
       </div>
     </div>

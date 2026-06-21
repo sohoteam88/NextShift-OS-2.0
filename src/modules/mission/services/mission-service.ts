@@ -181,7 +181,7 @@ export const missionService = {
     const completedChecks = toCompletedChecksValue(progress.completedChecks);
     const checkKeys = extractCheckKeys(completedChecks);
 
-    return JOURNEY_MAP.map((stage) => ({
+    return [...JOURNEY_MAP].sort((a, b) => a.order - b.order).map((stage) => ({
       ...stage,
       completed_at: getCompletionDate(completedChecks, stage.completion_check) ?? undefined,
       status: checkKeys.includes(stage.completion_check)

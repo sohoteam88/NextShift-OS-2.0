@@ -64,7 +64,7 @@ const TASK_MAP: Record<string, MissionTask[]> = {
   brand_foundation: [
     { key: 'brand_interview', label: '品牌访谈', route: '/brand-builder/step/interview', completed: false },
     { key: 'brand_dna', label: '品牌 DNA', route: '/brand-builder/step/profile', completed: false },
-    { key: 'social_setup', label: '社交媒体设置', route: '/social-setup', completed: false },
+    { key: 'social_setup', label: '社交资料设置', route: '/brand-builder/step/accounts', completed: false },
   ],
   content_creation: [
     { key: 'first_content', label: '内容规划', route: '/content-engine', completed: false },

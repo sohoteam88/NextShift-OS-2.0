@@ -129,7 +129,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
   },
   {
     id: 'positioning',
-    order: 5,
+    order: 6,
     name_zh: '建立个人定位',
     name_en: 'Build Positioning',
     name_ms: 'Bina Kedudukan',
@@ -146,7 +146,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
   },
   {
     id: 'fb_page_setup',
-    order: 6,
+    order: 7,
     name_zh: '建立 Facebook Page',
     name_en: 'Set Up Facebook Page',
     name_ms: 'Sediakan Facebook Page',
@@ -163,7 +163,7 @@ export const JOURNEY_MAP: JourneyStage[] = [
   },
   {
     id: 'ig_account_setup',
-    order: 7,
+    order: 8,
     name_zh: '建立 Instagram 账号',
     name_en: 'Set Up Instagram',
     name_ms: 'Sediakan Instagram',
@@ -180,18 +180,18 @@ export const JOURNEY_MAP: JourneyStage[] = [
   },
   {
     id: 'generate_bio',
-    order: 8,
-    name_zh: '生成 Bio 简介',
-    name_en: 'Generate Bio',
+    order: 5,
+    name_zh: '社交资料设置',
+    name_en: 'Social Profile Setup',
     name_ms: 'Jana Bio',
     category: 'social',
-    description_zh: 'AI 为每个平台生成专业的简介文案',
-    description_en: 'AI generates professional bios for each platform',
+    description_zh: 'AI 根据 Brand DNA 生成社交用户名、平台 Bio、头像和封面方向',
+    description_en: 'AI generates social username, platform bios, avatar, and cover direction from Brand DNA',
     description_ms: 'AI menjana bio profesional untuk setiap platform',
     estimated_minutes: 3,
     route: '/brand-builder/step/accounts',
     completion_check: 'bio_generated',
-    prerequisites: ['fb_page_setup', 'ig_account_setup'],
+    prerequisites: ['brand_dna'],
     is_milestone: false,
     xp_reward: 15,
   },
@@ -407,7 +407,7 @@ export function getStageById(id: JourneyStageId): JourneyStage | undefined {
 
 export function getNextStage(completedChecks: CompletedChecksValue): JourneyStage | null {
   const checkKeys = extractCheckKeys(completedChecks);
-  for (const stage of JOURNEY_MAP) {
+  for (const stage of [...JOURNEY_MAP].sort((a, b) => a.order - b.order)) {
     if (checkKeys.includes(stage.completion_check)) continue;
 
     const prereqsMet = stage.prerequisites.every((prereqId) => {

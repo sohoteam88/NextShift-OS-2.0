@@ -38,7 +38,7 @@ function buildSteps(profile: BrandProfile, funnelUrl: string): GuideStepData[] {
     {
       title: '填写 Bio',
       instruction: '在 Edit Profile → Bio 中填入以下内容：',
-      action: { type: 'copy', value: igBio || '（请先完成账号设置步骤生成 Bio）' },
+      action: { type: 'copy', value: igBio || '（请先完成社交资料设置生成 Bio）' },
       tip: 'Instagram Bio 最多 150 字，每行一个重点，最后一行放 CTA',
     },
     {

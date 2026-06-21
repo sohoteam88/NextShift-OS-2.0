@@ -12,12 +12,7 @@ export function AccountsStepClient({ brandProfile }: Props) {
   const router = useRouter();
   const [saved, setSaved] = React.useState(false);
 
-  async function handleSave(updates: Record<string, unknown>) {
-    await fetch('/api/v1/brand-builder/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+  function handleSave() {
     setSaved(true);
   }
 
@@ -42,22 +37,23 @@ export function AccountsStepClient({ brandProfile }: Props) {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">🔧 账号设置</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-text)]">社交资料设置</h1>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-          AI 将根据你的品牌定位生成账号名称和简介建议。
+          AI 将根据 Brand DNA 生成社交用户名、平台 Bio 和头像建议。这个步骤完成后，会继续进入平台指引；之后也可以在 Settings 回来修改。
         </p>
       </div>
       <AccountSetupStep
         brandProfile={brandProfile}
-        onSave={(updates) => void handleSave(updates)}
+        onSave={handleSave}
       />
       <div className="flex items-center gap-4 pt-2">
         <button
           type="button"
           onClick={() => void handleContinue()}
-          className="inline-flex items-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-hover)]"
+          disabled={!saved}
+          className="inline-flex items-center rounded-[var(--radius-md)] bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {saved ? '继续下一步 →' : '保存并继续 →'}
+          {saved ? '继续平台指引 →' : '请先保存社交资料'}
         </button>
         <button
           type="button"

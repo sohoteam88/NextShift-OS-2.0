@@ -78,24 +78,24 @@ function generateRecommendations(completedChecks: string[]): Recommendation[] {
     }
   }
 
-  // Rule 2: Has Brand DNA but no social setup
+  // Rule 2: Has Brand DNA but no social profile setup
   if (checks.has('brand_dna_confirmed') && !checks.has('social_setup_completed')) {
     recommendations.push({
       id: 'setup_social',
       priority: 2,
       emoji: '📱',
       title: {
-        zh: '设置你的社交媒体账号',
-        en: 'Set Up Your Social Media',
-        ms: 'Sediakan Media Sosial Anda',
+        zh: '完成社交资料设置',
+        en: 'Complete Social Profile Setup',
+        ms: 'Lengkapkan Profil Sosial',
       },
       body: {
-        zh: '你已经有品牌定位了，现在是时候把它展示给世界。设置 FB Page 和 IG 账号，这是你的数字门面。',
-        en: 'You have your positioning — now show it to the world. Set up FB Page and IG as your digital storefront.',
-        ms: 'Anda ada kedudukan jenama — kini tunjukkan pada dunia. Sediakan FB Page dan IG.',
+        zh: '你已经确认 Brand DNA。下一步先生成社交用户名、平台 Bio 和头像方向，内容引擎和漏斗 CTA 会优先使用这些资料。',
+        en: 'Your Brand DNA is confirmed. Generate your username, platform bios, and avatar direction before content and funnel CTA use them.',
+        ms: 'DNA jenama sudah disahkan. Jana nama pengguna, bio platform dan arah avatar sebelum kandungan dan CTA funnel menggunakannya.',
       },
-      route: '/brand-builder/step/guides',
-      buttonLabel: { zh: '设置社交媒体 →', en: 'Set Up Social →', ms: 'Sediakan Sosial →' },
+      route: '/brand-builder/step/accounts',
+      buttonLabel: { zh: '设置社交资料 →', en: 'Set Up Profile →', ms: 'Sediakan Profil →' },
     });
   }
 

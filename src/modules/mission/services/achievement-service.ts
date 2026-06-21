@@ -27,7 +27,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
   {
     key: 'social_ready',
     title: '社交媒体上线',
-    description: '完成 FB 和 IG 账号设置',
+    description: '完成 FB 和 IG 社交资料设置',
     icon: 'smartphone',
     xp: 40,
     check: (checks) => checks.includes('fb_page_completed') && checks.includes('ig_account_completed'),

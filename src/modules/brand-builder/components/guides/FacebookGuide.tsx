@@ -43,7 +43,7 @@ function buildSteps(profile: BrandProfile, phone: string): GuideStepData[] {
     {
       title: '填写简介 Bio',
       instruction: '把以下内容复制到 Bio 栏：',
-      action: { type: 'copy', value: fbBio || '（请先完成账号设置步骤生成 Bio）' },
+      action: { type: 'copy', value: fbBio || '（请先完成社交资料设置生成 Bio）' },
       tip: '你可以之后随时修改',
     },
     {
