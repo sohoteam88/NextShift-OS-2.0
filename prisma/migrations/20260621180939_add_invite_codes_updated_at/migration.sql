@@ -1,0 +1,2 @@
+ALTER TABLE public.invite_codes
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
