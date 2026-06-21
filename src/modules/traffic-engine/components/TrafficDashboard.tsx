@@ -1,27 +1,89 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Rocket, Sparkles, Target } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  CheckCircle2,
+  Circle,
+  FileText,
+  Gauge,
+  Loader2,
+  Megaphone,
+  MessageCircle,
+  MousePointerClick,
+  RadioTower,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  WalletCards,
+} from 'lucide-react';
 import { cn } from '@/lib/cn';
-import type { TrafficGoal, TrafficPlatform, BudgetTier, TrafficPackage } from '../types';
+import type {
+  BudgetTier,
+  TrafficDashboardPayload,
+  TrafficGoal,
+  TrafficPackage,
+  TrafficPlatform,
+  TrafficPrerequisites,
+} from '../types';
 import { TRAFFIC_GOALS } from '../types';
 import { getTrafficAdvisorTips } from '../trafficAdvisor';
 
-function useTraffic() { return useQuery({ queryKey: ['traffic-engine'], queryFn: async () => { const r = await fetch('/api/v1/traffic-engine'); if (!r.ok) throw new Error('Failed'); return r.json() as Promise<{ data: TrafficPackage | null }>; }, staleTime: 30_000 }); }
-function useGenerate() { const qc = useQueryClient(); return useMutation({ mutationFn: async (opts: { goal: TrafficGoal; platform: TrafficPlatform; budget: BudgetTier }) => { const r = await fetch('/api/v1/traffic-engine/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(opts) }); if (!r.ok) throw new Error('Failed'); return r.json(); }, onSuccess: () => qc.invalidateQueries({ queryKey: ['traffic-engine'] }) }); }
+const PLATFORM_LABELS: Record<TrafficPlatform, string> = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  xhs: '小红书',
+};
 
-function statusLabel(level: TrafficPackage['readiness']['level']) {
-  if (level === 'high') return '可以小额测试';
-  if (level === 'medium') return '接近就绪';
-  return '先补齐承接';
+const BUDGET_LABELS: Record<BudgetTier, string> = {
+  starter: '测试预算',
+  growth: '增长预算',
+  scale: '放大预算',
+};
+
+function emptyPrerequisites(): TrafficPrerequisites {
+  return {
+    brandDnaReady: false,
+    contentPlanReady: false,
+    leadMagnetReady: false,
+    retailLandingPageReady: false,
+    recruitmentLandingPageReady: false,
+    trackingPlanned: false,
+  };
 }
 
-function readinessState(value: number) {
-  if (value >= 70) return { label: '已准备', tone: 'text-emerald-700 bg-emerald-50 border-emerald-100' };
-  if (value >= 40) return { label: '可优化', tone: 'text-amber-700 bg-amber-50 border-amber-100' };
-  return { label: '需补齐', tone: 'text-red-700 bg-red-50 border-red-100' };
+function useTraffic() {
+  return useQuery({
+    queryKey: ['traffic-engine'],
+    queryFn: async () => {
+      const response = await fetch('/api/v1/traffic-engine');
+      if (!response.ok) throw new Error('Failed to load traffic engine');
+      return response.json() as Promise<TrafficDashboardPayload>;
+    },
+    staleTime: 30_000,
+  });
+}
+
+function useGenerate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (opts: { goal: TrafficGoal; platform: TrafficPlatform; budget: BudgetTier }) => {
+      const response = await fetch('/api/v1/traffic-engine/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(opts),
+      });
+      if (!response.ok) throw new Error('Failed to generate traffic plan');
+      return response.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['traffic-engine'] }),
+  });
 }
 
 function kpiLabel(kpi: string) {
@@ -33,158 +95,479 @@ function kpiLabel(kpi: string) {
     .replace('Cost Per Follower', '每位关注成本');
 }
 
-function budgetLabel(tier: BudgetTier) {
-  if (tier === 'scale') return '放大预算';
-  if (tier === 'growth') return '增长预算';
-  return '测试预算';
-}
-
-function riskLabel(risk: TrafficPackage['budget']['riskLevel']) {
+function budgetRiskLabel(risk: TrafficPackage['budget']['riskLevel']) {
   if (risk === 'high') return '高';
   if (risk === 'medium') return '中';
   return '低';
 }
 
-function checklistLabel(label: string) {
-  const lower = label.toLowerCase();
-  if (lower === 'funnel' || lower.includes('funnel')) return '确认漏斗页面已经可以收集客户资料';
-  if (lower === 'lead_magnet' || lower.includes('lead magnet') || lower.includes('lead_magnet')) return '准备一个可以吸引客户留下资料的资源';
-  if (lower.includes('traffic acquisition')) return '先完成流量来源设置，再启动广告测试';
-  if (lower.includes('success criteria')) return '目标是先获得第一位潜在客户';
-  if (lower.includes('tracking')) return '确认追踪参数已经设置';
-  return label;
+function isSavedTrafficPlan(pkg: TrafficPackage | null) {
+  return Boolean(pkg && pkg.campaign.name !== 'Business State Traffic Readiness');
 }
 
-function trackingLabel(key: string) {
-  const lower = key.toLowerCase();
-  if (lower.includes('utm')) return 'UTM';
-  if (lower.includes('pixel')) return '像素';
-  if (lower.includes('conversion')) return '转化事件';
-  return null;
+function prerequisitesComplete(prerequisites: TrafficPrerequisites) {
+  return (
+    prerequisites.brandDnaReady &&
+    prerequisites.contentPlanReady &&
+    prerequisites.leadMagnetReady &&
+    prerequisites.retailLandingPageReady &&
+    prerequisites.recruitmentLandingPageReady
+  );
+}
+
+function nextPrerequisiteLink(prerequisites: TrafficPrerequisites) {
+  if (!prerequisites.brandDnaReady) return { href: '/brand-builder/step/profile', label: '完成 Brand DNA' };
+  if (!prerequisites.contentPlanReady) return { href: '/content-engine', label: '生成内容计划' };
+  if (!prerequisites.leadMagnetReady) return { href: '/lead-magnet', label: '生成引流资源' };
+  if (!prerequisites.retailLandingPageReady || !prerequisites.recruitmentLandingPageReady) {
+    return { href: '/funnel', label: '生成双漏斗落地页' };
+  }
+  return { href: '/traffic-engine', label: '启动流量测试' };
 }
 
 export function TrafficDashboard() {
-  const router = useRouter(); const q = useTraffic(); const gen = useGenerate();
-  const pkg = q.data?.data ?? null;
+  const query = useTraffic();
+  const generate = useGenerate();
   const [goal, setGoal] = React.useState<TrafficGoal>('lead_generation');
   const [platform, setPlatform] = React.useState<TrafficPlatform>('facebook');
   const [budget, setBudget] = React.useState<BudgetTier>('starter');
-  const tips = pkg ? getTrafficAdvisorTips(pkg.readiness) : [];
-  const trackingEntries = pkg ? Object.entries(pkg.analyticsConfig)
-    .map(([key, value]) => ({ label: trackingLabel(key), value }))
-    .filter((entry): entry is { label: string; value: string } => Boolean(entry.label)) : [];
-  const blockedByFoundation = Boolean(pkg && (pkg.readiness.funnelReady < 50 || pkg.readiness.leadMagnetReady < 50));
-  const readinessItems = pkg ? [
-    { k: '漏斗页面', v: pkg.readiness.funnelReady },
-    { k: '着陆页', v: pkg.readiness.landingPageReady },
-    { k: 'CTA', v: pkg.readiness.ctaReady },
-    { k: '引流资源', v: pkg.readiness.leadMagnetReady },
-    { k: '跟进系统', v: pkg.readiness.whatsappReady },
-    { k: '内容素材', v: pkg.readiness.contentAssetsReady },
-    { k: '追踪设置', v: pkg.readiness.trackingReady },
-    { k: '感谢页', v: pkg.readiness.thankYouReady },
-  ] : [];
 
-  if (q.isLoading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-blue-600" /></div>;
+  const pkg = query.data?.data ?? null;
+  const prerequisites = pkg?.prerequisites ?? query.data?.prerequisites ?? emptyPrerequisites();
+  const readyToGenerate = prerequisitesComplete(prerequisites);
+  const savedPlan = isSavedTrafficPlan(pkg);
+  const nextLink = nextPrerequisiteLink(prerequisites);
+  const tips = savedPlan && pkg ? getTrafficAdvisorTips(pkg.readiness) : [];
+
+  if (query.isLoading) {
+    return (
+      <div className="flex min-h-[360px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 pb-12">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">流量测试中心</h1><p className="text-xs text-gray-500">这里是后续测试步骤；先用品牌资料生成承接页和引流资源。</p></div></div>
-        {pkg && <div className={cn('rounded-full px-3 py-1.5 text-xs font-bold', pkg.readiness.level === 'high' ? 'bg-emerald-100 text-emerald-700' : pkg.readiness.level === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')}>{statusLabel(pkg.readiness.level)}</div>}
-      </div>
-
-      {blockedByFoundation && (
-        <section className="rounded-xl border border-blue-100 bg-blue-50 p-5">
-          <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-white p-2 text-blue-600">
-              <Target className="h-5 w-5" />
-            </div>
-            <div className="space-y-3">
-              <div>
-                <h2 className="text-base font-bold text-gray-950">这里还不是第一步</h2>
-                <p className="mt-1 text-sm text-gray-600">
-                  流量测试中心负责在承接页完成后生成测试渠道、预算和追踪设置。现在系统还缺少可接住客户的漏斗页面或引流资源，所以不建议直接启动广告。
-                </p>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="rounded-lg border border-white bg-white p-3">
-                  <div className="text-xs font-bold text-gray-500">先完成</div>
-                  <div className="mt-1 text-sm font-semibold text-gray-950">根据品牌资料生成漏斗页面</div>
-                </div>
-                <div className="rounded-lg border border-white bg-white p-3">
-                  <div className="text-xs font-bold text-gray-500">再完成</div>
-                  <div className="mt-1 text-sm font-semibold text-gray-950">准备一个可领取的引流资源</div>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => router.push('/funnel')} className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700">
-                  生成漏斗页面 <ArrowRight className="h-4 w-4" />
-                </button>
-                <button onClick={() => router.push('/lead-magnet')} className="inline-flex h-10 items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 text-sm font-bold text-blue-700 hover:bg-blue-50">
-                  创建引流资源
-                </button>
-              </div>
-            </div>
+    <div className="mx-auto max-w-5xl space-y-6 pb-14">
+      <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start gap-3">
+          <Link
+            href="/dashboard"
+            aria-label="Back to dashboard"
+            className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-border)] bg-white text-gray-500 hover:bg-gray-50"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <p className="text-xs font-semibold uppercase text-blue-600">AI COO Mission</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-normal text-gray-950">启动流量测试</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+              当 Brand DNA、内容计划、引流资源和双漏斗落地页都准备好，系统才建议用小预算验证受众、文案、CTA 和跟进路径。
+            </p>
           </div>
-        </section>
-      )}
-
-      {!pkg && (
-        <div className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 p-8 text-center">
-          <Rocket className="h-8 w-8 text-blue-500 mx-auto mb-3" /><h2 className="text-lg font-bold mb-2">生成流量测试计划</h2>
-          <p className="mx-auto mb-4 max-w-xl text-sm text-gray-600">系统会读取你的品牌资料、漏斗页面、引流资源和内容资产，生成小预算测试建议。</p>
-          <div className="space-y-3 mb-4">
-            <div><label className="text-xs font-bold block mb-1">目标</label>
-              <div className="flex flex-wrap gap-2">{Object.entries(TRAFFIC_GOALS).map(([k,v]) => <button key={k} onClick={() => setGoal(k as TrafficGoal)} className={cn('rounded-lg px-3 py-2 text-xs text-left', goal===k?'bg-blue-600 text-white':'bg-white border')}><div className="font-bold">{v.objective}</div><div className="opacity-70">{kpiLabel(v.expectedKpi)}</div></button>)}</div>
-            </div>
-            <div><label className="text-xs font-bold block mb-1">平台</label>
-              <div className="flex gap-2">{(['facebook','instagram','tiktok','xhs'] as TrafficPlatform[]).map(p => <button key={p} onClick={() => setPlatform(p)} className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', platform===p?'bg-blue-600 text-white':'bg-gray-100')}>{p}</button>)}</div>
-            </div>
-            <div><label className="text-xs font-bold block mb-1">预算</label>
-              <div className="flex gap-2">{(['starter','growth','scale'] as BudgetTier[]).map(b => <button key={b} onClick={() => setBudget(b)} className={cn('rounded-lg px-3 py-1.5 text-xs font-semibold', budget===b?'bg-blue-600 text-white':'bg-gray-100')}>{budgetLabel(b)}</button>)}</div>
-            </div>
-          </div>
-          <button onClick={() => gen.mutate({ goal, platform, budget })} disabled={gen.isPending} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50">{gen.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}生成流量策略</button>
         </div>
-      )}
+        <div className={cn(
+          'inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold',
+          readyToGenerate ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-amber-100 bg-amber-50 text-amber-700',
+        )}>
+          <Gauge className="h-3.5 w-3.5" />
+          {readyToGenerate ? '可以启动测试' : '先补齐承接'}
+        </div>
+      </header>
 
-      {pkg && !blockedByFoundation && (
-        <>
-          <S title="📊 启动前检查">
-            <div className="grid grid-cols-4 gap-2 text-xs">
-              {readinessItems.map(d => {
-                const state = readinessState(d.v);
-                return <div key={d.k} className={cn('rounded border p-2 text-center', state.tone)}><div className="font-bold">{d.k}</div><div>{state.label}</div></div>;
-              })}
+      <section className="rounded-xl border border-blue-100 bg-blue-50 p-5 md:p-6">
+        <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-bold text-blue-700">
+              <Rocket className="h-4 w-4" />
+              COO 判断
             </div>
-            {tips.map((t,i) => <p key={i} className="text-xs text-amber-700 mt-2">💡 {t}</p>)}
-          </S>
-
-          {/* Campaign cards per platform */}
-          {pkg.facebook && <S title="📘 Facebook 广告"><p className="text-sm"><strong>广告名称:</strong> {pkg.facebook.campaignName}</p><p className="text-sm"><strong>受众:</strong> {pkg.facebook.audience}</p><p className="text-sm"><strong>文案:</strong> {pkg.facebook.primaryText}</p><p className="text-sm"><strong>CTA:</strong> {pkg.facebook.cta}</p><p className="text-xs text-gray-500"><strong>标题:</strong> {pkg.facebook.headlines.join(' | ')}</p></S>}
-          {pkg.instagram && <S title="📸 Instagram 广告"><p className="text-sm"><strong>Reel:</strong> {pkg.instagram.reelConcept}</p><p className="text-sm"><strong>Story:</strong> {pkg.instagram.storyConcept}</p><p className="text-sm"><strong>Carousel:</strong> {pkg.instagram.carouselConcept}</p></S>}
-          {pkg.tiktok && <S title="🎵 TikTok 广告"><p className="text-sm"><strong>开场 Hook:</strong> {pkg.tiktok.hook}</p><p className="text-sm"><strong>开场画面:</strong> {pkg.tiktok.openingScene}</p><p className="text-sm"><strong>留存策略:</strong> {pkg.tiktok.retentionStrategy}</p></S>}
-          {pkg.xhs && <S title="📕 小红书内容"><p className="text-sm"><strong>内容角度:</strong> {pkg.xhs.contentAngle}</p><p className="text-sm"><strong>关键词:</strong> {pkg.xhs.keywordDirection}</p><p className="text-sm"><strong>标题:</strong> {pkg.xhs.titles.join(' | ')}</p></S>}
-
-          <S title="💰 预算"><p className="text-sm"><strong>{budgetLabel(pkg.budget.tier)}:</strong> {pkg.budget.dailyBudget} → {pkg.budget.monthlyBudget}</p><p className="text-sm"><strong>预计:</strong> {pkg.budget.expectedLeads.replaceAll('leads', '位潜在客户')}</p><p className="text-sm"><strong>风险:</strong> {riskLabel(pkg.budget.riskLevel)}</p></S>
-
-          <S title="✅ 启动检查清单">
-            {pkg.checklist.map(item => <div key={item.id} className="text-sm flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-gray-300" /> {checklistLabel(item.label)}</div>)}
-          </S>
-
-          <S title="📈 追踪设置">
-            {trackingEntries.length > 0 ? (
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                {trackingEntries.map((entry) => <div key={entry.label} className="bg-gray-50 rounded p-2"><div className="font-bold text-gray-400">{entry.label}</div><div>{entry.value}</div></div>)}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">先完成漏斗页面和追踪设置，系统会在这里显示广告成效指标。</p>
+            <h2 className="mt-3 text-xl font-bold tracking-normal text-gray-950">
+              {savedPlan
+                ? '第一轮流量测试计划已经准备好。'
+                : readyToGenerate
+                  ? '你还没有启动流量测试。'
+                  : '流量测试还不能启动。'}
+            </h2>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-gray-700">
+              <p>
+                为什么是这个？因为漏斗完成后，下一件最高杠杆的事情不是继续加页面，而是让真实流量进入系统，测试是否有人点击、留下资料和开启对话。
+              </p>
+              <p>
+                为什么是现在？因为没有流量测试，AI COO 无法判断你的受众、Offer、CTA 和跟进流程哪一个环节需要优化。
+              </p>
+              <p>
+                为什么不是直接看 Leads？如果还没有启动测试，Leads 为零只说明没有流量进入，不代表漏斗失败。
+              </p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-blue-100 bg-white p-4">
+            <div className="text-xs font-bold uppercase text-gray-500">Recommended Next Action</div>
+            <div className="mt-2 text-lg font-bold text-gray-950">
+              {readyToGenerate ? '生成第一轮流量测试计划' : nextLink.label}
+            </div>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              {readyToGenerate
+                ? '先用 RM20-50/天的小预算跑 7 天，目标是验证点击、提交和 WhatsApp 对话质量。'
+                : '系统会先引导你回到缺失的上一步，避免广告流量进入无法承接的页面。'}
+            </p>
+            {!readyToGenerate && (
+              <Link
+                href={nextLink.href}
+                className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-700"
+              >
+                {nextLink.label}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             )}
-          </S>
-        </>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 md:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-950">启动条件</h2>
+            <p className="mt-1 text-sm text-gray-500">这些条件决定 COO 是否应该推荐“启动流量测试”。</p>
+          </div>
+          <div className="text-sm font-bold text-gray-700">
+            {readinessCount(prerequisites)} / 5 已完成
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <PrerequisiteRow
+            icon={ShieldCheck}
+            title="Brand DNA 已确认"
+            description="系统知道你是谁、卖给谁、用什么承诺进入市场。"
+            ready={prerequisites.brandDnaReady}
+            href="/brand-builder/step/profile"
+          />
+          <PrerequisiteRow
+            icon={FileText}
+            title="内容计划已生成"
+            description="零售和招募两种内容方向已经有可发布素材。"
+            ready={prerequisites.contentPlanReady}
+            href="/content-engine"
+          />
+          <PrerequisiteRow
+            icon={Target}
+            title="引流资源已准备"
+            description="用户点击广告后，有值得领取的资源或下一步理由。"
+            ready={prerequisites.leadMagnetReady}
+            href="/lead-magnet"
+          />
+          <PrerequisiteRow
+            icon={MousePointerClick}
+            title="零售客户落地页已发布"
+            description="承接想买产品、咨询方案或领取零售 Offer 的流量。"
+            ready={prerequisites.retailLandingPageReady}
+            href="/funnel"
+          />
+          <PrerequisiteRow
+            icon={MessageCircle}
+            title="招募伙伴落地页已发布"
+            description="承接想了解机会、加入团队或复制系统的流量。"
+            ready={prerequisites.recruitmentLandingPageReady}
+            href="/funnel"
+          />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 md:p-6">
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div>
+            <h2 className="text-lg font-bold text-gray-950">测试配置</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-500">
+              选择第一轮测试的目标、平台和预算。COO 会用这些条件生成 7 天测试计划。
+            </p>
+          </div>
+          <div className="space-y-5">
+            <ControlGroup label="测试目标">
+              {Object.entries(TRAFFIC_GOALS).map(([key, value]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setGoal(key as TrafficGoal)}
+                  className={cn(
+                    'rounded-lg border px-3 py-2 text-left text-sm transition',
+                    goal === key
+                      ? 'border-blue-600 bg-blue-50 text-blue-800'
+                      : 'border-[var(--color-border)] bg-white text-gray-700 hover:bg-gray-50',
+                  )}
+                >
+                  <span className="block font-bold">{value.objective}</span>
+                  <span className="mt-1 block text-xs opacity-75">{kpiLabel(value.expectedKpi)}</span>
+                </button>
+              ))}
+            </ControlGroup>
+            <ControlGroup label="优先平台">
+              {(['facebook', 'instagram', 'tiktok', 'xhs'] as TrafficPlatform[]).map((item) => (
+                <SegmentButton key={item} selected={platform === item} onClick={() => setPlatform(item)}>
+                  {PLATFORM_LABELS[item]}
+                </SegmentButton>
+              ))}
+            </ControlGroup>
+            <ControlGroup label="预算层级">
+              {(['starter', 'growth', 'scale'] as BudgetTier[]).map((item) => (
+                <SegmentButton key={item} selected={budget === item} onClick={() => setBudget(item)}>
+                  {BUDGET_LABELS[item]}
+                </SegmentButton>
+              ))}
+            </ControlGroup>
+            <button
+              type="button"
+              onClick={() => generate.mutate({ goal, platform, budget })}
+              disabled={!readyToGenerate || generate.isPending}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              {generate.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              生成流量测试计划
+            </button>
+            {!readyToGenerate && (
+              <p className="text-xs leading-5 text-amber-700">
+                生成按钮会在 Brand DNA、内容计划、引流资源和双漏斗落地页完成后开放。
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {savedPlan && pkg ? (
+        <GeneratedPlan pkg={pkg} tips={tips} />
+      ) : (
+        <ExpectedOutput />
       )}
     </div>
   );
 }
-function S({ title, children }: { title: string; children: React.ReactNode }) { return <section className="rounded-xl border border-[var(--color-border)] bg-white p-5"><h3 className="text-sm font-bold mb-3">{title}</h3>{children}</section>; }
+
+function readinessCount(prerequisites: TrafficPrerequisites) {
+  return [
+    prerequisites.brandDnaReady,
+    prerequisites.contentPlanReady,
+    prerequisites.leadMagnetReady,
+    prerequisites.retailLandingPageReady,
+    prerequisites.recruitmentLandingPageReady,
+  ].filter(Boolean).length;
+}
+
+function PrerequisiteRow({
+  icon: Icon,
+  title,
+  description,
+  ready,
+  href,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  ready: boolean;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'flex items-start gap-3 rounded-lg border p-4 transition hover:bg-gray-50',
+        ready ? 'border-emerald-100 bg-emerald-50/40' : 'border-[var(--color-border)] bg-white',
+      )}
+    >
+      <div className={cn('mt-0.5 rounded-lg p-2', ready ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500')}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-bold text-gray-950">{title}</h3>
+          {ready ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" /> : <Circle className="h-4 w-4 shrink-0 text-gray-300" />}
+        </div>
+        <p className="mt-1 text-xs leading-5 text-gray-500">{description}</p>
+      </div>
+    </Link>
+  );
+}
+
+function ControlGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-2 text-xs font-bold uppercase text-gray-500">{label}</div>
+      <div className="grid gap-2 sm:grid-cols-2">{children}</div>
+    </div>
+  );
+}
+
+function SegmentButton({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'rounded-lg border px-3 py-2 text-sm font-bold transition',
+        selected
+          ? 'border-blue-600 bg-blue-600 text-white'
+          : 'border-[var(--color-border)] bg-white text-gray-700 hover:bg-gray-50',
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function GeneratedPlan({ pkg, tips }: { pkg: TrafficPackage; tips: string[] }) {
+  const platformName = PLATFORM_LABELS[pkg.campaign.platform];
+  return (
+    <section className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Metric icon={RadioTower} label="测试平台" value={platformName} />
+        <Metric icon={WalletCards} label="每日预算" value={pkg.budget.dailyBudget} />
+        <Metric icon={BarChart3} label="Readiness" value={`${pkg.readiness.score}%`} />
+      </div>
+
+      <div className="rounded-xl border border-[var(--color-border)] bg-white p-5 md:p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-gray-950">{pkg.campaign.name}</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-500">
+              目标：{TRAFFIC_GOALS[pkg.goal].objective}。预算：{pkg.budget.dailyBudget}，预计 {pkg.budget.expectedLeads.replaceAll('leads', '位潜在客户')}。
+            </p>
+          </div>
+          <Link
+            href="/leads"
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-bold text-blue-700 hover:bg-blue-100"
+          >
+            查看 Leads
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <PlanBlock title="广告角度" value={campaignAngle(pkg)} />
+          <PlanBlock title="受众" value={pkg.campaign.audience} />
+          <PlanBlock title="Offer" value={pkg.campaign.offer} />
+          <PlanBlock title="CTA" value={pkg.campaign.cta} />
+          <PlanBlock title="落地页" value="同时测试零售客户漏斗和招募伙伴漏斗。" />
+          <PlanBlock title="追踪" value={pkg.campaign.trackingNotes || 'UTM、像素和转化事件需要在发布前确认。'} />
+        </div>
+
+        {tips.length > 0 && (
+          <div className="mt-5 rounded-lg border border-amber-100 bg-amber-50 p-4">
+            <div className="text-sm font-bold text-amber-800">COO 提醒</div>
+            <div className="mt-2 space-y-1">
+              {tips.map((tip) => (
+                <p key={tip} className="text-sm leading-6 text-amber-800">{tip}</p>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+        <div className="rounded-xl border border-[var(--color-border)] bg-white p-5 md:p-6">
+          <h2 className="text-lg font-bold text-gray-950">7 天测试节奏</h2>
+          <div className="mt-4 space-y-3">
+            {[
+              'Day 1：确认像素、UTM、表单和 WhatsApp 链接都能正常记录。',
+              'Day 2：发布第一组小预算广告，零售和招募各一条主文案。',
+              'Day 3：检查点击率、CPC 和落地页停留，不急着改 Offer。',
+              'Day 4：关闭明显低点击素材，复制表现较好的角度。',
+              'Day 5：观察提交率和 WhatsApp 对话质量。',
+              'Day 6：调整 CTA、标题或首屏承诺。',
+              'Day 7：决定继续优化、暂停，或进入 Leads/CRM 跟进。',
+            ].map((item) => (
+              <div key={item} className="flex gap-3 text-sm leading-6 text-gray-700">
+                <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-blue-600" />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl border border-[var(--color-border)] bg-white p-5 md:p-6">
+          <h2 className="text-lg font-bold text-gray-950">启动检查清单</h2>
+          <div className="mt-4 space-y-3">
+            {pkg.checklist.slice(0, 7).map((item) => (
+              <div key={item.id} className="flex items-center gap-3 text-sm text-gray-700">
+                {item.checked ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Circle className="h-4 w-4 text-gray-300" />}
+                <span>{checklistLabel(item.label)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 rounded-lg bg-gray-50 p-4 text-sm leading-6 text-gray-600">
+            风险等级：{budgetRiskLabel(pkg.budget.riskLevel)}。第一轮目标是学习，不是立刻放大预算。
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Metric({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+      <div className="flex items-center gap-2 text-xs font-bold uppercase text-gray-500">
+        <Icon className="h-4 w-4" />
+        {label}
+      </div>
+      <div className="mt-3 text-xl font-bold text-gray-950">{value}</div>
+    </div>
+  );
+}
+
+function PlanBlock({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+      <div className="text-xs font-bold uppercase text-gray-500">{title}</div>
+      <div className="mt-2 text-sm leading-6 text-gray-800">{value}</div>
+    </div>
+  );
+}
+
+function campaignAngle(pkg: TrafficPackage) {
+  if (pkg.facebook) return pkg.facebook.adAngles.join(' / ');
+  if (pkg.instagram) return pkg.instagram.reelConcept;
+  if (pkg.tiktok) return pkg.tiktok.hook;
+  if (pkg.xhs) return pkg.xhs.contentAngle;
+  return pkg.campaign.creative;
+}
+
+function checklistLabel(label: string) {
+  const lower = label.toLowerCase();
+  if (lower.includes('funnel')) return '双漏斗落地页确认可打开';
+  if (lower.includes('landing')) return '首屏标题、CTA 和表单已确认';
+  if (lower.includes('thank')) return '感谢页和下一步指令已确认';
+  if (lower.includes('whatsapp')) return 'WhatsApp 预填信息和自动回复已确认';
+  if (lower.includes('lead')) return '引流资源领取路径已确认';
+  if (lower.includes('tracking')) return 'UTM、像素和转化事件已确认';
+  if (lower.includes('budget')) return '7 天测试预算已确认';
+  if (lower.includes('creative')) return '广告素材已准备';
+  if (lower.includes('cta')) return 'CTA 点击路径已测试';
+  return label;
+}
+
+function ExpectedOutput() {
+  return (
+    <section className="rounded-xl border border-dashed border-blue-200 bg-blue-50/60 p-5 md:p-6">
+      <div className="flex items-start gap-3">
+        <div className="rounded-lg bg-white p-2 text-blue-600">
+          <Megaphone className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-gray-950">生成后会得到什么？</h2>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {[
+              ['测试目标', '第一轮要验证点击、提交、WhatsApp 对话或内容关注。'],
+              ['双漏斗投放方向', '零售客户和招募伙伴会有不同广告角度。'],
+              ['7 天测试计划', '每天检查什么、何时优化、何时停止。'],
+              ['预算和指标', '每日预算、预计 leads、CPC、CPL 和风险等级。'],
+              ['追踪设置', 'UTM、像素、转化事件和 CRM 归因提醒。'],
+              ['下一步', '测试后进入 Leads 和 CRM，不再停留在猜测。'],
+            ].map(([title, body]) => (
+              <div key={title} className="rounded-lg bg-white p-4">
+                <div className="text-sm font-bold text-gray-950">{title}</div>
+                <p className="mt-1 text-sm leading-6 text-gray-500">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

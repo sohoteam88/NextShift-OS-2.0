@@ -12,7 +12,16 @@ export interface BudgetPlan { tier: BudgetTier; dailyBudget: string; monthlyBudg
 export interface Campaign { name: string; objective: TrafficGoal; platform: TrafficPlatform; audience: string; creative: string; offer: string; cta: string; funnelDestination: string; trackingNotes: string; status: CampaignStatus; budgetTier: BudgetTier; readinessScore: number; }
 export interface TrafficReadiness { score: number; level: 'low'|'medium'|'high'; funnelReady: number; landingPageReady: number; thankYouReady: number; ctaReady: number; whatsappReady: number; leadMagnetReady: number; contentAssetsReady: number; trackingReady: number; missingItems: string[]; recommendations: string[]; }
 export interface LaunchChecklistItem { id: string; label: string; checked: boolean; }
-export interface TrafficPackage { goal: TrafficGoal; readiness: TrafficReadiness; facebook?: FacebookCampaign; instagram?: InstagramCampaign; tiktok?: TikTokCampaign; xhs?: XhsCampaign; budget: BudgetPlan; campaign: Campaign; checklist: LaunchChecklistItem[]; analyticsConfig: Record<string,string>; status: CampaignStatus; createdAt: string; }
+export interface TrafficPrerequisites {
+  brandDnaReady: boolean;
+  contentPlanReady: boolean;
+  leadMagnetReady: boolean;
+  retailLandingPageReady: boolean;
+  recruitmentLandingPageReady: boolean;
+  trackingPlanned: boolean;
+}
+export interface TrafficPackage { goal: TrafficGoal; readiness: TrafficReadiness; facebook?: FacebookCampaign; instagram?: InstagramCampaign; tiktok?: TikTokCampaign; xhs?: XhsCampaign; budget: BudgetPlan; campaign: Campaign; checklist: LaunchChecklistItem[]; analyticsConfig: Record<string,string>; status: CampaignStatus; createdAt: string; prerequisites?: TrafficPrerequisites; }
+export interface TrafficDashboardPayload { data: TrafficPackage | null; prerequisites: TrafficPrerequisites; }
 
 export const TRAFFIC_GOALS: Record<TrafficGoal, TrafficGoalInfo> = {
   lead_generation: { objective: '获取潜在客户联系方式', recommendedFunnel: 'Lead Magnet Funnel', recommendedPlatform: 'facebook', recommendedCta: '获取免费评估', expectedKpi: 'Cost Per Lead (CPL)' },

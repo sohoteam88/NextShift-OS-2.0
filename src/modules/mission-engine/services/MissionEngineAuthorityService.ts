@@ -110,6 +110,7 @@ function bottleneckForBusinessState(stateResult: BusinessStateResult): MissionBo
     case 'FUNNEL':
       return 'NO_FUNNEL';
     case 'LEAD_GENERATION':
+      if (missing.has('Traffic Source Active')) return 'NO_TRAFFIC';
       return missing.has('First Lead Generated') ? 'NO_LEADS' : 'NO_TRAFFIC';
     case 'SALES':
       if (missing.has('Lead Exists')) return 'NO_LEADS';
