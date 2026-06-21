@@ -51,7 +51,9 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   const pathname = usePathname();
   const isOnboardingPath = pathname.startsWith('/onboarding');
   const isWizardPath = pathname.startsWith('/brand-builder/step');
-  const isAdminExperience = pathname.startsWith('/admin') || pathname.startsWith('/workspace');
+  const isAdminRole = ['operator', 'platform_admin', 'admin'].includes(user.role);
+  const isAdminExperience = pathname.startsWith('/admin') || pathname.startsWith('/workspace') || (isAdminRole && pathname.startsWith('/settings'));
+  const adminHomeHref = user.role === 'platform_admin' ? '/platform-admin' : '/admin';
   void onboarding;
   const branding = extractBranding(tenant);
 
@@ -82,7 +84,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
         tenantName={tenant?.name}
         tenantLogoUrl={branding?.logoUrl}
         showExecutionRoadmap={!isAdminExperience}
-        homeHref={isAdminExperience ? '/admin' : '/dashboard'}
+        homeHref={isAdminExperience ? adminHomeHref : '/dashboard'}
       />
       {isAdminExperience ? null : <ExecutionRoadmapRail />}
       <main className="mx-auto min-w-0 max-w-[1440px] p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:p-6 lg:pb-6">
