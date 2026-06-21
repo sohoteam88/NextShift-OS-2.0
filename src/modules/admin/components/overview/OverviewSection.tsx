@@ -77,10 +77,10 @@ function PriorityQueue({ users }: { users: WorkspacePriorityUser[] }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-[var(--color-text)]">
-            优先处理队列
+            成员介入队列
           </h2>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            按执行路线卡点和未活动时间排序。
+            按成员卡点和未活动时间排序，帮助 operator 先处理最需要协助的人。
           </p>
         </div>
         <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
@@ -89,7 +89,7 @@ function PriorityQueue({ users }: { users: WorkspacePriorityUser[] }) {
       <div className="mt-4 divide-y divide-[var(--color-border)]">
         {users.length === 0 ? (
           <div className="rounded-[var(--radius-md)] border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-700">
-            暂时没有需要人工介入的用户。继续观察执行路线健康。
+            暂时没有需要人工介入的成员。继续观察工作区健康。
           </div>
         ) : (
           users.map((user) => (
@@ -136,16 +136,16 @@ function PriorityQueue({ users }: { users: WorkspacePriorityUser[] }) {
   );
 }
 
-function ExecutionRoadmap({ steps }: { steps: WorkspaceExecutionStep[] }) {
+function MemberProgressDistribution({ steps }: { steps: WorkspaceExecutionStep[] }) {
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-[var(--color-text)]">
-            11 步执行路线健康
+            成员推进分布
           </h2>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            看用户集中卡在哪一步，而不是只看最终收入。
+            这是 operator 的团队视角：看成员集中卡在哪个业务环节，而不是给 admin 安排个人执行路线。
           </p>
         </div>
         <Route className="h-5 w-5 text-blue-600" aria-hidden="true" />
@@ -162,7 +162,7 @@ function ExecutionRoadmap({ steps }: { steps: WorkspaceExecutionStep[] }) {
             >
               <div className="grid gap-3 md:grid-cols-[44px_1fr_180px] md:items-center">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-semibold text-[var(--color-text)] shadow-sm">
-                  {step.order}
+                  {step.users}
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -181,7 +181,7 @@ function ExecutionRoadmap({ steps }: { steps: WorkspaceExecutionStep[] }) {
                 </div>
                 <div className="text-sm text-[var(--color-text-muted)]">
                   <div className="flex justify-between">
-                    <span>当前</span>
+                    <span>当前成员</span>
                     <strong className="text-[var(--color-text)]">
                       {step.users}
                     </strong>
@@ -209,9 +209,9 @@ export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="Execution Operations"
-        title="系统执行控制台"
-        description="按 NextShift OS 的真实执行路线查看用户卡点、下一步动作和需要人工介入的地方。"
+        eyebrow="Workspace Operations"
+        title="Workspace Operator Console"
+        description="管理一个工作区或团队：查看成员卡点、系统异常、内容/漏斗/Leads 状态，并决定今天需要人工介入哪里。"
         action={(
           <Link
             href={data.execution.primaryActionHref}
@@ -228,14 +228,14 @@ export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700">
               <Zap className="h-4 w-4" aria-hidden="true" />
-              今日运营判断
+              今日工作区判断
             </div>
             <h2 className="mt-4 text-2xl font-semibold tracking-normal text-[var(--color-text)]">
-              目前最多用户卡在 {data.execution.currentStep}
+              目前最多成员卡在 {data.execution.currentStep}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-text-muted)]">
-              先处理最影响用户前进的步骤，再看 leads、CRM 和 sales
-              数据。后台首页的任务不是报表展示，而是让系统继续往前跑。
+              先处理最影响成员推进的卡点，再看 leads、CRM 和 sales
+              数据。这个后台不是用户首页，而是 operator 管理团队和工作区健康的控制台。
             </p>
           </div>
           <Link
@@ -250,30 +250,30 @@ export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Active Users"
+          label="Active Members"
           value={data.execution.activeUsers}
-          helper="最近 7 天有执行动作的用户。"
+          helper="最近 7 天有推进动作的成员。"
           icon={UserRoundCheck}
           tone="good"
         />
         <StatCard
-          label="Users Stuck"
+          label="Members Stuck"
           value={data.execution.usersStuck}
-          helper="超过 3 天没有推进当前系统步骤。"
+          helper="超过 3 天没有推进当前业务环节。"
           icon={Clock3}
           tone={hasPriorityUsers ? 'warning' : 'good'}
         />
         <StatCard
           label="Mission Engine Failures"
           value={data.execution.missionEngineFailures}
-          helper="AI COO 无法判断下一步时必须优先处理。"
+          helper="AI COO 无法判断成员下一步时必须优先处理。"
           icon={ShieldAlert}
           tone={data.execution.missionEngineFailures > 0 ? 'danger' : 'neutral'}
         />
         <StatCard
           label="Leads Unfollowed"
           value={data.execution.leadsUnfollowed}
-          helper="已有 leads 但尚未跟进，容易流失。"
+          helper="团队已有 leads 但尚未跟进，容易流失。"
           icon={Users}
           tone={data.execution.leadsUnfollowed > 0 ? 'warning' : 'neutral'}
         />
@@ -337,7 +337,7 @@ export function AdminOverview({ data }: { data: WorkspaceCommandData }) {
         </section>
       </section>
 
-      <ExecutionRoadmap steps={data.execution.steps} />
+      <MemberProgressDistribution steps={data.execution.steps} />
     </div>
   );
 }
