@@ -9,6 +9,7 @@ import {
   Crown,
   Route,
   ShieldAlert,
+  ShieldCheck,
   UserRoundCheck,
   Users,
   Zap,
@@ -231,6 +232,13 @@ export function AdminOverview({
               </Link>
             ) : null}
             <Link
+              href="/admin/users"
+              className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+            >
+              <ShieldCheck className="h-4 w-4 text-blue-600" aria-hidden="true" />
+              User Access
+            </Link>
+            <Link
               href={data.execution.primaryActionHref}
               className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 text-sm font-semibold text-white"
             >
@@ -262,6 +270,13 @@ export function AdminOverview({
           >
             {data.execution.primaryAction}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <Link
+            href="/admin/users"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-blue-200 bg-white px-5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+          >
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+            管理用户权限
           </Link>
           {isPlatformAdmin ? (
             <Link
