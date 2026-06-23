@@ -1297,6 +1297,7 @@
         "name": "Build market trust",
         "description": "Use content and lead capture assets to build trust until the market starts responding."
       }
-    }
+    },
+    "minutes": "{minutes} minutes"
   }
 }

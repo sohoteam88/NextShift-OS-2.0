@@ -1297,6 +1297,7 @@
         "name": "Bina kepercayaan pasaran",
         "description": "Gunakan kandungan dan aset lead capture untuk membina kepercayaan sehingga pasaran mula memberi respons."
       }
-    }
+    },
+    "minutes": "{minutes} minit"
   }
 }

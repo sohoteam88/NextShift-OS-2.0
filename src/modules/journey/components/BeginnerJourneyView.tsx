@@ -8,7 +8,6 @@ import type { ActivationProjection } from '@/modules/activation/contracts/Activa
 import type { MissionAuthoritySnapshot } from '@/modules/mission-engine/contracts/MissionAuthority';
 import type {
   BusinessOutcome,
-  MissionNode,
   OutcomeMissionStatus,
   OutcomeStatus,
 } from '@/modules/mission-engine/services/OutcomeOrchestrator';
@@ -46,22 +45,12 @@ function progressWidth(value: number) {
   return `${Math.max(0, Math.min(value, 100))}%`;
 }
 
-function missionRoute(mission: MissionNode, authority: MissionAuthoritySnapshot) {
-  if (mission.missionId === authority.missionPlan.id) return authority.missionPlan.route;
-  return mission.route;
-}
-
 export function BeginnerJourneyView({ activation, authority, outcome }: Props) {
   const t = useTranslations('journey');
-  const currentMission = outcome.missions.find((mission) => (
-    mission.missionId === outcome.currentMissionId
-  )) ?? outcome.missions.find((mission) => mission.status === 'ACTIVE') ?? outcome.missions[0];
   const nextMission = outcome.missions.find((mission) => (
     mission.missionId === outcome.nextMissionId
   ));
-  const currentMissionRoute = currentMission
-    ? missionRoute(currentMission, authority)
-    : authority.missionPlan.route;
+  const currentMissionRoute = authority.missionPlan.route;
 
   return (
     <div className="space-y-6">
@@ -137,7 +126,7 @@ export function BeginnerJourneyView({ activation, authority, outcome }: Props) {
               <span className="font-semibold text-[var(--color-text)]">
                 {t('estimatedTime')}:
               </span>{' '}
-              {authority.estimatedCompletion.label}
+              {t('minutes', { minutes: authority.estimatedCompletion.minutes })}
             </div>
             <Link
               href={currentMissionRoute}
@@ -161,7 +150,7 @@ export function BeginnerJourneyView({ activation, authority, outcome }: Props) {
             </p>
           </div>
           <div className="text-sm font-semibold text-blue-700">
-            {authority.progress.completedMissions}/{authority.progress.totalMissions} {t('completed')}
+            {outcome.missions.filter((mission) => mission.status === 'COMPLETED').length}/{outcome.missions.length} {t('completed')}
           </div>
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-3">
