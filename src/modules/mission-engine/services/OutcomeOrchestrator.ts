@@ -101,7 +101,8 @@ const OUTCOME_TEMPLATES: Record<OutcomeTemplateId, OutcomeTemplate> = {
       { missionType: 'LEAD_MAGNET' },
       { missionType: 'FUNNEL', dependsOn: ['LEAD_MAGNET'] },
       { missionType: 'TRAFFIC', dependsOn: ['FUNNEL'] },
-      { missionType: 'CUSTOMERS', dependsOn: ['TRAFFIC'] },
+      { missionType: 'WEBINAR', dependsOn: ['TRAFFIC'] },
+      { missionType: 'CUSTOMERS', dependsOn: ['WEBINAR'] },
     ],
     signal: {
       id: 'customerCount',
@@ -116,7 +117,8 @@ const OUTCOME_TEMPLATES: Record<OutcomeTemplateId, OutcomeTemplate> = {
     name: 'Generate First Revenue',
     description: 'Coordinate conversion work until revenue is verified from business signals.',
     missions: [
-      { missionType: 'CUSTOMERS' },
+      { missionType: 'WEBINAR' },
+      { missionType: 'CUSTOMERS', dependsOn: ['WEBINAR'] },
     ],
     signal: {
       id: 'revenue',
@@ -163,6 +165,7 @@ const OUTCOME_TEMPLATES: Record<OutcomeTemplateId, OutcomeTemplate> = {
     description: 'Coordinate content and lead capture missions until authority signals are visible.',
     missions: [
       { missionType: 'CONTENT' },
+      { missionType: 'WEBINAR', dependsOn: ['CONTENT'] },
       { missionType: 'LEAD_MAGNET', dependsOn: ['CONTENT'] },
     ],
     signal: {

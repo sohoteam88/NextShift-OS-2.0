@@ -53,6 +53,11 @@ function resolveCheck(check: string, input: MissionCompletionVerifierInput): boo
       return Boolean((signals?.activeTrafficSourceCount ?? 0) > 0 || (signals?.trafficCount ?? 0) > 0);
     case 'tracking.active':
       return Boolean(signals?.signalSourceAvailable && signals?.requiredMetricsResolved && !signals?.validationFailed);
+    case 'webinar.deckGenerated':
+    case 'webinar.speakerScriptGenerated':
+    case 'webinar.offerStackGenerated':
+    case 'webinar.followUpGenerated':
+      return false;
     case 'lead.followUpCompleted':
       return Boolean((signals?.crmActivityCount ?? 0) > 0 || (signals?.customerCount ?? 0) > 0);
     case 'customerOpportunity.updated':

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, MessageCircle, Sparkles, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
+import type { RevenueDriverResolvedIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 import type { WhatsAppPackage } from '../types';
 import { getWhatsappAdvisor } from '../whatsappAdvisor';
 
@@ -14,6 +16,12 @@ function useGen() { const qc = useQueryClient(); return useMutation({ mutationFn
 export function WhatsAppDashboard() {
   const router = useRouter(); const q = useWA(); const gen = useGen();
   const pkg = q.data?.data ?? null;
+  const [activeOutput, setActiveOutput] = React.useState('reply');
+  const handleIntentResolved = React.useCallback((resolution: RevenueDriverResolvedIntent) => {
+    if (typeof resolution.state.output === 'string') {
+      setActiveOutput(resolution.state.output);
+    }
+  }, []);
   const crm = q.data?.crm;
   const tips = crm ? getWhatsappAdvisor(crm.leads?.map((l: any) => ({ score: l.score })) ?? []) : [];
   const totalLeads = crm?.totalLeads ?? 0;
@@ -23,11 +31,13 @@ export function WhatsAppDashboard() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-12">
+      <RevenueDriverIntentResolver route="/whatsapp-ai" onResolved={handleIntentResolved} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3"><button onClick={() => router.push('/dashboard')}><ArrowLeft className="h-5 w-5 text-gray-400" /></button><div><h1 className="text-xl font-bold">客户跟进中心</h1><p className="text-xs text-gray-500">根据客户状态，准备回复、跟进和预约下一步。</p></div></div>
         {crm && <div className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700"><UserCheck className="inline h-3 w-3 mr-1" />{totalLeads} 位潜在客户</div>}
       </div>
 
+      <div id="whatsapp-ai-workspace" className="scroll-mt-24 space-y-4">
       {!hasLeads && (
         <div className="rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50 p-8 text-center">
           <MessageCircle className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
@@ -53,7 +63,7 @@ export function WhatsAppDashboard() {
             {tips.map((t,i) => <p key={i} className="text-sm text-amber-700">💡 {t}</p>)}
           </S>
 
-          <S title="💬 回复模板">
+          <S title="💬 回复模板" active={activeOutput === 'reply' || activeOutput === 'connect' || activeOutput === 'train' || activeOutput === 'closing'}>
             {Object.entries(pkg.smartReplies).map(([trigger, replies]) => (
               <div key={trigger} className="mb-3"><p className="text-xs font-bold text-gray-500 uppercase mb-1">触发: &quot;{trigger}&quot;</p>
                 {(replies as any[]).map((r, i) => <div key={i} className="bg-gray-50 rounded-lg p-3 mb-1 text-sm"><strong>{r.style}:</strong> {r.text}<br /><span className="text-xs text-gray-400">{r.reason}</span></div>)}
@@ -61,7 +71,7 @@ export function WhatsAppDashboard() {
             ))}
           </S>
 
-          <S title="🛡️ 常见顾虑回应">
+          <S title="🛡️ 常见顾虑回应" active={activeOutput === 'objections'}>
             {Object.entries(pkg.objections).map(([type, resp]) => (
               <div key={type} className="mb-3 p-3 bg-gray-50 rounded-lg"><p className="text-xs font-bold mb-1">{type}</p>
                 <p className="text-sm"><strong>💚 共情:</strong> {resp.empathyResponse}</p>
@@ -72,7 +82,7 @@ export function WhatsAppDashboard() {
             ))}
           </S>
 
-          <S title="📅 跟进节奏">
+          <S title="📅 跟进节奏" active={activeOutput === 'followUp'}>
             {pkg.followupTemplates.map(f => <div key={f.id} className="text-sm py-2 border-b last:border-0"><strong>Day {f.day}: {f.label}</strong><p className="text-xs text-gray-500">{f.message}</p></div>)}
           </S>
 
@@ -98,7 +108,10 @@ export function WhatsAppDashboard() {
           </S>
         </>
       )}
+      </div>
     </div>
   );
 }
-function S({ title, children }: { title: string; children: React.ReactNode }) { return <section className="rounded-xl border border-[var(--color-border)] bg-white p-5"><h3 className="text-sm font-bold mb-3">{title}</h3>{children}</section>; }
+function S({ title, children, active = false }: { title: string; children: React.ReactNode; active?: boolean }) {
+  return <section className={cn('rounded-xl border bg-white p-5', active ? 'border-emerald-300 ring-2 ring-emerald-100' : 'border-[var(--color-border)]')}><h3 className="text-sm font-bold mb-3">{title}</h3>{children}</section>;
+}

@@ -95,6 +95,37 @@ describe('COO-005 Mission Generator V2', () => {
     ]);
   });
 
+  it('generates a webinar conversion mission', () => {
+    const plan = generateMissionPlan({
+      bottleneckResult: bottleneckResult('NO_CONVERSION'),
+      priorityResult: priority({
+        priorityAction: 'Generate Webinar Conversion System',
+        expectedImpact: 'Warm prospects get a structured presentation, offer stack, Q&A handling, and follow-up path.',
+        category: 'CONVERSION',
+        missionType: 'WEBINAR',
+        route: '/webinar-center',
+        ctaLabel: '生成 Webinar 系统',
+      }),
+      explainability: explanation('Acquire First Customer'),
+    });
+
+    expect(plan).toMatchObject({
+      objective: 'Generate Webinar Conversion System',
+      route: '/webinar-center',
+      missionType: 'WEBINAR',
+      nextMilestone: 'Acquire First Customer',
+      successCriteria: ['Webinar Deck Generated', 'Speaker Script Generated', 'Offer Stack Generated', 'Follow-Up Generated'],
+      completionChecks: ['webinar.deckGenerated', 'webinar.speakerScriptGenerated', 'webinar.offerStackGenerated', 'webinar.followUpGenerated'],
+    });
+    expect(plan.steps.map((step) => step.id)).toEqual([
+      'webinar.strategy',
+      'webinar.deck',
+      'webinar.script',
+      'webinar.offer',
+      'webinar.followUp',
+    ]);
+  });
+
   it('generates a system recovery mission for NO_SYSTEM', () => {
     const plan = generateMissionPlan({
       bottleneckResult: bottleneckResult('NO_SYSTEM'),

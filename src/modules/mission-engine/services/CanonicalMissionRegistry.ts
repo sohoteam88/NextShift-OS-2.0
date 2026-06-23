@@ -58,6 +58,13 @@ const ENTRIES: CanonicalMissionEntry[] = [
     defaultPriority: 'High',
   },
   {
+    missionType: 'WEBINAR',
+    route: CANONICAL_ROUTES.webinarCenter,
+    aliases: [CANONICAL_ROUTES.webinarCenter],
+    ctaLabel: '生成 Webinar 系统',
+    defaultPriority: 'High',
+  },
+  {
     missionType: 'CUSTOMERS',
     route: CANONICAL_ROUTES.leads,
     aliases: [CANONICAL_ROUTES.leads, CANONICAL_ROUTES.crm, CANONICAL_ROUTES.sales, '/customers'],
@@ -110,6 +117,8 @@ const TYPE_BY_COMPLETION_CONDITION: Array<{ condition: string; missionType: Miss
   { condition: 'lead_magnet_created', missionType: 'LEAD_MAGNET' },
   { condition: 'funnel_published', missionType: 'FUNNEL' },
   { condition: 'traffic_campaign_launched', missionType: 'TRAFFIC' },
+  { condition: 'webinar_deck_generated', missionType: 'WEBINAR' },
+  { condition: 'webinar_speaker_script_generated', missionType: 'WEBINAR' },
   { condition: 'whatsapp_followup_configured', missionType: 'CUSTOMERS' },
   { condition: 'crm_setup_completed', missionType: 'CUSTOMERS' },
   { condition: 'first_sale_completed', missionType: 'CUSTOMERS' },

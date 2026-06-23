@@ -48,6 +48,7 @@ export type MissionType =
   | 'LEAD_MAGNET'
   | 'FUNNEL'
   | 'TRAFFIC'
+  | 'WEBINAR'
   | 'CUSTOMERS'
   | 'RETENTION'
   | 'OPTIMIZATION'

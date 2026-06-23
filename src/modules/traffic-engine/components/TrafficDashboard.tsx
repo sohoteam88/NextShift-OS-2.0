@@ -23,6 +23,8 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
+import type { RevenueDriverResolvedIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 import type {
   BudgetTier,
   TrafficDashboardPayload,
@@ -131,6 +133,12 @@ export function TrafficDashboard() {
   const [goal, setGoal] = React.useState<TrafficGoal>('lead_generation');
   const [platform, setPlatform] = React.useState<TrafficPlatform>('facebook');
   const [budget, setBudget] = React.useState<BudgetTier>('starter');
+  const handleIntentResolved = React.useCallback((resolution: RevenueDriverResolvedIntent) => {
+    const nextPlatform = resolution.state.platform as TrafficPlatform | undefined;
+    const nextGoal = resolution.state.goal as TrafficGoal | undefined;
+    if (nextPlatform && nextPlatform in PLATFORM_LABELS) setPlatform(nextPlatform);
+    if (nextGoal && nextGoal in TRAFFIC_GOALS) setGoal(nextGoal);
+  }, []);
 
   const pkg = query.data?.data ?? null;
   const prerequisites = pkg?.prerequisites ?? query.data?.prerequisites ?? emptyPrerequisites();
@@ -149,6 +157,7 @@ export function TrafficDashboard() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-14">
+      <RevenueDriverIntentResolver route="/traffic-engine" onResolved={handleIntentResolved} />
       <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-3">
           <Link
@@ -224,7 +233,7 @@ export function TrafficDashboard() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 md:p-6">
+      <section id="traffic-generator-controls" className="scroll-mt-24 rounded-xl border border-[var(--color-border)] bg-white p-5 md:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-gray-950">启动条件</h2>

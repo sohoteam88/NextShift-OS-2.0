@@ -123,6 +123,16 @@ const PLATFORM_CORE_ITEMS: NavItem[] = [
   { href: '/platform-admin/growth', label: 'platformGrowth', icon: LineChart },
 ];
 
+const REVENUE_DRIVER_ITEMS: NavItem[] = [
+  { href: '/revenue-drivers?driver=whatsapp', label: 'whatsappAi', icon: MessageCircle },
+  { href: '/revenue-drivers?driver=content', label: 'contentEngine', icon: FileText },
+  { href: '/revenue-drivers?driver=video', label: 'videoProduction', icon: Clapperboard },
+  { href: '/revenue-drivers?driver=ads', label: 'adsGenerator', icon: Megaphone },
+  { href: '/revenue-drivers?driver=webinar', label: 'webinarGenerator', icon: Sparkles },
+  { href: '/revenue-drivers?driver=leadMagnet', label: 'leadMagnets', icon: Target },
+  { href: '/revenue-drivers?driver=funnels', label: 'funnelGenerator', icon: LayoutTemplate },
+];
+
 const MEMBER_SECTIONS: NavSection[] = [
   {
     title: 'AI 与内容',
@@ -375,6 +385,13 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
           <div className="space-y-0.5">
             {sidebarItems.map((item) => renderMissionItem(item))}
           </div>
+          <div className="my-4 border-t border-[var(--color-border)]" />
+          <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+            {t('revenueDrivers')}
+          </p>
+          <div className="space-y-0.5">
+            {REVENUE_DRIVER_ITEMS.map((item) => renderItem(item))}
+          </div>
           {guidedCurrent ? (
             <>
               <div className="my-4 border-t border-[var(--color-border)]" />
@@ -414,6 +431,13 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
           {sidebarItems.slice(0, 2).map((item) => renderMissionItem(item))}
         </div>
         <div className="my-4 border-t border-[var(--color-border)]" />
+        <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
+          {t('revenueDrivers')}
+        </p>
+        <div className="space-y-0.5">
+          {REVENUE_DRIVER_ITEMS.map((item) => renderItem(item))}
+        </div>
+        <div className="my-4 border-t border-[var(--color-border)]" />
         <div className="space-y-3">
           {sidebarItems.slice(2).map((item) =>
             item.children ? (
@@ -436,10 +460,12 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
   const sections: NavSection[] =
     role === 'platform_admin'
       ? [
+          { title: t('revenueDrivers'), minRole: 'member', defaultOpen: true, items: REVENUE_DRIVER_ITEMS },
           { title: t('platformAdmin'), minRole: 'platform_admin', defaultOpen: true, items: PLATFORM_ITEMS },
           { title: '系统', minRole: 'member', items: MEMBER_SECTIONS.find((section) => section.title === '系统')?.items ?? [] },
         ]
       : [
+          { title: t('revenueDrivers'), minRole: 'member', defaultOpen: true, items: REVENUE_DRIVER_ITEMS },
           ...MEMBER_SECTIONS,
           { title: '团队管理', minRole: 'leader', items: LEADER_ITEMS },
           { title: '管理后台', minRole: 'operator', items: ADMIN_ITEMS },

@@ -91,6 +91,39 @@ const WORKFORCE_TEMPLATES: Partial<Record<MissionType, WorkforceTemplateAssignme
       guardrailAction: 'CRM_UPDATE',
     },
   ],
+  WEBINAR: [
+    {
+      agentType: 'webinar_agent',
+      actionId: 'generate_webinar_deck',
+      task: 'Create the webinar presentation deck and narrative structure.',
+      assetType: 'WEBINAR_ASSET',
+      guardrailAction: 'CONTENT_GENERATION',
+    },
+    {
+      agentType: 'content_agent',
+      actionId: 'generate_content',
+      task: 'Create the speaker script and talk track for the webinar.',
+      assetType: 'WEBINAR_ASSET',
+      dependsOn: ['webinar_agent'],
+      guardrailAction: 'CONTENT_GENERATION',
+    },
+    {
+      agentType: 'offer_agent',
+      actionId: 'offer_improvement',
+      task: 'Prepare the offer stack, objection handling, and CTA.',
+      assetType: 'OFFER_ASSET',
+      dependsOn: ['content_agent'],
+      guardrailAction: 'TASK_CREATION',
+    },
+    {
+      agentType: 'crm_agent',
+      actionId: 'follow_up_script',
+      task: 'Prepare WhatsApp and email follow-up for webinar attendees.',
+      assetType: 'CRM_ASSET',
+      dependsOn: ['offer_agent'],
+      guardrailAction: 'CRM_UPDATE',
+    },
+  ],
   CUSTOMERS: [
     {
       agentType: 'offer_agent',

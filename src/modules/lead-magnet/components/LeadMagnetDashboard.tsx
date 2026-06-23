@@ -23,6 +23,7 @@ import type {
   ContentCalendar,
   ContentTrack,
 } from '@/modules/content-engine/types';
+import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import type { LeadMagnetConfig, LeadMagnetTrack } from '../types';
 
 type BrandProfile = Record<string, unknown>;
@@ -395,6 +396,8 @@ export function LeadMagnetDashboard() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
+      <RevenueDriverIntentResolver route="/lead-magnet" />
+
       <section className="rounded-[var(--radius-lg)] border border-blue-200 bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="flex min-h-[360px] flex-col justify-between p-5 md:p-7">

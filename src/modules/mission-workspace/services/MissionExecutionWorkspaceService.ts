@@ -123,6 +123,12 @@ function requiredAssetsFor(plan: MissionPlan, completion: MissionCompletionResul
       { id: 'traffic-source', title: 'Traffic Source', description: 'At least one measurable traffic source is active.', checkKey: 'trafficSource.active', route: plan.route },
       { id: 'tracking', title: 'Tracking', description: 'Traffic and conversion tracking are available.', checkKey: 'tracking.active', route: plan.route },
     ],
+    WEBINAR: [
+      { id: 'webinar-deck', title: 'Webinar Deck', description: 'Presentation slides are generated for the webinar.', checkKey: 'webinar.deckGenerated', route: plan.route },
+      { id: 'speaker-script', title: 'Speaker Script', description: 'Speaker notes exist for each slide.', checkKey: 'webinar.speakerScriptGenerated', route: plan.route },
+      { id: 'offer-stack', title: 'Offer Stack', description: 'Main offer, bonus, guarantee, urgency, and CTA are prepared.', checkKey: 'webinar.offerStackGenerated', route: plan.route },
+      { id: 'webinar-follow-up', title: 'Webinar Follow-Up', description: 'WhatsApp and email follow-up assets are prepared.', checkKey: 'webinar.followUpGenerated', route: plan.route },
+    ],
     CUSTOMERS: [
       { id: 'lead-follow-up', title: 'Lead Follow-Up', description: 'A qualified lead has been followed up.', checkKey: 'lead.followUpCompleted', route: plan.route },
       { id: 'customer-opportunity', title: 'Customer Opportunity', description: 'The opportunity or customer outcome is recorded.', checkKey: 'customerOpportunity.updated', route: plan.route },

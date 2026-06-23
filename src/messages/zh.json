@@ -140,7 +140,190 @@
     "contentCalendar": "内容日历",
     "videoScript": "视频工作室",
     "contentInsights": "内容分析",
-    "platformGuides": "设置指南"
+    "platformGuides": "设置指南",
+    "revenueDrivers": "收入驱动",
+    "whatsappAi": "WhatsApp AI",
+    "contentEngine": "内容生成",
+    "videoProduction": "视频生成",
+    "adsGenerator": "广告生成",
+    "webinarGenerator": "Webinar 生成",
+    "leadMagnets": "引流资源",
+    "funnelGenerator": "漏斗生成"
+  },
+  "revenueDrivers": {
+    "dashboard": {
+      "badge": "收入驱动",
+      "title": "最赚钱的工具放在这里",
+      "description": "直接打开 WhatsApp AI、内容、视频、广告、Webinar、引流资源和漏斗。"
+    },
+    "hub": {
+      "badge": "Revenue Driver Hub",
+      "title": "收入驱动中心",
+      "description": "用最少点击启动最接近收入的能力。先跟进、再获客、再成交。"
+    },
+    "workspace": {
+      "badge": "Revenue Driver Actions",
+      "title": "{driver} 动作"
+    },
+    "priority": "优先级 {priority}",
+    "intent": {
+      "resolvedBadge": "已定位",
+      "fallback": {
+        "title": "显示默认工具首页",
+        "description": "没有指定工具意图，已打开这个收入驱动的默认工作区。"
+      },
+      "invalid": {
+        "title": "无法识别这个工具意图",
+        "description": "这个链接没有对应的工具，已回到默认工作区。"
+      },
+      "tools": {
+        "content": {
+          "facebookPost": { "title": "Facebook Generator 已打开", "description": "已定位到 Facebook 内容生成方向。" },
+          "instagramPost": { "title": "Instagram Generator 已打开", "description": "已定位到 Instagram 内容生成方向。" },
+          "tiktokPost": { "title": "TikTok Generator 已打开", "description": "已定位到 TikTok 内容生成方向。" },
+          "xhsPost": { "title": "小红书 Generator 已打开", "description": "已定位到小红书内容生成方向。" },
+          "emailContent": { "title": "Email Content Generator 已打开", "description": "已定位到 Email 内容和 CTA 方向。" },
+          "whatsappContent": { "title": "WhatsApp Content Generator 已打开", "description": "已定位到 WhatsApp 内容和群发方向。" }
+        },
+        "ads": {
+          "facebookAd": { "title": "Facebook Ad Tool 已打开", "description": "已预选 Facebook 广告工作流。" },
+          "instagramAd": { "title": "Instagram Ad Tool 已打开", "description": "已预选 Instagram 广告工作流。" },
+          "leadGenerationAd": { "title": "Lead Generation Ad Tool 已打开", "description": "已预选 Lead Generation 广告目标。" },
+          "retargetingAd": { "title": "Retargeting Ad Tool 已打开", "description": "已预选再营销广告方向。" },
+          "campaignStrategy": { "title": "Campaign Strategy 已打开", "description": "已定位到广告策略配置。" },
+          "audienceResearch": { "title": "Audience Research 已打开", "description": "已定位到受众研究配置。" },
+          "offerTesting": { "title": "Offer Testing 已打开", "description": "已定位到 Offer 测试配置。" }
+        },
+        "video": {
+          "hookGenerator": { "title": "Hook Generator 已打开", "description": "已预选短视频 Hook 生成方向。" },
+          "videoScript": { "title": "Video Script Generator 已打开", "description": "已预选视频脚本生成方向。" },
+          "shotList": { "title": "Shot List Generator 已打开", "description": "已预选镜头规划方向。" },
+          "capcutScript": { "title": "CapCut Script Generator 已打开", "description": "已预选剪辑脚本方向。" },
+          "veoPrompt": { "title": "Google Veo Prompt 已打开", "description": "已预选视频 AI prompt 方向。" },
+          "miniMaxPrompt": { "title": "MiniMax Prompt 已打开", "description": "已预选 MiniMax prompt 方向。" },
+          "subtitleGenerator": { "title": "Subtitle Generator 已打开", "description": "已预选字幕和平台适配方向。" }
+        },
+        "webinar": {
+          "presentationSlides": { "title": "Presentation Slides Generator 已打开", "description": "已定位到 Webinar slides 输出区。" },
+          "speakerScript": { "title": "Speaker Script Generator 已打开", "description": "已定位到逐页 speaker notes 输出区。" },
+          "offerStack": { "title": "Offer Stack Generator 已打开", "description": "已定位到 Webinar offer 和 CTA 输出区。" },
+          "qaGenerator": { "title": "Webinar Q&A Generator 已打开", "description": "已定位到常见异议和 Q&A 输出区。" },
+          "followUpSequence": { "title": "Follow-Up Sequence Generator 已打开", "description": "已定位到 WhatsApp、Email、Replay 和 closing 跟进序列。" },
+          "strategy": { "title": "Webinar Strategy 已打开", "description": "已定位到 Webinar 策略输出区。" }
+        },
+        "whatsapp": {
+          "connect": { "title": "Connect WhatsApp 已打开", "description": "已定位到 WhatsApp AI 工作区。" },
+          "train": { "title": "Train AI 已打开", "description": "已定位到知识训练和回复准备方向。" },
+          "testReply": { "title": "Test Reply 已打开", "description": "已定位到 AI 回复模板。" },
+          "followUp": { "title": "Follow-Up Generator 已打开", "description": "已定位到 WhatsApp 跟进节奏。" },
+          "objectionHandler": { "title": "Objection Handler 已打开", "description": "已定位到常见顾虑回应。" },
+          "closingAssistant": { "title": "Closing Assistant 已打开", "description": "已定位到成交回复和下一步 CTA。" }
+        },
+        "leadMagnet": {
+          "idea": { "title": "Lead Magnet Idea 已打开", "description": "已定位到引流资源点子方向。" },
+          "copy": { "title": "Lead Magnet Copy 已打开", "description": "已定位到引流资源文案方向。" },
+          "optInCta": { "title": "Opt-in CTA 已打开", "description": "已定位到领取 CTA 方向。" }
+        },
+        "funnel": {
+          "landingPage": { "title": "Landing Page 已打开", "description": "已定位到漏斗落地页方向。" },
+          "thankYouPage": { "title": "Thank You Page 已打开", "description": "已定位到感谢页方向。" },
+          "followUpPath": { "title": "Follow-Up Path 已打开", "description": "已定位到后续跟进路径方向。" }
+        }
+      }
+    },
+    "drivers": {
+      "whatsapp": {
+        "title": "WhatsApp AI Auto Reply",
+        "description": "连接、训练和测试 WhatsApp AI，让潜在客户更快得到回复。",
+        "outcome": "减少漏跟进，提升成交机会。",
+        "primaryAction": "打开 WhatsApp AI"
+      },
+      "content": {
+        "title": "Content Generator",
+        "description": "生成 Facebook、Instagram、TikTok、小红书、Email 和 WhatsApp 内容。",
+        "outcome": "更快发布内容，持续获得注意力。",
+        "primaryAction": "创建内容"
+      },
+      "video": {
+        "title": "Video Generator",
+        "description": "生成 Hook、脚本、分镜、B-roll、字幕和视频平台提示词。",
+        "outcome": "把想法变成可拍摄的视频资产。",
+        "primaryAction": "创建视频"
+      },
+      "ads": {
+        "title": "Ads Generator",
+        "description": "生成 Facebook、Instagram、Lead Gen、Retargeting 和 Campaign 测试素材。",
+        "outcome": "更快启动可衡量的获客测试。",
+        "primaryAction": "创建广告"
+      },
+      "webinar": {
+        "title": "Webinar Generator",
+        "description": "生成 Webinar 策略、Slides、Speaker Script、Offer Stack、Q&A 和跟进序列。",
+        "outcome": "把一次 Webinar 变成完整成交系统。",
+        "primaryAction": "创建 Webinar"
+      },
+      "leadMagnet": {
+        "title": "Lead Magnet Generator",
+        "description": "创建引流资源、领取文案和 opt-in CTA。",
+        "outcome": "把访客变成可跟进的潜在客户。",
+        "primaryAction": "生成引流资源"
+      },
+      "funnels": {
+        "title": "Funnel Generator",
+        "description": "创建落地页、感谢页和后续跟进路径。",
+        "outcome": "让流量进入可转化的销售路径。",
+        "primaryAction": "生成漏斗"
+      }
+    },
+    "actions": {
+      "connectWhatsApp": "连接 WhatsApp",
+      "trainAi": "训练 AI",
+      "uploadKnowledge": "上传知识库",
+      "testAiReply": "测试 AI 回复",
+      "viewConversations": "查看对话",
+      "aiFollowUp": "AI 跟进",
+      "aiObjectionHandling": "AI 异议处理",
+      "aiClosingAssistant": "AI 成交助手",
+      "facebookPost": "Facebook Post",
+      "instagramPost": "Instagram Post",
+      "tiktokPost": "TikTok Post",
+      "xhsPost": "小红书 Post",
+      "emailContent": "Email 内容",
+      "whatsappBroadcast": "WhatsApp 群发",
+      "hookGenerator": "Hook 生成器",
+      "videoScript": "视频脚本",
+      "masterScript": "Master Script",
+      "shotList": "Shot List",
+      "bRollPlan": "B-Roll Plan",
+      "capCutScript": "CapCut Script",
+      "subtitleGenerator": "字幕生成器",
+      "googleVeoPrompt": "Google Veo Prompt",
+      "miniMaxPrompt": "MiniMax Prompt",
+      "platformAdaptation": "平台改写",
+      "facebookAd": "Facebook Ad",
+      "instagramAd": "Instagram Ad",
+      "leadGenerationAd": "Lead Generation Ad",
+      "retargetingAd": "Retargeting Ad",
+      "campaignStrategy": "Campaign Strategy",
+      "audienceResearch": "Audience Research",
+      "offerTesting": "Offer Testing",
+      "webinarStrategy": "Webinar Strategy",
+      "presentationSlides": "Presentation Slides",
+      "speakerScript": "Speaker Script",
+      "offerStack": "Offer Stack",
+      "ctaSlides": "CTA Slides",
+      "qaHandling": "Q&A Handling",
+      "whatsappFollowUp": "WhatsApp 跟进",
+      "emailFollowUp": "Email 跟进",
+      "replaySequence": "Replay Sequence",
+      "closingReminder": "Closing Reminder",
+      "leadMagnetIdea": "引流资源点子",
+      "leadMagnetCopy": "引流资源文案",
+      "optInCta": "Opt-in CTA",
+      "landingPage": "落地页",
+      "thankYouPage": "感谢页",
+      "followUpPath": "跟进路径"
+    }
   },
   "platformAdmin": {
     "platformAdmin": "Founder 平台",

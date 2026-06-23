@@ -48,6 +48,9 @@ This folder contains the architecture and source reference documents for NextShi
 - [Expansion Engine PRD](ai-coo/PRODUCT-007_EXPANSION_ENGINE_PRD.md)
 - [Referral Engine PRD](ai-coo/PRODUCT-008_REFERRAL_ENGINE_PRD.md)
 - [Customer Health Engine PRD](ai-coo/PRODUCT-009_CUSTOMER_HEALTH_ENGINE_PRD.md)
+- [Revenue Driver Discovery Sprint V2 PRD](ux/UX-002_REVENUE_DRIVER_DISCOVERY_SPRINT_V2_PRD.md)
+- [Webinar Mission Routing Hotfix](ux/HOTFIX-017_WEBINAR_MISSION_ROUTING.md)
+- [Revenue Driver Deep Links Hotfix](ux/HOTFIX-018_REVENUE_DRIVER_DEEP_LINKS.md)
 - [Roadmap](PRD/ROADMAP.md)
 - [System Architecture README](source/README.md)
 - [AI Coworker Operating Rules](source/AGENTS.md)
@@ -105,6 +108,7 @@ This folder contains the architecture and source reference documents for NextShi
 
 - `PRD/` stores product requirements, the master checklist, blueprint documents, and roadmap.
 - `ai-coo/` stores AI COO dashboard, state validation, route contract, execution, product experience, personalization, and traceability PRDs.
+- `ux/` stores UX discovery, dashboard, navigation, and product experience implementation notes.
 - `epics/` stores implementation epics.
 - `architecture/` stores numbered system design documents.
 - `architecture/db/`, `architecture/api/`, `architecture/ai/`, and `architecture/workflows/` store focused architecture notes.

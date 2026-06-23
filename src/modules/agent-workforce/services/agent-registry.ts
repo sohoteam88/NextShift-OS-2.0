@@ -56,6 +56,15 @@ export const WORKFORCE_AGENT_REGISTRY: Record<WorkforceAgentType, WorkforceAgent
     priority: 70,
     availability: 'limited',
   },
+  webinar_agent: {
+    agentType: 'webinar_agent',
+    runtimeAgentId: 'content_director',
+    name: 'Webinar Agent',
+    capabilities: ['webinar strategy', 'presentation generation', 'speaker scripts', 'offer stack generation', 'follow-up sequence'],
+    supportedActions: ['TASK_CREATION', 'CONTENT_GENERATION'],
+    priority: 88,
+    availability: 'available',
+  },
   analytics_agent: {
     agentType: 'analytics_agent',
     runtimeAgentId: 'ceo_advisor',

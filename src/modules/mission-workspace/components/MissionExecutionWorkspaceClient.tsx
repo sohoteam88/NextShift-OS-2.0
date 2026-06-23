@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { ArrowRight, Check, Clock3, FileText, Loader2, ShieldCheck, Sparkles, Users } from 'lucide-react';
 import type { MissionExecutionWorkspace, MissionWorkspaceStep } from '../services/MissionExecutionWorkspaceService';
+import { getRevenueDriverForMissionType } from '@/modules/revenue-drivers/constants/revenue-drivers';
 
 type MissionExecutionWorkspaceClientProps = {
   missionId: string;
@@ -36,6 +38,7 @@ function statusClass(status: string) {
 }
 
 export function MissionExecutionWorkspaceClient({ missionId }: MissionExecutionWorkspaceClientProps) {
+  const revenueT = useTranslations('revenueDrivers');
   const queryClient = useQueryClient();
   const workspace = useQuery({
     queryKey: ['mission-workspace', missionId],
@@ -140,6 +143,8 @@ export function MissionExecutionWorkspaceClient({ missionId }: MissionExecutionW
   const nextOutcomeMission = data.businessOutcome.missions.find((mission) => (
     mission.missionId === data.businessOutcome.nextMissionId
   ));
+  const revenueDriver = getRevenueDriverForMissionType(data.missionType);
+  const revenueActions = revenueDriver?.actions.slice(0, 4) ?? [];
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 pb-8">
@@ -252,6 +257,42 @@ export function MissionExecutionWorkspaceClient({ missionId }: MissionExecutionW
             </div>
           ) : null}
         </section>
+
+      {revenueDriver ? (
+        <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase text-blue-700">
+                {revenueT('workspace.badge')}
+              </p>
+              <h2 className="mt-1 text-lg font-bold text-[var(--color-text)]">
+                {revenueT('workspace.title', { driver: revenueT(revenueDriver.titleKey) })}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
+                {revenueT(revenueDriver.outcomeKey)}
+              </p>
+            </div>
+            <Link
+              href={revenueDriver.route}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-blue-200 px-4 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              {revenueT(revenueDriver.primaryActionKey)}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {revenueActions.map((action) => (
+              <Link
+                key={action.id}
+                href={action.href}
+                className="inline-flex h-9 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 text-xs font-semibold text-[var(--color-text)] hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+              >
+                {revenueT(action.labelKey)}
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">

@@ -23,7 +23,7 @@ describe('COO-003 Priority Engine', () => {
     ['NO_FUNNEL', 'Build Funnel', 'LEADS', 'FUNNEL', '/funnel', 'High'],
     ['NO_TRAFFIC', 'Activate Traffic Source', 'LEADS', 'TRAFFIC', '/traffic-engine', 'High'],
     ['NO_LEADS', 'Improve Lead Capture', 'LEADS', 'FUNNEL', '/funnel', 'High'],
-    ['NO_CONVERSION', 'Improve Offer', 'CONVERSION', 'CUSTOMERS', '/sales', 'High'],
+    ['NO_CONVERSION', 'Generate Webinar Conversion System', 'CONVERSION', 'WEBINAR', '/webinar-center', 'High'],
     ['NO_CUSTOMERS', 'Convert Existing Leads', 'CONVERSION', 'CUSTOMERS', '/leads', 'High'],
     ['NO_RETENTION', 'Build Retention System', 'RETENTION', 'RETENTION', '/crm', 'High'],
     ['NO_TEAM', 'Create SOP', 'SCALE', 'TEAM', '/team/growth', 'Normal'],

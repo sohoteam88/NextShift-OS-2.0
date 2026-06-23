@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle2, Copy, Film, Loader2, Sparkles, Trophy } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
+import type { RevenueDriverResolvedIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 import type { VideoBrief, VideoPackage, VideoType, VideoFunnelStage, VideoPlatform, VideoDuration } from '../types';
 
 // ---- Hooks ----
@@ -38,6 +40,12 @@ export function VideoProductionDashboard() {
   const [vtype, setVtype] = React.useState<VideoType>('personal_story');
   const [vlen, setVlen] = React.useState<VideoDuration>(30);
   const [copied, setCopied] = React.useState('');
+  const handleIntentResolved = React.useCallback((resolution: RevenueDriverResolvedIntent) => {
+    const nextType = resolution.state.videoType as VideoType | undefined;
+    const nextStage = resolution.state.funnelStage as VideoFunnelStage | undefined;
+    if (nextType) setVtype(nextType);
+    if (nextStage) setFunnel(nextStage);
+  }, []);
 
   function handleGenerate() {
     generate.mutate({ contentPillar: pillar, audiencePain: pain, funnelStage: funnel, platformType: platform, videoType: vtype, videoLength: vlen, tone: '温暖亲切', ctaGoal: '引导评论互动' });
@@ -47,6 +55,7 @@ export function VideoProductionDashboard() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 pb-12">
+      <RevenueDriverIntentResolver route="/video-production" onResolved={handleIntentResolved} />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -57,7 +66,7 @@ export function VideoProductionDashboard() {
       </div>
 
       {/* Brief form */}
-      <section className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+      <section id="video-generator-controls" className="scroll-mt-24 rounded-xl border border-[var(--color-border)] bg-white p-5">
         <h3 className="text-sm font-bold mb-3">📋 视频简报</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <div><label className="text-xs font-semibold">内容支柱</label><input value={pillar} onChange={(e) => setPillar(e.target.value)} className="w-full rounded-lg border px-3 py-2 text-sm bg-gray-50 mt-1" /></div>

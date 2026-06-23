@@ -14,6 +14,7 @@ export type AgentAssetType =
   | 'LEAD_MAGNET_ASSET'
   | 'FUNNEL_ASSET'
   | 'TRAFFIC_ASSET'
+  | 'WEBINAR_ASSET'
   | 'CRM_ASSET'
   | 'OFFER_ASSET';
 
@@ -104,6 +105,21 @@ const EXECUTION_AGENTS: ExecutionAgent[] = [
       { id: 'recommend_traffic_sources', label: 'Traffic Recommendations', outputType: 'Traffic Plan', assetType: 'TRAFFIC_ASSET' },
       { id: 'suggest_ad_angles', label: 'Ad Angle Suggestions', outputType: 'Ad Angle Set', assetType: 'TRAFFIC_ASSET' },
       { id: 'suggest_audiences', label: 'Audience Suggestions', outputType: 'Audience Plan', assetType: 'TRAFFIC_ASSET' },
+    ],
+    status: 'IDLE',
+  },
+  {
+    id: 'webinar-agent',
+    name: 'Webinar Agent',
+    description: 'Generates webinar decks, speaker scripts, offer stacks, Q&A handling, and follow-up assets.',
+    supportedMissionTypes: ['WEBINAR'],
+    supportedSteps: ['webinar.strategy', 'webinar.deck', 'webinar.script', 'webinar.offer', 'webinar.followUp'],
+    actions: [
+      { id: 'generate_webinar_deck', label: 'Generate Webinar Deck', outputType: 'Webinar Deck', assetType: 'WEBINAR_ASSET' },
+      { id: 'generate_speaker_script', label: 'Generate Speaker Script', outputType: 'Speaker Script', assetType: 'WEBINAR_ASSET' },
+      { id: 'generate_offer_stack', label: 'Generate Offer Stack', outputType: 'Offer Stack', assetType: 'WEBINAR_ASSET' },
+      { id: 'generate_webinar_follow_up', label: 'Generate Webinar Follow-Up', outputType: 'Webinar Follow-Up', assetType: 'WEBINAR_ASSET' },
+      { id: 'generate_webinar_qa', label: 'Generate Webinar Q&A', outputType: 'Webinar Q&A', assetType: 'WEBINAR_ASSET' },
     ],
     status: 'IDLE',
   },

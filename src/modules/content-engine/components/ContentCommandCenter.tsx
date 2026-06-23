@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -22,6 +22,8 @@ import type {
   ContentCalendar,
   ContentTrack,
 } from '@/modules/content-engine/types';
+import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
+import type { RevenueDriverResolvedIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 
 type BrandProfile = Record<string, unknown>;
 
@@ -195,6 +197,12 @@ export function ContentCommandCenter() {
   const queryClient = useQueryClient();
   const [activeOutputTab, setActiveOutputTab] =
     useState<OutputTabId>('calendar');
+  const handleIntentResolved = useCallback((resolution: RevenueDriverResolvedIntent) => {
+    const outputTab = resolution.state.outputTab as OutputTabId | undefined;
+    if (outputTab && OUTPUTS.some((output) => output.id === outputTab)) {
+      setActiveOutputTab(outputTab);
+    }
+  }, []);
   const brandProfileQuery = useQuery({
     queryKey: ['brand-builder-profile'],
     queryFn: async () => {
@@ -365,6 +373,7 @@ export function ContentCommandCenter() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
+      <RevenueDriverIntentResolver route="/content-engine" onResolved={handleIntentResolved} />
       <section className="rounded-[var(--radius-lg)] border border-blue-200 bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="flex min-h-[360px] flex-col justify-between p-5 md:p-7">

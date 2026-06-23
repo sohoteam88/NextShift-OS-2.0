@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { Bot, FileText, Gauge, LayoutTemplate, UsersRound } from 'lucide-react';
+import { Bot, DollarSign, Gauge, LayoutTemplate, UsersRound } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 type MobileTabBarProps = {
@@ -12,7 +12,7 @@ type MobileTabBarProps = {
 
 const tabs = [
   { href: '/dashboard', label_zh: '首页', label_en: 'Home', label_ms: 'Utama', icon: Gauge },
-  { href: '/content-engine', label_zh: '内容', label_en: 'Content', label_ms: 'Kandungan', icon: FileText },
+  { href: '/revenue-drivers', label_zh: '收入', label_en: 'Revenue', label_ms: 'Hasil', icon: DollarSign },
   { href: '/funnel', label_zh: '漏斗', label_en: 'Funnel', label_ms: 'Funnel', icon: LayoutTemplate },
   { href: '/leads', label_zh: 'Leads', label_en: 'Leads', label_ms: 'Prospek', icon: UsersRound },
   { href: '/ai-workforce', label_zh: 'Team', label_en: 'Team', label_ms: 'Pasukan', icon: Bot },

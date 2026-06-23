@@ -101,6 +101,21 @@ const TEMPLATES: Record<MissionType, MissionTemplate> = {
     completionChecks: ['trafficSource.active', 'tracking.active'],
     route: CANONICAL_ROUTES.trafficEngine,
   },
+  WEBINAR: {
+    objective: 'Generate Webinar Conversion System',
+    description: 'Create the webinar deck, speaker script, offer stack, Q&A handling, and follow-up assets needed to convert warm prospects.',
+    steps: [
+      { id: 'webinar.strategy', title: 'Define Webinar Strategy', description: 'Confirm audience, offer, goal, duration, and platform.', estimatedMinutes: 10, required: true },
+      { id: 'webinar.deck', title: 'Generate Webinar Deck', description: 'Create the slide titles, slide content, and visual suggestions.', estimatedMinutes: 15, required: true },
+      { id: 'webinar.script', title: 'Generate Speaker Script', description: 'Create speaker notes for each slide.', estimatedMinutes: 15, required: true },
+      { id: 'webinar.offer', title: 'Generate Offer Stack', description: 'Create the main offer, bonus, guarantee, urgency, and CTA.', estimatedMinutes: 10, required: true },
+      { id: 'webinar.followUp', title: 'Generate Webinar Follow-Up', description: 'Prepare WhatsApp and email follow-up for replay and closing.', estimatedMinutes: 10, required: true },
+    ],
+    estimatedTime: 60,
+    successCriteria: ['Webinar Deck Generated', 'Speaker Script Generated', 'Offer Stack Generated', 'Follow-Up Generated'],
+    completionChecks: ['webinar.deckGenerated', 'webinar.speakerScriptGenerated', 'webinar.offerStackGenerated', 'webinar.followUpGenerated'],
+    route: CANONICAL_ROUTES.webinarCenter,
+  },
   CUSTOMERS: {
     objective: 'Convert Existing Leads',
     description: 'Work the closest customer opportunities through offer, follow-up, and sales action.',

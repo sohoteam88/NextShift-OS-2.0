@@ -8,6 +8,7 @@ export const CANONICAL_ROUTES = {
   leadMagnet: '/lead-magnet',
   funnel: '/funnel',
   trafficEngine: '/traffic-engine',
+  webinarCenter: '/webinar-center',
   leads: '/leads',
   crm: '/crm',
   sales: '/sales',

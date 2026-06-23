@@ -140,7 +140,190 @@
     "contentCalendar": "Kalendar Kandungan",
     "videoScript": "Studio Video",
     "contentInsights": "Analitik Kandungan",
-    "platformGuides": "Panduan Platform"
+    "platformGuides": "Panduan Platform",
+    "revenueDrivers": "Pemacu Hasil",
+    "whatsappAi": "WhatsApp AI",
+    "contentEngine": "Kandungan",
+    "videoProduction": "Video",
+    "adsGenerator": "Iklan",
+    "webinarGenerator": "Webinar",
+    "leadMagnets": "Lead Magnet",
+    "funnelGenerator": "Funnel"
+  },
+  "revenueDrivers": {
+    "dashboard": {
+      "badge": "Pemacu hasil",
+      "title": "Alat paling dekat dengan hasil ada di sini",
+      "description": "Buka WhatsApp AI, kandungan, video, iklan, webinar, lead magnet dan funnel tanpa mencari di seluruh aplikasi."
+    },
+    "hub": {
+      "badge": "Revenue Driver Hub",
+      "title": "Pusat Pemacu Hasil",
+      "description": "Lancarkan fungsi yang paling dekat dengan hasil dengan kurang klik. Susulan, dapatkan prospek dan tukar pelanggan."
+    },
+    "workspace": {
+      "badge": "Revenue Driver Actions",
+      "title": "Tindakan {driver}"
+    },
+    "priority": "Keutamaan {priority}",
+    "intent": {
+      "resolvedBadge": "Difokuskan",
+      "fallback": {
+        "title": "Ruang kerja lalai dipaparkan",
+        "description": "Tiada intent alat diberikan, jadi pemacu hasil ini membuka ruang kerja lalai."
+      },
+      "invalid": {
+        "title": "Intent alat tidak dikenali",
+        "description": "Pautan ini tidak sepadan dengan alat yang disokong, jadi ruang kerja lalai dipaparkan."
+      },
+      "tools": {
+        "content": {
+          "facebookPost": { "title": "Facebook Generator dibuka", "description": "Difokuskan pada aliran jana kandungan Facebook." },
+          "instagramPost": { "title": "Instagram Generator dibuka", "description": "Difokuskan pada aliran jana kandungan Instagram." },
+          "tiktokPost": { "title": "TikTok Generator dibuka", "description": "Difokuskan pada aliran jana kandungan TikTok." },
+          "xhsPost": { "title": "XHS Generator dibuka", "description": "Difokuskan pada aliran jana kandungan XHS." },
+          "emailContent": { "title": "Email Content Generator dibuka", "description": "Difokuskan pada kandungan e-mel dan aset CTA." },
+          "whatsappContent": { "title": "WhatsApp Content Generator dibuka", "description": "Difokuskan pada kandungan WhatsApp dan aset broadcast." }
+        },
+        "ads": {
+          "facebookAd": { "title": "Facebook Ad Tool dibuka", "description": "Aliran iklan Facebook telah dipilih." },
+          "instagramAd": { "title": "Instagram Ad Tool dibuka", "description": "Aliran iklan Instagram telah dipilih." },
+          "leadGenerationAd": { "title": "Lead Generation Ad Tool dibuka", "description": "Objektif lead generation telah dipilih." },
+          "retargetingAd": { "title": "Retargeting Ad Tool dibuka", "description": "Aliran iklan retargeting telah dipilih." },
+          "campaignStrategy": { "title": "Campaign Strategy dibuka", "description": "Difokuskan pada konfigurasi strategi kempen." },
+          "audienceResearch": { "title": "Audience Research dibuka", "description": "Difokuskan pada konfigurasi kajian audiens." },
+          "offerTesting": { "title": "Offer Testing dibuka", "description": "Difokuskan pada konfigurasi ujian tawaran." }
+        },
+        "video": {
+          "hookGenerator": { "title": "Hook Generator dibuka", "description": "Difokuskan pada jana hook video pendek." },
+          "videoScript": { "title": "Video Script Generator dibuka", "description": "Difokuskan pada jana skrip video." },
+          "shotList": { "title": "Shot List Generator dibuka", "description": "Difokuskan pada perancangan shot." },
+          "capcutScript": { "title": "CapCut Script Generator dibuka", "description": "Difokuskan pada persediaan skrip editing." },
+          "veoPrompt": { "title": "Google Veo Prompt dibuka", "description": "Difokuskan pada persediaan prompt AI video." },
+          "miniMaxPrompt": { "title": "MiniMax Prompt dibuka", "description": "Difokuskan pada persediaan prompt MiniMax." },
+          "subtitleGenerator": { "title": "Subtitle Generator dibuka", "description": "Difokuskan pada sari kata dan adaptasi platform." }
+        },
+        "webinar": {
+          "presentationSlides": { "title": "Presentation Slides Generator dibuka", "description": "Difokuskan pada output slaid webinar." },
+          "speakerScript": { "title": "Speaker Script Generator dibuka", "description": "Difokuskan pada nota penceramah setiap slaid." },
+          "offerStack": { "title": "Offer Stack Generator dibuka", "description": "Difokuskan pada tawaran webinar dan CTA." },
+          "qaGenerator": { "title": "Webinar Q&A Generator dibuka", "description": "Difokuskan pada bantahan dan output Q&A." },
+          "followUpSequence": { "title": "Follow-Up Sequence Generator dibuka", "description": "Difokuskan pada susulan WhatsApp, e-mel, replay dan closing." },
+          "strategy": { "title": "Webinar Strategy dibuka", "description": "Difokuskan pada output strategi webinar." }
+        },
+        "whatsapp": {
+          "connect": { "title": "Connect WhatsApp dibuka", "description": "Difokuskan pada ruang kerja WhatsApp AI." },
+          "train": { "title": "Train AI dibuka", "description": "Difokuskan pada latihan pengetahuan dan persediaan balasan." },
+          "testReply": { "title": "Test Reply dibuka", "description": "Difokuskan pada templat balasan AI." },
+          "followUp": { "title": "Follow-Up Generator dibuka", "description": "Difokuskan pada rentak susulan WhatsApp." },
+          "objectionHandler": { "title": "Objection Handler dibuka", "description": "Difokuskan pada respons bantahan biasa." },
+          "closingAssistant": { "title": "Closing Assistant dibuka", "description": "Difokuskan pada balasan closing dan CTA seterusnya." }
+        },
+        "leadMagnet": {
+          "idea": { "title": "Lead Magnet Idea dibuka", "description": "Difokuskan pada idea lead magnet." },
+          "copy": { "title": "Lead Magnet Copy dibuka", "description": "Difokuskan pada copy lead magnet." },
+          "optInCta": { "title": "Opt-in CTA dibuka", "description": "Difokuskan pada aset CTA opt-in." }
+        },
+        "funnel": {
+          "landingPage": { "title": "Landing Page dibuka", "description": "Difokuskan pada kerja landing page funnel." },
+          "thankYouPage": { "title": "Thank You Page dibuka", "description": "Difokuskan pada thank-you page." },
+          "followUpPath": { "title": "Follow-Up Path dibuka", "description": "Difokuskan pada laluan susulan selepas opt-in." }
+        }
+      }
+    },
+    "drivers": {
+      "whatsapp": {
+        "title": "WhatsApp AI Auto Reply",
+        "description": "Sambung, latih dan uji WhatsApp AI supaya prospek menerima balasan lebih pantas.",
+        "outcome": "Kurangkan susulan terlepas dan tingkatkan peluang closing.",
+        "primaryAction": "Buka WhatsApp AI"
+      },
+      "content": {
+        "title": "Content Generator",
+        "description": "Jana kandungan Facebook, Instagram, TikTok, XHS, e-mel dan WhatsApp.",
+        "outcome": "Terbitkan lebih pantas dan bina perhatian yang konsisten.",
+        "primaryAction": "Cipta kandungan"
+      },
+      "video": {
+        "title": "Video Generator",
+        "description": "Jana hook, skrip, senarai shot, pelan B-roll, sari kata dan prompt video.",
+        "outcome": "Tukar idea kepada aset video yang sedia dirakam.",
+        "primaryAction": "Cipta video"
+      },
+      "ads": {
+        "title": "Ads Generator",
+        "description": "Jana aset Facebook, Instagram, lead generation, retargeting dan ujian kempen.",
+        "outcome": "Lancarkan ujian pemerolehan yang boleh diukur dengan lebih cepat.",
+        "primaryAction": "Cipta iklan"
+      },
+      "webinar": {
+        "title": "Webinar Generator",
+        "description": "Jana strategi webinar, slaid, skrip penceramah, offer stack, Q&A dan susulan.",
+        "outcome": "Tukar satu webinar menjadi sistem penukaran yang lengkap.",
+        "primaryAction": "Cipta webinar"
+      },
+      "leadMagnet": {
+        "title": "Lead Magnet Generator",
+        "description": "Cipta idea lead magnet, copy opt-in dan aset CTA.",
+        "outcome": "Tukar pelawat kepada prospek yang sedia disusuli.",
+        "primaryAction": "Jana lead magnet"
+      },
+      "funnels": {
+        "title": "Funnel Generator",
+        "description": "Cipta landing page, thank-you page dan laluan susulan.",
+        "outcome": "Bawa trafik ke laluan jualan yang sedia menukar.",
+        "primaryAction": "Jana funnel"
+      }
+    },
+    "actions": {
+      "connectWhatsApp": "Sambung WhatsApp",
+      "trainAi": "Latih AI",
+      "uploadKnowledge": "Muat naik pengetahuan",
+      "testAiReply": "Uji balasan AI",
+      "viewConversations": "Lihat perbualan",
+      "aiFollowUp": "Susulan AI",
+      "aiObjectionHandling": "Tangani bantahan AI",
+      "aiClosingAssistant": "Pembantu closing AI",
+      "facebookPost": "Facebook Post",
+      "instagramPost": "Instagram Post",
+      "tiktokPost": "TikTok Post",
+      "xhsPost": "XHS Post",
+      "emailContent": "Kandungan e-mel",
+      "whatsappBroadcast": "WhatsApp Broadcast",
+      "hookGenerator": "Penjana Hook",
+      "videoScript": "Skrip Video",
+      "masterScript": "Master Script",
+      "shotList": "Shot List",
+      "bRollPlan": "B-Roll Plan",
+      "capCutScript": "CapCut Script",
+      "subtitleGenerator": "Penjana Sari Kata",
+      "googleVeoPrompt": "Google Veo Prompt",
+      "miniMaxPrompt": "MiniMax Prompt",
+      "platformAdaptation": "Adaptasi Platform",
+      "facebookAd": "Facebook Ad",
+      "instagramAd": "Instagram Ad",
+      "leadGenerationAd": "Lead Generation Ad",
+      "retargetingAd": "Retargeting Ad",
+      "campaignStrategy": "Strategi Kempen",
+      "audienceResearch": "Kajian Audiens",
+      "offerTesting": "Ujian Tawaran",
+      "webinarStrategy": "Strategi Webinar",
+      "presentationSlides": "Slaid Pembentangan",
+      "speakerScript": "Skrip Penceramah",
+      "offerStack": "Offer Stack",
+      "ctaSlides": "Slaid CTA",
+      "qaHandling": "Pengendalian Q&A",
+      "whatsappFollowUp": "Susulan WhatsApp",
+      "emailFollowUp": "Susulan E-mel",
+      "replaySequence": "Replay Sequence",
+      "closingReminder": "Peringatan Closing",
+      "leadMagnetIdea": "Idea Lead Magnet",
+      "leadMagnetCopy": "Copy Lead Magnet",
+      "optInCta": "Opt-in CTA",
+      "landingPage": "Landing Page",
+      "thankYouPage": "Thank You Page",
+      "followUpPath": "Laluan Susulan"
+    }
   },
   "platformAdmin": {
     "platformAdmin": "Founder Platform",

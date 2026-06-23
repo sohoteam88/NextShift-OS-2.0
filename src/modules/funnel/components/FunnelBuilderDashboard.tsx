@@ -20,6 +20,7 @@ import {
   Sparkles,
   Target,
 } from 'lucide-react';
+import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import type {
   FunnelBuilderType,
   FunnelPackage,
@@ -448,6 +449,8 @@ export function FunnelBuilderDashboard() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
+      <RevenueDriverIntentResolver route="/funnel" />
+
       <div className="flex items-center gap-3">
         <button
           type="button"

@@ -140,7 +140,190 @@
     "contentCalendar": "Content Calendar",
     "videoScript": "Video Studio",
     "contentInsights": "Content Insights",
-    "platformGuides": "Platform Guides"
+    "platformGuides": "Platform Guides",
+    "revenueDrivers": "Revenue Drivers",
+    "whatsappAi": "WhatsApp AI",
+    "contentEngine": "Content",
+    "videoProduction": "Video",
+    "adsGenerator": "Ads",
+    "webinarGenerator": "Webinar",
+    "leadMagnets": "Lead Magnets",
+    "funnelGenerator": "Funnels"
+  },
+  "revenueDrivers": {
+    "dashboard": {
+      "badge": "Revenue drivers",
+      "title": "The highest-revenue tools are here",
+      "description": "Open WhatsApp AI, content, video, ads, webinars, lead magnets, and funnels without hunting through the app."
+    },
+    "hub": {
+      "badge": "Revenue Driver Hub",
+      "title": "Revenue Driver Hub",
+      "description": "Launch the capabilities closest to revenue with fewer clicks. Follow up, acquire leads, and convert customers."
+    },
+    "workspace": {
+      "badge": "Revenue Driver Actions",
+      "title": "{driver} actions"
+    },
+    "priority": "Priority {priority}",
+    "intent": {
+      "resolvedBadge": "Focused",
+      "fallback": {
+        "title": "Showing the default workspace",
+        "description": "No tool intent was supplied, so this revenue driver opened its default workspace."
+      },
+      "invalid": {
+        "title": "Tool intent not recognized",
+        "description": "This link does not match a supported tool, so the default workspace is shown."
+      },
+      "tools": {
+        "content": {
+          "facebookPost": { "title": "Facebook Generator opened", "description": "Focused on the Facebook content generation workflow." },
+          "instagramPost": { "title": "Instagram Generator opened", "description": "Focused on the Instagram content generation workflow." },
+          "tiktokPost": { "title": "TikTok Generator opened", "description": "Focused on the TikTok content generation workflow." },
+          "xhsPost": { "title": "XHS Generator opened", "description": "Focused on the XHS content generation workflow." },
+          "emailContent": { "title": "Email Content Generator opened", "description": "Focused on email content and CTA assets." },
+          "whatsappContent": { "title": "WhatsApp Content Generator opened", "description": "Focused on WhatsApp content and broadcast assets." }
+        },
+        "ads": {
+          "facebookAd": { "title": "Facebook Ad Tool opened", "description": "Facebook ad workflow has been preselected." },
+          "instagramAd": { "title": "Instagram Ad Tool opened", "description": "Instagram ad workflow has been preselected." },
+          "leadGenerationAd": { "title": "Lead Generation Ad Tool opened", "description": "Lead generation ad objective has been preselected." },
+          "retargetingAd": { "title": "Retargeting Ad Tool opened", "description": "Retargeting ad workflow has been preselected." },
+          "campaignStrategy": { "title": "Campaign Strategy opened", "description": "Focused on campaign strategy configuration." },
+          "audienceResearch": { "title": "Audience Research opened", "description": "Focused on audience research configuration." },
+          "offerTesting": { "title": "Offer Testing opened", "description": "Focused on offer testing configuration." }
+        },
+        "video": {
+          "hookGenerator": { "title": "Hook Generator opened", "description": "Focused on short-video hook generation." },
+          "videoScript": { "title": "Video Script Generator opened", "description": "Focused on video script generation." },
+          "shotList": { "title": "Shot List Generator opened", "description": "Focused on shot planning." },
+          "capcutScript": { "title": "CapCut Script Generator opened", "description": "Focused on editing script preparation." },
+          "veoPrompt": { "title": "Google Veo Prompt opened", "description": "Focused on video AI prompt preparation." },
+          "miniMaxPrompt": { "title": "MiniMax Prompt opened", "description": "Focused on MiniMax prompt preparation." },
+          "subtitleGenerator": { "title": "Subtitle Generator opened", "description": "Focused on subtitles and platform adaptation." }
+        },
+        "webinar": {
+          "presentationSlides": { "title": "Presentation Slides Generator opened", "description": "Focused on webinar slide output." },
+          "speakerScript": { "title": "Speaker Script Generator opened", "description": "Focused on per-slide speaker notes." },
+          "offerStack": { "title": "Offer Stack Generator opened", "description": "Focused on webinar offer and CTA output." },
+          "qaGenerator": { "title": "Webinar Q&A Generator opened", "description": "Focused on objections and Q&A output." },
+          "followUpSequence": { "title": "Follow-Up Sequence Generator opened", "description": "Focused on WhatsApp, email, replay, and closing follow-up." },
+          "strategy": { "title": "Webinar Strategy opened", "description": "Focused on webinar strategy output." }
+        },
+        "whatsapp": {
+          "connect": { "title": "Connect WhatsApp opened", "description": "Focused on the WhatsApp AI workspace." },
+          "train": { "title": "Train AI opened", "description": "Focused on knowledge training and reply preparation." },
+          "testReply": { "title": "Test Reply opened", "description": "Focused on AI reply templates." },
+          "followUp": { "title": "Follow-Up Generator opened", "description": "Focused on WhatsApp follow-up rhythm." },
+          "objectionHandler": { "title": "Objection Handler opened", "description": "Focused on common objection responses." },
+          "closingAssistant": { "title": "Closing Assistant opened", "description": "Focused on closing replies and next-step CTAs." }
+        },
+        "leadMagnet": {
+          "idea": { "title": "Lead Magnet Idea opened", "description": "Focused on lead magnet ideas." },
+          "copy": { "title": "Lead Magnet Copy opened", "description": "Focused on lead magnet copy." },
+          "optInCta": { "title": "Opt-in CTA opened", "description": "Focused on opt-in CTA assets." }
+        },
+        "funnel": {
+          "landingPage": { "title": "Landing Page opened", "description": "Focused on funnel landing page work." },
+          "thankYouPage": { "title": "Thank You Page opened", "description": "Focused on the thank-you page." },
+          "followUpPath": { "title": "Follow-Up Path opened", "description": "Focused on the post opt-in follow-up path." }
+        }
+      }
+    },
+    "drivers": {
+      "whatsapp": {
+        "title": "WhatsApp AI Auto Reply",
+        "description": "Connect, train, and test WhatsApp AI so prospects get faster replies.",
+        "outcome": "Reduce missed follow-up and improve closing chances.",
+        "primaryAction": "Open WhatsApp AI"
+      },
+      "content": {
+        "title": "Content Generator",
+        "description": "Generate Facebook, Instagram, TikTok, XHS, email, and WhatsApp content.",
+        "outcome": "Publish faster and create consistent attention.",
+        "primaryAction": "Create content"
+      },
+      "video": {
+        "title": "Video Generator",
+        "description": "Generate hooks, scripts, shot lists, B-roll plans, subtitles, and video prompts.",
+        "outcome": "Turn ideas into shoot-ready video assets.",
+        "primaryAction": "Create video"
+      },
+      "ads": {
+        "title": "Ads Generator",
+        "description": "Generate Facebook, Instagram, lead generation, retargeting, and campaign test assets.",
+        "outcome": "Launch measurable acquisition tests faster.",
+        "primaryAction": "Create ads"
+      },
+      "webinar": {
+        "title": "Webinar Generator",
+        "description": "Generate webinar strategy, slides, speaker scripts, offer stacks, Q&A, and follow-up sequences.",
+        "outcome": "Turn one webinar into a complete conversion system.",
+        "primaryAction": "Create webinar"
+      },
+      "leadMagnet": {
+        "title": "Lead Magnet Generator",
+        "description": "Create lead magnet ideas, opt-in copy, and CTA assets.",
+        "outcome": "Turn visitors into follow-up-ready leads.",
+        "primaryAction": "Generate lead magnet"
+      },
+      "funnels": {
+        "title": "Funnel Generator",
+        "description": "Create landing pages, thank-you pages, and follow-up paths.",
+        "outcome": "Move traffic into a conversion-ready sales path.",
+        "primaryAction": "Generate funnel"
+      }
+    },
+    "actions": {
+      "connectWhatsApp": "Connect WhatsApp",
+      "trainAi": "Train AI",
+      "uploadKnowledge": "Upload Knowledge",
+      "testAiReply": "Test AI Reply",
+      "viewConversations": "View Conversations",
+      "aiFollowUp": "AI Follow-Up",
+      "aiObjectionHandling": "AI Objection Handling",
+      "aiClosingAssistant": "AI Closing Assistant",
+      "facebookPost": "Facebook Post",
+      "instagramPost": "Instagram Post",
+      "tiktokPost": "TikTok Post",
+      "xhsPost": "XHS Post",
+      "emailContent": "Email Content",
+      "whatsappBroadcast": "WhatsApp Broadcast",
+      "hookGenerator": "Hook Generator",
+      "videoScript": "Video Script",
+      "masterScript": "Master Script",
+      "shotList": "Shot List",
+      "bRollPlan": "B-Roll Plan",
+      "capCutScript": "CapCut Script",
+      "subtitleGenerator": "Subtitle Generator",
+      "googleVeoPrompt": "Google Veo Prompt",
+      "miniMaxPrompt": "MiniMax Prompt",
+      "platformAdaptation": "Platform Adaptation",
+      "facebookAd": "Facebook Ad",
+      "instagramAd": "Instagram Ad",
+      "leadGenerationAd": "Lead Generation Ad",
+      "retargetingAd": "Retargeting Ad",
+      "campaignStrategy": "Campaign Strategy",
+      "audienceResearch": "Audience Research",
+      "offerTesting": "Offer Testing",
+      "webinarStrategy": "Webinar Strategy",
+      "presentationSlides": "Presentation Slides",
+      "speakerScript": "Speaker Script",
+      "offerStack": "Offer Stack",
+      "ctaSlides": "CTA Slides",
+      "qaHandling": "Q&A Handling",
+      "whatsappFollowUp": "WhatsApp Follow-Up",
+      "emailFollowUp": "Email Follow-Up",
+      "replaySequence": "Replay Sequence",
+      "closingReminder": "Closing Reminder",
+      "leadMagnetIdea": "Lead Magnet Idea",
+      "leadMagnetCopy": "Lead Magnet Copy",
+      "optInCta": "Opt-in CTA",
+      "landingPage": "Landing Page",
+      "thankYouPage": "Thank You Page",
+      "followUpPath": "Follow-Up Path"
+    }
   },
   "platformAdmin": {
     "platformAdmin": "Founder Platform",

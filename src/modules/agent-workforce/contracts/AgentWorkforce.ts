@@ -14,6 +14,7 @@ export type WorkforceAgentType =
   | 'funnel_agent'
   | 'landing_page_agent'
   | 'traffic_agent'
+  | 'webinar_agent'
   | 'analytics_agent'
   | 'crm_agent'
   | 'offer_agent'

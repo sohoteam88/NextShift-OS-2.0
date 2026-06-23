@@ -146,4 +146,31 @@ describe('EXEC-006 Outcome Orchestrator', () => {
       }),
     }));
   });
+
+  it('includes webinar as a first customer conversion mission before customer follow-up', () => {
+    const outcome = createOutcomePlan({
+      currentMissionType: 'CUSTOMERS',
+      signals: firstLeadMissionsComplete,
+      sourceAvailable: true,
+    });
+
+    expect(outcome.templateId).toBe('FIRST_CUSTOMER');
+    expect(outcome.missions.map((mission) => mission.missionType)).toEqual([
+      'LEAD_MAGNET',
+      'FUNNEL',
+      'TRAFFIC',
+      'WEBINAR',
+      'CUSTOMERS',
+    ]);
+    expect(outcome.missions[3]).toMatchObject({
+      missionId: 'mission-plan-webinar',
+      route: '/webinar-center',
+      status: 'ACTIVE',
+    });
+    expect(outcome.missions[4]).toMatchObject({
+      missionId: 'mission-plan-customers',
+      dependsOn: ['mission-plan-webinar'],
+      status: 'LOCKED',
+    });
+  });
 });
