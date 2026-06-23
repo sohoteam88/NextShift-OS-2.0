@@ -1,8 +1,19 @@
+import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { MomentumWin, RetentionProjection } from '../contracts/RetentionProjection';
 import { buildRetentionProjection } from './retention-projection';
+import type { OutcomeTemplateId } from '@/modules/mission-engine/services/OutcomeOrchestrator';
 
 const THIRTY_DAYS_MS = 30 * 86_400_000;
+
+export const RETENTION_AUDIT_ACTIONS = {
+  progressed: 'retention.progressed',
+  atRisk: 'retention.at_risk',
+  stalled: 'retention.stalled',
+  recovered: 'retention.recovered',
+  expanding: 'retention.expanding',
+} as const;
 
 function metadataRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -30,6 +41,33 @@ function latestDate(dates: Date[], fallback: Date) {
   return dates.reduce((latest, date) => date > latest ? date : latest, fallback);
 }
 
+function numberFromMetadata(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/[^\d.]/g, ''));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
+
+function revenueFromCustomers(customers: Array<{ metadata: unknown }>) {
+  return customers.reduce((sum, customer) => {
+    const metadata = metadataRecord(customer.metadata);
+    return sum
+      + numberFromMetadata(metadata.revenue)
+      + numberFromMetadata(metadata.amount)
+      + numberFromMetadata(metadata.value)
+      + numberFromMetadata(metadata.purchaseAmount);
+  }, 0);
+}
+
+function nextOutcomeFor(input: { leadCount: number; customerCount: number; revenue: number }): OutcomeTemplateId {
+  if (input.revenue > 0) return 'RETENTION_SYSTEM';
+  if (input.customerCount > 0) return 'FIRST_REVENUE';
+  if (input.leadCount > 0) return 'FIRST_CUSTOMER';
+  return 'FIRST_LEAD';
+}
+
 export async function getRetentionProjection(userId: string, tenantId?: string): Promise<RetentionProjection> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -39,6 +77,7 @@ export async function getRetentionProjection(userId: string, tenantId?: string):
       createdAt: true,
       updatedAt: true,
       metadata: true,
+      languagePreference: true,
     },
   });
 
@@ -62,6 +101,9 @@ export async function getRetentionProjection(userId: string, tenantId?: string):
     aiCooInteractions,
     achievements,
     businessMemoryWins,
+    leads,
+    customers,
+    completedOutcomeAudits,
   ] = await Promise.all([
     prisma.analyticsEvent.count({
       where: {
@@ -132,6 +174,29 @@ export async function getRetentionProjection(userId: string, tenantId?: string):
       orderBy: { createdAt: 'desc' },
       take: 50,
     }),
+    prisma.lead.findMany({
+      where: { tenantId: resolvedTenantId, ownerId: user.id, deletedAt: null },
+      select: { createdAt: true },
+      orderBy: { createdAt: 'asc' },
+      take: 500,
+    }),
+    prisma.customer.findMany({
+      where: { tenantId: resolvedTenantId, ownerId: user.id },
+      select: { createdAt: true, purchaseDate: true, metadata: true },
+      orderBy: { createdAt: 'asc' },
+      take: 500,
+    }),
+    prisma.auditLog.findMany({
+      where: {
+        tenantId: resolvedTenantId,
+        actorId: user.id,
+        targetType: 'business_outcome',
+        action: 'outcome.completed',
+      },
+      select: { targetId: true, createdAt: true, metadata: true },
+      orderBy: { createdAt: 'asc' },
+      take: 100,
+    }),
   ]);
 
   const activityDates = [
@@ -142,9 +207,51 @@ export async function getRetentionProjection(userId: string, tenantId?: string):
     ...launchedFunnels.map((funnel) => funnel.publishedAt ?? funnel.createdAt),
     ...achievements.map((achievement) => achievement.unlockedAt),
     ...businessMemoryWins.map((win) => win.createdAt),
+    ...leads.map((lead) => lead.createdAt),
+    ...customers.map((customer) => customer.purchaseDate ?? customer.createdAt),
+    ...completedOutcomeAudits.map((audit) => audit.createdAt),
   ].filter((date) => date >= since);
 
   const leadMagnetRecent = Boolean(leadMagnetDate && leadMagnetDate >= since);
+  const revenue = revenueFromCustomers(customers);
+  const derivedOutcomeDates = [
+    leads[0]?.createdAt,
+    leads[1]?.createdAt,
+    customers[0]?.createdAt,
+    revenue > 0 ? customers.find((customer) => customer.purchaseDate || customer.createdAt)?.purchaseDate ?? customers[0]?.createdAt : null,
+    ...completedOutcomeAudits.map((audit) => audit.createdAt),
+  ].filter((date): date is Date => Boolean(date));
+  const derivedOutcomeCount = [
+    leads.length > 0,
+    leads.length >= 2,
+    customers.length > 0,
+    revenue > 0,
+  ].filter(Boolean).length;
+  const outcomeCompletionCount = Math.max(derivedOutcomeCount, completedOutcomeAudits.length);
+  const outcomeCompletionCount30d = Math.max(
+    [
+      leads[0]?.createdAt,
+      leads[1]?.createdAt,
+      customers[0]?.createdAt,
+      revenue > 0 ? customers[0]?.purchaseDate ?? customers[0]?.createdAt : null,
+    ].filter((date): date is Date => Boolean(date && date >= since)).length,
+    completedOutcomeAudits.filter((audit) => audit.createdAt >= since).length,
+  );
+  const lastOutcomeAt = derivedOutcomeDates.length > 0
+    ? latestDate(derivedOutcomeDates, user.createdAt)
+    : null;
+  const currentOutcome = nextOutcomeFor({
+    leadCount: leads.length,
+    customerCount: customers.length,
+    revenue,
+  });
+  const currentOutcomeProgressPercentage = currentOutcome === 'FIRST_LEAD'
+    ? 0
+    : currentOutcome === 'FIRST_CUSTOMER'
+      ? Math.min(90, leads.length * 35)
+      : currentOutcome === 'FIRST_REVENUE'
+        ? Math.min(90, customers.length * 50)
+        : Math.min(90, outcomeCompletionCount * 20);
   const recentWins: MomentumWin[] = [
     ...completedMissions.map((mission) => ({
       type: 'mission' as const,
@@ -174,6 +281,14 @@ export async function getRetentionProjection(userId: string, tenantId?: string):
         occurredAt: win.createdAt.toISOString(),
       };
     }),
+    ...completedOutcomeAudits.map((audit) => {
+      const metadata = metadataRecord(audit.metadata);
+      return {
+        type: 'outcome' as const,
+        title: String(metadata.templateId ?? metadata.outcomeId ?? audit.targetId ?? 'Outcome completed'),
+        occurredAt: audit.createdAt.toISOString(),
+      };
+    }),
   ].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 
   if (leadMagnetRecent && leadMagnetDate) {
@@ -201,10 +316,110 @@ export async function getRetentionProjection(userId: string, tenantId?: string):
     leadMagnetsCreated30d: leadMagnetRecent ? 1 : 0,
     funnelsLaunched30d: launchedFunnels.length,
     winsAchieved30d: recentWins.length,
+    outcomeCompletionCount,
+    outcomeCompletionCount30d,
+    lastOutcomeAt,
+    currentOutcome,
+    currentOutcomeProgressPercentage,
+    assetUtilizationCount30d: contentRows.length + (leadMagnetRecent ? 1 : 0) + launchedFunnels.length,
+    agentUsageCount30d: aiCooInteractions,
+    locale: user.languagePreference,
     recentWins,
   });
 }
 
+async function writeRetentionAuditIfMissing(input: {
+  user: AuthUser;
+  action: string;
+  targetId: string;
+  projection: RetentionProjection;
+}) {
+  const existing = await prisma.auditLog.findFirst({
+    where: {
+      tenantId: input.user.tenantId,
+      actorId: input.user.id,
+      action: input.action,
+      targetType: 'retention',
+      targetId: input.targetId,
+    },
+    select: { id: true },
+  });
+  if (existing) return;
+
+  await prisma.auditLog.create({
+    data: {
+      tenantId: input.user.tenantId,
+      actorId: input.user.id,
+      action: input.action,
+      targetType: 'retention',
+      targetId: input.targetId,
+      metadata: {
+        retentionLevel: input.projection.outcomeRetention.retentionLevel,
+        outcomeCount: input.projection.momentum.outcomesCompleted,
+        progressPercentage: input.projection.outcomeRetention.progressPercentage,
+        nextOutcome: input.projection.outcomeRetention.nextOutcome,
+        retained: input.projection.outcomeRetention.retained,
+        locale: input.projection.localization.locale,
+        translationSource: input.projection.localization.translationSource,
+        fallbackUsed: input.projection.localization.fallbackUsed,
+        messageKeys: input.projection.localization.messageKeys,
+        timestamp: new Date().toISOString(),
+      } as Prisma.InputJsonValue,
+    },
+  });
+}
+
+export async function ensureRetentionAudit(input: {
+  user: AuthUser;
+  projection: RetentionProjection;
+}) {
+  if (input.projection.outcomeRetention.retentionLevel === 'EXPANDING') {
+    await writeRetentionAuditIfMissing({
+      user: input.user,
+      action: RETENTION_AUDIT_ACTIONS.expanding,
+      targetId: `${input.projection.outcomeRetention.nextOutcome}:expanding`,
+      projection: input.projection,
+    });
+  }
+
+  if (input.projection.outcomeRetention.retentionLevel === 'AT_RISK') {
+    await writeRetentionAuditIfMissing({
+      user: input.user,
+      action: RETENTION_AUDIT_ACTIONS.atRisk,
+      targetId: `${input.projection.outcomeRetention.nextOutcome}:at_risk`,
+      projection: input.projection,
+    });
+  }
+
+  if (input.projection.outcomeRetention.retentionLevel === 'STALLED') {
+    await writeRetentionAuditIfMissing({
+      user: input.user,
+      action: RETENTION_AUDIT_ACTIONS.stalled,
+      targetId: `${input.projection.outcomeRetention.nextOutcome}:stalled`,
+      projection: input.projection,
+    });
+  }
+
+  if (input.projection.retentionRecovery.needed) {
+    await writeRetentionAuditIfMissing({
+      user: input.user,
+      action: RETENTION_AUDIT_ACTIONS.recovered,
+      targetId: `${input.projection.outcomeRetention.nextOutcome}:recovery`,
+      projection: input.projection,
+    });
+  }
+
+  if (input.projection.outcomeRetention.progressPercentage > 0) {
+    await writeRetentionAuditIfMissing({
+      user: input.user,
+      action: RETENTION_AUDIT_ACTIONS.progressed,
+      targetId: `${input.projection.outcomeRetention.nextOutcome}:${input.projection.outcomeRetention.progressPercentage}`,
+      projection: input.projection,
+    });
+  }
+}
+
 export const retentionEngine = {
   getProjection: getRetentionProjection,
+  ensureAudit: ensureRetentionAudit,
 };

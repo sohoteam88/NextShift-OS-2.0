@@ -9,6 +9,18 @@ export type ExpansionFacts = {
   valueProjection: ValueProjection;
   retentionProjection: RetentionProjection;
   metrics: ExpansionMetrics;
+  outcomeCount?: number;
+  lastOutcomeAt?: Date | string | null;
+  lastRevenueGrowthAt?: Date | string | null;
+  lastTeamProgressAt?: Date | string | null;
+  opportunityAdoptionRate?: number;
+  locale?: string | null;
+  personalization?: {
+    audience?: string | null;
+    offer?: string | null;
+    stage?: string | null;
+    region?: string | null;
+  };
 };
 
 export function growthRate(current: number, previous: number) {

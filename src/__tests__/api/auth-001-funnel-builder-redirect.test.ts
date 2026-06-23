@@ -17,6 +17,6 @@ describe('AUTH-001 legacy AI funnel builder redirect', () => {
 
     FunnelBuilderPage();
 
-    expect(redirectMock).toHaveBeenCalledWith('/funnel-builder');
+    expect(redirectMock).toHaveBeenCalledWith('/funnel');
   });
 });

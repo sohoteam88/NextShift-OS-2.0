@@ -6,12 +6,17 @@ function clamp(value: number) {
 }
 
 export function calculateMomentumScore(facts: RetentionFacts) {
+  const outcomeScore = (facts.outcomeCompletionCount30d ?? 0) * 30;
+  const progressScore = Math.round((facts.currentOutcomeProgressPercentage ?? 0) * 0.25);
+  const assetUsageScore = (facts.assetUtilizationCount30d ?? facts.contentGenerated30d + facts.leadMagnetsCreated30d + facts.funnelsLaunched30d) * 8;
+  const agentUsageScore = (facts.agentUsageCount30d ?? facts.aiCooInteractions30d) * 6;
+
   return clamp(
-    facts.missionCompleted30d * 18 +
-    facts.contentGenerated30d * 12 +
-    facts.leadMagnetsCreated30d * 16 +
-    facts.funnelsLaunched30d * 18 +
-    facts.winsAchieved30d * 10,
+    outcomeScore +
+    progressScore +
+    facts.missionCompleted30d * 10 +
+    assetUsageScore +
+    agentUsageScore,
   );
 }
 

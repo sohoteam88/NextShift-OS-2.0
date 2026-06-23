@@ -1,6 +1,9 @@
 import { businessStateService } from '@/modules/business-state/services/BusinessStateService';
 import { journeyStateService } from '@/modules/journey/services/JourneyStateService';
 import { growthLoopStateService } from '@/modules/growth-loop/services/GrowthLoopStateService';
+import type { BusinessState } from '@/modules/business-state/contracts/BusinessState';
+import type { JourneyState } from '@/modules/journey/contracts/JourneyState';
+import type { GrowthLoopState } from '@/modules/growth-loop/contracts/GrowthLoopState';
 import type { AnalyticsCenter, Benchmark, BusinessHealthScore, AIInsight, NextBestAction } from '../businessTypes';
 import { emitAnalyticsProjectionConsumed } from '../telemetry/analytics-telemetry';
 
@@ -39,11 +42,19 @@ function clamp(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-export async function getAnalyticsProjection(userId: string, tenantId?: string): Promise<AnalyticsProjection> {
+export async function getAnalyticsProjection(
+  userId: string,
+  tenantId?: string,
+  context: {
+    businessState?: BusinessState;
+    journeyState?: JourneyState;
+    growthLoopState?: GrowthLoopState;
+  } = {},
+): Promise<AnalyticsProjection> {
   const [businessState, journeyState, growthLoopState] = await Promise.all([
-    businessStateService.getBusinessState(userId),
-    journeyStateService.getJourneyState(userId),
-    growthLoopStateService.getGrowthLoopState(userId),
+    context.businessState ?? businessStateService.getBusinessState(userId),
+    context.journeyState ?? journeyStateService.getJourneyState(userId),
+    context.growthLoopState ?? growthLoopStateService.getGrowthLoopState(userId),
   ]);
 
   const projection = {

@@ -1,17 +1,24 @@
+import prisma from '@/lib/prisma';
 import { journeyEngineService } from '@/modules/journey-engine/journey-engine-service';
 import type { AdaptiveJourneyProjection } from '@/modules/journey-engine/journey-projection';
 import { businessStateService } from '@/modules/business-state/services/BusinessStateService';
 import type { BusinessStateResult } from '@/modules/business-state/contracts/BusinessStateResult';
 import type {
-  DashboardPriority,
-  MissionBottleneck,
+  BottleneckResult,
   MissionBusinessStage,
   MissionAuthorityDefinition,
   MissionAuthoritySnapshot,
   MissionLifecycleStatus,
-  MissionPriorityAction,
-  MissionType,
+  PriorityResult,
 } from '../contracts/MissionAuthority';
+import { BottleneckAuthority } from './BottleneckAuthority';
+import { readBottleneckSignals, resolveBottleneck, signalFailureResult, type BottleneckSignals } from './BottleneckEngine';
+import { explainabilityEngine, resolveExplainabilityLocale } from './ExplainabilityEngine';
+import { missionCompletionVerifier } from './MissionCompletionVerifier';
+import { missionGeneratorV2 } from './MissionGeneratorV2';
+import { priorityEngine, type PriorityHistoryEntry } from './PriorityEngine';
+
+const PRIORITY_HISTORY_WINDOW_DAYS = 7;
 
 function formatMinutes(minutes: number) {
   if (minutes <= 0) return '即将完成';
@@ -59,124 +66,16 @@ function hasCompleted(journey: AdaptiveJourneyProjection, check: string) {
   ));
 }
 
-function businessStageFor(mission: MissionAuthorityDefinition): MissionBusinessStage {
-  if (mission.completionConditions.includes('brand_discovery_completed')) return 'BRAND_FOUNDATION';
-  if (
-    mission.completionConditions.includes('brand_dna_confirmed')
-    || mission.completionConditions.includes('positioning_completed')
-  ) return 'BRAND_POSITIONING';
-  if (mission.completionConditions.includes('first_content_generated')) return 'CONTENT_SYSTEM';
-  if (mission.completionConditions.includes('lead_magnet_created')) return 'LEAD_MAGNET';
-  if (mission.completionConditions.includes('funnel_published')) return 'FUNNEL';
-  if (mission.completionConditions.includes('traffic_campaign_launched')) return 'LEAD_GENERATION';
-  if (
-    mission.completionConditions.includes('first_sale_completed')
-    || mission.completionConditions.includes('whatsapp_followup_configured')
-    || mission.completionConditions.includes('crm_setup_completed')
-  ) return 'SALES';
-  if (mission.route.includes('/team')) return 'TEAM_BUILDING';
-  return 'BRAND_FOUNDATION';
-}
-
-function bottleneckFor(mission: MissionAuthorityDefinition): MissionBottleneck {
-  if (mission.completionConditions.includes('brand_discovery_completed')) return 'NO_BRAND';
-  if (
-    mission.completionConditions.includes('brand_dna_confirmed')
-    || mission.completionConditions.includes('positioning_completed')
-  ) return 'NO_POSITIONING';
-  if (mission.completionConditions.includes('first_content_generated')) return 'NO_CONTENT';
-  if (mission.completionConditions.includes('lead_magnet_created')) return 'NO_LEAD_MAGNET';
-  if (mission.completionConditions.includes('funnel_published')) return 'NO_FUNNEL';
-  if (mission.completionConditions.includes('traffic_campaign_launched')) return 'NO_TRAFFIC';
-  if (mission.completionConditions.includes('whatsapp_followup_configured')) return 'NO_APPOINTMENTS';
-  if (mission.completionConditions.includes('crm_setup_completed')) return 'NO_APPOINTMENTS';
-  if (mission.completionConditions.includes('first_sale_completed')) return 'NO_CUSTOMERS';
-  if (mission.route.includes('/team')) return 'NO_TEAM';
-  return 'NO_BRAND';
-}
-
-function bottleneckForBusinessState(stateResult: BusinessStateResult): MissionBottleneck {
-  const missing = new Set(stateResult.missingRequirements);
-
-  switch (stateResult.currentState) {
-    case 'BRAND_FOUNDATION':
-      return 'NO_BRAND';
-    case 'BRAND_POSITIONING':
-      return 'NO_POSITIONING';
-    case 'CONTENT_SYSTEM':
-      return 'NO_CONTENT';
-    case 'LEAD_MAGNET':
-      return 'NO_LEAD_MAGNET';
-    case 'FUNNEL':
-      return 'NO_FUNNEL';
-    case 'LEAD_GENERATION':
-      if (missing.has('Traffic Source Active')) return 'NO_TRAFFIC';
-      return missing.has('First Lead Generated') ? 'NO_LEADS' : 'NO_TRAFFIC';
-    case 'SALES':
-      if (missing.has('Lead Exists')) return 'NO_LEADS';
-      if (missing.has('First Customer Acquired')) return 'NO_CUSTOMERS';
-      return 'NO_APPOINTMENTS';
-    case 'TEAM_BUILDING':
-      return 'NO_TEAM';
-  }
-}
-
-function missionTypeFor(mission: MissionAuthorityDefinition): MissionType {
-  if (mission.route.includes('/content')) return 'CONTENT';
-  if (mission.route.includes('/lead-magnet')) return 'LEAD_MAGNET';
-  if (mission.route.includes('/funnel')) return 'FUNNEL';
-  if (mission.route.includes('/traffic')) return 'TRAFFIC';
-  if (mission.route.includes('/customer') || mission.route.includes('/crm')) return 'CUSTOMERS';
-  if (mission.route.includes('/team') || mission.route.includes('/ai-workforce')) return 'TEAM';
-  if (
-    mission.completionConditions.includes('brand_dna_confirmed')
-    || mission.completionConditions.includes('positioning_completed')
-  ) return 'POSITIONING';
-  return 'BRAND';
-}
-
-function priorityFor(mission: MissionAuthorityDefinition): DashboardPriority {
-  if (mission.priority >= 90) return 'Critical';
-  if (mission.priority >= 50) return 'High';
-  return 'Normal';
-}
-
-function lifecycleFor(status: MissionAuthorityDefinition['status']): MissionLifecycleStatus {
-  if (status === 'completed') return 'COMPLETED';
+function lifecycleFor(
+  status: MissionAuthorityDefinition['status'],
+  missionCompletion?: MissionAuthoritySnapshot['missionCompletion'],
+): MissionLifecycleStatus {
+  if (missionCompletion?.completed) return 'COMPLETED';
+  if (missionCompletion?.verificationStatus === 'VERIFYING') return 'VERIFYING';
+  if (status === 'completed' && !missionCompletion?.completed) return 'BLOCKED';
+  if (status === 'blocked') return 'BLOCKED';
   if (status === 'active') return 'ACTIVE';
-  if (status === 'blocked') return 'FAILED';
   return 'PENDING';
-}
-
-function reasoningFor(input: {
-  mission: MissionAuthorityDefinition;
-  bottleneck: MissionBottleneck;
-  completed: string[];
-  businessState?: BusinessStateResult;
-}) {
-  const completedText = input.completed.length > 0
-    ? `Completed: ${input.completed.join(', ')}.`
-    : 'Completed: no prior business foundation has been confirmed yet.';
-  const stateReason = input.businessState
-    ? `Business State resolved ${input.businessState.currentState}. Missing: ${input.businessState.missingRequirements.join(', ') || 'none'}. ${input.businessState.explainability.reason}`
-    : 'Business State resolved from Journey mission requirements.';
-
-  return [
-    completedText,
-    `Current gap: ${input.bottleneck}.`,
-    stateReason,
-    `Because this is the first missing requirement preventing progress, the highest leverage action is "${input.mission.title}".`,
-    'Why not something else: the AI COO fixes the bottleneck before optimizing, scaling, or automating.',
-  ].join(' ');
-}
-
-function buildPriorityAction(mission: MissionAuthorityDefinition): MissionPriorityAction {
-  return {
-    missionType: missionTypeFor(mission),
-    title: mission.title,
-    route: mission.route,
-    priority: priorityFor(mission),
-  };
 }
 
 function teamWorkforceMission(baseMission: MissionAuthorityDefinition): MissionAuthorityDefinition {
@@ -186,13 +85,134 @@ function teamWorkforceMission(baseMission: MissionAuthorityDefinition): MissionA
     description: 'Your core business system has reached the team-building stage. Turn the proven workflow into repeatable team and AI workforce actions.',
     expectedOutcome: 'Business operates beyond founder',
     estimatedMinutes: 20,
-    route: '/ai-workforce',
+    route: '/team/growth',
   };
+}
+
+function healthyBusinessMission(baseMission: MissionAuthorityDefinition): MissionAuthorityDefinition {
+  return {
+    ...baseMission,
+    title: 'Continue Optimizing Your Business System',
+    description: 'Your current signals show no active bottleneck. Review growth opportunities, scale what is working, and keep the system healthy.',
+    expectedOutcome: 'Business systems remain healthy while growth opportunities are prioritized.',
+    estimatedMinutes: 15,
+    priority: 30,
+    route: '/dashboard',
+  };
+}
+
+function priorityMission(baseMission: MissionAuthorityDefinition, priorityResult: PriorityResult): MissionAuthorityDefinition {
+  return {
+    ...baseMission,
+    title: priorityResult.priorityAction,
+    description: priorityResult.priorityReason,
+    expectedOutcome: priorityResult.expectedImpact,
+    priority: priorityResult.urgency === 'Critical' ? 100 : priorityResult.urgency === 'High' ? 70 : 30,
+    route: priorityResult.route,
+  };
+}
+
+function metadataRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function metadataString(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === 'string' ? value : '';
+}
+
+function isMissionBottleneck(value: string): value is BottleneckResult['bottleneck'] {
+  return [
+    'NO_BRAND',
+    'NO_POSITIONING',
+    'NO_CONTENT',
+    'NO_AUDIENCE',
+    'NO_LEAD_MAGNET',
+    'NO_FUNNEL',
+    'NO_TRAFFIC',
+    'NO_LEADS',
+    'NO_CONVERSION',
+    'NO_CUSTOMERS',
+    'NO_RETENTION',
+    'BUSINESS_HEALTHY',
+    'NO_SYSTEM',
+    'NO_TEAM',
+  ].includes(value);
+}
+
+export async function readRecentPriorityHistory(input: {
+  userId: string;
+  currentBottleneck: BottleneckResult['bottleneck'];
+  now?: Date;
+}): Promise<PriorityHistoryEntry[]> {
+  const since = new Date(input.now ?? new Date());
+  since.setDate(since.getDate() - PRIORITY_HISTORY_WINDOW_DAYS);
+
+  const rows = await prisma.auditLog.findMany({
+    where: {
+      actorId: input.userId,
+      action: 'mission.decision.projected',
+      createdAt: { gte: since },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+    select: { metadata: true },
+  });
+
+  return rows.flatMap((row) => {
+    const metadata = metadataRecord(row.metadata);
+    const priorityAction = metadataString(metadata, 'priorityAction') || metadataString(metadata, 'missionTitle');
+    const bottleneck = metadataString(metadata, 'bottleneck');
+    if (!priorityAction || !isMissionBottleneck(bottleneck)) return [];
+
+    const completionStatus = metadataString(metadata, 'completionStatus') || 'unknown';
+    return [{
+      priorityAction,
+      bottleneck,
+      completionStatus,
+      resolved: completionStatus === 'completed' && bottleneck !== input.currentBottleneck,
+    }];
+  });
+}
+
+async function recordPriorityDedupAudit(input: {
+  userId: string;
+  tenantId?: string | null;
+  priorityResult: PriorityResult;
+}) {
+  if (!input.tenantId || !input.priorityResult.dedup || process.env.NODE_ENV === 'test') return;
+
+  try {
+    await prisma.auditLog.create({
+      data: {
+        tenantId: input.tenantId,
+        actorId: input.userId,
+        action: 'priority.dedup.applied',
+        targetType: 'priority',
+        metadata: {
+          action: input.priorityResult.dedup.action,
+          baseScore: input.priorityResult.dedup.baseScore,
+          penalty: input.priorityResult.dedup.penalty,
+          finalScore: input.priorityResult.dedup.finalScore,
+          reason: input.priorityResult.dedup.reason,
+        },
+      },
+    });
+  } catch {
+    // Priority recommendations should not fail because audit telemetry is unavailable.
+  }
 }
 
 export function resolveMissionAuthorityFromJourney(
   journey: AdaptiveJourneyProjection,
   businessState?: BusinessStateResult,
+  bottleneckResult?: BottleneckResult,
+  options: {
+    recentPriorityHistory?: PriorityHistoryEntry[];
+    locale?: string | null;
+    bottleneckSignals?: Partial<BottleneckSignals> | null;
+    completionSourceAvailable?: boolean;
+  } = {},
 ): MissionAuthoritySnapshot {
   const interviewCompleted = hasCompleted(journey, 'brand_discovery_completed');
   const requiresInterview = businessState?.currentState === 'BRAND_FOUNDATION'
@@ -201,19 +221,54 @@ export function resolveMissionAuthorityFromJourney(
     ? toMissionDefinition(journey.currentMission)
     : AI_INTERVIEW_MISSION;
   const nextMission = interviewCompleted && !requiresInterview && journey.nextMission ? toMissionDefinition(journey.nextMission) : null;
-  const businessStage = businessState?.currentState ?? businessStageFor(currentMission);
-  const bottleneck = businessState ? bottleneckForBusinessState(businessState) : bottleneckFor(currentMission);
-  const actionMission = bottleneck === 'NO_TEAM' ? teamWorkforceMission(currentMission) : currentMission;
+  const businessStage = BottleneckAuthority.businessStageFor({ businessState, mission: currentMission });
+  const resolvedBottleneckResult = bottleneckResult ?? signalFailureResult();
+  const bottleneck = resolvedBottleneckResult.bottleneck;
+  const priorityResult = priorityEngine.resolve({
+    bottleneckResult: resolvedBottleneckResult,
+    recentPriorityHistory: options.recentPriorityHistory,
+  });
+  const fallbackActionMission = bottleneck === 'NO_TEAM'
+    ? teamWorkforceMission(currentMission)
+    : bottleneck === 'BUSINESS_HEALTHY'
+      ? healthyBusinessMission(currentMission)
+      : currentMission;
+  const actionMission = priorityMission(fallbackActionMission, priorityResult);
   const completed = businessState
     ? businessState.completedStates
     : interviewCompleted
       ? completedLabels(journey)
       : [];
-  const reasoning = reasoningFor({ mission: actionMission, bottleneck, completed, businessState });
-  const priorityAction = buildPriorityAction(actionMission);
+  const explanation = explainabilityEngine.resolve({
+    bottleneckResult: resolvedBottleneckResult,
+    priorityResult,
+    locale: options.locale,
+  });
+  const explainability = {
+    ...explanation,
+    completed,
+    currentGap: bottleneck,
+    reasoning: explanation.whyThis,
+    decisionReason: explanation.whyNotOthers,
+    evidence: resolvedBottleneckResult.evidence,
+    severity: resolvedBottleneckResult.severity,
+    confidence: resolvedBottleneckResult.confidence,
+  };
+  const missionPlan = missionGeneratorV2.generate({
+    bottleneckResult: resolvedBottleneckResult,
+    priorityResult,
+    explainability: explanation,
+  });
+  const missionCompletion = missionCompletionVerifier.verify({
+    missionPlan,
+    businessState,
+    bottleneckResult: resolvedBottleneckResult,
+    signals: options.bottleneckSignals,
+    sourceAvailable: options.completionSourceAvailable,
+  });
   const estimatedCompletion = {
-    minutes: actionMission.estimatedMinutes,
-    label: formatMinutes(actionMission.estimatedMinutes),
+    minutes: missionPlan.estimatedTime,
+    label: formatMinutes(missionPlan.estimatedTime),
   };
 
   return {
@@ -224,26 +279,34 @@ export function resolveMissionAuthorityFromJourney(
     currentJourney: journey.currentJourney,
     businessStage,
     bottleneck,
+    bottleneckResult: resolvedBottleneckResult,
+    bottleneckSignals: options.bottleneckSignals ?? null,
+    priorityResult,
     currentMission,
     nextMission,
-    priorityAction,
-    explainability: {
-      completed,
-      currentGap: bottleneck,
-      reasoning,
-      expectedOutcome: currentMission.expectedOutcome,
+    priorityAction: {
+      missionType: priorityResult.missionType,
+      title: priorityResult.priorityAction,
+      route: priorityResult.route,
+      ctaLabel: priorityResult.ctaLabel,
+      priority: priorityResult.urgency,
     },
+    explainability,
+    missionPlan,
+    missionCompletion,
     dashboardCommandCenter: {
       currentStage: businessStage,
-      missionTitle: actionMission.title,
-      missionDescription: actionMission.description,
-      reasoning,
-      expectedOutcome: actionMission.expectedOutcome,
+      missionTitle: missionPlan.objective,
+      missionDescription: missionPlan.description,
+      reasoning: explainability.whyThis,
+      expectedOutcome: missionPlan.successCriteria[0] ?? explainability.expectedOutcome,
       estimatedTime: estimatedCompletion.label,
-      route: actionMission.route,
-      priority: priorityAction.priority,
+      route: missionPlan.route,
+      ctaLabel: priorityResult.ctaLabel,
+      decisionReason: explainability.whyNotOthers,
+      priority: priorityResult.urgency,
     },
-    lifecycle: lifecycleFor(currentMission.status),
+    lifecycle: lifecycleFor(currentMission.status, missionCompletion),
     progress: {
       completionPercentage: journey.completionPercentage,
       completedMissions: journey.missions.filter((mission) => mission.status === 'completed').length,
@@ -256,9 +319,50 @@ export function resolveMissionAuthorityFromJourney(
 }
 
 export const missionEngineAuthorityService = {
-  async getCurrentMission(userId: string): Promise<MissionAuthoritySnapshot> {
-    const businessState = await businessStateService.getBusinessState(userId);
-    const journey = await journeyEngineService.getJourneyProjection(userId);
-    return resolveMissionAuthorityFromJourney(journey, businessState.stateResult);
+  async getCurrentMission(
+    userId: string,
+    options: { businessState?: BusinessStateResult | null; locale?: string | null; browserLocale?: string | null } = {},
+  ): Promise<MissionAuthoritySnapshot> {
+    const businessState = Object.hasOwn(options, 'businessState')
+      ? { stateResult: options.businessState }
+      : await businessStateService.getBusinessState(userId);
+    const stateResult = businessState.stateResult ?? undefined;
+    const [journey, bottleneckSignalResult, user] = await Promise.all([
+      journeyEngineService.getJourneyProjection(userId),
+      stateResult ? readBottleneckSignals(userId).then(({ signals }) => signals).catch(() => null) : Promise.resolve(null),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          tenantId: true,
+          languagePreference: true,
+          tenant: { select: { settings: true } },
+        },
+      }),
+    ]);
+    const resolvedBottleneckResult = stateResult && bottleneckSignalResult
+      ? resolveBottleneck({ businessState: stateResult, signals: bottleneckSignalResult })
+      : signalFailureResult();
+    const recentPriorityHistory = await readRecentPriorityHistory({
+      userId,
+      currentBottleneck: resolvedBottleneckResult.bottleneck,
+    }).catch(() => []);
+    const locale = resolveExplainabilityLocale({
+      locale: options.locale,
+      userPreference: user?.languagePreference,
+      workspaceSetting: metadataString(metadataRecord(user?.tenant?.settings), 'default_language'),
+      browserLocale: options.browserLocale,
+    });
+    const missionAuthority = resolveMissionAuthorityFromJourney(journey, stateResult, resolvedBottleneckResult, {
+      recentPriorityHistory,
+      locale,
+      bottleneckSignals: bottleneckSignalResult,
+      completionSourceAvailable: Boolean(bottleneckSignalResult),
+    });
+    await recordPriorityDedupAudit({
+      userId,
+      tenantId: user?.tenantId,
+      priorityResult: missionAuthority.priorityResult,
+    });
+    return missionAuthority;
   },
 };

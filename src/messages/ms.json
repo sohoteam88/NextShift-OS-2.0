@@ -20,6 +20,55 @@
     "yes": "Ya",
     "no": "Tidak"
   },
+  "activation": {
+    "dashboard": {
+      "firstValue": "Nilai Pertama",
+      "state": "Status",
+      "noTimer": "Tiada pemasa",
+      "hoursLeft": "{hours}j lagi"
+    }
+  },
+  "success": {
+    "dashboard": {
+      "currentOutcome": "Hasil Semasa",
+      "progress": "Kemajuan",
+      "currentResult": "Keputusan Semasa",
+      "nextMilestone": "Milestone Seterusnya"
+    }
+  },
+  "retention": {
+    "dashboard": {
+      "currentLevel": "Tahap Semasa",
+      "nextOutcome": "Hasil Seterusnya",
+      "momentum": "Momentum",
+      "recentWins": "Kemenangan Terkini"
+    }
+  },
+  "expansion": {
+    "dashboard": {
+      "currentLevel": "Tahap Pengembangan",
+      "recentGrowth": "Pertumbuhan Terkini",
+      "nextOpportunity": "Peluang Seterusnya",
+      "progress": "Kemajuan Pengembangan"
+    }
+  },
+  "referral": {
+    "dashboard": {
+      "referralLevel": "Tahap Referral",
+      "successfulReferrals": "Referral Berjaya",
+      "pendingReferrals": "Referral Menunggu",
+      "nextOpportunity": "Peluang Seterusnya"
+    }
+  },
+  "health": {
+    "dashboard": {
+      "healthLevel": "Tahap Kesihatan",
+      "trend": "Trend Kesihatan",
+      "topDrivers": "Pemacu Utama",
+      "topRisks": "Risiko Utama",
+      "recommendedAction": "Tindakan Disyorkan"
+    }
+  },
   "auth": {
     "login": "Log Masuk",
     "logout": "Log Keluar",

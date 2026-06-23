@@ -20,6 +20,55 @@
     "yes": "是",
     "no": "否"
   },
+  "activation": {
+    "dashboard": {
+      "firstValue": "第一个成果",
+      "state": "状态",
+      "noTimer": "无计时",
+      "hoursLeft": "剩余 {hours} 小时"
+    }
+  },
+  "success": {
+    "dashboard": {
+      "currentOutcome": "当前成果",
+      "progress": "进度",
+      "currentResult": "当前结果",
+      "nextMilestone": "下一里程碑"
+    }
+  },
+  "retention": {
+    "dashboard": {
+      "currentLevel": "当前留存层级",
+      "nextOutcome": "下一个成果",
+      "momentum": "动能",
+      "recentWins": "近期成果"
+    }
+  },
+  "expansion": {
+    "dashboard": {
+      "currentLevel": "当前扩张层级",
+      "recentGrowth": "近期增长",
+      "nextOpportunity": "下一扩张机会",
+      "progress": "扩张进度"
+    }
+  },
+  "referral": {
+    "dashboard": {
+      "referralLevel": "推荐层级",
+      "successfulReferrals": "成功推荐",
+      "pendingReferrals": "待激活推荐",
+      "nextOpportunity": "下一推荐机会"
+    }
+  },
+  "health": {
+    "dashboard": {
+      "healthLevel": "健康层级",
+      "trend": "健康趋势",
+      "topDrivers": "主要驱动",
+      "topRisks": "主要风险",
+      "recommendedAction": "建议行动"
+    }
+  },
   "auth": {
     "login": "登录",
     "logout": "退出",

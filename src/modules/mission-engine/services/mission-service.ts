@@ -87,9 +87,9 @@ const TASK_MAP: Record<string, MissionTask[]> = {
     { key: 'ai_assistants', label: 'AI 助手', route: '/ai-workforce', completed: false },
   ],
   team_scaling: [
-    { key: 'recruitment', label: '招募成员', route: '/team', completed: false },
-    { key: 'team_management', label: '团队管理', route: '/team', completed: false },
-    { key: 'leadership', label: '领导力', route: '/team', completed: false },
+    { key: 'recruitment', label: '招募成员', route: '/team/growth', completed: false },
+    { key: 'team_management', label: '团队管理', route: '/team/growth', completed: false },
+    { key: 'leadership', label: '领导力', route: '/team/growth', completed: false },
   ],
 };
 

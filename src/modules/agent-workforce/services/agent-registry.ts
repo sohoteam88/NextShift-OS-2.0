@@ -74,6 +74,24 @@ export const WORKFORCE_AGENT_REGISTRY: Record<WorkforceAgentType, WorkforceAgent
     priority: 78,
     availability: 'available',
   },
+  offer_agent: {
+    agentType: 'offer_agent',
+    runtimeAgentId: 'ceo_advisor',
+    name: 'Offer Agent',
+    capabilities: ['offer review', 'objection analysis', 'pricing suggestions'],
+    supportedActions: ['TASK_CREATION'],
+    priority: 76,
+    availability: 'available',
+  },
+  sop_generator_agent: {
+    agentType: 'sop_generator_agent',
+    runtimeAgentId: 'ceo_advisor',
+    name: 'SOP Generator Agent',
+    capabilities: ['SOP generation', 'process documentation', 'handoff planning'],
+    supportedActions: ['TASK_CREATION'],
+    priority: 72,
+    availability: 'available',
+  },
 };
 
 export function getWorkforceAgents(): WorkforceAgentDefinition[] {

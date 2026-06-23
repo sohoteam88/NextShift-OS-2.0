@@ -122,7 +122,7 @@ export function JourneyProgressCard({ steps }: JourneyProgressCardProps) {
             <p className="mt-3 text-sm font-semibold">{step.label}</p>
             <p className="mt-2 text-xs leading-relaxed">
               {step.status === 'completed'
-                ? '已经成为 AI COO 的判断基础。'
+                ? '已经成为后续建议的判断基础。'
                 : step.status === 'current'
                   ? '现在只专注推进这一项。'
                   : '完成当前任务后才展开。'}

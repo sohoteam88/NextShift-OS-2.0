@@ -17,6 +17,24 @@ export function retentionRiskFor(days: number): RetentionRisk {
   return 'low';
 }
 
+export function outcomeDaysInactive(facts: RetentionFacts) {
+  if (!facts.lastOutcomeAt) return null;
+  return daysBetween(facts.lastOutcomeAt, new Date(facts.generatedAt));
+}
+
+export function outcomeRetentionRiskFor(facts: RetentionFacts): RetentionRisk {
+  const daysSinceOutcome = outcomeDaysInactive(facts);
+  const outcomeCount = facts.outcomeCompletionCount ?? 0;
+  const missionDaysInactive = daysInactive(facts);
+
+  if (outcomeCount === 0) return retentionRiskFor(missionDaysInactive);
+  if (daysSinceOutcome !== null && daysSinceOutcome >= 30) return 'critical';
+  if (daysSinceOutcome !== null && daysSinceOutcome >= 14) return 'high';
+  if (missionDaysInactive >= 14) return 'high';
+  if ((facts.currentOutcomeProgressPercentage ?? 0) === 0 && daysSinceOutcome !== null && daysSinceOutcome >= 7) return 'medium';
+  return 'low';
+}
+
 export function retentionStateFor(input: { facts: RetentionFacts; retentionScore: number; momentumScore: number }): RetentionState {
   const inactiveDays = daysInactive(input.facts);
   const accountAgeDays = daysBetween(input.facts.userCreatedAt, new Date(input.facts.generatedAt));

@@ -52,6 +52,15 @@ function facts(patch: Partial<ReferralFacts> = {}): ReferralFacts {
       businessMode: 'retail',
       expansionScore: 78,
       expansionStage: 'scaling',
+      expansionState: {
+        currentExpansionStage: 'scaling',
+        expansionLevel: 'SCALING',
+        expansionLevelLabel: 'Scaling',
+        expansionProgress: 72,
+        nextExpansionOpportunity: 'RETENTION_SYSTEM',
+        nextExpansionOpportunityLabel: 'Build retention system',
+        expanding: true,
+      },
       currentGrowthLever: {
         lever: 'customer_growth',
         title: '提高客户获取',
@@ -63,8 +72,42 @@ function facts(patch: Partial<ReferralFacts> = {}): ReferralFacts {
         status: 'scale_ready',
         reason: 'Ready to scale.',
       },
-      expansionOpportunities: [],
+      expansionOpportunity: {
+        id: 'expand_customer_growth',
+        lever: 'customer_growth',
+        opportunity: 'RETENTION_SYSTEM',
+        title: 'Build retention system',
+        reason: 'Customer growth is moving.',
+        route: '/customers',
+        priority: 'high',
+        expectedMetricLift: 'Increase customer growth rate.',
+        personalizedBy: ['businessMode', 'stage', 'region'],
+      },
+      expansionOpportunities: [
+        {
+          id: 'expand_customer_growth',
+          lever: 'customer_growth',
+          opportunity: 'RETENTION_SYSTEM',
+          title: 'Build retention system',
+          reason: 'Customer growth is moving.',
+          route: '/customers',
+          priority: 'high',
+          expectedMetricLift: 'Increase customer growth rate.',
+          personalizedBy: ['businessMode', 'stage', 'region'],
+        },
+      ],
       expansionRisks: [],
+      expansionRecovery: {
+        needed: false,
+        riskCode: 'none',
+        action: 'expansion_outcome',
+        title: 'Recommend expansion outcome',
+        reason: 'The user is ready for the next larger business outcome.',
+        route: '/customers',
+      },
+      expansionCelebrations: [
+        { id: 'first_revenue', title: 'First revenue achieved', occurredAt: '2026-06-19T00:00:00.000Z' },
+      ],
       nextGrowthMilestone: {
         title: 'Reach 4 customers',
         metric: 'customer_growth',
@@ -85,6 +128,21 @@ function facts(patch: Partial<ReferralFacts> = {}): ReferralFacts {
         customerGrowthRate: 200,
         teamGrowthRate: 0,
         expansionSuccessRate: 78,
+        expansionRate: 100,
+        outcomeProgressionRate: 60,
+        expansionOpportunityAdoption: 72,
+      },
+      localization: {
+        locale: 'en',
+        source: 'systemDefault',
+        translationSource: 'registry',
+        fallbackUsed: false,
+        messageKeys: ['expansion.level.SCALING'],
+      },
+      personalization: {
+        businessModel: 'retail',
+        stage: 'scaling',
+        locale: 'en',
       },
     },
     retentionProjection: {
@@ -98,6 +156,34 @@ function facts(patch: Partial<ReferralFacts> = {}): ReferralFacts {
       retentionRisk: 'low',
       momentumScore: 82,
       currentMomentum: 'Strong',
+      outcomeRetention: {
+        currentStage: 'RETAINED',
+        retentionLevel: 'RETAINED',
+        retentionLevelLabel: 'Retained',
+        progressPercentage: 100,
+        nextOutcome: 'FIRST_REVENUE',
+        retained: true,
+      },
+      outcomeRecommendation: {
+        outcome: 'FIRST_REVENUE',
+        label: 'Generate First Revenue',
+        reason: 'The user is ready for the next business outcome.',
+        route: '/mission',
+      },
+      retentionRecovery: {
+        needed: false,
+        action: 'recommend_next_outcome',
+        title: 'Recommend next outcome',
+        reason: 'The user is ready for the next business outcome.',
+        route: '/mission',
+      },
+      localization: {
+        locale: 'en',
+        localeSource: 'systemDefault',
+        translationSource: 'registry',
+        fallbackUsed: false,
+        messageKeys: ['retention.level.RETAINED'],
+      },
       currentStreak: 8,
       daysInactive: 0,
       inactivityFlag: 'none',
@@ -137,27 +223,78 @@ function facts(patch: Partial<ReferralFacts> = {}): ReferralFacts {
     referralInvitesCreated: 2,
     referralInvitesUsed: 1,
     referralLeads: 2,
-    referredMembers: 0,
+    referredMembers: 1,
+    activatedReferrals: 1,
+    successfulReferrals: 1,
+    pendingReferrals: 1,
+    ignoredReferralRequests: 0,
+    referralAttribution: [
+      {
+        referralUserId: 'referred-user-1',
+        source: 'invite_code',
+        activated: true,
+        successful: true,
+        activatedAt: '2026-06-19T00:00:00.000Z',
+      },
+    ],
     positiveSatisfactionSignals: 2,
     negativeSatisfactionSignals: 0,
     ...patch,
   };
 }
 
-describe('CUSTOMER-005 referral engine', () => {
+describe('PRODUCT-008 referral engine', () => {
   it('marks successful retail users as referral advocates', () => {
     const projection = buildReferralProjection(facts());
 
     expect(projection.referralScore).toBeGreaterThanOrEqual(70);
-    expect(['advocate', 'champion']).toContain(projection.referralReadiness);
-    expect(projection.referralOpportunities[0]).toMatchObject({
-      type: 'customer_referral',
-      title: '启动顾客转介绍',
+    expect(['advocate', 'ambassador', 'champion']).toContain(projection.referralReadiness);
+    expect(projection.referralState).toMatchObject({
+      referralReady: true,
+      referralLevel: 'ADVOCATE',
+      referralCount: 2,
+      successfulReferrals: 1,
+      pendingReferrals: 1,
+      nextReferralOpportunity: 'invite_friend',
+    });
+    expect(projection.referralRecommendation).toMatchObject({
+      type: 'invite_friend',
     });
     expect(projection.kpis).toMatchObject({
       referralRate: 100,
       referralConversionRate: 50,
       advocateRate: 100,
+      activatedReferralRate: 50,
+    });
+  });
+
+  it('does not count invites or leads as successful referrals before referred user activation', () => {
+    const projection = buildReferralProjection(facts({
+      activatedReferrals: 0,
+      successfulReferrals: 0,
+      referredMembers: 1,
+      pendingReferrals: 3,
+      referralAttribution: [
+        {
+          referralUserId: 'referred-user-1',
+          source: 'invite_code',
+          activated: false,
+          successful: false,
+          activatedAt: null,
+        },
+      ],
+    }));
+
+    expect(projection.referralReadiness).toBe('ready');
+    expect(projection.referralState).toMatchObject({
+      referralLevel: 'READY',
+      successfulReferrals: 0,
+      pendingReferrals: 3,
+    });
+    expect(projection.kpis).toMatchObject({
+      referralConversionRate: 0,
+      successfulReferralRate: 0,
+      activatedReferralRate: 0,
     });
   });
 
@@ -167,6 +304,11 @@ describe('CUSTOMER-005 referral engine', () => {
       referralInvitesCreated: 0,
       referralInvitesUsed: 0,
       referralLeads: 0,
+      referredMembers: 0,
+      activatedReferrals: 0,
+      successfulReferrals: 0,
+      pendingReferrals: 0,
+      referralAttribution: [],
       positiveSatisfactionSignals: 1,
     }));
 
@@ -198,13 +340,33 @@ describe('CUSTOMER-005 referral engine', () => {
       referralInvitesCreated: 0,
       referralInvitesUsed: 0,
       referralLeads: 0,
+      referredMembers: 0,
+      activatedReferrals: 0,
+      successfulReferrals: 0,
+      pendingReferrals: 0,
+      referralAttribution: [],
       positiveSatisfactionSignals: 0,
     }));
 
     expect(projection.referralReadiness).toBe('not_ready');
     expect(projection.referralRisks[0]).toMatchObject({
       code: 'referral_value_not_proven',
+      riskCode: 'NO_SUCCESS_YET',
     });
     expect(projection.nextReferralMilestone.target).toBe('Reach referral readiness: ready');
+  });
+
+  it('detects ignored referral request risk and reduces frequency', () => {
+    const projection = buildReferralProjection(facts({
+      referralInvitesCreated: 5,
+      referralInvitesUsed: 0,
+      activatedReferrals: 0,
+      successfulReferrals: 0,
+      pendingReferrals: 5,
+      ignoredReferralRequests: 5,
+      referralAttribution: [],
+    }));
+
+    expect(projection.referralRisks.some((risk) => risk.riskCode === 'REFERRAL_REQUESTS_IGNORED')).toBe(true);
   });
 });

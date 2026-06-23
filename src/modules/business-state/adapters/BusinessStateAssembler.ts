@@ -7,7 +7,7 @@ import { extractCheckKeys } from '@/modules/mission/utils/completed-checks';
 import type { BusinessState } from '../contracts/BusinessState';
 import type { BusinessBottleneck } from '../contracts/BusinessBottleneck';
 import type { BusinessOpportunity } from '../contracts/BusinessOpportunity';
-import type { BusinessCapabilityState, BusinessStateResult } from '../contracts/BusinessStateResult';
+import type { BusinessStateResult } from '../contracts/BusinessStateResult';
 import type { ReadinessScore } from '../contracts/ReadinessScore';
 import type { BusinessStateAdapterResult } from './business-state-adapter-diagnostics';
 import { createReadinessScore } from './business-state-adapter-diagnostics';
@@ -17,6 +17,7 @@ import { adaptMissionStage } from './MissionStageAdapter';
 import { adaptSocialReadiness } from './SocialReadinessAdapter';
 import { adaptTrafficReadiness } from './TrafficReadinessAdapter';
 import { resolveBusinessStateResult, type BusinessStateCapabilityFacts } from '../services/business-state-capability-engine';
+import { BottleneckAuthority } from '@/modules/mission-engine/services/BottleneckAuthority';
 
 const SEVERITY_RANK: Record<BusinessBottleneck['severity'], number> = {
   high: 3,
@@ -75,32 +76,6 @@ function toFunnelBusinessMode(projection: InterviewAuthorityProjection): Busines
 
 function hasAny(checks: Set<string>, values: string[]) {
   return values.some((value) => checks.has(value));
-}
-
-function toCanonicalBottleneck(stateResult: BusinessStateResult): BusinessBottleneck {
-  const firstMissing = stateResult.missingRequirements[0] ?? 'Next capability';
-  const domainByState: Record<BusinessCapabilityState, BusinessBottleneck['domain']> = {
-    BRAND_FOUNDATION: 'brand',
-    BRAND_POSITIONING: 'brand',
-    CONTENT_SYSTEM: 'content',
-    LEAD_MAGNET: 'funnel',
-    FUNNEL: 'funnel',
-    LEAD_GENERATION: 'traffic',
-    SALES: 'sales',
-    TEAM_BUILDING: 'sales',
-  };
-
-  return {
-    source: 'BusinessStateCapabilityEngine',
-    scope: 'user',
-    confidence: 'derived',
-    fallback: 'none',
-    code: `capability_${stateResult.currentState.toLowerCase()}`,
-    title: `Complete ${stateResult.currentState.replaceAll('_', ' ').toLowerCase()}`,
-    description: stateResult.explainability.reason || `Missing requirement: ${firstMissing}.`,
-    severity: stateResult.currentState === 'BRAND_FOUNDATION' ? 'high' : 'medium',
-    domain: domainByState[stateResult.currentState],
-  };
 }
 
 async function readCapabilityFacts(
@@ -194,7 +169,7 @@ export async function assembleBusinessState(user: AuthUser): Promise<BusinessSta
   const stateResult = resolveBusinessStateResult(capabilityFacts);
 
   const stage = adapterResults.find((result) => result.stage)?.stage ?? 'foundation';
-  const bottlenecks = mergeByCode([toCanonicalBottleneck(stateResult), ...adapterResults.flatMap((result) => result.bottlenecks)])
+  const bottlenecks = mergeByCode([BottleneckAuthority.toBusinessBottleneck(stateResult), ...adapterResults.flatMap((result) => result.bottlenecks)])
     .sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   const opportunities = mergeByCode(adapterResults.flatMap((result) => result.opportunities))
     .sort((a, b) => IMPACT_RANK[b.impact] - IMPACT_RANK[a.impact]);

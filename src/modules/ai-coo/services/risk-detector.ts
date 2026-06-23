@@ -10,6 +10,8 @@ import type { RetentionProjection } from '@/modules/retention/contracts/Retentio
 import type { ValueProjection } from '@/modules/value/contracts/ValueProjection';
 import type { ExpansionProjection } from '@/modules/expansion/contracts/ExpansionProjection';
 import type { ReferralProjection } from '@/modules/referral/contracts/ReferralProjection';
+import type { UserSuccessProjection } from '@/modules/user-success/contracts/UserSuccessProjection';
+import type { CustomerHealthProjection } from '@/modules/customer-health/contracts/CustomerHealthProjection';
 import type { AICOODecisionSignal } from '../contracts/AICOODecision';
 
 function priorityRank(priority: AICOODecisionSignal['priority']) {
@@ -27,18 +29,50 @@ export function detectRisks(input: {
   activationProjection?: ActivationProjection;
   retentionProjection?: RetentionProjection;
   valueProjection?: ValueProjection;
+  userSuccessProjection?: UserSuccessProjection;
   expansionProjection?: ExpansionProjection;
   referralProjection?: ReferralProjection;
+  customerHealthProjection?: CustomerHealthProjection;
 }): AICOODecisionSignal[] {
   const risks: AICOODecisionSignal[] = [];
 
-  if (input.activationProjection && input.activationProjection.activationScore < input.activationProjection.activationThreshold) {
+  if (
+    input.customerHealthProjection
+    && input.customerHealthProjection.customerHealth.interventionRequired
+  ) {
+    const primaryRisk = input.customerHealthProjection.customerHealth.riskFactors[0];
     risks.push({
-      code: `activation_${input.activationProjection.dropOffStage}`,
-      title: 'Activation incomplete',
-      reason: `Activation score is ${input.activationProjection.activationScore}. Current drop-off stage: ${input.activationProjection.dropOffStage}.`,
-      domain: input.activationProjection.currentStep.id === 'first_lead_captured' ? 'traffic' : 'operations',
-      priority: input.activationProjection.activationRisk === 'critical'
+      code: `health_${input.customerHealthProjection.customerHealth.healthLevel.toLowerCase()}`,
+      title: input.customerHealthProjection.recommendedAction.title,
+      reason: primaryRisk?.reason ?? input.customerHealthProjection.recommendedAction.reason,
+      domain: primaryRisk?.type === 'expansion_plateau'
+        ? 'sales'
+        : primaryRisk?.type === 'referral_blocked'
+          ? 'crm'
+          : primaryRisk?.type === 'low_asset_utilization'
+            ? 'content'
+            : 'operations',
+      priority: input.customerHealthProjection.customerHealth.healthLevel === 'CRITICAL' ? 'critical' : 'high',
+    });
+  }
+
+  if (
+    input.activationProjection
+    && input.activationProjection.activationScore < input.activationProjection.activationThreshold
+    && input.activationProjection.dropOffRisk.state !== 'ON_TRACK'
+    && input.activationProjection.dropOffRisk.state !== 'ACTIVATED'
+  ) {
+    risks.push({
+      code: `activation_${input.activationProjection.dropOffRisk.state.toLowerCase()}_${input.activationProjection.activationState.currentStep.toLowerCase()}`,
+      title: input.activationProjection.localization.aiCooRiskTitle,
+      reason: input.activationProjection.localization.aiCooRiskReason,
+      domain: input.activationProjection.activationState.currentStep === 'FIRST_OUTCOME'
+        || input.activationProjection.activationState.currentStep === 'ACTIVATED'
+        ? 'traffic'
+        : 'operations',
+      priority: input.activationProjection.dropOffRisk.state === 'DROPPED_OFF'
+        ? 'high'
+        : input.activationProjection.activationRisk === 'critical'
         ? 'critical'
         : input.activationProjection.activationRisk === 'high'
           ? 'high'
@@ -62,12 +96,35 @@ export function detectRisks(input: {
     });
   }
 
+  if (
+    input.userSuccessProjection
+    && input.userSuccessProjection.successState.successLevel !== 'SUCCESSFUL'
+    && (input.userSuccessProjection.successState.successLevel === 'AT_RISK'
+      || input.userSuccessProjection.successState.successLevel === 'BLOCKED')
+  ) {
+    const blocker = input.userSuccessProjection.blockers[0];
+    risks.push({
+      code: `success_${input.userSuccessProjection.successState.successLevel.toLowerCase()}_${input.userSuccessProjection.successState.currentOutcome.toLowerCase()}`,
+      title: blocker?.title ?? 'User success outcome stalled',
+      reason: blocker?.reason ?? `${input.userSuccessProjection.currentOutcome.label} is not achieved yet.`,
+      domain: input.userSuccessProjection.successState.currentOutcome === 'FIRST_CUSTOMER'
+        || input.userSuccessProjection.successState.currentOutcome === 'FIRST_REVENUE'
+        ? 'sales'
+        : input.userSuccessProjection.successState.currentOutcome === 'TEAM_SCALING'
+          ? 'team'
+          : input.userSuccessProjection.successState.currentOutcome === 'AUTHORITY_BUILDING'
+            ? 'content'
+            : 'traffic',
+      priority: input.userSuccessProjection.successState.successLevel === 'BLOCKED' ? 'high' : 'medium',
+    });
+  }
+
   if (input.expansionProjection?.expansionRisks[0]) {
     const risk = input.expansionProjection.expansionRisks[0];
     risks.push({
       code: risk.code,
-      title: risk.title,
-      reason: `${risk.reason} Scale readiness is ${input.expansionProjection.scaleReadiness.score}.`,
+      title: input.expansionProjection.expansionRecovery.title,
+      reason: `${input.expansionProjection.expansionRecovery.reason} Scale readiness is ${input.expansionProjection.scaleReadiness.score}.`,
       domain: risk.lever === 'content_growth' || risk.lever === 'audience_growth'
         ? 'content'
         : risk.lever === 'lead_growth'
@@ -84,7 +141,7 @@ export function detectRisks(input: {
     risks.push({
       code: risk.code,
       title: risk.title,
-      reason: `${risk.reason} Referral score is ${input.referralProjection.referralScore}.`,
+      reason: `${risk.reason} Referral level is ${input.referralProjection.referralState.referralLevel}.`,
       domain: risk.code.includes('value')
         ? 'sales'
         : risk.code.includes('retention')
@@ -94,11 +151,11 @@ export function detectRisks(input: {
     });
   }
 
-  if (input.retentionProjection?.reEngagement.needed) {
+  if (input.retentionProjection?.retentionRecovery.needed || input.retentionProjection?.reEngagement.needed) {
     risks.push({
-      code: `retention_${input.retentionProjection.inactivityFlag}`,
-      title: 'Retention risk increasing',
-      reason: `${input.retentionProjection.daysInactive} days inactive. Retention score is ${input.retentionProjection.retentionScore}.`,
+      code: `retention_${input.retentionProjection.outcomeRetention.retentionLevel.toLowerCase()}`,
+      title: input.retentionProjection.retentionRecovery.title,
+      reason: input.retentionProjection.retentionRecovery.reason,
       domain: 'operations',
       priority: input.retentionProjection.retentionRisk,
     });

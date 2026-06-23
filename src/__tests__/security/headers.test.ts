@@ -23,6 +23,10 @@ describe('Security Headers', () => {
     expect(getSecurityHeaders()['Content-Security-Policy']).toContain("default-src 'self'");
   });
 
+  it('does not allow eval in non-development CSP', () => {
+    expect(getSecurityHeaders()['Content-Security-Policy']).not.toContain("'unsafe-eval'");
+  });
+
   it('CORS only allows known origins', () => {
     expect(isAllowedOrigin('https://app.nextshift.app', 'nextshift.app')).toBe(true);
     expect(isAllowedOrigin('https://tenant.nextshift.app', 'nextshift.app')).toBe(true);

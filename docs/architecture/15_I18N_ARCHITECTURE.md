@@ -26,8 +26,8 @@ Ensure every user-facing string, AI output, and dynamic content renders in the u
 | Library | next-intl | First-class Next.js App Router support, server component compatible |
 | Translation format | JSON (flat key-value) | Simple, diffable, AI-friendly for batch translation |
 | Key convention | `module.section.key` | e.g. `crm.lead.addNote` |
-| Default locale | `zh` | Primary market is Chinese-speaking Malaysian users |
-| Fallback chain | User pref → `zh` | Always show something |
+| Default locale | `en` | PRODUCT-003 defines English as the system default when user, tenant, and browser locale are unavailable |
+| Fallback chain | User pref → tenant setting → browser locale → `en` | Always show localized copy without exposing raw keys |
 | AI output language | Explicit `language` param in every prompt | See `09_AI_ARCHITECTURE.md` |
 
 ---
@@ -107,7 +107,7 @@ Middleware reads cookie → sets `next-intl` locale.
 Funnel pages use path-based locale:
 
 ```
-/{tenant_slug}/funnel/{funnel_slug}          → default zh
+/{tenant_slug}/funnel/{funnel_slug}          → default en
 /{tenant_slug}/funnel/{funnel_slug}?lang=en  → English
 /{tenant_slug}/funnel/{funnel_slug}?lang=ms  → Malay
 ```
@@ -206,7 +206,7 @@ Rendering picks `content[currentLocale]` with fallback to `content.zh`.
 }
 ```
 
-Production: fallback to `zh` value silently.
+Production: fallback to `en` value silently and log missing keys for localization coverage audits.
 
 ### 9.3 Batch Translation Script
 

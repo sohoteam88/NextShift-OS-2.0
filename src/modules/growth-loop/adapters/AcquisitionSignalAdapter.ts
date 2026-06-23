@@ -73,7 +73,7 @@ export function adaptAcquisitionSignals(input: AcquisitionSignalInput): Acquisit
         type: 'funnel',
         name: 'Funnels',
         status: input.publishedFunnelCount > 0 ? 'published' : input.funnelCount > 0 ? 'draft' : 'missing',
-        route: '/funnels',
+        route: '/funnel',
       },
       {
         id: 'content',

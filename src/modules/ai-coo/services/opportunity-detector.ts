@@ -129,8 +129,8 @@ export function detectOpportunities(input: {
     });
   }
 
-  if (input.expansionProjection?.expansionOpportunities[0] && input.expansionProjection.scaleReadiness.status !== 'not_ready') {
-    const opportunity = input.expansionProjection.expansionOpportunities[0];
+  if (input.expansionProjection?.expansionOpportunity && input.expansionProjection.scaleReadiness.status !== 'not_ready') {
+    const opportunity = input.expansionProjection.expansionOpportunity;
     opportunities.push({
       code: `expansion_${opportunity.lever}`,
       title: opportunity.title,
@@ -146,8 +146,8 @@ export function detectOpportunities(input: {
     });
   }
 
-  if (input.referralProjection?.referralOpportunities[0] && ['ready', 'advocate', 'champion'].includes(input.referralProjection.referralReadiness)) {
-    const opportunity = input.referralProjection.referralOpportunities[0];
+  if (input.referralProjection?.referralRecommendation && ['ready', 'advocate', 'ambassador', 'champion'].includes(input.referralProjection.referralReadiness)) {
+    const opportunity = input.referralProjection.referralRecommendation;
     opportunities.push({
       code: `referral_${opportunity.type}`,
       title: opportunity.title,

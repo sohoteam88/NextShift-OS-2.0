@@ -54,6 +54,34 @@ function facts(patch: Partial<ExpansionFacts> = {}): ExpansionFacts {
       retentionRisk: 'low',
       momentumScore: 75,
       currentMomentum: 'Active',
+      outcomeRetention: {
+        currentStage: 'RETAINED',
+        retentionLevel: 'RETAINED',
+        retentionLevelLabel: 'Retained',
+        progressPercentage: 100,
+        nextOutcome: 'FIRST_REVENUE',
+        retained: true,
+      },
+      outcomeRecommendation: {
+        outcome: 'FIRST_REVENUE',
+        label: 'Generate First Revenue',
+        reason: 'The user is ready for the next business outcome.',
+        route: '/mission',
+      },
+      retentionRecovery: {
+        needed: false,
+        action: 'recommend_next_outcome',
+        title: 'Recommend next outcome',
+        reason: 'The user is ready for the next business outcome.',
+        route: '/mission',
+      },
+      localization: {
+        locale: 'en',
+        localeSource: 'systemDefault',
+        translationSource: 'registry',
+        fallbackUsed: false,
+        messageKeys: ['retention.level.RETAINED'],
+      },
       currentStreak: 5,
       daysInactive: 1,
       inactivityFlag: 'none',
@@ -107,11 +135,17 @@ describe('CUSTOMER-004 expansion engine', () => {
     expect(['scaling', 'optimizing']).toContain(projection.expansionStage);
     expect(projection.currentGrowthLever.lever).toBe('customer_growth');
     expect(projection.scaleReadiness.status).not.toBe('not_ready');
+    expect(projection.expansionState).toMatchObject({
+      expansionLevel: 'SCALING',
+      nextExpansionOpportunity: 'RETENTION_SYSTEM',
+    });
+    expect(projection.expansionOpportunity.opportunity).toBe('RETENTION_SYSTEM');
     expect(projection.kpis).toMatchObject({
       leadGrowthRate: 100,
       customerGrowthRate: 100,
       revenueGrowthRate: 100,
     });
+    expect(projection.kpis.expansionOpportunityAdoption).toBeGreaterThanOrEqual(70);
   });
 
   it('uses creator content and audience levers', () => {
@@ -154,8 +188,67 @@ describe('CUSTOMER-004 expansion engine', () => {
 
     expect(projection.expansionRisks[0]).toMatchObject({
       code: 'expansion_value_not_proven',
+      riskCode: 'VALUE_NOT_PROVEN',
       priority: 'high',
     });
     expect(projection.expansionStage).toBe('repeatable');
+  });
+
+  it('detects revenue plateau and recommends optimization recovery', () => {
+    const projection = buildExpansionProjection(facts({
+      lastRevenueGrowthAt: '2026-05-18T00:00:00.000Z',
+      metrics: {
+        leads: metric(5, 5),
+        customers: metric(2, 2),
+        revenue: metric(800, 800),
+        audience: metric(1200, 1000),
+        content: metric(4, 4),
+        team: metric(0, 0),
+      },
+    }));
+
+    expect(projection.expansionRisks[0]).toMatchObject({
+      code: 'expansion_plateau',
+      riskCode: 'PLATEAU',
+    });
+    expect(projection.expansionRecovery).toMatchObject({
+      needed: true,
+      action: 'optimization_mission',
+    });
+  });
+
+  it('detects stalled outcome growth after 45 days', () => {
+    const projection = buildExpansionProjection(facts({
+      lastOutcomeAt: '2026-05-01T00:00:00.000Z',
+      outcomeCount: 2,
+    }));
+
+    expect(projection.expansionRisks[0]).toMatchObject({
+      code: 'expansion_stalled_growth',
+      riskCode: 'STALLED_GROWTH',
+    });
+    expect(projection.expansionRecovery.action).toBe('growth_mission');
+  });
+
+  it('detects blocked scaling when team progress stalls for 60 days', () => {
+    const projection = buildExpansionProjection(facts({
+      lastTeamProgressAt: '2026-04-01T00:00:00.000Z',
+      outcomeCount: 4,
+      metrics: {
+        leads: metric(10, 8),
+        customers: metric(4, 3),
+        revenue: metric(1400, 1000),
+        audience: metric(1800, 1200),
+        content: metric(6, 4),
+        team: metric(1, 1),
+      },
+    }));
+
+    expect(projection.expansionRisks[0]).toMatchObject({
+      code: 'expansion_scaling_blocked',
+      riskCode: 'SCALING_BLOCKED',
+    });
+    expect(projection.expansionState.expansionLevel).toBe('LEADING');
+    expect(projection.expansionRecovery.action).toBe('workforce_assistance');
   });
 });

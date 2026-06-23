@@ -128,10 +128,10 @@ export const ADVANCED_SIDEBAR: MissionSidebarItem[] = [
     label_zh: '分析成长',
     label_en: 'Analytics & Growth',
     label_ms: 'Analitik',
-    route: '/team',
+    route: '/team/growth',
     children: [
       { icon: 'Brain', label_zh: 'AI COO', label_en: 'AI COO', label_ms: 'AI COO', route: CANONICAL_ROUTES.ceoMode },
-      { icon: 'Users', label_zh: '团队成长', label_en: 'Team Growth', label_ms: 'Pertumbuhan Pasukan', route: '/team' },
+      { icon: 'Users', label_zh: '团队成长', label_en: 'Team Growth', label_ms: 'Pertumbuhan Pasukan', route: '/team/growth' },
       { icon: 'BarChart3', label_zh: '数据分析', label_en: 'Analytics', label_ms: 'Analitik', route: '/analytics' },
       { icon: 'BookOpenCheck', label_zh: '培训', label_en: 'Training', label_ms: 'Latihan', route: '/member?view=training' },
       { icon: 'Activity', label_zh: '每日行动', label_en: 'Daily Actions', label_ms: 'Tindakan Harian', route: '/member/daily-actions' },

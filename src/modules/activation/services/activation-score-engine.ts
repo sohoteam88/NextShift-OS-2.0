@@ -1,4 +1,4 @@
-import type { ActivationStepId } from '../contracts/ActivationProjection';
+import type { ActivationFunnelStepId, ActivationStepId } from '../contracts/ActivationProjection';
 
 export type ActivationFacts = {
   userCreatedAt: Date;
@@ -9,17 +9,12 @@ export type ActivationFacts = {
   firstLeadCapturedAt: Date | null;
   leadMagnetGeneratedAt: Date | null;
   landingPagePublishedAt: Date | null;
+  firstMissionStartedAt: Date | null;
+  firstAssetGeneratedAt: Date | null;
+  firstAssetReviewedAt: Date | null;
+  firstOutcomeVerifiedAt: Date | null;
   lastActivityAt: Date | null;
   generatedAt: string;
-};
-
-const STEP_WEIGHTS: Record<ActivationStepId, number> = {
-  account_created: 10,
-  interview_started: 15,
-  interview_completed: 20,
-  brand_dna_generated: 25,
-  first_content_generated: 20,
-  first_lead_captured: 10,
 };
 
 export function completedActivationSteps(facts: ActivationFacts): Set<ActivationStepId> {
@@ -32,7 +27,34 @@ export function completedActivationSteps(facts: ActivationFacts): Set<Activation
   return completed;
 }
 
+export function completedActivationFunnelSteps(facts: ActivationFacts): Set<ActivationFunnelStepId> {
+  const completed = new Set<ActivationFunnelStepId>(['SIGNUP']);
+  if (facts.interviewCompletedAt) completed.add('AI_INTERVIEW');
+  if (facts.brandDnaGeneratedAt) completed.add('BUSINESS_ANALYSIS');
+  if (facts.firstMissionStartedAt) completed.add('FIRST_MISSION');
+  if (facts.firstAssetGeneratedAt ?? facts.firstContentGeneratedAt ?? facts.leadMagnetGeneratedAt ?? facts.landingPagePublishedAt) {
+    completed.add('FIRST_ASSET');
+  }
+  if (facts.firstOutcomeVerifiedAt ?? facts.firstLeadCapturedAt) completed.add('FIRST_OUTCOME');
+  if (facts.firstOutcomeVerifiedAt) completed.add('ACTIVATED');
+  return completed;
+}
+
+export function getActivationFunnelCurrentStep(facts: ActivationFacts): ActivationFunnelStepId {
+  const completed = completedActivationFunnelSteps(facts);
+  const order: ActivationFunnelStepId[] = [
+    'SIGNUP',
+    'AI_INTERVIEW',
+    'BUSINESS_ANALYSIS',
+    'FIRST_MISSION',
+    'FIRST_ASSET',
+    'FIRST_OUTCOME',
+    'ACTIVATED',
+  ];
+  return order.find((step) => !completed.has(step)) ?? 'ACTIVATED';
+}
+
 export function calculateActivationScore(facts: ActivationFacts): number {
-  const completed = completedActivationSteps(facts);
-  return Array.from(completed).reduce((score, step) => score + STEP_WEIGHTS[step], 0);
+  const completed = completedActivationFunnelSteps(facts);
+  return Math.round((completed.size / 7) * 100);
 }

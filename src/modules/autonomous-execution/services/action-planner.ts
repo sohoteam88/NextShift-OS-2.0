@@ -1,6 +1,7 @@
 import type { AICOODecision } from '@/modules/ai-coo/contracts/AICOODecision';
 import type { AutonomousActionType, AutonomousExecutionAction } from '../contracts/AutonomousExecution';
 import { executionModeFor, requiresApproval } from './approval-manager';
+import { evaluateGuardrail, guardrailStateFor } from './guardrail-engine';
 
 function actionTypeFor(decision: AICOODecision): AutonomousActionType {
   const route = decision.nextBestAction.route ?? '';
@@ -24,6 +25,12 @@ function actionTypeFor(decision: AICOODecision): AutonomousActionType {
 export function planExecutionAction(decision: AICOODecision, now: Date = new Date()): AutonomousExecutionAction {
   const actionType = actionTypeFor(decision);
   const createdAt = now.toISOString();
+  const guardrail = evaluateGuardrail({
+    action: actionType,
+    decision,
+    affectedResources: [decision.nextBestAction.route ?? decision.recommendedMission?.route ?? decision.focusArea],
+    now,
+  });
   const executionMode = executionModeFor({ actionType, decision });
 
   return {
@@ -39,8 +46,14 @@ export function planExecutionAction(decision: AICOODecision, now: Date = new Dat
     estimatedImpact: decision.estimatedImpact,
     estimatedEffort: decision.estimatedEffort,
     successMetric: decision.successMetric,
-    state: 'queued',
+    riskClass: guardrail.risk,
+    executionLevel: guardrail.executionLevel,
+    approvalStatus: guardrail.approvalStatus,
+    approvalExpiresAt: guardrail.expiresAt,
+    guardrail,
+    state: guardrailStateFor(guardrail),
     createdAt,
     updatedAt: createdAt,
+    outcome: guardrail.allowed ? undefined : guardrail.reason,
   };
 }

@@ -10,6 +10,7 @@ import { getWorkforceAgents } from './agent-registry';
 import { routeActionsToAgents } from './agent-router';
 import { agentExecutionTracker } from './agent-execution-tracker';
 import { buildAgentPerformance } from './agent-performance-engine';
+import { WORKFORCE_AUDIT_ACTIONS } from './WorkforceOrchestrator';
 
 function confidenceFor(assignment: WorkforceAssignment): WorkforceExecutionResult['confidence'] {
   if (assignment.action.executionMode === 'autonomous') return 'high';
@@ -98,6 +99,30 @@ export const agentWorkforceService = {
     const result = buildResult(assignment);
 
     if (result.status === 'completed') {
+      await prisma.auditLog.create({
+        data: {
+          tenantId: input.tenantId,
+          actorId: input.userId,
+          action: WORKFORCE_AUDIT_ACTIONS.assignmentStarted,
+          targetType: 'agent_workforce',
+          targetId: assignment.assignmentId,
+          metadata: {
+            assignmentId: assignment.assignmentId,
+            actionId: assignment.actionId,
+            agentType: assignment.agentType,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+      if (assignment.action.state !== 'executing') {
+        await executionQueue.transition({
+          userId: input.userId,
+          tenantId: input.tenantId,
+          actionId: assignment.actionId,
+          state: 'executing',
+          outcome: `${assignment.agentType} started ${assignment.action.actionType}.`,
+        });
+      }
       await executionQueue.transition({
         userId: input.userId,
         tenantId: input.tenantId,

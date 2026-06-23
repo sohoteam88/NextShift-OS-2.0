@@ -13,6 +13,14 @@ export type RetentionFacts = {
   leadMagnetsCreated30d: number;
   funnelsLaunched30d: number;
   winsAchieved30d: number;
+  outcomeCompletionCount?: number;
+  outcomeCompletionCount30d?: number;
+  lastOutcomeAt?: Date | null;
+  currentOutcomeProgressPercentage?: number;
+  assetUtilizationCount30d?: number;
+  agentUsageCount30d?: number;
+  currentOutcome?: 'FIRST_LEAD' | 'FIRST_CUSTOMER' | 'FIRST_REVENUE' | 'RETENTION_SYSTEM' | 'TEAM_SCALING' | 'AUTHORITY_BUILDING';
+  locale?: string | null;
 };
 
 function clamp(value: number) {
@@ -44,13 +52,29 @@ export function executionConsistency(facts: RetentionFacts) {
 }
 
 export function calculateRetentionScore(facts: RetentionFacts) {
-  const inactivityPenalty = Math.min(daysInactive(facts) * 3, 45);
+  const outcomeCount = facts.outcomeCompletionCount ?? 0;
+  const outcomeVelocity = facts.outcomeCompletionCount30d ?? 0;
+  const outcomeProgress = facts.currentOutcomeProgressPercentage ?? 0;
+  const lastOutcomeAt = facts.lastOutcomeAt;
+  const daysSinceOutcome = lastOutcomeAt ? daysBetween(lastOutcomeAt, new Date(facts.generatedAt)) : null;
+  const outcomeRecencyScore = daysSinceOutcome === null
+    ? 0
+    : daysSinceOutcome <= 7
+      ? 100
+      : daysSinceOutcome <= 14
+        ? 70
+        : daysSinceOutcome <= 30
+          ? 35
+          : 0;
+  const inactivityPenalty = Math.min(daysInactive(facts) * 1.5, 30);
   const score = (
-    scoreRatio(facts.activeDays30d, 8) * 0.25 +
-    missionCompletionRate(facts) * 0.25 +
-    scoreRatio(facts.contentGenerated30d, 4) * 0.2 +
-    executionConsistency(facts) * 0.15 +
-    scoreRatio(facts.aiCooInteractions30d, 4) * 0.15
+    scoreRatio(outcomeCount, 3) * 0.25 +
+    scoreRatio(outcomeVelocity, 2) * 0.2 +
+    outcomeRecencyScore * 0.2 +
+    outcomeProgress * 0.15 +
+    missionCompletionRate(facts) * 0.1 +
+    scoreRatio(facts.assetUtilizationCount30d ?? facts.contentGenerated30d + facts.leadMagnetsCreated30d + facts.funnelsLaunched30d, 4) * 0.05 +
+    scoreRatio(facts.agentUsageCount30d ?? facts.aiCooInteractions30d, 4) * 0.05
   ) - inactivityPenalty;
 
   return clamp(score);

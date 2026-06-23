@@ -1,5 +1,11 @@
 import type { AgentId } from '@/modules/ai/types/agents';
-import type { AutonomousActionType, AutonomousExecutionAction } from '@/modules/autonomous-execution/contracts/AutonomousExecution';
+import type {
+  AutonomousActionType,
+  AutonomousExecutionAction,
+  ExecutionLevel,
+  GuardrailDecision,
+} from '@/modules/autonomous-execution/contracts/AutonomousExecution';
+import type { MissionType } from '@/modules/mission-engine/contracts/MissionAuthority';
 
 export type WorkforceAgentType =
   | 'coo_agent'
@@ -9,7 +15,9 @@ export type WorkforceAgentType =
   | 'landing_page_agent'
   | 'traffic_agent'
   | 'analytics_agent'
-  | 'crm_agent';
+  | 'crm_agent'
+  | 'offer_agent'
+  | 'sop_generator_agent';
 
 export type WorkforceTaskStatus =
   | 'assigned'
@@ -63,4 +71,48 @@ export type AgentWorkforceProjection = {
   completedAgentTasks: WorkforceExecutionResult[];
   agentPerformance: AgentPerformanceSummary[];
   currentAssignments: WorkforceAssignment[];
+};
+
+export type WorkforceMode = 'sequential' | 'parallel' | 'hybrid';
+
+export type WorkforceAssignmentQueueState =
+  | 'QUEUED'
+  | 'READY'
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'BLOCKED'
+  | 'WAITING';
+
+export type WorkforceDependencyGraphNode = {
+  assignmentId: string;
+  dependsOn: string[];
+  unlocks: string[];
+};
+
+export type WorkforcePlanAssignment = {
+  assignmentId: string;
+  agentId: string;
+  agentType: WorkforceAgentType;
+  agentName: string;
+  task: string;
+  actionId: string;
+  assetType: string;
+  dependsOn: string[];
+  executionLevel: ExecutionLevel;
+  status: WorkforceAssignmentQueueState;
+  outputAssetIds: string[];
+  handoffFrom: string[];
+  handoffTo: string[];
+  guardrail: GuardrailDecision;
+};
+
+export type WorkforcePlan = {
+  missionId: string;
+  missionType: MissionType;
+  mode: WorkforceMode;
+  agents: WorkforcePlanAssignment[];
+  dependencyGraph: WorkforceDependencyGraphNode[];
+  currentAssignmentId?: string;
+  verificationBoundary: 'workforce_completion_not_mission_completion';
 };

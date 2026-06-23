@@ -20,6 +20,55 @@
     "yes": "Yes",
     "no": "No"
   },
+  "activation": {
+    "dashboard": {
+      "firstValue": "First Value",
+      "state": "State",
+      "noTimer": "No timer",
+      "hoursLeft": "{hours}h left"
+    }
+  },
+  "success": {
+    "dashboard": {
+      "currentOutcome": "Current Outcome",
+      "progress": "Progress",
+      "currentResult": "Current Result",
+      "nextMilestone": "Next Milestone"
+    }
+  },
+  "retention": {
+    "dashboard": {
+      "currentLevel": "Current Level",
+      "nextOutcome": "Next Outcome",
+      "momentum": "Momentum",
+      "recentWins": "Recent Wins"
+    }
+  },
+  "expansion": {
+    "dashboard": {
+      "currentLevel": "Expansion Level",
+      "recentGrowth": "Recent Growth",
+      "nextOpportunity": "Next Opportunity",
+      "progress": "Expansion Progress"
+    }
+  },
+  "referral": {
+    "dashboard": {
+      "referralLevel": "Referral Level",
+      "successfulReferrals": "Successful Referrals",
+      "pendingReferrals": "Pending Referrals",
+      "nextOpportunity": "Next Opportunity"
+    }
+  },
+  "health": {
+    "dashboard": {
+      "healthLevel": "Health Level",
+      "trend": "Health Trend",
+      "topDrivers": "Top Drivers",
+      "topRisks": "Top Risks",
+      "recommendedAction": "Recommended Action"
+    }
+  },
   "auth": {
     "login": "Log In",
     "logout": "Log Out",

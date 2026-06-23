@@ -1,5 +1,5 @@
 import type { InterviewAuthorityBusinessMode } from '@/modules/interview-authority/contracts/InterviewAuthorityProjection';
-import type { ExpansionMetrics, ExpansionOpportunity, ExpansionProjection, ExpansionRisk, GrowthLever } from '../contracts/ExpansionProjection';
+import type { ExpansionMetrics, ExpansionOpportunity, ExpansionOpportunityId, ExpansionProjection, ExpansionRecoveryAction, ExpansionRisk, GrowthLever } from '../contracts/ExpansionProjection';
 import type { ExpansionFacts } from './expansion-facts';
 
 type LeverDefinition = {
@@ -17,6 +17,56 @@ const LEVERS: Record<GrowthLever, LeverDefinition> = {
   content_growth: { lever: 'content_growth', title: '提高内容产出', route: '/content-engine', metric: 'content' },
   team_growth: { lever: 'team_growth', title: '扩大团队增长', route: '/team/growth', metric: 'team' },
 };
+
+const OPPORTUNITY_SEQUENCE: ExpansionOpportunityId[] = [
+  'FIRST_CUSTOMER',
+  'FIRST_REVENUE',
+  'RETENTION_SYSTEM',
+  'TEAM_SCALING',
+  'AUTHORITY_BUILDING',
+  'MARKET_LEADERSHIP',
+];
+
+function parseDate(value?: Date | string | null) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function daysSince(value: Date | string | null | undefined, generatedAt: string) {
+  const date = parseDate(value);
+  if (!date) return null;
+  return Math.max(0, Math.floor((new Date(generatedAt).getTime() - date.getTime()) / 86_400_000));
+}
+
+function inferredOutcomeCount(facts: ExpansionFacts) {
+  if (typeof facts.outcomeCount === 'number') return Math.max(0, Math.round(facts.outcomeCount));
+
+  let count = 0;
+  if (facts.metrics.customers.current > 0 || facts.metrics.customers.previous > 0) count += 1;
+  if (facts.metrics.revenue.current > 0 || facts.metrics.revenue.previous > 0) count += 1;
+  if (facts.retentionProjection.outcomeRetention?.retained) count += 1;
+  if (facts.metrics.team.current > 0 || facts.metrics.team.previous > 0) count += 1;
+  if (facts.metrics.audience.current >= 5000 && facts.metrics.content.current >= 12) count += 1;
+  return count;
+}
+
+function opportunityForFacts(facts: ExpansionFacts): ExpansionOpportunityId {
+  const count = inferredOutcomeCount(facts);
+  return OPPORTUNITY_SEQUENCE[Math.min(count, OPPORTUNITY_SEQUENCE.length - 1)];
+}
+
+function opportunityForLever(facts: ExpansionFacts, lever: GrowthLever): ExpansionOpportunityId {
+  if (lever === 'revenue_growth') return 'FIRST_REVENUE';
+  if (lever === 'team_growth') return 'TEAM_SCALING';
+  if (lever === 'content_growth' || lever === 'audience_growth') {
+    return facts.metrics.team.current > 0 || facts.metrics.team.previous > 0 ? 'MARKET_LEADERSHIP' : 'AUTHORITY_BUILDING';
+  }
+  if (lever === 'customer_growth') {
+    return facts.retentionProjection.outcomeRetention?.retained ? 'RETENTION_SYSTEM' : 'FIRST_CUSTOMER';
+  }
+  return opportunityForFacts(facts);
+}
 
 function priorityFor(rate: number): ExpansionOpportunity['priority'] {
   if (rate >= 50) return 'high';
@@ -87,6 +137,7 @@ export function detectExpansionOpportunities(facts: ExpansionFacts): ExpansionOp
       return {
         id: `expand_${lever}`,
         lever,
+        opportunity: opportunityForLever(facts, lever),
         title: copy.title,
         reason: metric.growthRate > 0
           ? `${definition.title} is already moving at ${metric.growthRate}% growth. Multiply what is working.`
@@ -94,6 +145,7 @@ export function detectExpansionOpportunities(facts: ExpansionFacts): ExpansionOp
         route: definition.route,
         priority: priorityFor(metric.growthRate),
         expectedMetricLift: copy.expectedMetricLift,
+        personalizedBy: ['businessMode', 'stage', 'region'] as ExpansionOpportunity['personalizedBy'],
       };
     })
     .sort((a, b) => {
@@ -106,10 +158,50 @@ export function detectExpansionOpportunities(facts: ExpansionFacts): ExpansionOp
 
 export function detectExpansionRisks(facts: ExpansionFacts): ExpansionRisk[] {
   const risks: ExpansionRisk[] = [];
+  const daysSinceRevenueGrowth = daysSince(facts.lastRevenueGrowthAt, facts.generatedAt);
+  const daysSinceLastOutcome = daysSince(facts.lastOutcomeAt, facts.generatedAt);
+  const daysSinceTeamProgress = daysSince(facts.lastTeamProgressAt, facts.generatedAt);
+
+  if (daysSinceRevenueGrowth !== null && daysSinceRevenueGrowth >= 30) {
+    risks.push({
+      code: 'expansion_plateau',
+      riskCode: 'PLATEAU',
+      lever: 'revenue_growth',
+      title: 'Revenue growth plateau detected',
+      reason: 'No revenue growth has been detected for 30 days.',
+      route: '/sales',
+      priority: 'high',
+    });
+  }
+
+  if (daysSinceLastOutcome !== null && daysSinceLastOutcome >= 45) {
+    risks.push({
+      code: 'expansion_stalled_growth',
+      riskCode: 'STALLED_GROWTH',
+      lever: 'customer_growth',
+      title: 'Outcome growth stalled',
+      reason: 'No new verified outcome has been detected for 45 days.',
+      route: '/mission',
+      priority: 'high',
+    });
+  }
+
+  if (daysSinceTeamProgress !== null && daysSinceTeamProgress >= 60) {
+    risks.push({
+      code: 'expansion_scaling_blocked',
+      riskCode: 'SCALING_BLOCKED',
+      lever: 'team_growth',
+      title: 'Scaling blocked',
+      reason: 'No team progress has been detected for 60 days.',
+      route: '/team/growth',
+      priority: 'medium',
+    });
+  }
 
   if (facts.valueProjection.currentValueStage === 'not_started' || facts.valueProjection.currentValueStage === 'progressing') {
     risks.push({
       code: 'expansion_value_not_proven',
+      riskCode: 'VALUE_NOT_PROVEN',
       lever: 'revenue_growth',
       title: 'Value not proven enough to scale',
       reason: 'The user should prove a meaningful business outcome before multiplying growth activity.',
@@ -125,6 +217,7 @@ export function detectExpansionRisks(facts: ExpansionFacts): ExpansionRisk[] {
     if (metric.current === 0) {
       risks.push({
         code: `expansion_${lever}_missing`,
+        riskCode: 'LEVER_MISSING',
         lever,
         title: `${definition.title} missing`,
         reason: `No current ${definition.metric} signal exists in the last 30 days, so this lever cannot be scaled yet.`,
@@ -134,6 +227,7 @@ export function detectExpansionRisks(facts: ExpansionFacts): ExpansionRisk[] {
     } else if (metric.growthRate < 0) {
       risks.push({
         code: `expansion_${lever}_declining`,
+        riskCode: 'LEVER_DECLINING',
         lever,
         title: `${definition.title} declining`,
         reason: `${definition.title} is down ${Math.abs(metric.growthRate)}% versus the previous period.`,
@@ -144,6 +238,14 @@ export function detectExpansionRisks(facts: ExpansionFacts): ExpansionRisk[] {
   }
 
   return risks.slice(0, 3);
+}
+
+export function recoveryActionForRisk(risk: ExpansionRisk | undefined): ExpansionRecoveryAction {
+  if (!risk) return 'expansion_outcome';
+  if (risk.riskCode === 'PLATEAU') return 'optimization_mission';
+  if (risk.riskCode === 'SCALING_BLOCKED') return 'workforce_assistance';
+  if (risk.riskCode === 'STALLED_GROWTH') return 'growth_mission';
+  return 'expansion_outcome';
 }
 
 export function selectCurrentGrowthLever(facts: ExpansionFacts, opportunities: ExpansionOpportunity[]): ExpansionProjection['currentGrowthLever'] {

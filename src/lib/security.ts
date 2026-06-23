@@ -16,6 +16,11 @@ export function isAllowedOrigin(origin: string | null, baseDomain = DEFAULT_BASE
 }
 
 export function getSecurityHeaders(): Record<string, string> {
+  const scriptSrc =
+    process.env.NODE_ENV === 'development'
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'";
+
   return {
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
     'X-Content-Type-Options': 'nosniff',
@@ -27,7 +32,7 @@ export function getSecurityHeaders(): Record<string, string> {
       "base-uri 'self'",
       "frame-ancestors 'none'",
       "form-action 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",

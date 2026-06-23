@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import type { WorkforceExecutionResult } from '../contracts/AgentWorkforce';
+import { WORKFORCE_AUDIT_ACTIONS } from './WorkforceOrchestrator';
 
 const TARGET_TYPE = 'agent_workforce';
 
@@ -26,10 +27,10 @@ export const agentExecutionTracker = {
         tenantId: input.tenantId,
         actorId: input.userId,
         action: input.result.status === 'completed'
-          ? 'AGENT_TASK_COMPLETED'
+          ? WORKFORCE_AUDIT_ACTIONS.assignmentCompleted
           : input.result.status === 'approval_required'
-            ? 'AGENT_TASK_WAITING_APPROVAL'
-            : 'AGENT_TASK_FAILED',
+            ? WORKFORCE_AUDIT_ACTIONS.assignmentBlocked
+            : WORKFORCE_AUDIT_ACTIONS.assignmentFailed,
         targetType: TARGET_TYPE,
         metadata: {
           assignmentId: input.result.assignmentId,

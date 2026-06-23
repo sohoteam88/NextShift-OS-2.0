@@ -14,5 +14,6 @@ export const CANONICAL_ROUTES = {
   whatsappAi: '/whatsapp-ai',
   ceoMode: '/ceo-mode',
   team: '/team',
+  teamGrowth: '/team/growth',
   aiWorkforce: '/ai-workforce',
 } as const;

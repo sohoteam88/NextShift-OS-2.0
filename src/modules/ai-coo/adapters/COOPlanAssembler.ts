@@ -8,6 +8,7 @@ import type { JourneyState } from '@/modules/journey/contracts/JourneyState';
 import type { MissionAuthoritySnapshot } from '@/modules/mission-engine/contracts/MissionAuthority';
 import type { InterviewAuthorityProjection } from '@/modules/interview-authority/contracts/InterviewAuthorityProjection';
 import type { BusinessContextProjection } from '@/modules/business-context-memory/contracts/BusinessContextMemory';
+import type { AICOORequestContext } from '../contracts/AICOORequestContext';
 import type { COOPlan } from '../contracts/COOPlan';
 import type { COORecommendation } from '../contracts/COORecommendation';
 import { adaptAssignments } from './AssignmentAdapter';
@@ -105,7 +106,7 @@ function prioritizeWithBusinessMemory(
   return [...fresh, ...repeated];
 }
 
-export async function assembleCOOPlan(userId: string): Promise<COOPlan> {
+export async function assembleCOOPlan(userId: string, context: AICOORequestContext = {}): Promise<COOPlan> {
   const [user, journeyState, missionAuthority, interviewAuthority] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -120,7 +121,7 @@ export async function assembleCOOPlan(userId: string): Promise<COOPlan> {
       },
     }),
     journeyStateService.getJourneyState(userId),
-    missionEngineAuthorityService.getCurrentMission(userId),
+    context.missionAuthority ?? missionEngineAuthorityService.getCurrentMission(userId),
     getInterviewAuthorityProjection(userId),
   ]);
 
@@ -130,7 +131,10 @@ export async function assembleCOOPlan(userId: string): Promise<COOPlan> {
   const currentStage = journeyStageToAgentStage(journeyState.stage);
   const [businessContext, decision, ceoResult] = await Promise.all([
     businessContextMemoryService.getBusinessContext(user.id, user.tenantId),
-    aiCOODecisionEngine.getDecision(user.id, user.tenantId),
+    aiCOODecisionEngine.getDecision(user.id, user.tenantId, {
+      businessState: context.businessState,
+      missionAuthority,
+    }),
     adaptCEORecommendations(user.id, user.tenantId),
   ]);
   const missionRecommendation = buildMissionRecommendation(missionAuthority, journeyState, interviewAuthority);

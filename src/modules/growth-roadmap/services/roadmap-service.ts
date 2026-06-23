@@ -13,8 +13,8 @@ const STEPS: Omit<RoadmapStep, 'status'>[] = [
   { id: 'follow_up_system', stepNumber: 9, title: '跟进系统', description: '自动化客户跟进。', missionId: 'customer_acquisition', route: '/whatsapp-ai', estimatedTime: '20 分钟', rewards: ['自动化', '一致性'] },
   { id: 'sales_engine', stepNumber: 10, title: '销售引擎', description: '建立可复制的销售流程。', missionId: 'customer_acquisition', route: '/crm', estimatedTime: '30 分钟', rewards: ['销售管道', '收入系统'] },
   { id: 'automation_engine', stepNumber: 11, title: '自动化引擎', description: '端到端自动化工作流程。', missionId: 'system_building', route: '/automation', estimatedTime: '40 分钟', rewards: ['可扩展性', '时间自由'] },
-  { id: 'team_building', stepNumber: 12, title: '团队建设', description: '引入你的第一个团队成员。', missionId: 'team_scaling', route: '/team', estimatedTime: '60 分钟', rewards: ['团队成长', '授权分工'] },
-  { id: 'leadership', stepNumber: 13, title: '领导力', description: '发展领导能力。', missionId: 'team_scaling', route: '/team', estimatedTime: '持续进行', rewards: ['领导技能', '导师能力'] },
+  { id: 'team_building', stepNumber: 12, title: '团队建设', description: '引入你的第一个团队成员。', missionId: 'team_scaling', route: '/team/growth', estimatedTime: '60 分钟', rewards: ['团队成长', '授权分工'] },
+  { id: 'leadership', stepNumber: 13, title: '领导力', description: '发展领导能力。', missionId: 'team_scaling', route: '/team/growth', estimatedTime: '持续进行', rewards: ['领导技能', '导师能力'] },
   { id: 'scale', stepNumber: 14, title: '规模化', description: '规模化运营与收入。', missionId: 'team_scaling', route: '/analytics-center', estimatedTime: '持续进行', rewards: ['业务增长', '市场影响力'] },
   { id: 'business_operator', stepNumber: 15, title: '业务运营者', description: '运营一个自我维持的事业。', missionId: 'team_scaling', route: '/dashboard', estimatedTime: '持续进行', rewards: ['完整系统', '财务自由'] },
 ];

@@ -74,6 +74,14 @@ export function prioritizeFocus(input: {
     };
   }
 
+  if (primaryRisk?.code.startsWith('success_')) {
+    return {
+      focusArea: 'realize_value',
+      basis: primaryRisk,
+      basisType: 'risk',
+    };
+  }
+
   if (primaryRisk?.code.startsWith('expansion_')) {
     return {
       focusArea: 'scale_results',
