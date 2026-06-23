@@ -33,6 +33,11 @@ export type FirstUserExperienceProjection = {
   };
 };
 
+type FirstUserMissionControl = Pick<
+  DashboardProjection['missionControl'],
+  'ctaLabel' | 'route' | 'progress' | 'nextMilestone' | 'expectedOutcome'
+>;
+
 function dashboardState(activation: ActivationProjection): FirstUserState {
   if (activation.kpis.thirtyDayRetentionSignal || activation.kpis.sevenDayRetentionSignal) return 'RETAINED';
   if (activation.activationState?.activated || activation.firstValue?.visible || activation.firstWin.achieved) return 'VALUE_REALIZED';
@@ -64,7 +69,7 @@ function stateHeadline(state: FirstUserState, locale: ProductLocale) {
 
 export function buildFirstUserExperienceForDashboard(input: {
   activation: ActivationProjection;
-  missionControl: DashboardProjection['missionControl'];
+  missionControl: FirstUserMissionControl;
 }): FirstUserExperienceProjection {
   const state = dashboardState(input.activation);
   const firstValueAchieved = state === 'VALUE_REALIZED' || state === 'RETAINED';

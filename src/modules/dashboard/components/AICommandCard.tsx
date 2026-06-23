@@ -51,12 +51,6 @@ function priorityClass(priorityLevel: DashboardPriorityLevel) {
   return 'border-blue-100 bg-blue-50 text-blue-800';
 }
 
-function priorityLabel(priorityLevel: DashboardPriorityLevel) {
-  if (priorityLevel === 'Critical') return '紧急';
-  if (priorityLevel === 'High') return '高';
-  return '普通';
-}
-
 export function AICommandCard({
   completedItems,
   currentGap,
@@ -79,8 +73,9 @@ export function AICommandCard({
   firstUserExperience,
   userSuccess,
   executeRoute,
-  primaryActionLabel = '开始任务',
+  primaryActionLabel,
 }: AICommandCardProps) {
+  const t = useTranslations('dashboard.aiCommand');
   const activationT = useTranslations('activation.dashboard');
   const successT = useTranslations('success.dashboard');
 
@@ -91,7 +86,7 @@ export function AICommandCard({
           <div>
             <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
               <Sparkles className="h-4 w-4" aria-hidden="true" />
-              Your next step
+              {t('nextStepBadge')}
             </div>
             {firstUserExperience ? (
               <p className="mb-3 text-sm font-semibold text-emerald-700">
@@ -99,7 +94,7 @@ export function AICommandCard({
               </p>
             ) : null}
             <p className="text-sm font-semibold text-blue-700">
-              今天先做这一件事。
+              {t('todayFocus')}
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-bold leading-tight text-[var(--color-text)] md:text-4xl">
               {todayMission}
@@ -113,7 +108,7 @@ export function AICommandCard({
             <div className="space-y-4 border-l-2 border-blue-100 pl-4">
               <div>
                 <p className="text-xs font-semibold uppercase text-blue-700">
-                  为什么是这个
+                  {t('whyThis')}
                 </p>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
                   {missionReason}
@@ -121,7 +116,7 @@ export function AICommandCard({
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase text-blue-700">
-                  为什么现在
+                  {t('whyNow')}
                 </p>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
                   {whyNow}
@@ -129,7 +124,7 @@ export function AICommandCard({
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase text-blue-700">
-                  为什么不是其他任务
+                  {t('whyNotOthers')}
                 </p>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
                   {decisionReason}
@@ -140,25 +135,25 @@ export function AICommandCard({
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase text-blue-700">
-                    当前步骤
+                    {t('currentStep')}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-[var(--color-text)]">
-                    {currentStep ? currentStep.title : '任务完成验证中'}
+                    {currentStep ? currentStep.title : t('missionVerifying')}
                   </p>
                 </div>
                 <p className="text-sm font-semibold text-blue-700">
-                  {progress}% 完成
+                  {t('progressComplete', { progress })}
                 </p>
               </div>
               <div className="mt-3 grid gap-2 text-xs font-semibold text-blue-800 sm:grid-cols-3">
                 <div className="rounded-[var(--radius-sm)] border border-blue-100 bg-white px-3 py-2">
-                  已验证 {passedChecks.length}
+                  {t('verifiedCount', { count: passedChecks.length })}
                 </div>
                 <div className="rounded-[var(--radius-sm)] border border-blue-100 bg-white px-3 py-2">
-                  剩余 {remainingChecks}
+                  {t('remainingCount', { count: remainingChecks })}
                 </div>
                 <div className="rounded-[var(--radius-sm)] border border-blue-100 bg-white px-3 py-2">
-                  {verificationStatus === 'VERIFYING' ? '验证中' : verificationStatus === 'VERIFIED' ? '已验证' : '待补齐'}
+                  {t(`verificationStatus.${verificationStatus}`)}
                 </div>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-blue-100">
@@ -169,7 +164,7 @@ export function AICommandCard({
               </div>
               {nextRequiredCheck ? (
                 <p className="mt-3 text-xs font-semibold text-blue-800">
-                  下一个验证项：{nextRequiredCheck}
+                  {t('nextRequiredCheck', { check: nextRequiredCheck })}
                 </p>
               ) : null}
               {currentStep ? (
@@ -238,7 +233,7 @@ export function AICommandCard({
                 href={executeRoute}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
               >
-                {primaryActionLabel}{' '}
+                {primaryActionLabel ?? t('startMission')}{' '}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <div className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--color-text-muted)]">
@@ -252,7 +247,7 @@ export function AICommandCard({
         <aside className="border-t border-blue-100 bg-blue-50/40 p-5 lg:border-l lg:border-t-0 md:p-6">
           <div className="space-y-5">
             <div>
-              <p className="text-xs font-semibold text-emerald-700">已完成</p>
+              <p className="text-xs font-semibold text-emerald-700">{t('completed')}</p>
               <div className="mt-3 space-y-2">
                 {completedItems.length > 0 ? (
                   completedItems.map((item) => (
@@ -269,7 +264,7 @@ export function AICommandCard({
                   ))
                 ) : (
                   <p className="text-sm font-medium text-emerald-950">
-                    系统正在确认你的业务基础。
+                    {t('confirmingFoundation')}
                   </p>
                 )}
               </div>
@@ -278,7 +273,7 @@ export function AICommandCard({
             <div className="h-px bg-blue-100" />
 
             <div>
-              <p className="text-xs font-semibold text-blue-700">执行步骤</p>
+              <p className="text-xs font-semibold text-blue-700">{t('executionSteps')}</p>
               <div className="mt-3 space-y-3">
                 {steps.map((step, index) => (
                   <div key={step.id} className="flex gap-3 text-sm">
@@ -290,7 +285,7 @@ export function AICommandCard({
                         {step.title}
                       </p>
                       <p className="mt-1 leading-relaxed text-[var(--color-text-muted)]">
-                        {step.estimatedMinutes} 分钟
+                        {t('minutes', { minutes: step.estimatedMinutes })}
                       </p>
                     </div>
                   </div>
@@ -304,13 +299,13 @@ export function AICommandCard({
               <div
                 className={`rounded-[var(--radius-md)] border p-3 ${priorityClass(priorityLevel)}`}
               >
-                <p className="text-xs font-semibold">优先级</p>
+                <p className="text-xs font-semibold">{t('priority')}</p>
                 <p className="mt-2 text-xl font-bold">
-                  {priorityLabel(priorityLevel)}
+                  {t(`priorityLevel.${priorityLevel}`)}
                 </p>
               </div>
               <div className="rounded-[var(--radius-md)] border border-red-100 bg-red-50 p-3 text-red-800">
-                <p className="text-xs font-semibold">当前缺口</p>
+                <p className="text-xs font-semibold">{t('currentGap')}</p>
                 <p className="mt-2 text-sm font-bold leading-snug">
                   {currentGap}
                 </p>
@@ -324,7 +319,7 @@ export function AICommandCard({
                   aria-hidden="true"
                 />
                 <p className="text-xs font-semibold text-emerald-700">
-                  预期结果
+                  {t('expectedOutcome')}
                 </p>
               </div>
               <p className="mt-2 text-base font-semibold text-emerald-950">
@@ -338,7 +333,7 @@ export function AICommandCard({
               <div className="flex items-center gap-2">
                 <Route className="h-4 w-4 text-blue-700" aria-hidden="true" />
                 <p className="text-xs font-semibold text-blue-700">
-                  下一里程碑
+                  {t('nextMilestone')}
                 </p>
               </div>
               <div className="mt-3 space-y-2 text-sm text-[var(--color-text-muted)]">
@@ -348,7 +343,7 @@ export function AICommandCard({
                   </span>
                 </p>
                 <p>
-                  先完成当前这一步，再推进下一阶段的业务结果。
+                  {t('nextMilestoneHelp')}
                 </p>
               </div>
             </div>

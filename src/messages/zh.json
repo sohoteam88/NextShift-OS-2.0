@@ -426,7 +426,26 @@
     "completionDescription": "你的资料、品牌、第一篇内容和第一个漏斗都已设置完成。",
     "goDashboard": "前往仪表盘",
     "openFunnel": "打开漏斗",
-    "next": "继续"
+    "next": "继续",
+    "activation": {
+      "eyebrow": "新用户启动",
+      "title": "先完成第一条清晰路线",
+      "subtitle": "系统会根据你的启动状态，告诉你现在在哪一步、下一步是什么，以及完成后会得到什么成果。",
+      "currentStep": "当前步骤",
+      "progress": "进度",
+      "timeWindow": "启动窗口",
+      "noTimer": "无计时限制",
+      "hoursLeft": "剩余 {hours} 小时",
+      "nextStep": "下一步",
+      "expectedOutcome": "预期结果",
+      "firstValue": "第一个可见成果",
+      "activationFunnel": "启动路线",
+      "stepStatus": {
+        "completed": "已完成",
+        "current": "当前步骤",
+        "locked": "稍后解锁"
+      }
+    }
   },
   "aiCoach": {
     "eyebrow": "AI 教练",
@@ -1076,7 +1095,40 @@
     "leadsSeries": "线索",
     "conversionsSeries": "转化",
     "contentSeries": "内容",
-    "showingMembers": "显示 {count} / {total}"
+    "showingMembers": "显示 {count} / {total}",
+    "aiCommand": {
+      "nextStepBadge": "下一步行动",
+      "todayFocus": "今天先做这一件事。",
+      "whyThis": "为什么是这个",
+      "whyNow": "为什么现在",
+      "whyNotOthers": "为什么不是其他任务",
+      "currentStep": "当前步骤",
+      "missionVerifying": "任务完成验证中",
+      "progressComplete": "{progress}% 完成",
+      "verifiedCount": "已验证 {count}",
+      "remainingCount": "剩余 {count}",
+      "verificationStatus": {
+        "VERIFIED": "已验证",
+        "VERIFYING": "验证中",
+        "BLOCKED": "待补齐"
+      },
+      "nextRequiredCheck": "下一个验证项：{check}",
+      "completed": "已完成",
+      "confirmingFoundation": "系统正在确认你的业务基础。",
+      "executionSteps": "执行步骤",
+      "minutes": "{minutes} 分钟",
+      "priority": "优先级",
+      "priorityLevel": {
+        "Critical": "紧急",
+        "High": "高",
+        "Normal": "普通"
+      },
+      "currentGap": "当前缺口",
+      "expectedOutcome": "预期结果",
+      "nextMilestone": "下一里程碑",
+      "nextMilestoneHelp": "先完成当前这一步，再推进下一阶段的业务结果。",
+      "startMission": "开始任务"
+    }
   },
   "errors": {
     "somethingWentWrong": "出错了",
@@ -1190,6 +1242,61 @@
       "unlimitedUploads": "语音上传次数无限量",
       "uploadLimitReached": "已达语音上传上限",
       "confidenceTitle": "品牌准备度"
+    }
+  },
+  "journey": {
+    "title": "成长旅程",
+    "subtitle": "这里显示你现在要达成的业务结果、当前任务，以及下一步会推进到哪里。",
+    "currentOutcome": "当前目标",
+    "currentMission": "当前任务",
+    "estimatedTime": "预计时间",
+    "progress": "进度",
+    "missionChain": "任务链",
+    "missionChainHelp": "系统会按顺序推进任务，只显示当前目标相关的关键步骤。",
+    "completed": "已完成",
+    "nextMilestone": "下一里程碑",
+    "requiredSignal": "完成信号",
+    "signalLine": "{label}: 当前 {value} / 目标 {target}",
+    "activationProgress": "启动进度",
+    "outcomeStatus": {
+      "PLANNED": "已规划",
+      "ACTIVE": "进行中",
+      "BLOCKED": "需要处理",
+      "COMPLETED": "已完成",
+      "FAILED": "未完成"
+    },
+    "missionStatus": {
+      "LOCKED": "稍后解锁",
+      "ACTIVE": "当前任务",
+      "BLOCKED": "需要补齐",
+      "COMPLETED": "已完成",
+      "FAILED": "未完成"
+    },
+    "outcome": {
+      "FIRST_LEAD": {
+        "name": "获得第一个 Lead",
+        "description": "把引流资源、漏斗落地页和流量测试串起来，直到系统捕捉到第一个真实 Lead。"
+      },
+      "FIRST_CUSTOMER": {
+        "name": "获得第一个客户",
+        "description": "从获客到跟进成交，推动系统产生第一个真实客户。"
+      },
+      "FIRST_REVENUE": {
+        "name": "产生第一笔收入",
+        "description": "聚焦成交机会，直到收入信号被系统确认。"
+      },
+      "RETENTION_SYSTEM": {
+        "name": "建立留存系统",
+        "description": "建立客户跟进和复购动作，让客户价值可以持续。"
+      },
+      "TEAM_SCALING": {
+        "name": "扩大团队执行",
+        "description": "把已经验证的流程变成团队和 AI Workforce 可以重复执行的动作。"
+      },
+      "AUTHORITY_BUILDING": {
+        "name": "建立市场信任",
+        "description": "通过内容和引流资源建立信任，直到市场开始产生可见回应。"
+      }
     }
   }
 }

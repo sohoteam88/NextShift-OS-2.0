@@ -1,11 +1,11 @@
 import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
-import { resolveJourneyCompletion } from '@/modules/journey/services/JourneyCompletionResolver';
 import { missionService } from '@/modules/mission/services/mission-service';
 import { deriveLevel } from '../core/derive-level';
 import { deriveUnlocks } from '../core/derive-unlocks';
 import type { EvolutionSnapshot } from '../types/evolution-snapshot';
+import { deriveEvolutionInput } from '../utils/derive-evolution-input';
 
 type MinimalUserRecord = {
   id: string;
@@ -65,21 +65,10 @@ export async function buildEvolutionSnapshot(input: EvolutionAdapterInput): Prom
   ]);
 
   const completedChecks = normalizeMissionChecks(progress.completedChecks);
-  const completion = resolveJourneyCompletion({
+  const levelState = deriveLevel(deriveEvolutionInput({
     completedChecks,
     progressPercent: progress.progressPercent,
-  });
-  const levelState = deriveLevel({
-    brandInterview: completion.brandInterview,
-    brandDNA: completion.brandDNA,
-    socialSetup: completion.socialSetup,
-    contentCount: progress.progressPercent >= 40 ? 3 : progress.progressPercent >= 30 ? 1 : 0,
-    leadCount: progress.progressPercent >= 55 ? 1 : 0,
-    customerCount: progress.progressPercent >= 70 ? 1 : 0,
-    teamMemberCount: progress.progressPercent >= 95 ? 1 : 0,
-    crmActive: completion.followUpSystem,
-    followUpActive: completion.followUpSystem,
-  });
+  }));
 
   const unlockedModules = deriveUnlocks(levelState.level);
 

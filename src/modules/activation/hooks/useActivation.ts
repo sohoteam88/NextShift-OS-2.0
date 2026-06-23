@@ -1,29 +1,22 @@
 'use client';
 
 import { useMissionState } from '@/modules/mission/hooks/use-mission';
-import { getNextJourneyAction } from '@/modules/journey/utils/getNextJourneyAction';
+import { extractCheckKeys } from '@/modules/mission/utils/completed-checks';
 import {
-  resolveJourneyCompletion,
-  toJourneyNextActionInput,
-} from '@/modules/journey/services/JourneyCompletionResolver';
-import {
-  DAY_MISSIONS,
+  getActivationDay,
   getActivationLevel,
+  getCurrentDayMission,
+  isActivationComplete,
   TOTAL_DAYS,
 } from '../services/activation-service';
 
 export function useActivation() {
   const mission = useMissionState();
   const state = mission.data?.data;
-  const completion = resolveJourneyCompletion({
-    completedChecks: state?.completedChecks,
-    progressPercent: state?.progressPercent,
-  });
-  const journeyAction = getNextJourneyAction(toJourneyNextActionInput(completion));
-
-  const currentDay = journeyAction.progressStep;
-  const complete = journeyAction.stageName === '全部完成';
-  const mission_ = complete ? null : DAY_MISSIONS[currentDay - 1] ?? null;
+  const completedEvents = extractCheckKeys(state?.completedChecks ?? []);
+  const currentDay = getActivationDay(completedEvents);
+  const complete = isActivationComplete(completedEvents);
+  const mission_ = getCurrentDayMission(completedEvents);
   const progressPercent = Math.round((currentDay / TOTAL_DAYS) * 100);
   const score = progressPercent;
   const level = getActivationLevel(score);

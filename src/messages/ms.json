@@ -426,7 +426,26 @@
     "completionDescription": "Profil, jenama, kandungan pertama, dan corong pertama anda sudah siap.",
     "goDashboard": "Pergi ke papan pemuka",
     "openFunnel": "Buka corong",
-    "next": "Teruskan"
+    "next": "Teruskan",
+    "activation": {
+      "eyebrow": "Aktivasi pengguna baharu",
+      "title": "Selesaikan laluan pertama yang jelas",
+      "subtitle": "Sistem menunjukkan kedudukan anda, langkah seterusnya, dan hasil yang dijangka selepas selesai.",
+      "currentStep": "Langkah semasa",
+      "progress": "Kemajuan",
+      "timeWindow": "Tetingkap aktivasi",
+      "noTimer": "Tiada had masa",
+      "hoursLeft": "{hours} jam lagi",
+      "nextStep": "Langkah seterusnya",
+      "expectedOutcome": "Hasil dijangka",
+      "firstValue": "Hasil pertama yang kelihatan",
+      "activationFunnel": "Laluan aktivasi",
+      "stepStatus": {
+        "completed": "Selesai",
+        "current": "Langkah semasa",
+        "locked": "Dikunci"
+      }
+    }
   },
   "aiCoach": {
     "eyebrow": "AI Coach",
@@ -1076,7 +1095,40 @@
     "leadsSeries": "Prospek",
     "conversionsSeries": "Penukaran",
     "contentSeries": "Kandungan",
-    "showingMembers": "Menunjukkan {count} daripada {total}"
+    "showingMembers": "Menunjukkan {count} daripada {total}",
+    "aiCommand": {
+      "nextStepBadge": "Tindakan seterusnya",
+      "todayFocus": "Buat satu perkara ini hari ini.",
+      "whyThis": "Mengapa ini",
+      "whyNow": "Mengapa sekarang",
+      "whyNotOthers": "Mengapa bukan tugasan lain",
+      "currentStep": "Langkah semasa",
+      "missionVerifying": "Penyelesaian misi sedang disahkan",
+      "progressComplete": "{progress}% selesai",
+      "verifiedCount": "{count} disahkan",
+      "remainingCount": "{count} lagi",
+      "verificationStatus": {
+        "VERIFIED": "Disahkan",
+        "VERIFYING": "Mengesahkan",
+        "BLOCKED": "Perlu dilengkapkan"
+      },
+      "nextRequiredCheck": "Semakan seterusnya: {check}",
+      "completed": "Selesai",
+      "confirmingFoundation": "Sistem sedang mengesahkan asas bisnes anda.",
+      "executionSteps": "Langkah pelaksanaan",
+      "minutes": "{minutes} minit",
+      "priority": "Keutamaan",
+      "priorityLevel": {
+        "Critical": "Kritikal",
+        "High": "Tinggi",
+        "Normal": "Biasa"
+      },
+      "currentGap": "Jurang semasa",
+      "expectedOutcome": "Hasil dijangka",
+      "nextMilestone": "Pencapaian seterusnya",
+      "nextMilestoneHelp": "Selesaikan langkah ini dahulu, kemudian teruskan hasil bisnes seterusnya.",
+      "startMission": "Mula misi"
+    }
   },
   "errors": {
     "somethingWentWrong": "Sesuatu telah berlaku",
@@ -1190,6 +1242,61 @@
       "unlimitedUploads": "Muat naik suara tanpa had",
       "uploadLimitReached": "Had muat naik suara telah dicapai",
       "confidenceTitle": "Kesediaan brand"
+    }
+  },
+  "journey": {
+    "title": "Perjalanan Pertumbuhan",
+    "subtitle": "Lihat hasil bisnes yang sedang diusahakan, misi semasa, dan langkah selepas ini.",
+    "currentOutcome": "Matlamat semasa",
+    "currentMission": "Misi semasa",
+    "estimatedTime": "Anggaran masa",
+    "progress": "Kemajuan",
+    "missionChain": "Rantaian misi",
+    "missionChainHelp": "Sistem memajukan misi mengikut turutan dan hanya menunjukkan langkah penting untuk matlamat semasa.",
+    "completed": "selesai",
+    "nextMilestone": "Pencapaian seterusnya",
+    "requiredSignal": "Isyarat selesai",
+    "signalLine": "{label}: semasa {value} / sasaran {target}",
+    "activationProgress": "Kemajuan aktivasi",
+    "outcomeStatus": {
+      "PLANNED": "Dirancang",
+      "ACTIVE": "Sedang berjalan",
+      "BLOCKED": "Perlu perhatian",
+      "COMPLETED": "Selesai",
+      "FAILED": "Belum selesai"
+    },
+    "missionStatus": {
+      "LOCKED": "Dikunci",
+      "ACTIVE": "Misi semasa",
+      "BLOCKED": "Perlu dilengkapkan",
+      "COMPLETED": "Selesai",
+      "FAILED": "Belum selesai"
+    },
+    "outcome": {
+      "FIRST_LEAD": {
+        "name": "Dapatkan lead pertama",
+        "description": "Sambungkan lead magnet, landing page, dan ujian trafik sehingga sistem menangkap lead sebenar."
+      },
+      "FIRST_CUSTOMER": {
+        "name": "Dapatkan pelanggan pertama",
+        "description": "Gerakkan proses daripada lead kepada susulan dan jualan sehingga pelanggan sebenar pertama muncul."
+      },
+      "FIRST_REVENUE": {
+        "name": "Jana pendapatan pertama",
+        "description": "Fokus pada peluang jualan sehingga pendapatan disahkan oleh sistem."
+      },
+      "RETENTION_SYSTEM": {
+        "name": "Bina sistem pengekalan",
+        "description": "Bina tindakan susulan pelanggan supaya nilai pelanggan boleh berterusan."
+      },
+      "TEAM_SCALING": {
+        "name": "Skalakan pelaksanaan pasukan",
+        "description": "Tukar aliran kerja yang terbukti kepada tindakan berulang untuk pasukan dan AI workforce."
+      },
+      "AUTHORITY_BUILDING": {
+        "name": "Bina kepercayaan pasaran",
+        "description": "Gunakan kandungan dan aset lead capture untuk membina kepercayaan sehingga pasaran mula memberi respons."
+      }
     }
   }
 }

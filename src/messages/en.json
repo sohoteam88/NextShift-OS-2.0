@@ -426,7 +426,26 @@
     "completionDescription": "Your profile, brand, first content, and first funnel are all set up.",
     "goDashboard": "Go to dashboard",
     "openFunnel": "Open funnel",
-    "next": "Continue"
+    "next": "Continue",
+    "activation": {
+      "eyebrow": "New user activation",
+      "title": "Finish the first clear path",
+      "subtitle": "The system shows where you are, what to do next, and what result you should expect after finishing it.",
+      "currentStep": "Current step",
+      "progress": "Progress",
+      "timeWindow": "Activation window",
+      "noTimer": "No time limit",
+      "hoursLeft": "{hours} hours left",
+      "nextStep": "Next step",
+      "expectedOutcome": "Expected outcome",
+      "firstValue": "First visible result",
+      "activationFunnel": "Activation path",
+      "stepStatus": {
+        "completed": "Completed",
+        "current": "Current step",
+        "locked": "Locked"
+      }
+    }
   },
   "aiCoach": {
     "eyebrow": "AI Coach",
@@ -1076,7 +1095,40 @@
     "leadsSeries": "Leads",
     "conversionsSeries": "Conversions",
     "contentSeries": "Content",
-    "showingMembers": "Showing {count} of {total}"
+    "showingMembers": "Showing {count} of {total}",
+    "aiCommand": {
+      "nextStepBadge": "Next action",
+      "todayFocus": "Do this one thing today.",
+      "whyThis": "Why this",
+      "whyNow": "Why now",
+      "whyNotOthers": "Why not another task",
+      "currentStep": "Current step",
+      "missionVerifying": "Mission completion is being verified",
+      "progressComplete": "{progress}% complete",
+      "verifiedCount": "{count} verified",
+      "remainingCount": "{count} remaining",
+      "verificationStatus": {
+        "VERIFIED": "Verified",
+        "VERIFYING": "Verifying",
+        "BLOCKED": "Needs input"
+      },
+      "nextRequiredCheck": "Next required check: {check}",
+      "completed": "Completed",
+      "confirmingFoundation": "The system is confirming your business foundation.",
+      "executionSteps": "Execution steps",
+      "minutes": "{minutes} minutes",
+      "priority": "Priority",
+      "priorityLevel": {
+        "Critical": "Critical",
+        "High": "High",
+        "Normal": "Normal"
+      },
+      "currentGap": "Current gap",
+      "expectedOutcome": "Expected outcome",
+      "nextMilestone": "Next milestone",
+      "nextMilestoneHelp": "Finish this step first, then move the next business result forward.",
+      "startMission": "Start mission"
+    }
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",
@@ -1190,6 +1242,61 @@
       "unlimitedUploads": "Unlimited voice uploads",
       "uploadLimitReached": "Voice upload limit reached",
       "confidenceTitle": "Brand readiness"
+    }
+  },
+  "journey": {
+    "title": "Growth Journey",
+    "subtitle": "See the business outcome you are working toward, the current mission, and what comes next.",
+    "currentOutcome": "Current goal",
+    "currentMission": "Current mission",
+    "estimatedTime": "Estimated time",
+    "progress": "Progress",
+    "missionChain": "Mission chain",
+    "missionChainHelp": "The system advances missions in order and only shows the key steps for the current goal.",
+    "completed": "completed",
+    "nextMilestone": "Next milestone",
+    "requiredSignal": "Completion signal",
+    "signalLine": "{label}: current {value} / target {target}",
+    "activationProgress": "Activation progress",
+    "outcomeStatus": {
+      "PLANNED": "Planned",
+      "ACTIVE": "In progress",
+      "BLOCKED": "Needs attention",
+      "COMPLETED": "Completed",
+      "FAILED": "Not completed"
+    },
+    "missionStatus": {
+      "LOCKED": "Locked",
+      "ACTIVE": "Current mission",
+      "BLOCKED": "Needs input",
+      "COMPLETED": "Completed",
+      "FAILED": "Not completed"
+    },
+    "outcome": {
+      "FIRST_LEAD": {
+        "name": "Acquire your first lead",
+        "description": "Connect the lead magnet, landing pages, and traffic test until the system captures a real lead."
+      },
+      "FIRST_CUSTOMER": {
+        "name": "Acquire your first customer",
+        "description": "Move from lead capture to follow-up and conversion until the first real customer appears."
+      },
+      "FIRST_REVENUE": {
+        "name": "Generate first revenue",
+        "description": "Focus on conversion opportunities until revenue is confirmed by the system."
+      },
+      "RETENTION_SYSTEM": {
+        "name": "Build a retention system",
+        "description": "Create customer follow-up and repeat-value actions so customer value can continue."
+      },
+      "TEAM_SCALING": {
+        "name": "Scale team execution",
+        "description": "Turn the proven workflow into repeatable actions for your team and AI workforce."
+      },
+      "AUTHORITY_BUILDING": {
+        "name": "Build market trust",
+        "description": "Use content and lead capture assets to build trust until the market starts responding."
+      }
     }
   }
 }

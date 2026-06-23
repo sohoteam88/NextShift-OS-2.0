@@ -1,11 +1,5 @@
-import {
-  getNextJourneyAction,
-  type JourneyNextAction as LegacyJourneyNextAction,
-} from '@/modules/journey/utils/getNextJourneyAction';
-import {
-  resolveJourneyCompletion,
-  toJourneyNextActionInput,
-} from '@/modules/journey/services/JourneyCompletionResolver';
+import { businessStateService } from '@/modules/business-state/services/BusinessStateService';
+import { missionEngineAuthorityService } from '@/modules/mission-engine/services/MissionEngineAuthorityService';
 import type { JourneyNextAction } from '../contracts/JourneyNextAction';
 import { metadataFor, readJourneyProgress } from './journey-adapter-diagnostics';
 
@@ -17,24 +11,21 @@ function actionTypeFromRoute(route: string): JourneyNextAction['actionType'] {
   return 'mission';
 }
 
-function mapLegacyAction(action: LegacyJourneyNextAction, metadata: ReturnType<typeof metadataFor>): JourneyNextAction {
+export async function adaptJourneyNextAction(userId: string): Promise<JourneyNextAction> {
+  const [progress, businessState] = await Promise.all([
+    readJourneyProgress(userId),
+    businessStateService.getBusinessState(userId),
+  ]);
+  const metadata = metadataFor('MissionAuthority+OutcomeProjection', progress);
+  const authority = await missionEngineAuthorityService.getCurrentMission(userId, {
+    businessState: businessState.stateResult,
+  });
+
   return {
     ...metadata,
-    title: action.title,
-    description: action.description,
-    route: action.route,
-    actionType: actionTypeFromRoute(action.route),
+    title: authority.priorityAction.title,
+    description: authority.missionPlan.description,
+    route: authority.priorityAction.route,
+    actionType: actionTypeFromRoute(authority.priorityAction.route),
   };
-}
-
-export async function adaptJourneyNextAction(userId: string): Promise<JourneyNextAction> {
-  const progress = await readJourneyProgress(userId);
-  const metadata = metadataFor('getNextJourneyAction+userProgress', progress);
-  const completion = resolveJourneyCompletion({
-    completedChecks: progress.completedChecksValue,
-    progressPercent: progress.progressPercent,
-  });
-  const action = getNextJourneyAction(toJourneyNextActionInput(completion));
-
-  return mapLegacyAction(action, metadata);
 }
