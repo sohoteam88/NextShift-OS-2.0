@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
-import { createServiceRoleSupabaseClient } from '@/lib/supabase/server';
+import { createServiceRoleSupabaseClient, hasServiceRoleSupabaseCredentials } from '@/lib/supabase/server';
 import type { AdminUserRecord, AdminUserRole, AdminUserStatus, AdminUsersResponse } from '../types';
 
 const VALID_ROLES: AdminUserRole[] = ['member', 'leader', 'operator', 'platform_admin'];
@@ -149,9 +149,23 @@ export async function deleteUser(operatorId: string, userId: string) {
     throw new AppError('FORBIDDEN', 403, 'You cannot delete your own account');
   }
 
-  const supabaseAdmin = createServiceRoleSupabaseClient();
-  const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id, true);
-  if (error) throw new AppError('AUTH_DELETE_FAILED', 400, error.message);
+  let authDeletion: 'soft_deleted' | 'skipped_missing_service_role' | 'already_missing' = 'skipped_missing_service_role';
+
+  if (hasServiceRoleSupabaseCredentials()) {
+    const supabaseAdmin = createServiceRoleSupabaseClient();
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(target.id, true);
+    if (error) {
+      const message = error.message.toLowerCase();
+      const status = 'status' in error && typeof error.status === 'number' ? error.status : null;
+      if (status === 404 || message.includes('not found') || message.includes('no user')) {
+        authDeletion = 'already_missing';
+      } else {
+        throw new AppError('AUTH_DELETE_FAILED', 400, error.message);
+      }
+    } else {
+      authDeletion = 'soft_deleted';
+    }
+  }
 
   const updated = await prisma.user.update({
     where: { id: target.id },
@@ -162,7 +176,8 @@ export async function deleteUser(operatorId: string, userId: string) {
   await logAudit(target.tenantId, actor.id, `User deleted by ${actor.name}`, 'user', userId, {
     actor: { id: actor.id, name: actor.name, role: actor.role },
     target: { id: target.id, name: target.name, email: target.email, role: target.role, status: target.status },
-    deletion: 'soft_delete_auth_and_app_user',
+    deletion: 'soft_delete_app_user',
+    authDeletion,
   });
 
   return toUserRecord(updated);
