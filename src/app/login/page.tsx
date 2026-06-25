@@ -5,6 +5,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { homeRouteForRole } from '@/modules/auth/services/auth-routing';
+
+type AuthMeResponse = {
+  data?: {
+    user?: {
+      role?: string;
+      status?: string;
+    } | null;
+  };
+};
 
 export default function LoginPage() {
   const t = useTranslations('auth');
@@ -28,7 +38,19 @@ export default function LoginPage() {
       return;
     }
 
-    router.push('/onboarding');
+    const meResponse = await fetch('/api/v1/auth/me').catch(() => null);
+    const me = meResponse?.ok
+      ? ((await meResponse.json().catch(() => null)) as AuthMeResponse | null)
+      : null;
+    const user = me?.data?.user;
+
+    if (user?.status === 'pending') {
+      router.push('/pending');
+    } else if (user?.status === 'suspended') {
+      router.push('/login');
+    } else {
+      router.push(homeRouteForRole(user?.role ?? 'member'));
+    }
     router.refresh();
   }
 
