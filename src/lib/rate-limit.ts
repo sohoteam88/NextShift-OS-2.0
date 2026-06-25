@@ -1,17 +1,50 @@
-// Rate Limiter — supports in-memory (dev) and Redis (production)
-// Set REDIS_URL in production to enable distributed rate limiting
+// Rate Limiter — supports in-memory (dev), VPS Redis, and Upstash Redis.
+// Set REDIS_URL=redis://redis:6379 in production to enable Docker Redis.
 
 type Entry = { count: number; resetAt: number };
 const store = new Map<string, Entry>();
 
-// Redis adapter - activates when both Upstash env vars are set.
-// Install: pnpm add @upstash/redis
-async function getRedisStore() {
-  if (!process.env.REDIS_URL || !process.env.REDIS_TOKEN) return null;
+type RedisStore = {
+  incr(key: string): Promise<number>;
+  expire(key: string, seconds: number): Promise<unknown>;
+};
+
+let redisStorePromise: Promise<RedisStore | null> | null = null;
+
+async function createRedisStore(): Promise<RedisStore | null> {
+  const redisUrl = process.env.REDIS_URL;
+  if (!redisUrl) return null;
+
   try {
-    const { Redis } = await import('@upstash/redis');
-    return new Redis({ url: process.env.REDIS_URL, token: process.env.REDIS_TOKEN });
-  } catch { return null; }
+    if (redisUrl.startsWith('http://') || redisUrl.startsWith('https://')) {
+      if (!process.env.REDIS_TOKEN) return null;
+      const { Redis } = await import('@upstash/redis');
+      return new Redis({ url: redisUrl, token: process.env.REDIS_TOKEN });
+    }
+
+    if (redisUrl.startsWith('redis://') || redisUrl.startsWith('rediss://')) {
+      const { default: Redis } = await import('ioredis');
+      const client = new Redis(redisUrl, {
+        lazyConnect: true,
+        maxRetriesPerRequest: 1,
+        enableOfflineQueue: false,
+      });
+      client.on('error', () => undefined);
+      await client.connect();
+      return client;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+async function getRedisStore() {
+  redisStorePromise ??= createRedisStore();
+  const redis = await redisStorePromise;
+  if (!redis) redisStorePromise = null;
+  return redis;
 }
 
 export async function checkRateLimit(key: string, max: number, windowMs: number): Promise<boolean> {
