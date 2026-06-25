@@ -385,13 +385,6 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
           <div className="space-y-0.5">
             {sidebarItems.map((item) => renderMissionItem(item))}
           </div>
-          <div className="my-4 border-t border-[var(--color-border)]" />
-          <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
-            {t('revenueDrivers')}
-          </p>
-          <div className="space-y-0.5">
-            {REVENUE_DRIVER_ITEMS.map((item) => renderItem(item))}
-          </div>
           {guidedCurrent ? (
             <>
               <div className="my-4 border-t border-[var(--color-border)]" />

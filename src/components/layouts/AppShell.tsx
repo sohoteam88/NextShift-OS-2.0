@@ -52,9 +52,9 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   const isOnboardingPath = pathname.startsWith('/onboarding');
   const isWizardPath = pathname.startsWith('/brand-builder/step');
   const isAdminRole = ['operator', 'platform_admin', 'admin'].includes(user.role);
-  const isAdminExperience = pathname.startsWith('/admin') || pathname.startsWith('/workspace') || (isAdminRole && pathname.startsWith('/settings'));
+  const isAdminExperience = isAdminRole || pathname.startsWith('/admin') || pathname.startsWith('/workspace');
+  const showMemberRoadmap = user.role === 'member' && onboarding.completed && !isAdminExperience;
   const adminHomeHref = user.role === 'platform_admin' ? '/platform-admin' : '/admin';
-  void onboarding;
   const branding = extractBranding(tenant);
 
   if (isOnboardingPath || isWizardPath) {
@@ -83,14 +83,19 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
         userRole={user.role as 'member' | 'leader' | 'operator' | 'platform_admin'}
         tenantName={tenant?.name}
         tenantLogoUrl={branding?.logoUrl}
-        showExecutionRoadmap={!isAdminExperience}
+        showExecutionRoadmap={showMemberRoadmap}
         homeHref={isAdminExperience ? adminHomeHref : '/dashboard'}
       />
-      {isAdminExperience ? null : <ExecutionRoadmapRail />}
+      {showMemberRoadmap ? <ExecutionRoadmapRail /> : null}
       <main className="mx-auto min-w-0 max-w-[1440px] p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:p-6 lg:pb-6">
         {children}
       </main>
-      {isAdminExperience ? null : <MobileTabBar className="lg:hidden" />}
+      {user.role === 'member' ? (
+        <MobileTabBar
+          activationMode={!onboarding.completed}
+          className="lg:hidden"
+        />
+      ) : null}
       <MissionListener />
     </div>
   );
