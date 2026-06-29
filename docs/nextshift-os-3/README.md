@@ -15,6 +15,8 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 - [Runtime Status](RUNTIME_STATUS.md)
 - [Capability Status](CAPABILITY_STATUS.md)
 - [Capabilities](capabilities/README.md)
+- [Design System](design-system/README.md)
+- [UI Kit](ui-kit/README.md)
 - [Project Roadmap](PROJECT_ROADMAP.md)
 - [Sprints](sprints/README.md)
 - [Sprint 000 - Blueprint Cleanup](sprints/SPRINT-000_BLUEPRINT_CLEANUP.md)
@@ -62,6 +64,11 @@ Foundation documents:
 
 - [RFC Template](rfc/TEMPLATE.md)
 
+## Platform Projects
+
+- [NextShift Design System v1.0](design-system/README.md)
+- [NextShift UI Kit v1.0](ui-kit/README.md)
+
 ## Governance
 
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
@@ -73,6 +80,8 @@ Foundation documents:
 - [Runtime Status](RUNTIME_STATUS.md)
 - [Capability Status](CAPABILITY_STATUS.md)
 - [Capabilities](capabilities/README.md)
+- [Design System](design-system/README.md)
+- [UI Kit](ui-kit/README.md)
 - [Project Roadmap](PROJECT_ROADMAP.md)
 - [Architectural Manifesto](ARCHITECTURAL_MANIFESTO.md)
 - [Governance](governance/GOVERNANCE.md)

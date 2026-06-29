@@ -34,6 +34,7 @@ For first-time contributors:
 After completing the above:
 
 - Capability documentation
+- Platform project documentation
 - Sprint documentation
 - Engineering documentation
 
@@ -47,6 +48,8 @@ After completing the above:
 | Core Runtime         | Complete        |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
+| Design System        | Released        |
+| UI Kit               | UK-001 Planning |
 
 ---
 
@@ -108,6 +111,23 @@ Reference:
 Engineering Knowledge:
 
 - [Lessons Learned CAP-001](capabilities/LESSONS_LEARNED_CAP_001.md)
+
+---
+
+## Platform Projects
+
+Design System:
+
+- [NextShift Design System v1.0](design-system/README.md)
+- [Design System Project Planning](design-system/PROJECT_PLANNING.md)
+- [Design System Project Release](design-system/PROJECT_RELEASE.md)
+- [Design System Project Release Notes](design-system/PROJECT_RELEASE_NOTES.md)
+
+UI Kit:
+
+- [NextShift UI Kit v1.0](ui-kit/README.md)
+- [UI Kit Project Planning](ui-kit/PROJECT_PLANNING.md)
+- [UK-001 Design Language Planning](ui-kit/slices/UK-001-design-language/PLANNING.md)
 
 ---
 
