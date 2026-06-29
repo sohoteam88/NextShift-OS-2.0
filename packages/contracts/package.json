@@ -1,0 +1,19 @@
+{
+  "name": "@nextshift/contracts",
+  "version": "0.1.0-alpha",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prebuild": "pnpm --filter @nextshift/shared build",
+    "build": "tsc -p tsconfig.json",
+    "pretypecheck": "pnpm --filter @nextshift/shared build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@nextshift/shared": "workspace:*"
+  }
+}

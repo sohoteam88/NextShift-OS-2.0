@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2022"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@nextshift/shared": ["packages/shared/src/index.ts"],
+      "@nextshift/contracts": ["packages/contracts/src/index.ts"],
+      "@nextshift/event-bus": ["packages/event-bus/src/index.ts"],
+      "@nextshift/business-brain": ["packages/business-brain/src/index.ts"],
+      "@nextshift/decision-brain": ["packages/decision-brain/src/index.ts"],
+      "@nextshift/execution-layer": ["packages/execution-layer/src/index.ts"],
+      "@nextshift/learning-system": ["packages/learning-system/src/index.ts"],
+      "@nextshift/domain": ["packages/domain/src/index.ts"],
+      "@nextshift/application": ["packages/application/src/index.ts"],
+      "@nextshift/ui": ["packages/ui/src/index.ts"],
+      "@nextshift/agents": ["packages/agents/src/index.ts"],
+      "@nextshift/capability-layer": ["packages/capability-layer/src/index.ts"]
+    }
+  }
+}

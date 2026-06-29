@@ -1,10 +1,12 @@
 # NextShift OS Documentation
 
-This folder contains the architecture and source reference documents for NextShift OS 2.0.
+This folder contains the architecture, source reference, and governance documents for NextShift OS.
 
 ## Start Here
 
 - [PRD Master](PRD/PRD_MASTER.md)
+- [NextShift OS 3.0](nextshift-os-3/README.md)
+- [NextShift OS 3.0 Phase 0 Foundation](nextshift-os-3/phase-0-foundation/README.md)
 - [Master Checklist](PRD/MASTER_CHECKLIST.md)
 - [V3 Master Control Checklist](PRD/V3_MASTER_CONTROL_CHECKLIST.md)
 - [System Architecture](PRD/SYSTEM_ARCHITECTURE.md)
@@ -107,6 +109,7 @@ This folder contains the architecture and source reference documents for NextShi
 ## Folder Rules
 
 - `PRD/` stores product requirements, the master checklist, blueprint documents, and roadmap.
+- `nextshift-os-3/` stores NextShift OS 3.0 foundation, constitution, architecture, and implementation governance documents.
 - `ai-coo/` stores AI COO dashboard, state validation, route contract, execution, product experience, personalization, and traceability PRDs.
 - `ux/` stores UX discovery, dashboard, navigation, and product experience implementation notes.
 - `epics/` stores implementation epics.

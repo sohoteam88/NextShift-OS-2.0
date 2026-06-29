@@ -6,7 +6,8 @@ node_modules/
 test-results/
 coverage/
 playwright-report/
-tsconfig.tsbuildinfo
+packages/*/dist/
+*.tsbuildinfo
 .env
 .env.*
 !.env.example

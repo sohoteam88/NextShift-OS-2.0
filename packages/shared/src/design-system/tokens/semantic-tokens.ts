@@ -1,0 +1,52 @@
+import { primitiveTokens } from "./primitive-tokens";
+import { deepFreeze } from "./token-freeze";
+
+export const semanticTokens = deepFreeze({
+  color: {
+    background: primitiveTokens.color.surface.canvas,
+    foreground: primitiveTokens.color.neutral["900"],
+    surface: primitiveTokens.color.surface.raised,
+    surfaceMuted: primitiveTokens.color.surface.muted,
+    border: primitiveTokens.color.neutral["200"],
+    borderStrong: primitiveTokens.color.neutral["300"],
+    primary: primitiveTokens.color.brand["600"],
+    primaryForeground: primitiveTokens.color.neutral["0"],
+    secondary: primitiveTokens.color.neutral["100"],
+    secondaryForeground: primitiveTokens.color.neutral["900"],
+    success: primitiveTokens.color.success["600"],
+    successForeground: primitiveTokens.color.neutral["0"],
+    warning: primitiveTokens.color.warning["500"],
+    warningForeground: primitiveTokens.color.neutral["900"],
+    danger: primitiveTokens.color.danger["600"],
+    dangerForeground: primitiveTokens.color.neutral["0"],
+    info: primitiveTokens.color.info["600"],
+    infoForeground: primitiveTokens.color.neutral["0"],
+    muted: primitiveTokens.color.neutral["100"],
+    mutedForeground: primitiveTokens.color.neutral["500"],
+    disabled: primitiveTokens.color.neutral["300"],
+    focusRing: primitiveTokens.color.brand["500"],
+  },
+  typography: primitiveTokens.typography,
+  spacing: primitiveTokens.spacing,
+  radius: primitiveTokens.radius,
+  elevation: primitiveTokens.elevation,
+  motion: primitiveTokens.motion,
+  breakpoint: primitiveTokens.breakpoint,
+  zIndex: primitiveTokens.zIndex,
+  state: {
+    hover: primitiveTokens.state.hover,
+    active: primitiveTokens.state.active,
+    selected: primitiveTokens.state.selected,
+    disabled: primitiveTokens.state.disabled,
+    focus: {
+      ...primitiveTokens.state.focus,
+      outlineColor: primitiveTokens.color.brand["500"],
+    },
+    error: {
+      ...primitiveTokens.state.error,
+      outlineColor: primitiveTokens.color.danger["600"],
+    },
+    loading: primitiveTokens.state.loading,
+  },
+  chart: primitiveTokens.chart,
+} as const);

@@ -151,6 +151,155 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@20.19.41)(@vitest/coverage-v8@4.1.8)(vite@8.0.16(@types/node@20.19.41)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
 
+  packages/agents:
+    dependencies:
+      '@nextshift/application':
+        specifier: workspace:*
+        version: link:../application
+      '@nextshift/business-brain':
+        specifier: workspace:*
+        version: link:../business-brain
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@nextshift/event-bus':
+        specifier: workspace:*
+        version: link:../event-bus
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/application:
+    dependencies:
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/business-brain:
+    dependencies:
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@nextshift/event-bus':
+        specifier: workspace:*
+        version: link:../event-bus
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/capability-layer:
+    dependencies:
+      '@nextshift/application':
+        specifier: workspace:*
+        version: link:../application
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@nextshift/event-bus':
+        specifier: workspace:*
+        version: link:../event-bus
+      '@nextshift/execution-layer':
+        specifier: workspace:*
+        version: link:../execution-layer
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/contracts:
+    dependencies:
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/decision-brain:
+    dependencies:
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/domain:
+    dependencies:
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/event-bus:
+    dependencies:
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/execution-layer:
+    dependencies:
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/decision-brain':
+        specifier: workspace:*
+        version: link:../decision-brain
+      '@nextshift/event-bus':
+        specifier: workspace:*
+        version: link:../event-bus
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/learning-system:
+    dependencies:
+      '@nextshift/business-brain':
+        specifier: workspace:*
+        version: link:../business-brain
+      '@nextshift/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@nextshift/event-bus':
+        specifier: workspace:*
+        version: link:../event-bus
+      '@nextshift/execution-layer':
+        specifier: workspace:*
+        version: link:../execution-layer
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  packages/shared: {}
+
+  packages/ui:
+    dependencies:
+      '@nextshift/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+
 packages:
 
   '@alloc/quick-lru@5.2.0':

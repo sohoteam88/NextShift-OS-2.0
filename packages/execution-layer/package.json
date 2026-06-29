@@ -1,0 +1,22 @@
+{
+  "name": "@nextshift/execution-layer",
+  "version": "0.1.0-alpha",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "prebuild": "pnpm --filter @nextshift/shared build && pnpm --filter @nextshift/contracts build && pnpm --filter @nextshift/event-bus build && pnpm --filter @nextshift/business-brain build && pnpm --filter @nextshift/decision-brain build",
+    "build": "tsc -p tsconfig.json",
+    "pretypecheck": "pnpm --filter @nextshift/decision-brain build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "@nextshift/shared": "workspace:*",
+    "@nextshift/contracts": "workspace:*",
+    "@nextshift/event-bus": "workspace:*",
+    "@nextshift/decision-brain": "workspace:*"
+  }
+}
