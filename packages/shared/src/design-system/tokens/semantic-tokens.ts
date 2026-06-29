@@ -33,6 +33,10 @@ export const semanticTokens = deepFreeze({
   motion: primitiveTokens.motion,
   breakpoint: primitiveTokens.breakpoint,
   zIndex: primitiveTokens.zIndex,
+  overlay: {
+    background: "rgba(255, 255, 255, 0.82)",
+    scrim: "rgba(17, 24, 39, 0.48)",
+  },
   state: {
     hover: primitiveTokens.state.hover,
     active: primitiveTokens.state.active,

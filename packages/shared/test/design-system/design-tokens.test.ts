@@ -29,6 +29,8 @@ describe("design tokens", () => {
     expect(semanticTokens.color.primary).toBe("#2563eb");
     expect(semanticTokens.color.dangerForeground).toBe("#ffffff");
     expect(semanticTokens.color.focusRing).toBe("#3b82f6");
+    expect(semanticTokens.overlay.background).toBe("rgba(255, 255, 255, 0.82)");
+    expect(semanticTokens.overlay.scrim).toBe("rgba(17, 24, 39, 0.48)");
   });
 
   it("defines the theme token structure", () => {
@@ -38,6 +40,9 @@ describe("design tokens", () => {
     expect(nextShiftThemeTokens.spacing["4"]).toBe(primitiveTokens.spacing["4"]);
     expect(nextShiftThemeTokens.component.button.primary.background).toBe(
       semanticTokens.color.primary
+    );
+    expect(nextShiftThemeTokens.overlay.scrim).toBe(
+      semanticTokens.overlay.scrim
     );
     expect(nextShiftThemeTokens.primitive.color.brand["600"]).toBe("#2563eb");
   });

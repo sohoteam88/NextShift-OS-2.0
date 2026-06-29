@@ -12,6 +12,7 @@ export const nextShiftThemeTokens = deepFreeze({
   motion: semanticTokens.motion,
   breakpoint: semanticTokens.breakpoint,
   zIndex: semanticTokens.zIndex,
+  overlay: semanticTokens.overlay,
   state: semanticTokens.state,
   chart: semanticTokens.chart,
   component: componentTokens,
