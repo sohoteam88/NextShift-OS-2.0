@@ -1,10 +1,10 @@
 # NextShift UI Kit v1.0
 
-## UK-001 Planning
+## UI Kit Project Planning
 
 **Project:** NextShift UI Kit v1.0  
-**Slice:** UK-001 Design Language  
-**Status:** Planning
+**Current Slice:** UK-002 Design Principles  
+**Status:** Active
 
 ## Engineering Baseline
 
@@ -13,6 +13,8 @@
 - NextShift Engineering Playbook v1.1
 - Continuous Engineering Mode v2
 - NextShift Design System v1.0 (Released)
+- UK-001 Design Language v1.0.0 (Released)
+- UK-002 Design Principles v1.0.0 (Released)
 
 ## Vision
 
@@ -22,54 +24,49 @@ The UI Kit does not redefine implementation details contained in the Design Syst
 
 The UI Kit becomes the single source of truth for visual consistency, interaction consistency, documentation standards, and AI-assisted design generation.
 
-## Objectives
+## Current Objective
 
-UK-001 Design Language establishes the foundational vocabulary used throughout the entire UI Kit.
+UK-002 Design Principles converts the released UK-001 Design Language into durable decision rules for product design, documentation review, QA review, Claude Design, and AI-assisted design generation.
 
-It defines:
+UK-002 defines how NextShift interfaces should apply AI-first experience, decision-driven interface design, clarity, consistency, efficiency, scalability, responsive-first thinking, accessibility-first thinking, trustworthy interaction patterns, and AI-readable documentation across future product surfaces.
 
-- Design philosophy
-- Visual language
-- Naming conventions
-- Design vocabulary
-- Documentation conventions
-- Reusable terminology
-- AI-friendly design descriptions
-
-This document intentionally excludes implementation details, runtime behavior, and component engineering.
+This project intentionally excludes implementation details, runtime behavior, and component engineering unless a later slice explicitly requires them.
 
 ## Scope
 
 Included:
 
-- Design language definition
-- Terminology
-- Naming standards
-- Documentation conventions
-- Cross-reference rules
-- AI prompt conventions
-- Relationship to the Design System
-- Relationship to future Business Capabilities
+- Design principle definitions
+- UX philosophy
+- Decision framework
+- Interface priorities
+- Principle rationale
+- Usage guidance
+- Examples
+- Anti-patterns
+- Relationships to UK-001 terminology
+- Relationships to the released Design System
+- AI prompt guidance for principle application
+- Verification criteria for future UI Kit slices
 
 Excluded:
 
-- Design Tokens
+- Design token definitions
 - Component implementation
-- Storybook
-- Frontend code
+- Storybook implementation
 - Runtime behavior
 - Engineering governance
-- Accessibility implementation
 - Theme implementation
+- Business-domain workflow specifications
 
-These topics remain owned by the released NextShift Design System.
+These topics remain owned by the released Design System, Core Runtime, governance docs, or future business capability slices.
 
 ## Slice Plan
 
 | Slice | Description | Status |
 | --- | --- | --- |
-| UK-001 | Design Language | Planning |
-| UK-002 | Design Principles | Planned |
+| UK-001 | Design Language | Released |
+| UK-002 | Design Principles | Released |
 | UK-003 | Component Catalog | Planned |
 | UK-004 | Layout Guidelines | Planned |
 | UK-005 | Interaction Patterns | Planned |
@@ -79,16 +76,19 @@ These topics remain owned by the released NextShift Design System.
 
 ## Acceptance Criteria
 
-UK-001 is complete when:
+UK-002 is complete when:
 
-- Design language is fully defined.
-- Terminology is standardized.
-- Documentation structure is reusable.
-- Naming conventions are finalized.
-- AI compatibility rules are documented.
-- Scope boundaries are explicitly defined.
-- No Design System functionality is duplicated.
+- All approved design principles are defined.
+- Each principle includes rationale, usage guidance, examples, and anti-patterns.
+- Principles are implementation-independent.
+- Principles are reusable across future UI Kit and Business Capability work.
+- UK-001 terminology is reused consistently.
+- The released Design System is referenced without duplication.
+- AI generation guidance is supported.
+- Principle guidance is usable by human designers, engineers, QA reviewers, Claude Design, and AI design agents.
+- Future UI Kit slices can reference the principles as review criteria.
+- No implementation or runtime behavior is introduced.
 
 ## Next Phase Deliverable
 
-Implement UK-001 Design Language documentation.
+UK-002 Design Principles released as v1.0.0. Begin UK-003 Component Catalog planning.

@@ -14,14 +14,14 @@ The UI Kit does not redefine implementation details owned by the Design System. 
 
 ## Project Status
 
-Planning
+Active
 
 ## Slice Plan
 
 | Slice | Description | Status |
 | --- | --- | --- |
-| UK-001 | Design Language | Planning |
-| UK-002 | Design Principles | Planned |
+| UK-001 | Design Language | Released |
+| UK-002 | Design Principles | Released |
 | UK-003 | Component Catalog | Planned |
 | UK-004 | Layout Guidelines | Planned |
 | UK-005 | Interaction Patterns | Planned |
@@ -33,7 +33,18 @@ Planning
 
 - UI Kit project initialized.
 - UK-001 Design Language planning archived under `slices/UK-001-design-language/`.
-- Next executable step: implement UK-001 Design Language documentation.
+- UK-001 Design Language implementation documentation completed under `slices/UK-001-design-language/`.
+- UK-001 Verification passed and is archived under `slices/UK-001-design-language/VERIFICATION.md`.
+- UK-001 Audit passed and is archived under `slices/UK-001-design-language/AUDIT_REPORT.md`.
+- UK-001 Release Notes archived under `slices/UK-001-design-language/RELEASE_NOTES.md`.
+- UK-001 Design Language released as v1.0.0 on 2026-06-30.
+- UK-002 Design Principles planning initialized under `slices/UK-002-design-principles/PLANNING.md`.
+- UK-002 Design Principles implementation documentation completed under `slices/UK-002-design-principles/`.
+- UK-002 Verification passed and is archived under `slices/UK-002-design-principles/VERIFICATION.md`.
+- UK-002 Audit passed and is archived under `slices/UK-002-design-principles/AUDIT_REPORT.md`.
+- UK-002 Release Notes archived under `slices/UK-002-design-principles/RELEASE_NOTES.md`.
+- UK-002 Design Principles released as v1.0.0 on 2026-06-30.
+- Next executable step: UK-003 Component Catalog planning.
 
 ## Rules
 
