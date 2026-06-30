@@ -13,6 +13,7 @@ import type {
   LeadMagnetConfig,
   LeadMagnetTrack,
 } from './types';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 import { generateLeadMagnet } from './leadMagnetGenerators';
 import { validateLeadMagnet } from './leadMagnetValidator';
 
@@ -103,6 +104,29 @@ function adaptConfigForTrack(
   };
 }
 
+function isLeadMagnetTrack(value: unknown): value is LeadMagnetTrack {
+  return value === 'retail' || value === 'recruitment';
+}
+
+function resolveWorkspaceTrack(
+  track: LeadMagnetTrack,
+  workspaceContext?: WorkspaceContext,
+): LeadMagnetTrack {
+  const configuredTrack = workspaceContext?.workspaceConfig.contentTrack;
+  return isLeadMagnetTrack(configuredTrack) ? configuredTrack : track;
+}
+
+function workspaceMetadata(workspaceContext?: WorkspaceContext): LeadMagnetConfig['workspaceContext'] {
+  if (!workspaceContext) return undefined;
+
+  return {
+    workspaceId: workspaceContext.workspaceId,
+    workspaceType: workspaceContext.workspaceType,
+    templateNamespace: workspaceContext.templateNamespace,
+    themeKey: workspaceContext.themeKey,
+  };
+}
+
 function buildLandingPageConfig(config: LeadMagnetConfig): FunnelConfig {
   const landing = config.landingPage;
   if (!landing) throw new Error('Landing page not generated');
@@ -165,17 +189,22 @@ export const leadMagnetService = {
     userId: string,
     type: LeadMagnetType,
     track: LeadMagnetTrack = 'retail',
+    workspaceContext?: WorkspaceContext,
   ): Promise<LeadMagnetConfig> {
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('请先完成品牌资料');
 
-    const config = adaptConfigForTrack(generateLeadMagnet(ctx, type), track);
+    const activeTrack = resolveWorkspaceTrack(track, workspaceContext);
+    const config = {
+      ...adaptConfigForTrack(generateLeadMagnet(ctx, type), activeTrack),
+      workspaceContext: workspaceMetadata(workspaceContext),
+    };
     config.qualityScore = validateLeadMagnet(config).score;
-    await this.saveTrack(userId, track, config);
+    await this.saveTrack(userId, activeTrack, config);
     return config;
   },
 
-  async publish(user: AuthUser): Promise<LeadMagnetConfig> {
+  async publish(user: AuthUser, workspaceContext?: WorkspaceContext): Promise<LeadMagnetConfig> {
     const config = await this.get(user.id);
     if (!config) throw new Error('Lead magnet not generated');
 
@@ -185,6 +214,7 @@ export const leadMagnetService = {
       ownerId: user.id,
       title: config.landingPage?.headline ?? config.title,
       config: funnelConfig as unknown as Record<string, unknown>,
+      workspaceContext,
     });
     const published = await funnelService.publish(user, funnel.id);
     const nextConfig: LeadMagnetConfig = {
@@ -197,6 +227,7 @@ export const leadMagnetService = {
         publishedAt: new Date().toISOString(),
       },
       updatedAt: new Date().toISOString(),
+      workspaceContext: workspaceMetadata(workspaceContext) ?? config.workspaceContext,
     };
 
     await this.save(user.id, nextConfig);

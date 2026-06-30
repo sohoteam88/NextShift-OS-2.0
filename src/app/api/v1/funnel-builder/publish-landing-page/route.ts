@@ -5,14 +5,24 @@ import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { funnelBuilderService } from '@/modules/funnel/services/funnel-builder-service';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
+import { resolveRequestWorkspaceContext } from '@/modules/workspace/request-workspace-context';
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
   await sharedAiRateLimitGuard(user, { feature: 'generation' });
   let body: unknown;
   try { body = await request.json(); } catch { body = {}; }
-  const { track } = z.object({ track: z.enum(['retail', 'recruitment']).default('retail') }).parse(body);
-  const data = await funnelBuilderService.publishLandingPage(user, track);
+  const { track } = z.object({
+    track: z.enum(['retail', 'recruitment']).default('retail'),
+    workspaceId: z.string().optional(),
+  }).parse(body);
+  const workspaceContext = await resolveRequestWorkspaceContext({
+    user,
+    request,
+    body,
+    legacyWorkspaceType: track,
+  });
+  const data = await funnelBuilderService.publishLandingPage(user, track, workspaceContext);
   const mission = await notifyMissionProgress(user, 'funnel_published');
   return NextResponse.json({ data, mission });
 });

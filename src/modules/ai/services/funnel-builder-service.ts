@@ -10,6 +10,7 @@ import type { FunnelConfig } from '@/modules/funnel/types';
 import type { StrategyContext } from '@/modules/funnel/types/strategy-context';
 import { qualityGateService, type QualityGateSummary } from '@/modules/funnel/services/quality-gate-service';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 
 export interface FunnelBuilderInput {
   businessType: string;
@@ -199,6 +200,22 @@ function copyFor(input: FunnelBuilderInput) {
     scam: '对方需要透明流程、证明和安全感。',
     fit: '对方想知道自己目前阶段能不能开始。',
   };
+}
+
+function buildWorkspacePromptBlock(workspaceContext?: WorkspaceContext): string {
+  if (!workspaceContext) return '';
+
+  return `
+Workspace Context:
+- Workspace ID: ${workspaceContext.workspaceId}
+- Workspace Type: ${workspaceContext.workspaceType}
+- Template Namespace: ${workspaceContext.templateNamespace}
+- Theme Key: ${workspaceContext.themeKey}
+- Prompt Namespace: ${workspaceContext.promptProfile.namespace}
+- Prompt Tone: ${workspaceContext.promptProfile.tone.join(', ')}
+- Prompt Constraints: ${workspaceContext.promptProfile.constraints.join('; ')}
+- Landing Focus: ${workspaceContext.landingContext.focus.join(', ')}
+- Landing Metrics: ${workspaceContext.landingContext.metrics.join(', ')}`;
 }
 
 function createFallbackFunnel(input: FunnelBuilderInput): FunnelBuilderOutput {
@@ -466,7 +483,7 @@ Generation rules based on Strategy Context:
 - If case studies exist, landing page must include testimonial-style proof inside the copy and FAQ.`;
 }
 
-function buildPrompt(input: FunnelBuilderInput): string {
+function buildPrompt(input: FunnelBuilderInput, workspaceContext?: WorkspaceContext): string {
   const lang = LANGUAGE_MAP[input.language];
   return `Generate a complete funnel system for this business. Respond entirely in ${lang}.
 
@@ -483,6 +500,7 @@ Business Information:
 - Closing Method: ${input.closingMethod}
 - Brand Tone: ${input.brandTone ?? 'Warm and relatable'}
 ${buildStrategyPromptBlock(input)}
+${buildWorkspacePromptBlock(workspaceContext)}
 
 Return this exact JSON structure (all strings in ${lang}):
 {
@@ -800,12 +818,13 @@ async function saveGeneratedFunnel(
   user: AuthUser,
   input: FunnelBuilderInput,
   result: FunnelGenerationResult,
+  workspaceContext?: WorkspaceContext,
 ): Promise<FunnelGenerationResult> {
   try {
     const saved = await funnelService.create(user, {
       title: buildSavedFunnelTitle(input, result.funnel),
       config: toSavedFunnelConfig(input, result.funnel, result.qualityGateResults ?? runQualityGate(result.funnel)) as unknown as Record<string, unknown>,
-    });
+    }, workspaceContext);
 
     if (
       result.strategyContext?.real_material.case_studies.length &&
@@ -825,6 +844,7 @@ export const funnelBuilderService = {
   async generateWorldClassFunnel(
     user: AuthUser,
     input: FunnelBuilderInput,
+    workspaceContext?: WorkspaceContext,
   ): Promise<FunnelGenerationResult> {
     await enforceQuota(user.tenantId);
 
@@ -834,7 +854,7 @@ export const funnelBuilderService = {
       const result = await router.generate(
         {
           systemPrompt: SYSTEM_PROMPT,
-          userMessage: buildPrompt(input),
+          userMessage: buildPrompt(input, workspaceContext),
           temperature: 0.55,
           maxTokens: 8000,
         },
@@ -848,7 +868,7 @@ export const funnelBuilderService = {
         const retry = await router.generate(
           {
             systemPrompt: SYSTEM_PROMPT + '\n\nIMPORTANT: Do NOT mention specific income amounts, medical cures, or guarantees. Return only valid JSON.',
-            userMessage: buildPrompt(input),
+            userMessage: buildPrompt(input, workspaceContext),
             temperature: 0.35,
             maxTokens: 8000,
           },
@@ -910,6 +930,6 @@ export const funnelBuilderService = {
     });
 
     const result = await Promise.race([aiGeneration, timeoutFallback]);
-    return saveGeneratedFunnel(user, input, result);
+    return saveGeneratedFunnel(user, input, result, workspaceContext);
   },
 };

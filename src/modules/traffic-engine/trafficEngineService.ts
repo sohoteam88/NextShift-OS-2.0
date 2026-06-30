@@ -4,6 +4,7 @@ import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvid
 import { extractCheckKeys } from '@/modules/mission/utils/completed-checks';
 import type { TrafficGoal, TrafficPlatform, BudgetTier, TrafficPackage, TrafficPrerequisites } from './types';
 import { generateTrafficPackage } from './trafficGenerators';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 
 function hasPublishedLandingPage(value: unknown) {
   if (!value || typeof value !== 'object') return false;
@@ -17,23 +18,39 @@ function isObjectMap(value: unknown): value is Record<string, unknown> {
 }
 
 export const trafficEngineService = {
-  async generate(userId: string, goal: TrafficGoal, platform: TrafficPlatform, budget: BudgetTier): Promise<TrafficPackage> {
+  async generate(
+    userId: string,
+    goal: TrafficGoal,
+    platform: TrafficPlatform,
+    budget: BudgetTier,
+    workspaceContext?: WorkspaceContext,
+  ): Promise<TrafficPackage> {
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('Brand DNA not found');
 
-    const prerequisites = await this.getPrerequisites(userId);
-    const funnelExists = prerequisites.retailLandingPageReady && prerequisites.recruitmentLandingPageReady;
+    const prerequisites = await this.getPrerequisites(userId, workspaceContext);
+    const funnelExists = workspaceContext
+      ? Boolean(prerequisites.activeWorkspaceLandingPageReady)
+      : prerequisites.retailLandingPageReady && prerequisites.recruitmentLandingPageReady;
     const lmExists = prerequisites.leadMagnetReady;
     const contentCount = await prisma.content.count({ where: { ownerId: userId } });
 
     const pkg = generateTrafficPackage(ctx, goal, platform, budget, funnelExists, lmExists, contentCount);
     pkg.campaign.readinessScore = pkg.readiness.score;
     pkg.prerequisites = prerequisites;
+    if (workspaceContext) {
+      pkg.workspaceContext = {
+        workspaceId: workspaceContext.workspaceId,
+        workspaceType: workspaceContext.workspaceType,
+        templateNamespace: workspaceContext.templateNamespace,
+        themeKey: workspaceContext.themeKey,
+      };
+    }
     await this.save(userId, pkg);
     return pkg;
   },
 
-  async getPrerequisites(userId: string): Promise<TrafficPrerequisites> {
+  async getPrerequisites(userId: string, workspaceContext?: WorkspaceContext): Promise<TrafficPrerequisites> {
     const [user, progress, contentCount, calendarCount, recentFunnels, brandProfile] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } }),
       prisma.userProgress.findUnique({ where: { userId }, select: { completedChecks: true } }),
@@ -70,6 +87,12 @@ export const trafficEngineService = {
     const hasLegacyLeadMagnet = Boolean(meta.lead_magnet && typeof meta.lead_magnet === 'object');
     const hasDualLeadMagnets = Boolean(leadMagnetTracks.retail && leadMagnetTracks.recruitment);
     const hasDualContentCalendars = Boolean(contentCalendars.retail && contentCalendars.recruitment);
+    const activeTrack = workspaceContext?.workspaceConfig.contentTrack === 'recruitment'
+      ? 'recruitment'
+      : 'retail';
+    const activeWorkspaceLandingPageReady = activeTrack === 'recruitment'
+      ? recruitmentLandingPageReady
+      : retailLandingPageReady;
 
     return {
       brandDnaReady: Boolean(brandProfile) || checks.has('brand_dna_confirmed') || checks.has('positioning_completed'),
@@ -82,6 +105,7 @@ export const trafficEngineService = {
       leadMagnetReady: hasDualLeadMagnets || hasLegacyLeadMagnet || checks.has('lead_magnet_created'),
       retailLandingPageReady,
       recruitmentLandingPageReady,
+      activeWorkspaceLandingPageReady,
       trackingPlanned: Boolean(meta.traffic_engine) || checks.has('traffic_campaign_launched'),
     };
   },

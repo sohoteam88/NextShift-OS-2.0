@@ -1,10 +1,12 @@
 import prisma from '@/lib/prisma';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { AnalyticsCenter, KPIOverview } from './businessTypes';
 import { detectAnomalies } from './analyticsEngines';
 import { applyProjectionToAnalyticsCenter, getAnalyticsProjection } from './adapters/AnalyticsProjectionAdapter';
 
 export const analyticsService = {
-  async getAnalyticsCenter(userId: string, tenantId: string): Promise<AnalyticsCenter> {
+  async getAnalyticsCenter(userId: string, tenantId: string, workspaceContext?: WorkspaceContext): Promise<AnalyticsCenter> {
+    const analyticsFocus = workspaceContext?.analyticsContext.focus[0] ?? 'sales';
     const contentCount = await prisma.content.count({ where: { ownerId: userId } });
     const videoCount = await prisma.videoProject.count({ where: { userId } });
     const leadCount = await prisma.lead.count({ where: { tenantId, deletedAt: null } });
@@ -18,7 +20,7 @@ export const analyticsService = {
       totalConversions: customerCount,
       totalRevenue: 0, // Would come from actual sales data
       conversionRate: leadCount > 0 ? Math.round((customerCount / leadCount) * 100) : 0,
-      leadResponseRate: 70, // Placeholder
+      leadResponseRate: analyticsFocus === 'appointments' ? 75 : 70, // Placeholder until workspace-aware analytics repositories land.
     };
 
     // Calculate revenue from opportunities

@@ -106,6 +106,12 @@ export interface LeadMagnetConfig {
   status: LMStatus;
   createdAt: string;
   updatedAt: string;
+  workspaceContext?: {
+    workspaceId: string;
+    workspaceType: string;
+    templateNamespace: string;
+    themeKey: string;
+  };
 }
 
 export interface LeadMagnetQuality {

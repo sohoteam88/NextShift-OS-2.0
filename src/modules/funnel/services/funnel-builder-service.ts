@@ -8,6 +8,7 @@ import { funnelService } from '@/modules/funnel/services/funnel-service';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { FunnelConfig, FunnelSection, FunnelTheme } from '@/modules/funnel/types';
 import { extractCheckKeys } from '@/modules/mission/utils/completed-checks';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 
 const DEFAULT_THEME: FunnelTheme = { primary_color: '#2563eb', bg_color: '#ffffff', font: 'system' };
 const TRACKS: FunnelTrack[] = ['retail', 'recruitment'];
@@ -34,6 +35,11 @@ function isFunnelTrack(value: unknown): value is FunnelTrack {
 
 function emptyPortfolio(activeTrack: FunnelTrack = 'retail'): FunnelPortfolio {
   return { retail: null, recruitment: null, activeTrack };
+}
+
+function resolveWorkspaceTrack(track: FunnelTrack, workspaceContext?: WorkspaceContext): FunnelTrack {
+  const workspaceTrack = workspaceContext?.workspaceConfig.contentTrack;
+  return isFunnelTrack(workspaceTrack) ? workspaceTrack : track;
 }
 
 function buildLandingPageConfig(pkg: FunnelPackage): FunnelConfig {
@@ -105,10 +111,16 @@ function buildLandingPageConfig(pkg: FunnelPackage): FunnelConfig {
 }
 
 export const funnelBuilderService = {
-  async generate(userId: string, funnelType: FunnelBuilderType, track: FunnelTrack = 'retail'): Promise<FunnelPackage> {
+  async generate(
+    userId: string,
+    funnelType: FunnelBuilderType,
+    track: FunnelTrack = 'retail',
+    workspaceContext?: WorkspaceContext,
+  ): Promise<FunnelPackage> {
+    const activeTrack = resolveWorkspaceTrack(track, workspaceContext);
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('Brand DNA not found');
-    const pkg = generateFullFunnel(ctx, funnelType, undefined, undefined, track);
+    const pkg = generateFullFunnel(ctx, funnelType, undefined, undefined, activeTrack);
     const health = funnelHealthService.evaluatePackage(pkg);
     pkg.healthScore = health.score;
     pkg.nextBestAction = funnelHealthService.getPackageAdvisor(health).nextAction;
@@ -122,9 +134,10 @@ export const funnelBuilderService = {
       ownerId: userId,
       title: pkg.title,
       config: pkg as unknown as Record<string, unknown>,
+      workspaceContext,
     });
 
-    await this.savePackage(userId, pkg, user.metadata, track);
+    await this.savePackage(userId, pkg, user.metadata, activeTrack, workspaceContext);
 
     return pkg;
   },
@@ -186,8 +199,13 @@ export const funnelBuilderService = {
     return portfolio;
   },
 
-  async publishLandingPage(user: AuthUser, track: FunnelTrack = 'retail'): Promise<FunnelPackage> {
-    const pkg = await this.get(user.id, track);
+  async publishLandingPage(
+    user: AuthUser,
+    track: FunnelTrack = 'retail',
+    workspaceContext?: WorkspaceContext,
+  ): Promise<FunnelPackage> {
+    const activeTrack = resolveWorkspaceTrack(track, workspaceContext);
+    const pkg = await this.get(user.id, activeTrack);
     if (!pkg) throw new Error('Funnel package not generated');
 
     let funnel = pkg.landingPage.funnelId
@@ -203,6 +221,7 @@ export const funnelBuilderService = {
         ownerId: user.id,
         title: pkg.landingPage.headline || pkg.title,
         config: config as unknown as Record<string, unknown>,
+        workspaceContext,
       });
     } else {
       funnel = await prisma.funnel.update({
@@ -228,18 +247,37 @@ export const funnelBuilderService = {
       updatedAt: new Date().toISOString(),
     };
 
-    await this.savePackage(user.id, nextPkg, undefined, track);
+    await this.savePackage(user.id, nextPkg, undefined, activeTrack, workspaceContext);
     return nextPkg;
   },
 
-  async savePackage(userId: string, pkg: FunnelPackage, existingMetadata?: unknown, track: FunnelTrack = pkg.track ?? 'retail') {
+  async savePackage(
+    userId: string,
+    pkg: FunnelPackage,
+    existingMetadata?: unknown,
+    track: FunnelTrack = pkg.track ?? 'retail',
+    workspaceContext?: WorkspaceContext,
+  ) {
     const meta = existingMetadata
       ? (existingMetadata as Record<string, unknown>)
       : ((await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } }))?.metadata as Record<string, unknown>) ?? {};
     const storedTracks = (meta.funnel_builder_tracks && typeof meta.funnel_builder_tracks === 'object')
       ? meta.funnel_builder_tracks as Record<string, unknown>
       : {};
-    const nextPkg = { ...pkg, track };
+    const nextPkg = {
+      ...pkg,
+      track,
+      ...(workspaceContext
+        ? {
+          workspaceContext: {
+            workspaceId: workspaceContext.workspaceId,
+            workspaceType: workspaceContext.workspaceType,
+            templateNamespace: workspaceContext.templateNamespace,
+            themeKey: workspaceContext.themeKey,
+          },
+        }
+        : {}),
+    };
     await prisma.user.update({
       where: { id: userId },
       data: {

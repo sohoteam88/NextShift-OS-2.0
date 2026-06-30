@@ -2,6 +2,7 @@
 // Replaces role-based personas with mission-context-aware advice
 
 import type { UserLevel } from '@/modules/user-evolution/types/evolution.types';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 
 interface CoachContext {
   missionTitle: string;
@@ -73,12 +74,22 @@ const DEFAULT_ADVICE: CoachAdvice = {
   encouragement: '进步胜过完美。继续向前迈进。',
 };
 
-export function getAICoachAdvice(missionId: string): CoachAdvice {
-  return ADVICE[missionId] ?? DEFAULT_ADVICE;
+export function getAICoachAdvice(missionId: string, workspaceContext?: WorkspaceContext): CoachAdvice {
+  const advice = ADVICE[missionId] ?? DEFAULT_ADVICE;
+  const coachingFocus = workspaceContext?.aiContext.focus[0];
+
+  if (!coachingFocus) {
+    return advice;
+  }
+
+  return {
+    ...advice,
+    nextBestAction: `${advice.nextBestAction} Focus: ${coachingFocus}.`,
+  };
 }
 
-export function getNextBestAction(missionId: string, completedTasks: string[]): string {
-  const advice = getAICoachAdvice(missionId);
+export function getNextBestAction(missionId: string, completedTasks: string[], workspaceContext?: WorkspaceContext): string {
+  const advice = getAICoachAdvice(missionId, workspaceContext);
   const remaining = completedTasks.length === 0 ? 'Start your first task.' : `${completedTasks.length} tasks completed. ${advice.nextBestAction}`;
   return remaining;
 }

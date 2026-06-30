@@ -18,9 +18,10 @@ export interface TrafficPrerequisites {
   leadMagnetReady: boolean;
   retailLandingPageReady: boolean;
   recruitmentLandingPageReady: boolean;
+  activeWorkspaceLandingPageReady?: boolean;
   trackingPlanned: boolean;
 }
-export interface TrafficPackage { goal: TrafficGoal; readiness: TrafficReadiness; facebook?: FacebookCampaign; instagram?: InstagramCampaign; tiktok?: TikTokCampaign; xhs?: XhsCampaign; budget: BudgetPlan; campaign: Campaign; checklist: LaunchChecklistItem[]; analyticsConfig: Record<string,string>; status: CampaignStatus; createdAt: string; prerequisites?: TrafficPrerequisites; }
+export interface TrafficPackage { goal: TrafficGoal; readiness: TrafficReadiness; facebook?: FacebookCampaign; instagram?: InstagramCampaign; tiktok?: TikTokCampaign; xhs?: XhsCampaign; budget: BudgetPlan; campaign: Campaign; checklist: LaunchChecklistItem[]; analyticsConfig: Record<string,string>; status: CampaignStatus; createdAt: string; prerequisites?: TrafficPrerequisites; workspaceContext?: { workspaceId: string; workspaceType: string; templateNamespace: string; themeKey: string }; }
 export interface TrafficDashboardPayload { data: TrafficPackage | null; prerequisites: TrafficPrerequisites; }
 
 export const TRAFFIC_GOALS: Record<TrafficGoal, TrafficGoalInfo> = {
