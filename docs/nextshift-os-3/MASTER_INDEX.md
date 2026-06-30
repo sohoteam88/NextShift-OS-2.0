@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-06-26
+Last Updated: 2026-06-30
 
 ---
 
@@ -28,8 +28,9 @@ For first-time contributors:
 4. [Runtime Status](RUNTIME_STATUS.md)
 5. [Capability Status](CAPABILITY_STATUS.md)
 6. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
-7. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-8. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+7. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
+8. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+9. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -46,10 +47,11 @@ After completing the above:
 | -------------------- | --------------- |
 | Blueprint            | Complete        |
 | Core Runtime         | Complete        |
+| Architecture 3.1     | ARC-001–003 Released · Foundation Milestone PASSED |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
 | Design System        | Released        |
-| UI Kit               | UK-001 Planning |
+| UI Kit               | UK-002 Released |
 
 ---
 
@@ -91,6 +93,7 @@ Packages:
 
 Engineering:
 
+- [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
 - [Implementation Cycle](engineering/IMPLEMENTATION_CYCLE.md)
 
 ---
@@ -116,6 +119,37 @@ Engineering Knowledge:
 
 ## Platform Projects
 
+Architecture 3.1:
+
+- [ARC-001 Platform Kernel & Member-Centric Identity Foundation](../architecture/ARC-001_PLATFORM_KERNEL_MEMBER_CENTRIC_IDENTITY_FOUNDATION.md)
+- [ARC-001 Implementation Report](../audit/ARC_001_IMPLEMENTATION_REPORT.md)
+- [ARC-001 Verification Checklist](../audit/ARC_001_VERIFICATION_CHECKLIST.md)
+- [ARC-001 Audit Report](../audit/ARC_001_AUDIT_REPORT.md)
+- [ARC-001 Release](../architecture/ARC-001_RELEASE.md)
+- [ARC-001 Release Notes](../architecture/ARC_001_RELEASE_NOTES.md)
+- [ARC-002 Workspace Context Architecture](../architecture/ARC-002_WORKSPACE_CONTEXT_ARCHITECTURE.md)
+- [ARC-002 Implementation Report](../audit/ARC_002_IMPLEMENTATION_REPORT.md)
+- [ARC-002 Codex Implementation Report](../audit/ARC_002_CODEX_IMPLEMENTATION_REPORT.md)
+- [ARC-002 Verification Checklist](../audit/ARC_002_VERIFICATION_CHECKLIST.md)
+- [ARC-002 Claude Code Architecture Audit Task](../audit/ARC_002_CLAUDE_CODE_ARCHITECTURE_AUDIT_TASK.md)
+- [ARC-002 Audit Report](../audit/ARC_002_AUDIT_REPORT.md)
+- [ARC-002 Release](../architecture/ARC-002_RELEASE.md)
+- [ARC-002 Release Notes](../architecture/ARC_002_RELEASE_NOTES.md)
+- [ARC-003 Engine Context Refactor](../architecture/ARC-003_ENGINE_CONTEXT_REFACTOR.md)
+- [ARC-003 Codex Implementation Task](../audit/ARC_003_CODEX_IMPLEMENTATION_TASK.md)
+- [ARC-003 Implementation Report](../audit/ARC_003_IMPLEMENTATION_REPORT.md)
+- [ARC-003 Codex Implementation Report](../audit/ARC_003_CODEX_IMPLEMENTATION_REPORT.md)
+- [ARC-003 Verification Checklist](../audit/ARC_003_VERIFICATION_CHECKLIST.md)
+- [ARC-003 Claude Code Architecture Audit Task](../audit/ARC_003_CLAUDE_CODE_ARCHITECTURE_AUDIT_TASK.md)
+- [ARC-003 Audit Report](../audit/ARC_003_AUDIT_REPORT.md)
+- [ARC-003 Release](../architecture/ARC-003_RELEASE.md)
+- [ARC-003 Release Notes](../architecture/ARC_003_RELEASE_NOTES.md)
+- [NextShift OS 3.1 Architecture Milestone Review (ARC-001 to ARC-003)](../architecture/NEXTSHIFT_OS_3_1_ARCHITECTURE_MILESTONE_REVIEW.md)
+- [NS31 Dual Business Workspace Architecture](../architecture/NS31_DUAL_BUSINESS_WORKSPACE_ARCHITECTURE.md)
+- [NS31 Workspace Context System](../architecture/NS31_WORKSPACE_CONTEXT_SYSTEM.md)
+- [NS31 Database Evolution Plan](../architecture/NS31_DATABASE_EVOLUTION_PLAN.md)
+- [NS31 Migration Plan](../architecture/NS31_MIGRATION_PLAN.md)
+
 Design System:
 
 - [NextShift Design System v1.0](design-system/README.md)
@@ -128,6 +162,17 @@ UI Kit:
 - [NextShift UI Kit v1.0](ui-kit/README.md)
 - [UI Kit Project Planning](ui-kit/PROJECT_PLANNING.md)
 - [UK-001 Design Language Planning](ui-kit/slices/UK-001-design-language/PLANNING.md)
+- [UK-001 Design Language Audit Report](ui-kit/slices/UK-001-design-language/AUDIT_REPORT.md)
+- [UK-001 Design Language Release Notes](ui-kit/slices/UK-001-design-language/RELEASE_NOTES.md)
+- [UK-002 Design Principles Planning](ui-kit/slices/UK-002-design-principles/PLANNING.md)
+- [UK-002 Design Principles](ui-kit/slices/UK-002-design-principles/DESIGN_PRINCIPLES.md)
+- [UK-002 Principle Explanations](ui-kit/slices/UK-002-design-principles/PRINCIPLE_EXPLANATIONS.md)
+- [UK-002 UX Foundations](ui-kit/slices/UK-002-design-principles/UX_FOUNDATIONS.md)
+- [UK-002 Anti-Patterns](ui-kit/slices/UK-002-design-principles/ANTI_PATTERNS.md)
+- [UK-002 Implementation Report](ui-kit/slices/UK-002-design-principles/IMPLEMENTATION_REPORT.md)
+- [UK-002 Verification](ui-kit/slices/UK-002-design-principles/VERIFICATION.md)
+- [UK-002 Design Principles Audit Report](ui-kit/slices/UK-002-design-principles/AUDIT_REPORT.md)
+- [UK-002 Design Principles Release Notes](ui-kit/slices/UK-002-design-principles/RELEASE_NOTES.md)
 
 ---
 
