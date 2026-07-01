@@ -47,7 +47,7 @@ After completing the above:
 | -------------------- | --------------- |
 | Blueprint            | Complete        |
 | Core Runtime         | Complete        |
-| Architecture 3.1     | ARC-001–003 Released · Foundation Milestone PASSED |
+| Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
 | Design System        | Released        |
@@ -145,6 +145,32 @@ Architecture 3.1:
 - [ARC-003 Release](../architecture/ARC-003_RELEASE.md)
 - [ARC-003 Release Notes](../architecture/ARC_003_RELEASE_NOTES.md)
 - [NextShift OS 3.1 Architecture Milestone Review (ARC-001 to ARC-003)](../architecture/NEXTSHIFT_OS_3_1_ARCHITECTURE_MILESTONE_REVIEW.md)
+- [OS 3.1 Foundation Checkpoint Report](../audit/OS31_FOUNDATION_CHECKPOINT_REPORT.md)
+- [ARC-004 Retail Business OS Configuration](../architecture/ARC-004_RETAIL_BUSINESS_OS_CONFIGURATION.md)
+- [ARC-004 Implementation Report](../audit/ARC_004_IMPLEMENTATION_REPORT.md)
+- [ARC-004 Codex Implementation Report](../audit/ARC_004_CODEX_IMPLEMENTATION_REPORT.md)
+- [ARC-004 Verification Checklist](../audit/ARC_004_VERIFICATION_CHECKLIST.md)
+- [ARC-004 Claude Code Architecture Audit Task](../audit/ARC_004_CLAUDE_CODE_ARCHITECTURE_AUDIT_TASK.md)
+- [ARC-004 Audit Report](../audit/ARC_004_AUDIT_REPORT.md)
+- [ARC-004 Release](../architecture/ARC-004_RELEASE.md)
+- [ARC-004 Release Notes](../architecture/ARC_004_RELEASE_NOTES.md)
+- [ARC-005 Recruitment Business OS Configuration](../architecture/ARC-005_RECRUITMENT_BUSINESS_OS_CONFIGURATION.md)
+- [ARC-005 Implementation Report](../audit/ARC_005_IMPLEMENTATION_REPORT.md)
+- [ARC-005 Codex Implementation Report](../audit/ARC_005_CODEX_IMPLEMENTATION_REPORT.md)
+- [ARC-005 Verification Checklist](../audit/ARC_005_VERIFICATION_CHECKLIST.md)
+- [ARC-005 Claude Code Architecture Audit Task](../audit/ARC_005_CLAUDE_CODE_ARCHITECTURE_AUDIT_TASK.md)
+- [ARC-005 Audit Report](../audit/ARC_005_AUDIT_REPORT.md)
+- [ARC-005 Release](../architecture/ARC-005_RELEASE.md)
+- [ARC-005 Release Notes](../architecture/ARC_005_RELEASE_NOTES.md)
+- [ARC-006 Workspace Presentation Layer Rendering](../architecture/ARC-006_WORKSPACE_PRESENTATION_LAYER_RENDERING.md)
+- [ARC-006 Implementation Report](../audit/ARC_006_IMPLEMENTATION_REPORT.md)
+- [ARC-006 Codex Implementation Report](../audit/ARC_006_CODEX_IMPLEMENTATION_REPORT.md)
+- [ARC-006 Verification Checklist](../audit/ARC_006_VERIFICATION_CHECKLIST.md)
+- [ARC-006 Claude Code Architecture Audit Task](../audit/ARC_006_CLAUDE_CODE_ARCHITECTURE_AUDIT_TASK.md)
+- [ARC-006 Audit Report](../audit/ARC_006_AUDIT_REPORT.md)
+- [ARC-006 Release](../architecture/ARC-006_RELEASE.md)
+- [ARC-006 Release Notes](../architecture/ARC_006_RELEASE_NOTES.md)
+- [OS 3.1 Production Readiness Review (RC1)](../audit/OS31_PRODUCTION_READINESS_REVIEW.md)
 - [NS31 Dual Business Workspace Architecture](../architecture/NS31_DUAL_BUSINESS_WORKSPACE_ARCHITECTURE.md)
 - [NS31 Workspace Context System](../architecture/NS31_WORKSPACE_CONTEXT_SYSTEM.md)
 - [NS31 Database Evolution Plan](../architecture/NS31_DATABASE_EVOLUTION_PLAN.md)
