@@ -172,6 +172,7 @@ Architecture 3.1:
 - [ARC-006 Release Notes](../architecture/ARC_006_RELEASE_NOTES.md)
 - [OS 3.1 Production Readiness Review (RC1)](../audit/OS31_PRODUCTION_READINESS_REVIEW.md)
 - [OS 3.1 Release Candidate (RC1)](../architecture/OS31_RELEASE_CANDIDATE.md)
+- [OS 3.1 RC1 Git Checkpoint Report](../audit/OS31_RC1_GIT_CHECKPOINT_REPORT.md)
 - [NS31 Dual Business Workspace Architecture](../architecture/NS31_DUAL_BUSINESS_WORKSPACE_ARCHITECTURE.md)
 - [NS31 Workspace Context System](../architecture/NS31_WORKSPACE_CONTEXT_SYSTEM.md)
 - [NS31 Database Evolution Plan](../architecture/NS31_DATABASE_EVOLUTION_PLAN.md)
