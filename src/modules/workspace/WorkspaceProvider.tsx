@@ -76,3 +76,7 @@ export function useWorkspaceContext(): WorkspaceProviderValue {
 
   return value;
 }
+
+export function useOptionalWorkspaceContext(): WorkspaceProviderValue | null {
+  return useContext(WorkspaceContextState);
+}

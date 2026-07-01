@@ -6,3 +6,4 @@ export * from './workspace-registry';
 export * from './workspace-repository';
 export * from './workspace-resolver';
 export * from './workspace-switcher';
+export * from './WorkspaceProvider';

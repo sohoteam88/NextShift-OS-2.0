@@ -3,7 +3,11 @@ import type {
   WorkspaceCapabilityConfig,
   WorkspaceConfig,
   WorkspaceManifest,
+  WorkspaceAIProfile,
+  WorkspaceDashboardWidget,
+  WorkspaceNavigationItem,
   WorkspacePromptProfile,
+  WorkspaceTemplateDefinition,
   WorkspaceType,
 } from './types';
 import { getWorkspaceManifest, WORKSPACE_MANIFEST_REGISTRY } from './workspace-config';
@@ -25,8 +29,16 @@ export class WorkspaceRegistry {
     return this.getConfiguration(workspaceType).navigation;
   }
 
+  getNavigationItems(workspaceType: WorkspaceType): readonly WorkspaceNavigationItem[] {
+    return this.getConfiguration(workspaceType).navigation.items ?? [];
+  }
+
   getDashboardProfile(workspaceType: WorkspaceType): WorkspaceCapabilityConfig {
     return this.getConfiguration(workspaceType).dashboard;
+  }
+
+  getDashboardWidgets(workspaceType: WorkspaceType): readonly WorkspaceDashboardWidget[] {
+    return this.getConfiguration(workspaceType).dashboardWidgets ?? [];
   }
 
   getCapabilityProfile(
@@ -48,6 +60,22 @@ export class WorkspaceRegistry {
 
   getPromptProfile(workspaceType: WorkspaceType): WorkspacePromptProfile {
     return this.getConfiguration(workspaceType).promptProfile;
+  }
+
+  getAIProfile(workspaceType: WorkspaceType): WorkspaceAIProfile | null {
+    return this.getConfiguration(workspaceType).aiProfile ?? null;
+  }
+
+  getAICOOProfile(workspaceType: WorkspaceType): WorkspaceAIProfile | null {
+    return this.getConfiguration(workspaceType).aiCooProfile ?? null;
+  }
+
+  getTemplates(workspaceType: WorkspaceType): readonly WorkspaceTemplateDefinition[] {
+    return this.getConfiguration(workspaceType).templates ?? [];
+  }
+
+  getBusinessCapabilities(workspaceType: WorkspaceType): readonly string[] {
+    return this.getConfiguration(workspaceType).businessCapabilities ?? [];
   }
 }
 

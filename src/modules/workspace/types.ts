@@ -72,24 +72,62 @@ export interface WorkspacePromptProfile {
   readonly constraints: readonly string[];
 }
 
+export interface WorkspaceNavigationItem {
+  readonly id: string;
+  readonly label: string;
+  readonly route: string;
+  readonly capability?: WorkspaceCapability;
+  readonly priority: number;
+}
+
+export interface WorkspaceDashboardWidget {
+  readonly id: string;
+  readonly title: string;
+  readonly metric: string;
+  readonly route: string;
+  readonly capability?: WorkspaceCapability;
+}
+
+export interface WorkspaceTemplateDefinition {
+  readonly id: string;
+  readonly name: string;
+  readonly namespace: string;
+  readonly capability: WorkspaceCapability;
+  readonly purpose: string;
+  readonly format: string;
+}
+
+export interface WorkspaceAIProfile {
+  readonly mission: string;
+  readonly directives: readonly string[];
+  readonly guardrails: readonly string[];
+}
+
 export interface WorkspaceConfig {
   readonly workspaceType: WorkspaceType;
+  readonly workspaceName: string;
   readonly label: string;
   readonly contentTrack: 'retail' | 'recruitment' | (string & {});
   readonly themeKey: string;
   readonly templateNamespace: string;
   readonly promptProfile: WorkspacePromptProfile;
+  readonly businessCapabilities?: readonly string[];
   readonly enabledCapabilities: readonly WorkspaceCapability[];
   readonly dashboard: WorkspaceCapabilityConfig;
+  readonly dashboardWidgets?: readonly WorkspaceDashboardWidget[];
   readonly crm: WorkspaceCapabilityConfig;
   readonly content: WorkspaceCapabilityConfig;
   readonly funnel: WorkspaceCapabilityConfig;
   readonly landing: WorkspaceCapabilityConfig;
   readonly analytics: WorkspaceCapabilityConfig;
   readonly ai: WorkspaceCapabilityConfig;
+  readonly aiProfile?: WorkspaceAIProfile;
+  readonly aiCooProfile?: WorkspaceAIProfile;
+  readonly templates?: readonly WorkspaceTemplateDefinition[];
   readonly navigation: {
     readonly primaryWorkspaceRoute: string;
     readonly capabilityRoutes: Readonly<Record<WorkspaceCapability, string>>;
+    readonly items?: readonly WorkspaceNavigationItem[];
   };
 }
 

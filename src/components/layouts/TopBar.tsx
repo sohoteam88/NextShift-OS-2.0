@@ -16,6 +16,8 @@ import {
   getExecutionRoadmapLabel,
   isExecutionRoadmapStepActive,
 } from '@/modules/mission/constants/execution-roadmap';
+import { WorkspaceSwitcher } from '@/modules/workspace/components/WorkspaceSwitcher';
+import { WorkspaceTopNavigation } from '@/modules/workspace/components/WorkspaceTopNavigation';
 
 type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
 
@@ -136,8 +138,12 @@ export function TopBar({
         </span>
       </Link>
 
+      <WorkspaceSwitcher />
+
+      <WorkspaceTopNavigation />
+
       {showExecutionRoadmap ? (
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto xl:flex" aria-label="Primary navigation">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto 2xl:flex" aria-label="Execution roadmap">
           {topNav.map((item) => {
             const active = isExecutionRoadmapStepActive(item, pathname);
             return (
@@ -156,9 +162,7 @@ export function TopBar({
             );
           })}
         </nav>
-      ) : (
-        <div className="min-w-0 flex-1" />
-      )}
+      ) : null}
 
       <div className="ml-auto flex items-center gap-2">
         <LanguageSwitcher />

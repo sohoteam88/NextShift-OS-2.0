@@ -8,6 +8,7 @@ import { MomentumCard } from './MomentumCard';
 import { useDashboardMission } from '../hooks/useDashboardMission';
 import { RevenueDriverDashboardSection } from '@/modules/revenue-drivers/components/RevenueDriverHub';
 import { revenueDriverHubRouteForMission } from '@/modules/revenue-drivers/constants/revenue-drivers';
+import { WorkspaceDashboardMetadata } from '@/modules/workspace/components/WorkspaceDashboardMetadata';
 
 function routeOrFallback(route?: string) {
   return route && route.length > 0 ? route : '/journey';
@@ -104,6 +105,7 @@ export function DashboardHome() {
         executeRoute={executeRoute}
         primaryActionLabel={data.missionControl.ctaLabel}
       />
+      <WorkspaceDashboardMetadata />
       <RevenueDriverDashboardSection />
       <div className="grid gap-5 lg:grid-cols-2">
         <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />
