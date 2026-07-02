@@ -682,6 +682,7 @@ Core:
 - [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
 - [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
 - [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+- [Engineering Standards v1.0 Release Package](engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md)
 - [Documentation Recommendation Standard](governance/DOCUMENTATION_RECOMMENDATION_STANDARD.md)
 - [Product Governance Charter](governance/PRODUCT_GOVERNANCE_CHARTER.md)
 - [Product Decision Framework](governance/PRODUCT_DECISION_FRAMEWORK.md)
