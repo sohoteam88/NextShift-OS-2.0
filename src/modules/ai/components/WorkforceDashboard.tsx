@@ -221,7 +221,7 @@ function LockedWorkforceView({ gate, onRetry }: { gate: WorkforceGate; onRetry: 
               </div>
               <div className="rounded-[var(--radius-md)] bg-white p-3">
                 <p className="font-semibold text-[var(--color-text)]">显示规则</p>
-                <p className="mt-1 text-[var(--color-text-muted)]">只有进入 TEAM_BUILDING 后才显示执行工作队。</p>
+                <p className="mt-1 text-[var(--color-text-muted)]">只有进入团队复制阶段后才显示执行工作队。</p>
               </div>
               <div className="rounded-[var(--radius-md)] bg-white p-3">
                 <p className="font-semibold text-[var(--color-text)]">下一步</p>

@@ -2,18 +2,25 @@
 
 import Link from 'next/link';
 import { ArrowRight, Zap } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
 import type { FunnelGoal, FunnelNextAction, FunnelProgress } from '@/modules/funnel/types/funnel-os';
 import { getFunnelLabel } from './FunnelSelector';
 
 type Locale = 'zh' | 'en' | 'ms';
 
+function normalizeLocale(locale: string): Locale {
+  if (locale.startsWith('en')) return 'en';
+  if (locale.startsWith('ms')) return 'ms';
+  return 'zh';
+}
+
 export function FunnelOperatingCard({
   funnelType,
   progress,
   goal,
   nextAction,
-  locale = 'zh',
+  locale,
 }: {
   funnelType: BusinessFunnelType;
   progress: FunnelProgress;
@@ -21,12 +28,15 @@ export function FunnelOperatingCard({
   nextAction: FunnelNextAction;
   locale?: Locale;
 }) {
+  const currentLocale = useLocale();
+  const activeLocale = normalizeLocale(locale ?? currentLocale);
+
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr_1fr]">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Current Funnel</p>
-          <h1 className="mt-2 text-2xl font-semibold text-[var(--color-text)]">{getFunnelLabel(funnelType, locale)}</h1>
+          <h1 className="mt-2 text-2xl font-semibold text-[var(--color-text)]">{getFunnelLabel(funnelType, activeLocale)}</h1>
           <div className="mt-4 flex items-end gap-3">
             <span className="text-4xl font-semibold text-[var(--color-text)]">{progress.progress}%</span>
             <span className="pb-1 text-sm text-[var(--color-text-muted)]">built</span>
@@ -57,4 +67,3 @@ export function FunnelOperatingCard({
     </section>
   );
 }
-

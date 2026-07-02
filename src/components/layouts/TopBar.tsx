@@ -28,6 +28,7 @@ type TopBarProps = {
   tenantName?: string;
   tenantLogoUrl?: string | null;
   showExecutionRoadmap?: boolean;
+  showWorkspaceNavigation?: boolean;
   homeHref?: string;
 };
 
@@ -107,6 +108,7 @@ export function TopBar({
   tenantName = 'NextShift',
   tenantLogoUrl,
   showExecutionRoadmap = true,
+  showWorkspaceNavigation = true,
   homeHref = '/dashboard',
 }: TopBarProps) {
   const nav = useTranslations('nav');
@@ -140,7 +142,7 @@ export function TopBar({
 
       <WorkspaceSwitcher />
 
-      <WorkspaceTopNavigation />
+      {showWorkspaceNavigation ? <WorkspaceTopNavigation /> : null}
 
       {showExecutionRoadmap ? (
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto 2xl:flex" aria-label="Execution roadmap">

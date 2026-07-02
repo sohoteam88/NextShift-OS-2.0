@@ -11,6 +11,20 @@ type WorkspaceTopNavigationProps = {
   readonly className?: string;
 };
 
+const PRIMARY_NAVIGATION_MATCHERS = [
+  'dashboard',
+  'journey',
+  'content',
+  'lead_magnet',
+  'offer',
+  'funnel',
+];
+
+function isPrimaryNavigationItem(item: { readonly id: string; readonly capability?: string }) {
+  const searchable = `${item.id} ${item.capability ?? ''}`.toLowerCase();
+  return PRIMARY_NAVIGATION_MATCHERS.some((matcher) => searchable.includes(matcher));
+}
+
 export function WorkspaceTopNavigation({ className }: WorkspaceTopNavigationProps) {
   const workspace = useOptionalWorkspaceContext();
   const pathname = usePathname();
@@ -22,9 +36,12 @@ export function WorkspaceTopNavigation({ className }: WorkspaceTopNavigationProp
 
   if (!model || model.navigationItems.length === 0) return null;
 
+  const navigationItems = model.navigationItems.filter(isPrimaryNavigationItem).slice(0, 5);
+  const visibleItems = navigationItems.length > 0 ? navigationItems : model.navigationItems.slice(0, 5);
+
   return (
     <nav className={cn('hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto xl:flex', className)} aria-label={`${model.workspaceName} navigation`}>
-      {model.navigationItems.map((item) => {
+      {visibleItems.map((item) => {
         const active = pathname === item.route || pathname.startsWith(`${item.route}/`);
 
         return (

@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Dna, TrendingUp, AlertTriangle } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import { cn } from '@/lib/cn';
 
 // ============================================================
@@ -15,6 +16,12 @@ type Locale = 'zh' | 'en' | 'ms';
 interface DNAHealthCardProps {
   locale?: Locale;
   className?: string;
+}
+
+function normalizeLocale(locale: string): Locale {
+  if (locale.startsWith('en')) return 'en';
+  if (locale.startsWith('ms')) return 'ms';
+  return 'zh';
 }
 
 // ============================================================
@@ -51,13 +58,15 @@ function useDNAHealth() {
 // Component
 // ============================================================
 
-export function DNAHealthCard({ locale = 'zh', className }: DNAHealthCardProps) {
+export function DNAHealthCard({ locale, className }: DNAHealthCardProps) {
+  const currentLocale = useLocale();
+  const activeLocale = normalizeLocale(locale ?? currentLocale);
   const query = useDNAHealth();
   const health = query.data?.data;
 
-  const title = locale === 'en' ? 'Brand DNA Health' : locale === 'ms' ? 'Kesihatan DNA Jenama' : '品牌 DNA 健康度';
-  const viewStudio = locale === 'en' ? 'Open Studio' : locale === 'ms' ? 'Buka Studio' : '进入 DNA Studio';
-  const complete = locale === 'en' ? 'Your Brand DNA is' : locale === 'ms' ? 'DNA Jenama anda' : '你的 Brand DNA 完成度';
+  const title = activeLocale === 'en' ? 'Brand DNA Health' : activeLocale === 'ms' ? 'Kesihatan DNA Jenama' : '品牌 DNA 健康度';
+  const viewStudio = activeLocale === 'en' ? 'Open Studio' : activeLocale === 'ms' ? 'Buka Studio' : '进入 DNA Studio';
+  const complete = activeLocale === 'en' ? 'Your Brand DNA is' : activeLocale === 'ms' ? 'DNA Jenama anda' : '你的 Brand DNA 完成度';
 
   if (query.isLoading) {
     return (

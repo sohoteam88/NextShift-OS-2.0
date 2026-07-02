@@ -84,6 +84,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
         tenantName={tenant?.name}
         tenantLogoUrl={branding?.logoUrl}
         showExecutionRoadmap={showMemberRoadmap}
+        showWorkspaceNavigation={!isAdminExperience}
         homeHref={isAdminExperience ? adminHomeHref : '/dashboard'}
       />
       {showMemberRoadmap ? <ExecutionRoadmapRail /> : null}
