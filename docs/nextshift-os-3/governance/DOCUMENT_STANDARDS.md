@@ -32,6 +32,8 @@ Every document should begin with:
 - Last Updated, optional
 - Owner, optional
 
+Documents that are part of a release, implementation slice, capability, platform project, or governance chain should also follow [Traceability Standard](TRACEABILITY_STANDARD.md).
+
 ## Writing Style
 
 Use:
@@ -83,6 +85,8 @@ Every concept should have one authoritative definition.
 
 If a concept already exists elsewhere, reference it instead of redefining it.
 
+Document authority levels and conflict resolution are defined in [Document Hierarchy Standard](DOCUMENT_HIERARCHY_STANDARD.md).
+
 ## Versioning
 
 Major architectural changes require a version increment.
@@ -98,3 +102,9 @@ Documentation is part of the architecture.
 Documentation should evolve together with the product.
 
 Documentation is never an afterthought.
+
+## Recommendation Artifacts
+
+When ChatGPT or an AI contributor recommends a new governance document, roadmap, architecture document, implementation plan, engineering standard, product standard, or project planning artifact, the recommendation must also include a ready Markdown artifact.
+
+Follow [Documentation Recommendation Standard](DOCUMENTATION_RECOMMENDATION_STANDARD.md) for the required output format and naming convention.

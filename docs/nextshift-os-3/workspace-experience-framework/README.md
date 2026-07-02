@@ -4,6 +4,17 @@ Workspace Experience Framework (WEF) v1.0 defines the Workspace operating model 
 
 WEF is a platform experience project. It is not a Business Capability, not a UI Kit extension, and not a runtime architecture redesign. It consumes the released NextShift Standards v1.0, Design System v1.0, and UI Kit v1.0 as foundations.
 
+Workspace-level architecture and lifecycle rules are defined in [Workspace Standard](WORKSPACE_STANDARD.md).
+
+AI behavior across Workspaces is governed by [AI Workspace Standard](AI_WORKSPACE_STANDARD.md).
+
+MVP 1.0 workspace-specific standards:
+
+- [Content Workspace Standard](CONTENT_WORKSPACE_STANDARD.md)
+- [Visual Workspace Standard](VISUAL_WORKSPACE_STANDARD.md)
+- [Video Workspace Standard](VIDEO_WORKSPACE_STANDARD.md)
+- [Publishing Workspace Standard](PUBLISHING_WORKSPACE_STANDARD.md)
+
 ## Engineering Baseline
 
 - NextShift Blueprint v1.0
@@ -118,6 +129,9 @@ WEF v1.0 Released
 - Reuse NextShift Standards v1.0.
 - Reuse NextShift Design System v1.0.
 - Reuse NextShift UI Kit v1.0.
+- Follow [Workspace Standard](WORKSPACE_STANDARD.md).
+- Follow [AI Workspace Standard](AI_WORKSPACE_STANDARD.md).
+- Follow MVP workspace standards for content, visual, video, and publishing workflows.
 - Do not redesign the Design System.
 - Do not redesign the UI Kit.
 - Do not redesign runtime architecture.

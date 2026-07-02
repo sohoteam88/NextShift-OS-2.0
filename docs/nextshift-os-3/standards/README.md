@@ -64,6 +64,36 @@ Canonical document:
 
 - [STD-004 Release Governance v1.0](../engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
 
+### STD-005 - GitHub Alignment Standard
+
+Defines:
+
+- Branch strategy
+- Release branch and tag alignment
+- VPS deployed revision standard
+- Archive deployment compatibility
+- Deployment manifest requirements
+- Production alignment gate
+
+Canonical document:
+
+- [STD-005 GitHub Alignment Standard v1.0](../engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+
+### STD-006 - Project Execution Orchestration Standard
+
+Defines:
+
+- Project state machine
+- Three stop point orchestration
+- Continuation protocol
+- Project state detection
+- Artifact production matrix
+- Standard dependency map
+
+Canonical document:
+
+- [STD-006 Project Execution Orchestration Standard v1.0](../engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+
 ## Adoption
 
 Every new NextShift project should declare the following Engineering Baseline:
@@ -72,6 +102,8 @@ Every new NextShift project should declare the following Engineering Baseline:
 - STD-002 AI Role Framework
 - STD-003 Documentation Standard
 - STD-004 Release Governance
+- STD-005 GitHub Alignment Standard
+- STD-006 Project Execution Orchestration Standard
 
 ## Repository Structure
 
@@ -98,7 +130,6 @@ Status: Released
 
 Future standards may include:
 
-- STD-005 Workspace Experience Framework
-- STD-006 Design Governance
-- STD-007 Security & Compliance
-- STD-008 AI Collaboration Standard
+- STD-007 Design Governance
+- STD-008 Security & Compliance
+- STD-009 AI Collaboration Standard

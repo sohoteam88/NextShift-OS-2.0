@@ -14,6 +14,8 @@ Implementation follows architecture.
 
 Features follow implementation.
 
+MVP 1.0 delivery is governed by [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md), sequenced through the [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md) and [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md), and monitored in the [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md). Every feature proposed for MVP 1.0 must map to MVP Phase 1, Phase 2, or Phase 3 before it is implemented.
+
 ## Current Status
 
 Blueprint status:
@@ -36,6 +38,24 @@ The objective is not to deliver features.
 The objective is to deliver architectural capability.
 
 Each milestone should increase the intelligence of the platform.
+
+For MVP 1.0, architectural capability is considered useful only when it helps close the operating loop:
+
+```text
+Understand -> Decide -> Create -> Execute -> Measure -> Learn
+```
+
+## MVP 1.0 Alignment Overlay
+
+The architecture phases below remain the implementation roadmap. The MVP 1.0 alignment constrains priority and completion gating:
+
+| MVP Phase | Required Product Capability | Roadmap Dependency |
+| --- | --- | --- |
+| MVP Phase 1 - Business OS Foundation | Business Brain understands the business and explains next actions | Core Intelligence Platform, Decision Platform, Learning Platform |
+| MVP Phase 2 - AI Workspace | Users create, edit, approve, and publish assets inside NextShift | Execution Platform, Capability Platform, Workspace Experience Framework, Content / Visual / Video / Publishing Workspace Standards |
+| MVP Phase 3 - Content Intelligence | AI determines what content should be created based on context and evidence | Decision Platform, Analytics, Learning Platform, Content Intelligence Standard, market-signal integrations |
+
+Capabilities outside these phases remain [Product Backlog](governance/PRODUCT_BACKLOG_STANDARD.md) candidates until the MVP 1.0 completion gate is satisfied.
 
 ## Phase 0 - Blueprint
 

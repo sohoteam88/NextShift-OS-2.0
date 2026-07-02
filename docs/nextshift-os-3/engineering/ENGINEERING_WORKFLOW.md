@@ -36,6 +36,9 @@ Audit Report (ChatGPT)
 Release Notes (ChatGPT)
         |
         v
+GitHub Alignment (STD-005)
+        |
+        v
 Released
 ```
 
@@ -69,6 +72,7 @@ Responsible for:
 - Build validation
 - Migration implementation
 - Verification execution
+- GitHub, release tag, and deployment revision verification when release alignment is in scope
 
 Codex outputs:
 
@@ -76,6 +80,7 @@ Codex outputs:
 - Files Changed
 - Commands Executed
 - Validation Results
+- Alignment Results, when release alignment is in scope
 
 ### Claude Code
 
@@ -126,6 +131,7 @@ Implementation is complete only when:
 - Claude Code audit passes
 - Release Notes generated
 - Documentation updated
+- GitHub alignment passes when release alignment is required
 
 ## Architecture Principles
 
@@ -148,6 +154,9 @@ Release requires:
 - Claude Code Audit PASS
 - No critical regressions
 - Documentation complete
+- GitHub alignment PASS when release alignment is required
+
+Release branch, tag, VPS deployed revision, and production traceability checks are governed by [STD-005 GitHub Alignment Standard v1.0](STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
 
 ## Continuous Improvement
 

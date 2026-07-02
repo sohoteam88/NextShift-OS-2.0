@@ -365,6 +365,10 @@ Applies to:
 - CAP-003 and later capabilities
 - Future Blueprint revisions unless superseded
 
+## Execution Playbook
+
+The mandatory role-based execution workflow is defined in [NextShift Engineering Execution Playbook v1.0](NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md).
+
 ## Delivery Order Principle
 
 The mandatory order is:

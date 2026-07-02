@@ -23,16 +23,26 @@ Every authoritative document should be reachable from this index.
 For first-time contributors:
 
 1. [README](README.md)
-2. [Blueprint Status](BLUEPRINT_STATUS.md)
-3. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
-4. [Runtime Status](RUNTIME_STATUS.md)
-5. [Capability Status](CAPABILITY_STATUS.md)
-6. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
-7. [NextShift Standards v1.0](standards/README.md)
-8. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
-9. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
-10. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-11. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+2. [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
+3. [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
+4. [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md)
+5. [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
+6. [AI Bootstrap Framework](ai/README.md)
+7. [Project Status](PROJECT_STATUS.md)
+8. [Blueprint Status](BLUEPRINT_STATUS.md)
+9. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
+10. [Runtime Status](RUNTIME_STATUS.md)
+11. [Capability Status](CAPABILITY_STATUS.md)
+12. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
+13. [NextShift Standards v1.0](standards/README.md)
+14. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
+15. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
+16. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
+17. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
+18. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+19. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+20. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+21. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -63,14 +73,30 @@ After completing the above:
 Core documents:
 
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
+- [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
+- [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
+- [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md)
+- [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
+- [AI Bootstrap Framework](ai/README.md)
+- [Project Status](PROJECT_STATUS.md)
 - [Blueprint Status](BLUEPRINT_STATUS.md)
 - [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
 
 Supporting:
 
 - [Current Constitution](constitution/README.md)
+- [Product Governance Charter](governance/PRODUCT_GOVERNANCE_CHARTER.md)
+- [Product Decision Framework](governance/PRODUCT_DECISION_FRAMEWORK.md)
 - [Product Philosophy](phase-0-foundation/0.8_PRODUCT_PHILOSOPHY.md)
 - [AI Operating Loop](phase-0-foundation/0.3_AI_OPERATING_LOOP.md)
+- [Product Backlog Standard](governance/PRODUCT_BACKLOG_STANDARD.md)
+- [Document Hierarchy Standard](governance/DOCUMENT_HIERARCHY_STANDARD.md)
+- [Change Management Standard](governance/CHANGE_MANAGEMENT_STANDARD.md)
+- [Traceability Standard](governance/TRACEABILITY_STANDARD.md)
+- [Repository Structure Standard](governance/REPOSITORY_STRUCTURE_STANDARD.md)
+- [Platform Project Standard](governance/PLATFORM_PROJECT_STANDARD.md)
+- [Architecture Decision Record Standard](adr/ARCHITECTURE_DECISION_RECORD_STANDARD.md)
+- [Learning System Standard](phase-2-architecture/LEARNING_SYSTEM_STANDARD.md)
 
 ---
 
@@ -106,6 +132,8 @@ Engineering:
 Status:
 
 - [Capability Status](CAPABILITY_STATUS.md)
+- [Capability Lifecycle Standard](capabilities/CAPABILITY_LIFECYCLE_STANDARD.md)
+- [Content Intelligence Standard](capabilities/CONTENT_INTELLIGENCE_STANDARD.md)
 
 Reference:
 
@@ -201,6 +229,12 @@ UI Kit:
 Workspace Experience Framework:
 
 - [Workspace Experience Framework v1.0](workspace-experience-framework/README.md)
+- [Workspace Standard](workspace-experience-framework/WORKSPACE_STANDARD.md)
+- [AI Workspace Standard](workspace-experience-framework/AI_WORKSPACE_STANDARD.md)
+- [Content Workspace Standard](workspace-experience-framework/CONTENT_WORKSPACE_STANDARD.md)
+- [Visual Workspace Standard](workspace-experience-framework/VISUAL_WORKSPACE_STANDARD.md)
+- [Video Workspace Standard](workspace-experience-framework/VIDEO_WORKSPACE_STANDARD.md)
+- [Publishing Workspace Standard](workspace-experience-framework/PUBLISHING_WORKSPACE_STANDARD.md)
 - [WEF Project Kickoff](workspace-experience-framework/PROJECT_KICKOFF.md)
 - [WEF Project Planning](workspace-experience-framework/PROJECT_PLANNING.md)
 - [WEF v1.0 Project Verification](workspace-experience-framework/PROJECT_VERIFICATION.md)
@@ -646,9 +680,24 @@ Core:
 - [NextShift Standards v1.0](standards/README.md)
 - [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
 - [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
+- [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
 - [STD-002 AI Role Framework v1.0](engineering/STD-002_AI_ROLE_FRAMEWORK_v1.0.md)
 - [STD-003 Documentation Standard v1.0](engineering/STD-003_DOCUMENTATION_STANDARD_v1.0.md)
 - [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
+- [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+- [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+- [Engineering Standards v1.0 Release Package](engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md)
+- [Documentation Recommendation Standard](governance/DOCUMENTATION_RECOMMENDATION_STANDARD.md)
+- [Product Governance Charter](governance/PRODUCT_GOVERNANCE_CHARTER.md)
+- [Product Decision Framework](governance/PRODUCT_DECISION_FRAMEWORK.md)
+- [Product Backlog Standard](governance/PRODUCT_BACKLOG_STANDARD.md)
+- [Document Hierarchy Standard](governance/DOCUMENT_HIERARCHY_STANDARD.md)
+- [Change Management Standard](governance/CHANGE_MANAGEMENT_STANDARD.md)
+- [Traceability Standard](governance/TRACEABILITY_STANDARD.md)
+- [Repository Structure Standard](governance/REPOSITORY_STRUCTURE_STANDARD.md)
+- [Platform Project Standard](governance/PLATFORM_PROJECT_STANDARD.md)
+- [Architecture Decision Record Standard](adr/ARCHITECTURE_DECISION_RECORD_STANDARD.md)
+- [Learning System Standard](phase-2-architecture/LEARNING_SYSTEM_STANDARD.md)
 - [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
 
 Implementation:

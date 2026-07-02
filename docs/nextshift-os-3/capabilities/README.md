@@ -111,3 +111,5 @@ Implementation
 - Capabilities must not redefine runtime responsibilities.
 - Capabilities should evolve independently.
 - Capabilities should follow the lifecycle defined in [Capability Status](../CAPABILITY_STATUS.md).
+- Capabilities must follow [Capability Lifecycle Standard](CAPABILITY_LIFECYCLE_STANDARD.md).
+- Content Intelligence must follow [Content Intelligence Standard](CONTENT_INTELLIGENCE_STANDARD.md).
