@@ -116,6 +116,7 @@ Every release must contain:
 - Updated CAPABILITY_STATUS, if applicable
 - Updated MVP_1_PHASE_TRACKER, if applicable
 - Traceability links validated
+- Deployment manifest, when production deployment occurs
 - Version tag, when release level requires it
 
 ---
@@ -138,7 +139,11 @@ Every release must contain:
 
 - Working tree clean
 - GitHub synchronized
-- Tags verified
+- Release branch verified
+- Release tag verified, when applicable
+- VPS deployed revision verified, when production deployment occurs
+
+Repository alignment is governed by [STD-005 GitHub Alignment Standard v1.0](STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
 
 ### Gate 4 - Product
 
@@ -190,12 +195,26 @@ If any gate fails:
 
 ---
 
+## Release Freeze
+
+After a release candidate is verified:
+
+- Planning work must continue on `planning/*` branches.
+- Experimental work must not be merged into the release branch.
+- Existing release tags must not move unless a new verified release commit is intentionally created.
+- Production must not be redeployed unless alignment verification shows a mismatch or an approved fix is ready.
+
+Release freeze branch and tag rules are defined by [STD-005 GitHub Alignment Standard v1.0](STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
+
+---
+
 ## Governance Rules
 
 - No slice may be released without Verification and Audit.
 - No capability may be released with unreleased required slices.
 - No project may be released with unreleased required slices.
 - No architecture milestone may be released without repository and GitHub alignment.
+- No release may be marked complete when local, GitHub, tag, VPS deployed revision, and running production are misaligned.
 - Standards are referenced rather than duplicated.
 - Repository indexes must be current before release.
 - Release state must match GitHub state.

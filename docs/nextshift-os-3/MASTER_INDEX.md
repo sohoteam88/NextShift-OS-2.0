@@ -36,8 +36,9 @@ For first-time contributors:
 12. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
 13. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
 14. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
-15. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-16. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+15. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+16. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+17. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 

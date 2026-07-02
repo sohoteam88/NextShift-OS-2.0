@@ -19,3 +19,7 @@ Status: In Progress
 - [Implementation Cycle](IMPLEMENTATION_CYCLE.md)
 - [Implementation Cycles](implementation-cycles/README.md)
 - [Naming Conventions](NAMING_CONVENTIONS.md)
+
+## Release Alignment
+
+Release branch, release tag, VPS deployed revision, archive deployment compatibility, and production alignment gates are governed by [STD-005 GitHub Alignment Standard v1.0](STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
