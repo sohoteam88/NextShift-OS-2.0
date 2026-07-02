@@ -23,16 +23,18 @@ Every authoritative document should be reachable from this index.
 For first-time contributors:
 
 1. [README](README.md)
-2. [Blueprint Status](BLUEPRINT_STATUS.md)
-3. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
-4. [Runtime Status](RUNTIME_STATUS.md)
-5. [Capability Status](CAPABILITY_STATUS.md)
-6. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
-7. [NextShift Standards v1.0](standards/README.md)
-8. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
-9. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
-10. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-11. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+2. [Phase 1 Execution Master Plan](PHASE_1_EXECUTION_MASTER_PLAN.md)
+3. [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+4. [Blueprint Status](BLUEPRINT_STATUS.md)
+5. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
+6. [Runtime Status](RUNTIME_STATUS.md)
+7. [Capability Status](CAPABILITY_STATUS.md)
+8. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
+9. [NextShift Standards v1.0](standards/README.md)
+10. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
+11. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
+12. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+13. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -52,6 +54,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
+| Business OS Phase 1  | BOS-001 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -63,6 +66,8 @@ After completing the above:
 Core documents:
 
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
+- [Phase 1 Execution Master Plan](PHASE_1_EXECUTION_MASTER_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 - [Blueprint Status](BLUEPRINT_STATUS.md)
 - [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
 
@@ -117,6 +122,29 @@ Reference:
 Engineering Knowledge:
 
 - [Lessons Learned CAP-001](capabilities/LESSONS_LEARNED_CAP_001.md)
+
+---
+
+## Business OS
+
+Planning:
+
+- [Business OS](business-os/README.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+
+BOS-001 Business Foundation:
+
+- [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
+- [BOS-001 Planning](business-os/phase-1/BOS-001-business-foundation/PLANNING.md)
+- [BOS-001 Documentation Implementation Contract](business-os/phase-1/BOS-001-business-foundation/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-001 Architecture](business-os/phase-1/BOS-001-business-foundation/ARCHITECTURE.md)
+- [BOS-001 Capability Matrix](business-os/phase-1/BOS-001-business-foundation/CAPABILITY_MATRIX.md)
+- [BOS-001 Dependency Model](business-os/phase-1/BOS-001-business-foundation/DEPENDENCY_MODEL.md)
+- [BOS-001 Implementation Status](business-os/phase-1/BOS-001-business-foundation/IMPLEMENTATION_STATUS.md)
+- [BOS-001 Requirements Verification](business-os/phase-1/BOS-001-business-foundation/REQUIREMENTS_VERIFICATION.md)
+- [BOS-001 Audit Report](business-os/phase-1/BOS-001-business-foundation/AUDIT_REPORT.md)
+- [BOS-001 Release Notes](business-os/phase-1/BOS-001-business-foundation/RELEASE_NOTES.md)
+- [BOS-001 Capability Release](business-os/phase-1/BOS-001-business-foundation/CAPABILITY_RELEASE.md)
 
 ---
 

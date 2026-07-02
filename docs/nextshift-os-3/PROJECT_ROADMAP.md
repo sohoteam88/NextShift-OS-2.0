@@ -62,6 +62,12 @@ Objective:
 
 Build the cognitive core.
 
+Execution sequence:
+
+- [Phase 1 Execution Master Plan](PHASE_1_EXECUTION_MASTER_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+- [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
+
 Deliverables:
 
 - Business Brain

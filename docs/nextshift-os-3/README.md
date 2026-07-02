@@ -7,6 +7,8 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 ## Start Here
 
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
+- [Phase 1 Execution Master Plan](PHASE_1_EXECUTION_MASTER_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 - [Start Here](START_HERE.md)
 - [System Context](SYSTEM_CONTEXT.md)
 - [Master Index](MASTER_INDEX.md)
@@ -15,6 +17,7 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 - [Runtime Status](RUNTIME_STATUS.md)
 - [Capability Status](CAPABILITY_STATUS.md)
 - [Capabilities](capabilities/README.md)
+- [Business OS](business-os/README.md)
 - [Design System](design-system/README.md)
 - [UI Kit](ui-kit/README.md)
 - [Project Roadmap](PROJECT_ROADMAP.md)
@@ -72,6 +75,8 @@ Foundation documents:
 ## Governance
 
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
+- [Phase 1 Execution Master Plan](PHASE_1_EXECUTION_MASTER_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 - [Start Here](START_HERE.md)
 - [System Context](SYSTEM_CONTEXT.md)
 - [Master Index](MASTER_INDEX.md)
