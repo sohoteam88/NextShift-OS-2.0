@@ -197,14 +197,7 @@ If any gate fails:
 
 ## Release Freeze
 
-After a release candidate is verified:
-
-- Planning work must continue on `planning/*` branches.
-- Experimental work must not be merged into the release branch.
-- Existing release tags must not move unless a new verified release commit is intentionally created.
-- Production must not be redeployed unless alignment verification shows a mismatch or an approved fix is ready.
-
-Release freeze branch and tag rules are defined by [STD-005 GitHub Alignment Standard v1.0](STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
+Release freeze, branch, tag, and production redeployment rules are governed by [STD-005 GitHub Alignment Standard v1.0](STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
 
 ---
 
