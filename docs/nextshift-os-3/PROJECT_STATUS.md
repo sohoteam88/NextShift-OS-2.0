@@ -76,7 +76,7 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Current Phase | Documentation governance and AI continuity baseline |
 | Current Focus | Engineering Standards v1.0, AI Bootstrap Framework, Project Status Dashboard, and orchestration documentation |
 | Current Blockers | Release promotion and formal approval records are pending; there is no known production blocker for the current planning documentation work |
-| Current Priorities | Complete the status dashboard, audit the planning branch, fill approval records, decide promotion path, and resume CAP-005 implementation once the governance baseline is accepted |
+| Current Priorities | Keep PROJECT_STATUS.md current after every governance or release milestone, audit the planning branch, fill approval records, decide promotion path, and resume CAP-005 implementation once the governance baseline is accepted |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 

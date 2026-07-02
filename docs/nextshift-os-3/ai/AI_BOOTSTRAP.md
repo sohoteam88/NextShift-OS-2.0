@@ -18,14 +18,15 @@ This document tells an assistant what to load before planning, implementing, ver
 
 ## Required Reading Order
 
-1. [README](../README.md)
-2. [Master Index](../MASTER_INDEX.md)
-3. [MVP 1.0 Alignment](../MVP_1_ALIGNMENT.md)
-4. [MVP 1.0 Implementation Master Plan](../MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
-5. [MVP 1.0 Phase Tracker](../MVP_1_PHASE_TRACKER.md)
-6. [NextShift Standards v1.0](../standards/README.md)
-7. [Engineering Standards v1.0 Release Package](../engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md)
-8. [AI Bootstrap Framework](README.md)
+1. [AI Bootstrap Framework](README.md)
+2. [Project Status](../PROJECT_STATUS.md)
+3. [Master Index](../MASTER_INDEX.md)
+4. [README](../README.md)
+5. [MVP 1.0 Alignment](../MVP_1_ALIGNMENT.md)
+6. [MVP 1.0 Implementation Master Plan](../MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
+7. [MVP 1.0 Phase Tracker](../MVP_1_PHASE_TRACKER.md)
+8. [NextShift Standards v1.0](../standards/README.md)
+9. [Engineering Standards v1.0 Release Package](../engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md)
 
 Load deeper capability, workspace, architecture, or release documents only when the task scope requires them.
 
