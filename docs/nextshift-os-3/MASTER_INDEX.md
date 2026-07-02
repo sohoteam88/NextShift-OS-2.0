@@ -38,8 +38,9 @@ For first-time contributors:
 14. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
 15. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
 16. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
-17. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-18. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+17. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+18. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+19. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -680,6 +681,7 @@ Core:
 - [STD-003 Documentation Standard v1.0](engineering/STD-003_DOCUMENTATION_STANDARD_v1.0.md)
 - [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
 - [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+- [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
 - [Documentation Recommendation Standard](governance/DOCUMENTATION_RECOMMENDATION_STANDARD.md)
 - [Product Governance Charter](governance/PRODUCT_GOVERNANCE_CHARTER.md)
 - [Product Decision Framework](governance/PRODUCT_DECISION_FRAMEWORK.md)
