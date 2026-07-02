@@ -10,6 +10,8 @@ This document defines the contractual responsibilities of the Learning System.
 
 The Learning System transforms business outcomes into improved business intelligence.
 
+Implementation and governance requirements are defined in [Learning System Standard](LEARNING_SYSTEM_STANDARD.md).
+
 It ensures that every meaningful business activity contributes to the continuous evolution of the Business Twin.
 
 The Learning System is responsible for making NextShift progressively more intelligent over time.
