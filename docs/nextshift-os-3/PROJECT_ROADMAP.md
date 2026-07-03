@@ -31,6 +31,14 @@ Current milestone:
 
 Blueprint Freeze Preparation
 
+## Engineering Foundation
+
+AI Engineering Foundation is the engineering baseline supporting every product initiative.
+
+- [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
+- [AI Bootstrap Framework](ai/README.md)
+- [AI Prompt Library](ai/prompts/README.md)
+
 ## Delivery Philosophy
 
 The objective is not to deliver features.
@@ -88,7 +96,7 @@ Subordinate Business OS Phase 1 execution scope:
 - [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 - [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 - [BOS-002 Decision Intelligence](business-os/phase-1/BOS-002-decision-intelligence/README.md)
-- [BOS-003 AI Workflow Planning](business-os/phase-1/BOS-003-ai-workflow/PLANNING.md)
+- [BOS-003 AI Workflow](business-os/phase-1/BOS-003-ai-workflow/README.md)
 
 Deliverables:
 

@@ -18,12 +18,16 @@ This framework complements the Engineering Standards and references their canoni
 
 ## Documents
 
+- [AI Engineering Foundation](AI_ENGINEERING_FOUNDATION.md)
 - [NextShift Context](NEXTSHIFT_CONTEXT.md)
 - [AI Session Starter](AI_SESSION_STARTER.md)
 - [AI Bootstrap](AI_BOOTSTRAP.md)
 - [AI Onboarding Guide](AI_ONBOARDING_GUIDE.md)
 - [AI Execution Guide](AI_EXECUTION_GUIDE.md)
 - [AI Context Loading](AI_CONTEXT_LOADING.md)
+- [AI Prompt Library](prompts/README.md)
+- [AI Prompt Library Audit Contract](prompts/AI_PROMPT_LIBRARY_AUDIT_CONTRACT.md)
+- [AI Engineering Foundation v1.0 Release Package](releases/AI_ENGINEERING_FOUNDATION_v1.0/README.md)
 
 ---
 

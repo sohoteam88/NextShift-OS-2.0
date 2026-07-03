@@ -88,7 +88,7 @@ Documentation:
 
 ### BOS-003 AI Workflow
 
-Status: Planning
+Status: Documentation Implemented
 
 Scope:
 
@@ -106,9 +106,15 @@ Core execution engine for Business OS.
 
 Documentation:
 
+- [BOS-003 AI Workflow](BOS-003-ai-workflow/README.md)
 - [BOS-003 Planning](BOS-003-ai-workflow/PLANNING.md)
 - [BOS-003 Documentation Implementation Contract](BOS-003-ai-workflow/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
 - [BOS-003 Execution Task](BOS-003-ai-workflow/EXECUTION_TASK.md)
+- [BOS-003 Architecture](BOS-003-ai-workflow/ARCHITECTURE.md)
+- [BOS-003 Capability Matrix](BOS-003-ai-workflow/CAPABILITY_MATRIX.md)
+- [BOS-003 Dependency Model](BOS-003-ai-workflow/DEPENDENCY_MODEL.md)
+- [BOS-003 Implementation Status](BOS-003-ai-workflow/IMPLEMENTATION_STATUS.md)
+- [BOS-003 Requirements Verification](BOS-003-ai-workflow/REQUIREMENTS_VERIFICATION.md)
 
 ### BOS-004 Workspace Experience
 

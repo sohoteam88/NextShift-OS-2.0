@@ -31,23 +31,25 @@ For first-time contributors:
 7. [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 8. [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 9. [AI Bootstrap Framework](ai/README.md)
-10. [NextShift Context](ai/NEXTSHIFT_CONTEXT.md)
-11. [AI Session Starter](ai/AI_SESSION_STARTER.md)
-12. [Project Status](PROJECT_STATUS.md)
-13. [Blueprint Status](BLUEPRINT_STATUS.md)
-14. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
-15. [Runtime Status](RUNTIME_STATUS.md)
-16. [Capability Status](CAPABILITY_STATUS.md)
-17. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
-18. [NextShift Standards v1.0](standards/README.md)
-19. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
-20. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
-21. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
-22. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
-23. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
-24. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
-25. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-26. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+10. [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
+11. [AI Prompt Library](ai/prompts/README.md)
+12. [NextShift Context](ai/NEXTSHIFT_CONTEXT.md)
+13. [AI Session Starter](ai/AI_SESSION_STARTER.md)
+14. [Project Status](PROJECT_STATUS.md)
+15. [Blueprint Status](BLUEPRINT_STATUS.md)
+16. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
+17. [Runtime Status](RUNTIME_STATUS.md)
+18. [Capability Status](CAPABILITY_STATUS.md)
+19. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
+20. [NextShift Standards v1.0](standards/README.md)
+21. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
+22. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
+23. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
+24. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
+25. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+26. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+27. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+28. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -67,7 +69,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Released |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Audited |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -84,6 +86,8 @@ Core documents:
 - [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md)
 - [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
 - [AI Bootstrap Framework](ai/README.md)
+- [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
+- [AI Prompt Library](ai/prompts/README.md)
 - [NextShift Context](ai/NEXTSHIFT_CONTEXT.md)
 - [AI Session Starter](ai/AI_SESSION_STARTER.md)
 - [Project Status](PROJECT_STATUS.md)
@@ -107,6 +111,19 @@ Supporting:
 - [Platform Project Standard](governance/PLATFORM_PROJECT_STANDARD.md)
 - [Architecture Decision Record Standard](adr/ARCHITECTURE_DECISION_RECORD_STANDARD.md)
 - [Learning System Standard](phase-2-architecture/LEARNING_SYSTEM_STANDARD.md)
+
+---
+
+## AI Engineering
+
+- [AI README](ai/README.md)
+- [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
+- [AI Bootstrap](ai/AI_BOOTSTRAP.md)
+- [AI Context Loading](ai/AI_CONTEXT_LOADING.md)
+- [AI Execution Guide](ai/AI_EXECUTION_GUIDE.md)
+- [AI Prompt Library](ai/prompts/README.md)
+- [AI Prompt Library Audit Contract](ai/prompts/AI_PROMPT_LIBRARY_AUDIT_CONTRACT.md)
+- [AI Engineering Foundation v1.0 Release Package](ai/releases/AI_ENGINEERING_FOUNDATION_v1.0/README.md)
 
 ---
 
@@ -195,9 +212,16 @@ BOS-002 Decision Intelligence:
 
 BOS-003 AI Workflow:
 
+- [BOS-003 AI Workflow](business-os/phase-1/BOS-003-ai-workflow/README.md)
 - [BOS-003 Planning](business-os/phase-1/BOS-003-ai-workflow/PLANNING.md)
 - [BOS-003 Documentation Implementation Contract](business-os/phase-1/BOS-003-ai-workflow/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
 - [BOS-003 Execution Task](business-os/phase-1/BOS-003-ai-workflow/EXECUTION_TASK.md)
+- [BOS-003 Architecture](business-os/phase-1/BOS-003-ai-workflow/ARCHITECTURE.md)
+- [BOS-003 Capability Matrix](business-os/phase-1/BOS-003-ai-workflow/CAPABILITY_MATRIX.md)
+- [BOS-003 Dependency Model](business-os/phase-1/BOS-003-ai-workflow/DEPENDENCY_MODEL.md)
+- [BOS-003 Implementation Status](business-os/phase-1/BOS-003-ai-workflow/IMPLEMENTATION_STATUS.md)
+- [BOS-003 Requirements Verification](business-os/phase-1/BOS-003-ai-workflow/REQUIREMENTS_VERIFICATION.md)
+- [BOS-003 Audit Report](business-os/phase-1/BOS-003-ai-workflow/AUDIT_REPORT.md)
 
 ---
 

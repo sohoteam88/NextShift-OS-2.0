@@ -33,6 +33,12 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 - [Sprint 000 - Blueprint Cleanup](sprints/SPRINT-000_BLUEPRINT_CLEANUP.md)
 - [Architectural Manifesto](ARCHITECTURAL_MANIFESTO.md)
 
+## AI Engineering
+
+- [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
+- [AI Bootstrap](ai/AI_BOOTSTRAP.md)
+- [Prompt Library](ai/prompts/README.md)
+
 ## Architecture Hierarchy
 
 1. Phase 0 - Foundation

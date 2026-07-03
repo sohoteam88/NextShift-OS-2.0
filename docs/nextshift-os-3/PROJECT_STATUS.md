@@ -31,6 +31,8 @@ Canonical navigation:
 
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
+- [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
+- [AI Prompt Library](ai/prompts/README.md)
 - [Capability Status](CAPABILITY_STATUS.md)
 - [Project Roadmap](PROJECT_ROADMAP.md)
 
@@ -50,6 +52,17 @@ Canonical standards:
 - [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
 
 This dashboard references those standards as the source of truth. It does not restate their detailed workflow, role, documentation, release, GitHub alignment, or orchestration rules.
+
+### AI Engineering Foundation
+
+Status: Released
+
+Components:
+
+- Bootstrap Framework
+- Prompt Library
+- Repository-first Workflow
+- AI Execution Framework
 
 ---
 
