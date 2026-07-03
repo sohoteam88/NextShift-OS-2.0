@@ -219,6 +219,8 @@ Documentation:
 
 ### BOS-007 Event Platform
 
+Status: Released
+
 Scope:
 
 - Event Bus
@@ -226,10 +228,27 @@ Scope:
 - Domain Events
 - Event Routing
 - Event Monitoring
+- Event Governance
 
 Deliverable:
 
 Event-driven architecture.
+
+Documentation:
+
+- [BOS-007 Event Platform](BOS-007-event-platform/README.md)
+- [BOS-007 Planning](BOS-007-event-platform/PLANNING.md)
+- [BOS-007 Documentation Implementation Contract](BOS-007-event-platform/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-007 Execution Task](BOS-007-event-platform/EXECUTION_TASK.md)
+- [BOS-007 Architecture](BOS-007-event-platform/ARCHITECTURE.md)
+- [BOS-007 Capability Matrix](BOS-007-event-platform/CAPABILITY_MATRIX.md)
+- [BOS-007 Dependency Model](BOS-007-event-platform/DEPENDENCY_MODEL.md)
+- [BOS-007 Implementation Status](BOS-007-event-platform/IMPLEMENTATION_STATUS.md)
+- [BOS-007 Requirements Verification](BOS-007-event-platform/REQUIREMENTS_VERIFICATION.md)
+- [BOS-007 Audit Report](BOS-007-event-platform/AUDIT_REPORT.md)
+- [BOS-007 Release Decision](BOS-007-event-platform/RELEASE_DECISION.md)
+- [BOS-007 Release Notes](BOS-007-event-platform/RELEASE_NOTES.md)
+- [BOS-007 Next Phase Handoff](BOS-007-event-platform/NEXT_PHASE_HANDOFF.md)
 
 ### BOS-008 Business OS Integration
 

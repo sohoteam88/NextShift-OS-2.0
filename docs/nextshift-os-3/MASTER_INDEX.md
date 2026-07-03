@@ -71,7 +71,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -275,6 +275,22 @@ BOS-006 Business Memory:
 - [BOS-006 Release Decision](business-os/phase-1/BOS-006-business-memory/RELEASE_DECISION.md)
 - [BOS-006 Release Notes](business-os/phase-1/BOS-006-business-memory/RELEASE_NOTES.md)
 - [BOS-006 Next Phase Handoff](business-os/phase-1/BOS-006-business-memory/NEXT_PHASE_HANDOFF.md)
+
+BOS-007 Event Platform:
+
+- [BOS-007 Event Platform](business-os/phase-1/BOS-007-event-platform/README.md)
+- [BOS-007 Planning](business-os/phase-1/BOS-007-event-platform/PLANNING.md)
+- [BOS-007 Documentation Implementation Contract](business-os/phase-1/BOS-007-event-platform/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-007 Execution Task](business-os/phase-1/BOS-007-event-platform/EXECUTION_TASK.md)
+- [BOS-007 Architecture](business-os/phase-1/BOS-007-event-platform/ARCHITECTURE.md)
+- [BOS-007 Capability Matrix](business-os/phase-1/BOS-007-event-platform/CAPABILITY_MATRIX.md)
+- [BOS-007 Dependency Model](business-os/phase-1/BOS-007-event-platform/DEPENDENCY_MODEL.md)
+- [BOS-007 Implementation Status](business-os/phase-1/BOS-007-event-platform/IMPLEMENTATION_STATUS.md)
+- [BOS-007 Requirements Verification](business-os/phase-1/BOS-007-event-platform/REQUIREMENTS_VERIFICATION.md)
+- [BOS-007 Audit Report](business-os/phase-1/BOS-007-event-platform/AUDIT_REPORT.md)
+- [BOS-007 Release Decision](business-os/phase-1/BOS-007-event-platform/RELEASE_DECISION.md)
+- [BOS-007 Release Notes](business-os/phase-1/BOS-007-event-platform/RELEASE_NOTES.md)
+- [BOS-007 Next Phase Handoff](business-os/phase-1/BOS-007-event-platform/NEXT_PHASE_HANDOFF.md)
 
 ---
 

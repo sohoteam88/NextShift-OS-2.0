@@ -23,7 +23,7 @@ Business OS documentation defines the AI-native operating foundation that enable
 | BOS-004 | Workspace Experience | Released |
 | BOS-005 | Business Automation | Released |
 | BOS-006 | Business Memory | Released |
-| BOS-007 | Event Platform | Not Started |
+| BOS-007 | Event Platform | Released |
 | BOS-008 | Business OS Integration | Not Started |
 
 ### BOS-001 Business Foundation
@@ -112,3 +112,19 @@ Business OS documentation defines the AI-native operating foundation that enable
 - [Release Decision](phase-1/BOS-006-business-memory/RELEASE_DECISION.md)
 - [Release Notes](phase-1/BOS-006-business-memory/RELEASE_NOTES.md)
 - [Next Phase Handoff](phase-1/BOS-006-business-memory/NEXT_PHASE_HANDOFF.md)
+
+### BOS-007 Event Platform
+
+- [README](phase-1/BOS-007-event-platform/README.md)
+- [Planning](phase-1/BOS-007-event-platform/PLANNING.md)
+- [Documentation Implementation Contract](phase-1/BOS-007-event-platform/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [Execution Task](phase-1/BOS-007-event-platform/EXECUTION_TASK.md)
+- [Architecture](phase-1/BOS-007-event-platform/ARCHITECTURE.md)
+- [Capability Matrix](phase-1/BOS-007-event-platform/CAPABILITY_MATRIX.md)
+- [Dependency Model](phase-1/BOS-007-event-platform/DEPENDENCY_MODEL.md)
+- [Implementation Status](phase-1/BOS-007-event-platform/IMPLEMENTATION_STATUS.md)
+- [Requirements Verification](phase-1/BOS-007-event-platform/REQUIREMENTS_VERIFICATION.md)
+- [Audit Report](phase-1/BOS-007-event-platform/AUDIT_REPORT.md)
+- [Release Decision](phase-1/BOS-007-event-platform/RELEASE_DECISION.md)
+- [Release Notes](phase-1/BOS-007-event-platform/RELEASE_NOTES.md)
+- [Next Phase Handoff](phase-1/BOS-007-event-platform/NEXT_PHASE_HANDOFF.md)

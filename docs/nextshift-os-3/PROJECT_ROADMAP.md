@@ -100,6 +100,7 @@ Subordinate Business OS Phase 1 execution scope:
 - [BOS-004 Workspace Experience](business-os/phase-1/BOS-004-workspace-experience/README.md)
 - [BOS-005 Business Automation](business-os/phase-1/BOS-005-business-automation/README.md)
 - [BOS-006 Business Memory](business-os/phase-1/BOS-006-business-memory/README.md)
+- [BOS-007 Event Platform](business-os/phase-1/BOS-007-event-platform/README.md)
 
 Deliverables:
 
