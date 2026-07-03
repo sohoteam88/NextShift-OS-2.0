@@ -69,7 +69,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Audited |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -222,6 +222,9 @@ BOS-003 AI Workflow:
 - [BOS-003 Implementation Status](business-os/phase-1/BOS-003-ai-workflow/IMPLEMENTATION_STATUS.md)
 - [BOS-003 Requirements Verification](business-os/phase-1/BOS-003-ai-workflow/REQUIREMENTS_VERIFICATION.md)
 - [BOS-003 Audit Report](business-os/phase-1/BOS-003-ai-workflow/AUDIT_REPORT.md)
+- [BOS-003 Release Decision](business-os/phase-1/BOS-003-ai-workflow/RELEASE_DECISION.md)
+- [BOS-003 Release Notes](business-os/phase-1/BOS-003-ai-workflow/RELEASE_NOTES.md)
+- [BOS-003 Next Phase Handoff](business-os/phase-1/BOS-003-ai-workflow/NEXT_PHASE_HANDOFF.md)
 
 ---
 

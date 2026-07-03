@@ -1,7 +1,7 @@
 # BOS-003 AI Workflow
 
 Version: v1.0
-Status: Documentation Implemented
+Status: Released
 
 ## Purpose
 
@@ -31,6 +31,11 @@ BOS-003 covers:
 - [Capability Matrix](CAPABILITY_MATRIX.md)
 - [Dependency Model](DEPENDENCY_MODEL.md)
 - [Implementation Status](IMPLEMENTATION_STATUS.md)
+- [Requirements Verification](REQUIREMENTS_VERIFICATION.md)
+- [Audit Report](AUDIT_REPORT.md)
+- [Release Decision](RELEASE_DECISION.md)
+- [Release Notes](RELEASE_NOTES.md)
+- [Next Phase Handoff](NEXT_PHASE_HANDOFF.md)
 
 ## Foundation Rule
 

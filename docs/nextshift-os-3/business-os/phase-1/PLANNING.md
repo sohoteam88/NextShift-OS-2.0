@@ -88,7 +88,7 @@ Documentation:
 
 ### BOS-003 AI Workflow
 
-Status: Documentation Implemented
+Status: Released
 
 Scope:
 
@@ -115,6 +115,10 @@ Documentation:
 - [BOS-003 Dependency Model](BOS-003-ai-workflow/DEPENDENCY_MODEL.md)
 - [BOS-003 Implementation Status](BOS-003-ai-workflow/IMPLEMENTATION_STATUS.md)
 - [BOS-003 Requirements Verification](BOS-003-ai-workflow/REQUIREMENTS_VERIFICATION.md)
+- [BOS-003 Audit Report](BOS-003-ai-workflow/AUDIT_REPORT.md)
+- [BOS-003 Release Decision](BOS-003-ai-workflow/RELEASE_DECISION.md)
+- [BOS-003 Release Notes](BOS-003-ai-workflow/RELEASE_NOTES.md)
+- [BOS-003 Next Phase Handoff](BOS-003-ai-workflow/NEXT_PHASE_HANDOFF.md)
 
 ### BOS-004 Workspace Experience
 
