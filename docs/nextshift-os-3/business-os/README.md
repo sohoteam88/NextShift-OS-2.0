@@ -18,7 +18,7 @@ Business OS documentation defines the AI-native operating foundation that enable
 | Capability | Description | Status |
 | --- | --- | --- |
 | BOS-001 | Business Foundation | Released |
-| BOS-002 | Decision Intelligence | Not Started |
+| BOS-002 | Decision Intelligence | Requirements Verified |
 | BOS-003 | AI Workflow | Not Started |
 | BOS-004 | Workspace Experience | Not Started |
 | BOS-005 | Business Automation | Not Started |
@@ -37,3 +37,14 @@ Business OS documentation defines the AI-native operating foundation that enable
 - [Audit Report](phase-1/BOS-001-business-foundation/AUDIT_REPORT.md)
 - [Release Notes](phase-1/BOS-001-business-foundation/RELEASE_NOTES.md)
 - [Capability Release](phase-1/BOS-001-business-foundation/CAPABILITY_RELEASE.md)
+
+### BOS-002 Decision Intelligence
+
+- [README](phase-1/BOS-002-decision-intelligence/README.md)
+- [Planning](phase-1/BOS-002-decision-intelligence/PLANNING.md)
+- [Documentation Implementation Contract](phase-1/BOS-002-decision-intelligence/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [Architecture](phase-1/BOS-002-decision-intelligence/ARCHITECTURE.md)
+- [Capability Matrix](phase-1/BOS-002-decision-intelligence/CAPABILITY_MATRIX.md)
+- [Dependency Model](phase-1/BOS-002-decision-intelligence/DEPENDENCY_MODEL.md)
+- [Implementation Status](phase-1/BOS-002-decision-intelligence/IMPLEMENTATION_STATUS.md)
+- [Requirements Verification](phase-1/BOS-002-decision-intelligence/REQUIREMENTS_VERIFICATION.md)

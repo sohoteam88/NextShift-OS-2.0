@@ -1,7 +1,7 @@
 # Business OS Phase 1 Planning
 
 Version: v1.0
-Status: Planning
+Status: Requirements Verified
 
 ---
 
@@ -57,6 +57,8 @@ Documentation:
 
 ### BOS-002 Decision Intelligence
 
+Status: Planning
+
 Scope:
 
 - Decision Brain
@@ -64,10 +66,23 @@ Scope:
 - Prioritization
 - Opportunity Ranking
 - Business Context
+- Decision Policies
+- Decision-to-Workflow readiness
 
 Deliverable:
 
 Unified business decision pipeline.
+
+Documentation:
+
+- [BOS-002 Decision Intelligence](BOS-002-decision-intelligence/README.md)
+- [BOS-002 Planning](BOS-002-decision-intelligence/PLANNING.md)
+- [BOS-002 Documentation Implementation Contract](BOS-002-decision-intelligence/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-002 Architecture](BOS-002-decision-intelligence/ARCHITECTURE.md)
+- [BOS-002 Capability Matrix](BOS-002-decision-intelligence/CAPABILITY_MATRIX.md)
+- [BOS-002 Dependency Model](BOS-002-decision-intelligence/DEPENDENCY_MODEL.md)
+- [BOS-002 Implementation Status](BOS-002-decision-intelligence/IMPLEMENTATION_STATUS.md)
+- [BOS-002 Requirements Verification](BOS-002-decision-intelligence/REQUIREMENTS_VERIFICATION.md)
 
 ### BOS-003 AI Workflow
 

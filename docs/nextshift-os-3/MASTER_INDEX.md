@@ -180,6 +180,17 @@ BOS-001 Business Foundation:
 - [BOS-001 Release Notes](business-os/phase-1/BOS-001-business-foundation/RELEASE_NOTES.md)
 - [BOS-001 Capability Release](business-os/phase-1/BOS-001-business-foundation/CAPABILITY_RELEASE.md)
 
+BOS-002 Decision Intelligence:
+
+- [BOS-002 Decision Intelligence](business-os/phase-1/BOS-002-decision-intelligence/README.md)
+- [BOS-002 Planning](business-os/phase-1/BOS-002-decision-intelligence/PLANNING.md)
+- [BOS-002 Documentation Implementation Contract](business-os/phase-1/BOS-002-decision-intelligence/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-002 Architecture](business-os/phase-1/BOS-002-decision-intelligence/ARCHITECTURE.md)
+- [BOS-002 Capability Matrix](business-os/phase-1/BOS-002-decision-intelligence/CAPABILITY_MATRIX.md)
+- [BOS-002 Dependency Model](business-os/phase-1/BOS-002-decision-intelligence/DEPENDENCY_MODEL.md)
+- [BOS-002 Implementation Status](business-os/phase-1/BOS-002-decision-intelligence/IMPLEMENTATION_STATUS.md)
+- [BOS-002 Requirements Verification](business-os/phase-1/BOS-002-decision-intelligence/REQUIREMENTS_VERIFICATION.md)
+
 ---
 
 ## Platform Projects
