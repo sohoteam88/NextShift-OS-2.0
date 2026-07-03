@@ -1,6 +1,6 @@
 # AI_IMPLEMENTATION_PROMPT.md
 
-Version: v1.0
+Version: v1.1
 Status: Approved
 
 ## Purpose
@@ -52,6 +52,15 @@ Load only the current capability documentation:
 
 Implement only the approved scope.
 
+Navigation synchronization:
+
+- When the current implementation creates or updates lifecycle evidence such as `REQUIREMENTS_VERIFICATION.md`, confirm navigation is updated before returning implementation evidence.
+- Verify the capability `README.md` includes the new lifecycle evidence link.
+- Verify `docs/nextshift-os-3/business-os/README.md` includes the new lifecycle evidence link when the capability is under Business OS.
+- Verify `docs/nextshift-os-3/business-os/phase-1/PLANNING.md` includes the new lifecycle evidence link when the capability is under Business OS Phase 1.
+- Verify `docs/nextshift-os-3/MASTER_INDEX.md` includes the new lifecycle evidence link.
+- Confirm scoped relative links resolve.
+
 After implementation provide:
 
 - Files created
@@ -60,6 +69,7 @@ After implementation provide:
 - git diff --check
 - git diff --cached --check
 - Additional validation results
+- Navigation synchronization result, when lifecycle evidence was created or updated
 - Confirmation that no commit/push was performed
 
 Stop after implementation evidence.

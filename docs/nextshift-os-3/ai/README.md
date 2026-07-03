@@ -27,6 +27,7 @@ This framework complements the Engineering Standards and references their canoni
 - [AI Context Loading](AI_CONTEXT_LOADING.md)
 - [AI Prompt Library](prompts/README.md)
 - [AI Prompt Library Audit Contract](prompts/AI_PROMPT_LIBRARY_AUDIT_CONTRACT.md)
+- [AI Knowledge Base Framework](knowledge/AI_KNOWLEDGE_BASE_FRAMEWORK.md)
 - [AI Engineering Foundation v1.0 Release Package](releases/AI_ENGINEERING_FOUNDATION_v1.0/README.md)
 
 ---

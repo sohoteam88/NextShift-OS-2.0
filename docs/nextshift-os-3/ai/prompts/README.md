@@ -31,6 +31,7 @@ The Prompt Library does not replace these standards. It operationalizes them thr
 | AI_CONTEXT_LOADING.md | Session | Detect repository state |
 | AI_EXECUTION_GUIDE.md | All | Execution responsibilities |
 | AI_PROMPT_LIBRARY_AUDIT_CONTRACT.md | Audit | Prompt library audit contract |
+| AI_PROMPT_EVOLUTION_FRAMEWORK.md | Improvement | Continuous prompt improvement framework |
 | AI_IMPLEMENTATION_PROMPT.md | Stop A | Implementation handoff |
 | AI_VERIFICATION_PROMPT.md | Stop B | Requirements Verification |
 | AI_AUDIT_PROMPT.md | Stop B | Repository Audit |
@@ -86,6 +87,7 @@ All prompts follow these rules:
 - AI_BOOTSTRAP.md
 - AI_CONTEXT_LOADING.md
 - AI_EXECUTION_GUIDE.md
+- AI_PROMPT_EVOLUTION_FRAMEWORK.md
 - PROJECT_STATUS.md
 - MASTER_INDEX.md
 - STD-006 Project Execution Orchestration Standard

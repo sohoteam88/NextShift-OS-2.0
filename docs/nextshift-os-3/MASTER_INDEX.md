@@ -70,7 +70,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -124,6 +124,8 @@ Supporting:
 - [AI Execution Guide](ai/AI_EXECUTION_GUIDE.md)
 - [AI Prompt Library](ai/prompts/README.md)
 - [AI Prompt Library Audit Contract](ai/prompts/AI_PROMPT_LIBRARY_AUDIT_CONTRACT.md)
+- [AI Prompt Evolution Framework](ai/prompts/AI_PROMPT_EVOLUTION_FRAMEWORK.md)
+- [AI Knowledge Base Framework](ai/knowledge/AI_KNOWLEDGE_BASE_FRAMEWORK.md)
 - [AI Engineering Foundation v1.0 Release Package](ai/releases/AI_ENGINEERING_FOUNDATION_v1.0/README.md)
 
 ---
@@ -241,6 +243,22 @@ BOS-004 Workspace Experience:
 - [BOS-004 Release Decision](business-os/phase-1/BOS-004-workspace-experience/RELEASE_DECISION.md)
 - [BOS-004 Release Notes](business-os/phase-1/BOS-004-workspace-experience/RELEASE_NOTES.md)
 - [BOS-004 Next Phase Handoff](business-os/phase-1/BOS-004-workspace-experience/NEXT_PHASE_HANDOFF.md)
+
+BOS-005 Business Automation:
+
+- [BOS-005 Business Automation](business-os/phase-1/BOS-005-business-automation/README.md)
+- [BOS-005 Planning](business-os/phase-1/BOS-005-business-automation/PLANNING.md)
+- [BOS-005 Documentation Implementation Contract](business-os/phase-1/BOS-005-business-automation/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-005 Execution Task](business-os/phase-1/BOS-005-business-automation/EXECUTION_TASK.md)
+- [BOS-005 Architecture](business-os/phase-1/BOS-005-business-automation/ARCHITECTURE.md)
+- [BOS-005 Capability Matrix](business-os/phase-1/BOS-005-business-automation/CAPABILITY_MATRIX.md)
+- [BOS-005 Dependency Model](business-os/phase-1/BOS-005-business-automation/DEPENDENCY_MODEL.md)
+- [BOS-005 Implementation Status](business-os/phase-1/BOS-005-business-automation/IMPLEMENTATION_STATUS.md)
+- [BOS-005 Requirements Verification](business-os/phase-1/BOS-005-business-automation/REQUIREMENTS_VERIFICATION.md)
+- [BOS-005 Audit Report](business-os/phase-1/BOS-005-business-automation/AUDIT_REPORT.md)
+- [BOS-005 Release Decision](business-os/phase-1/BOS-005-business-automation/RELEASE_DECISION.md)
+- [BOS-005 Release Notes](business-os/phase-1/BOS-005-business-automation/RELEASE_NOTES.md)
+- [BOS-005 Next Phase Handoff](business-os/phase-1/BOS-005-business-automation/NEXT_PHASE_HANDOFF.md)
 
 ---
 

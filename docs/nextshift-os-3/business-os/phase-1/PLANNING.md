@@ -154,6 +154,8 @@ Documentation:
 
 ### BOS-005 Business Automation
 
+Status: Released
+
 Scope:
 
 - Scheduler
@@ -161,10 +163,27 @@ Scope:
 - Rule Engine
 - Automation Pipeline
 - Background Jobs
+- Automation Governance
 
 Deliverable:
 
 Business process automation.
+
+Documentation:
+
+- [BOS-005 Business Automation](BOS-005-business-automation/README.md)
+- [BOS-005 Planning](BOS-005-business-automation/PLANNING.md)
+- [BOS-005 Documentation Implementation Contract](BOS-005-business-automation/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-005 Execution Task](BOS-005-business-automation/EXECUTION_TASK.md)
+- [BOS-005 Architecture](BOS-005-business-automation/ARCHITECTURE.md)
+- [BOS-005 Capability Matrix](BOS-005-business-automation/CAPABILITY_MATRIX.md)
+- [BOS-005 Dependency Model](BOS-005-business-automation/DEPENDENCY_MODEL.md)
+- [BOS-005 Implementation Status](BOS-005-business-automation/IMPLEMENTATION_STATUS.md)
+- [BOS-005 Requirements Verification](BOS-005-business-automation/REQUIREMENTS_VERIFICATION.md)
+- [BOS-005 Audit Report](BOS-005-business-automation/AUDIT_REPORT.md)
+- [BOS-005 Release Decision](BOS-005-business-automation/RELEASE_DECISION.md)
+- [BOS-005 Release Notes](BOS-005-business-automation/RELEASE_NOTES.md)
+- [BOS-005 Next Phase Handoff](BOS-005-business-automation/NEXT_PHASE_HANDOFF.md)
 
 ### BOS-006 Business Memory
 
