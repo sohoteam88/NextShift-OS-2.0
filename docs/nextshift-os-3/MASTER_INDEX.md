@@ -27,22 +27,25 @@ For first-time contributors:
 3. [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
 4. [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md)
 5. [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
-6. [AI Bootstrap Framework](ai/README.md)
-7. [Project Status](PROJECT_STATUS.md)
-8. [Blueprint Status](BLUEPRINT_STATUS.md)
-9. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
-10. [Runtime Status](RUNTIME_STATUS.md)
-11. [Capability Status](CAPABILITY_STATUS.md)
-12. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
-13. [NextShift Standards v1.0](standards/README.md)
-14. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
-15. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
-16. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
-17. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
-18. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
-19. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
-20. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-21. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+6. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+7. [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+8. [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
+9. [AI Bootstrap Framework](ai/README.md)
+10. [Project Status](PROJECT_STATUS.md)
+11. [Blueprint Status](BLUEPRINT_STATUS.md)
+12. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
+13. [Runtime Status](RUNTIME_STATUS.md)
+14. [Capability Status](CAPABILITY_STATUS.md)
+15. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
+16. [NextShift Standards v1.0](standards/README.md)
+17. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
+18. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
+19. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
+20. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
+21. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+22. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+23. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+24. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -62,6 +65,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
+| Business OS Phase 1  | BOS-001 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -79,6 +83,8 @@ Core documents:
 - [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
 - [AI Bootstrap Framework](ai/README.md)
 - [Project Status](PROJECT_STATUS.md)
+- [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 - [Blueprint Status](BLUEPRINT_STATUS.md)
 - [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
 
@@ -145,6 +151,30 @@ Reference:
 Engineering Knowledge:
 
 - [Lessons Learned CAP-001](capabilities/LESSONS_LEARNED_CAP_001.md)
+
+---
+
+## Business OS
+
+Planning:
+
+- [Business OS](business-os/README.md)
+- [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+
+BOS-001 Business Foundation:
+
+- [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
+- [BOS-001 Planning](business-os/phase-1/BOS-001-business-foundation/PLANNING.md)
+- [BOS-001 Documentation Implementation Contract](business-os/phase-1/BOS-001-business-foundation/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-001 Architecture](business-os/phase-1/BOS-001-business-foundation/ARCHITECTURE.md)
+- [BOS-001 Capability Matrix](business-os/phase-1/BOS-001-business-foundation/CAPABILITY_MATRIX.md)
+- [BOS-001 Dependency Model](business-os/phase-1/BOS-001-business-foundation/DEPENDENCY_MODEL.md)
+- [BOS-001 Implementation Status](business-os/phase-1/BOS-001-business-foundation/IMPLEMENTATION_STATUS.md)
+- [BOS-001 Requirements Verification](business-os/phase-1/BOS-001-business-foundation/REQUIREMENTS_VERIFICATION.md)
+- [BOS-001 Audit Report](business-os/phase-1/BOS-001-business-foundation/AUDIT_REPORT.md)
+- [BOS-001 Release Notes](business-os/phase-1/BOS-001-business-foundation/RELEASE_NOTES.md)
+- [BOS-001 Capability Release](business-os/phase-1/BOS-001-business-foundation/CAPABILITY_RELEASE.md)
 
 ---
 

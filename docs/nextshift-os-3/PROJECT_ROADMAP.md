@@ -82,6 +82,12 @@ Objective:
 
 Build the cognitive core.
 
+Subordinate Business OS Phase 1 execution scope:
+
+- [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+- [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
+
 Deliverables:
 
 - Business Brain
