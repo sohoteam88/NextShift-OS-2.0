@@ -18,6 +18,8 @@ This framework complements the Engineering Standards and references their canoni
 
 ## Documents
 
+- [NextShift Context](NEXTSHIFT_CONTEXT.md)
+- [AI Session Starter](AI_SESSION_STARTER.md)
 - [AI Bootstrap](AI_BOOTSTRAP.md)
 - [AI Onboarding Guide](AI_ONBOARDING_GUIDE.md)
 - [AI Execution Guide](AI_EXECUTION_GUIDE.md)
