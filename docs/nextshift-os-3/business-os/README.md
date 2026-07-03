@@ -24,7 +24,7 @@ Business OS documentation defines the AI-native operating foundation that enable
 | BOS-005 | Business Automation | Released |
 | BOS-006 | Business Memory | Released |
 | BOS-007 | Event Platform | Released |
-| BOS-008 | Business OS Integration | Not Started |
+| BOS-008 | Business OS Integration | Released |
 
 ### BOS-001 Business Foundation
 
@@ -128,3 +128,18 @@ Business OS documentation defines the AI-native operating foundation that enable
 - [Release Decision](phase-1/BOS-007-event-platform/RELEASE_DECISION.md)
 - [Release Notes](phase-1/BOS-007-event-platform/RELEASE_NOTES.md)
 - [Next Phase Handoff](phase-1/BOS-007-event-platform/NEXT_PHASE_HANDOFF.md)
+
+### BOS-008 Business OS Integration
+
+- [README](phase-1/BOS-008-business-os-integration/README.md)
+- [Planning](phase-1/BOS-008-business-os-integration/PLANNING.md)
+- [Documentation Implementation Contract](phase-1/BOS-008-business-os-integration/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [Execution Task](phase-1/BOS-008-business-os-integration/EXECUTION_TASK.md)
+- [Architecture](phase-1/BOS-008-business-os-integration/ARCHITECTURE.md)
+- [Capability Matrix](phase-1/BOS-008-business-os-integration/CAPABILITY_MATRIX.md)
+- [Dependency Model](phase-1/BOS-008-business-os-integration/DEPENDENCY_MODEL.md)
+- [Implementation Status](phase-1/BOS-008-business-os-integration/IMPLEMENTATION_STATUS.md)
+- [Audit Report](phase-1/BOS-008-business-os-integration/AUDIT_REPORT.md)
+- [Release Decision](phase-1/BOS-008-business-os-integration/RELEASE_DECISION.md)
+- [Release Notes](phase-1/BOS-008-business-os-integration/RELEASE_NOTES.md)
+- [Next Phase Handoff](phase-1/BOS-008-business-os-integration/NEXT_PHASE_HANDOFF.md)

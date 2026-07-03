@@ -252,17 +252,35 @@ Documentation:
 
 ### BOS-008 Business OS Integration
 
+Status: Released
+
 Scope:
 
 - Runtime Integration
 - Module Registration
-- Cross Capability Communication
-- Public API
-- End-to-End Testing
+- Cross-Capability Communication
+- Integration Validation
+- Business OS Readiness
+- Release Readiness
 
 Deliverable:
 
 Business OS v1.0 Release.
+
+Documentation:
+
+- [BOS-008 Business OS Integration](BOS-008-business-os-integration/README.md)
+- [BOS-008 Planning](BOS-008-business-os-integration/PLANNING.md)
+- [BOS-008 Documentation Implementation Contract](BOS-008-business-os-integration/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-008 Execution Task](BOS-008-business-os-integration/EXECUTION_TASK.md)
+- [BOS-008 Architecture](BOS-008-business-os-integration/ARCHITECTURE.md)
+- [BOS-008 Capability Matrix](BOS-008-business-os-integration/CAPABILITY_MATRIX.md)
+- [BOS-008 Dependency Model](BOS-008-business-os-integration/DEPENDENCY_MODEL.md)
+- [BOS-008 Implementation Status](BOS-008-business-os-integration/IMPLEMENTATION_STATUS.md)
+- [BOS-008 Audit Report](BOS-008-business-os-integration/AUDIT_REPORT.md)
+- [BOS-008 Release Decision](BOS-008-business-os-integration/RELEASE_DECISION.md)
+- [BOS-008 Release Notes](BOS-008-business-os-integration/RELEASE_NOTES.md)
+- [BOS-008 Next Phase Handoff](BOS-008-business-os-integration/NEXT_PHASE_HANDOFF.md)
 
 ---
 

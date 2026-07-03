@@ -71,7 +71,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released · BOS-008 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -291,6 +291,21 @@ BOS-007 Event Platform:
 - [BOS-007 Release Decision](business-os/phase-1/BOS-007-event-platform/RELEASE_DECISION.md)
 - [BOS-007 Release Notes](business-os/phase-1/BOS-007-event-platform/RELEASE_NOTES.md)
 - [BOS-007 Next Phase Handoff](business-os/phase-1/BOS-007-event-platform/NEXT_PHASE_HANDOFF.md)
+
+BOS-008 Business OS Integration:
+
+- [BOS-008 Business OS Integration](business-os/phase-1/BOS-008-business-os-integration/README.md)
+- [BOS-008 Planning](business-os/phase-1/BOS-008-business-os-integration/PLANNING.md)
+- [BOS-008 Documentation Implementation Contract](business-os/phase-1/BOS-008-business-os-integration/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-008 Execution Task](business-os/phase-1/BOS-008-business-os-integration/EXECUTION_TASK.md)
+- [BOS-008 Architecture](business-os/phase-1/BOS-008-business-os-integration/ARCHITECTURE.md)
+- [BOS-008 Capability Matrix](business-os/phase-1/BOS-008-business-os-integration/CAPABILITY_MATRIX.md)
+- [BOS-008 Dependency Model](business-os/phase-1/BOS-008-business-os-integration/DEPENDENCY_MODEL.md)
+- [BOS-008 Implementation Status](business-os/phase-1/BOS-008-business-os-integration/IMPLEMENTATION_STATUS.md)
+- [BOS-008 Audit Report](business-os/phase-1/BOS-008-business-os-integration/AUDIT_REPORT.md)
+- [BOS-008 Release Decision](business-os/phase-1/BOS-008-business-os-integration/RELEASE_DECISION.md)
+- [BOS-008 Release Notes](business-os/phase-1/BOS-008-business-os-integration/RELEASE_NOTES.md)
+- [BOS-008 Next Phase Handoff](business-os/phase-1/BOS-008-business-os-integration/NEXT_PHASE_HANDOFF.md)
 
 ---
 
