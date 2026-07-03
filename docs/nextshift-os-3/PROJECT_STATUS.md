@@ -40,7 +40,7 @@ Canonical navigation:
 
 ## 2. Current Engineering Baseline
 
-The active engineering baseline is [Engineering Standards v1.0](engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md).
+The active engineering baseline is [Engineering Standards v1.1](engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md).
 
 Canonical standards:
 
@@ -50,8 +50,9 @@ Canonical standards:
 - [STD-004 Release Governance](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
 - [STD-005 GitHub Alignment Standard](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
 - [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+- [STD-007 Repository Canonical Resolution Standard](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
 
-This dashboard references those standards as the source of truth. It does not restate their detailed workflow, role, documentation, release, GitHub alignment, or orchestration rules.
+This dashboard references those standards as the source of truth. It does not restate their detailed workflow, role, documentation, release, GitHub alignment, orchestration, or repository-resolution rules.
 
 ### AI Engineering Foundation
 
@@ -87,11 +88,13 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Active Planning Branch | `planning/os-3.1-mvp-governance` |
 | Active Milestone | OS 3.1 MVP governance expansion |
 | Current Phase | Documentation governance and AI continuity baseline |
-| Current Focus | Engineering Standards v1.0, AI Bootstrap Framework, Project Status Dashboard, and orchestration documentation |
+| Current Focus | Engineering Standards v1.1, AI Bootstrap Framework, Project Status Dashboard, and orchestration documentation |
 | Current Blockers | Release promotion and formal approval records are pending; there is no known production blocker for the current planning documentation work |
 | Current Priorities | Keep PROJECT_STATUS.md current after every governance or release milestone, audit the planning branch, fill approval records, decide promotion path, and resume CAP-005 implementation once the governance baseline is accepted |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
+
+Use [STD-007 Repository Canonical Resolution Standard](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md) when repository artifacts and conversation context appear to conflict.
 
 ---
 
@@ -127,6 +130,6 @@ For any AI assistant continuing NextShift OS work:
 1. Read [AI Bootstrap](ai/AI_BOOTSTRAP.md).
 2. Read this [Project Status](PROJECT_STATUS.md).
 3. Read the [Master Index](MASTER_INDEX.md).
-4. Load only the standards required for the current task from [Engineering Standards v1.0](engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md).
+4. Load only the standards required for the current task from [Engineering Standards v1.1](engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md).
 5. Determine the current phase with [AI Context Loading](ai/AI_CONTEXT_LOADING.md) and [STD-006](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md).
 6. Continue from the current phase; do not restart completed lifecycle phases.

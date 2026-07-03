@@ -41,6 +41,7 @@ AI assistants must follow the standards baseline:
 - [STD-004 Release Governance](../engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
 - [STD-005 GitHub Alignment Standard](../engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
 - [STD-006 Project Execution Orchestration Standard](../engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+- [STD-007 Repository Canonical Resolution Standard](../engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
 
 ---
 

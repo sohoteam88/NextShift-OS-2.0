@@ -94,6 +94,21 @@ Canonical document:
 
 - [STD-006 Project Execution Orchestration Standard v1.0](../engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
 
+### STD-007 - Repository Canonical Resolution Standard
+
+Defines:
+
+- Canonical source hierarchy
+- Repository-first resolution rules
+- Conversation versus repository conflict handling
+- Capability resolution
+- Lifecycle resolution
+- Required repository checks before lifecycle work
+
+Canonical document:
+
+- [STD-007 Repository Canonical Resolution Standard v1.0](../engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
+
 ## Adoption
 
 Every new NextShift project should declare the following Engineering Baseline:
@@ -104,6 +119,7 @@ Every new NextShift project should declare the following Engineering Baseline:
 - STD-004 Release Governance
 - STD-005 GitHub Alignment Standard
 - STD-006 Project Execution Orchestration Standard
+- STD-007 Repository Canonical Resolution Standard
 
 ## Repository Structure
 
@@ -122,7 +138,7 @@ docs/nextshift-os-3/engineering/
 
 ## Current Version
 
-Version: v1.0.0
+Version: v1.1.0
 
 Status: Released
 
@@ -130,6 +146,6 @@ Status: Released
 
 Future standards may include:
 
-- STD-007 Design Governance
-- STD-008 Security & Compliance
-- STD-009 AI Collaboration Standard
+- STD-008 Design Governance
+- STD-009 Security & Compliance
+- STD-010 AI Collaboration Standard
