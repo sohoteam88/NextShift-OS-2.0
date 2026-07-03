@@ -6,12 +6,15 @@ Business OS documentation defines the AI-native operating foundation that enable
 
 | Phase | Description | Status |
 | --- | --- | --- |
-| Phase 1 | Business OS Foundation | Planning |
+| Phase 1 | Business OS Foundation | Released |
 
 ## Phase 1
 
 - [Business OS Phase 1 Execution Plan](phase-1/EXECUTION_PLAN.md)
 - [Business OS Phase 1 Planning](phase-1/PLANNING.md)
+- [Business OS v1.0 Release Package](releases/BUSINESS_OS_v1.0/README.md)
+- [Business OS v1.0 Release Manifest](releases/BUSINESS_OS_v1.0/RELEASE_MANIFEST.md)
+- [Business OS v1.0 Release Notes](releases/BUSINESS_OS_v1.0/RELEASE_NOTES.md)
 
 ### BOS Capabilities
 

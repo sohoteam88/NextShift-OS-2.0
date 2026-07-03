@@ -94,6 +94,8 @@ Subordinate Business OS Phase 1 execution scope:
 
 - [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
 - [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+- [Business OS v1.0 Release Package](business-os/releases/BUSINESS_OS_v1.0/README.md)
+- [Business OS v1.0 Release Manifest](business-os/releases/BUSINESS_OS_v1.0/RELEASE_MANIFEST.md)
 - [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 - [BOS-002 Decision Intelligence](business-os/phase-1/BOS-002-decision-intelligence/README.md)
 - [BOS-003 AI Workflow](business-os/phase-1/BOS-003-ai-workflow/README.md)

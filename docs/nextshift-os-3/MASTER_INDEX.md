@@ -71,7 +71,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released · BOS-008 Released |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released · BOS-008 Released · Business OS v1.0 Release Package Audited (Pass) |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -186,6 +186,12 @@ Planning:
 - [Business OS](business-os/README.md)
 - [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
 - [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+- [Business OS v1.0 Release Package](business-os/releases/BUSINESS_OS_v1.0/README.md)
+- [Business OS v1.0 Release Manifest](business-os/releases/BUSINESS_OS_v1.0/RELEASE_MANIFEST.md)
+- [Business OS v1.0 Release Notes](business-os/releases/BUSINESS_OS_v1.0/RELEASE_NOTES.md)
+- [Business OS v1.0 Approval Record](business-os/releases/BUSINESS_OS_v1.0/APPROVAL_RECORD.md)
+- [Business OS v1.0 Release Checklist](business-os/releases/BUSINESS_OS_v1.0/RELEASE_CHECKLIST.md)
+- [Business OS v1.0 Release Package Audit Report](business-os/releases/BUSINESS_OS_v1.0/AUDIT_REPORT.md)
 
 BOS-001 Business Foundation:
 
