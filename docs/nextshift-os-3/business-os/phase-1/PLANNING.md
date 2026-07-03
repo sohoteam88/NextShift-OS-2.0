@@ -187,6 +187,8 @@ Documentation:
 
 ### BOS-006 Business Memory
 
+Status: Released
+
 Scope:
 
 - Business Memory
@@ -194,10 +196,26 @@ Scope:
 - Brand Memory
 - Workflow Memory
 - Workspace Memory
+- Memory Governance
 
 Deliverable:
 
 Shared long-term memory layer.
+
+Documentation:
+
+- [BOS-006 Business Memory](BOS-006-business-memory/README.md)
+- [BOS-006 Planning](BOS-006-business-memory/PLANNING.md)
+- [BOS-006 Documentation Implementation Contract](BOS-006-business-memory/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-006 Architecture](BOS-006-business-memory/ARCHITECTURE.md)
+- [BOS-006 Capability Matrix](BOS-006-business-memory/CAPABILITY_MATRIX.md)
+- [BOS-006 Dependency Model](BOS-006-business-memory/DEPENDENCY_MODEL.md)
+- [BOS-006 Implementation Status](BOS-006-business-memory/IMPLEMENTATION_STATUS.md)
+- [BOS-006 Requirements Verification](BOS-006-business-memory/REQUIREMENTS_VERIFICATION.md)
+- [BOS-006 Audit Report](BOS-006-business-memory/AUDIT_REPORT.md)
+- [BOS-006 Release Decision](BOS-006-business-memory/RELEASE_DECISION.md)
+- [BOS-006 Release Notes](BOS-006-business-memory/RELEASE_NOTES.md)
+- [BOS-006 Next Phase Handoff](BOS-006-business-memory/NEXT_PHASE_HANDOFF.md)
 
 ### BOS-007 Event Platform
 

@@ -47,10 +47,11 @@ For first-time contributors:
 23. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
 24. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
 25. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
-26. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
-27. [STD-007 Repository Canonical Resolution Standard v1.0](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
-28. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-29. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+26. [STD-006 Project Execution Orchestration Standard v1.1](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.1.md)
+27. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+28. [STD-007 Repository Canonical Resolution Standard v1.0](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
+29. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+30. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -70,7 +71,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -259,6 +260,21 @@ BOS-005 Business Automation:
 - [BOS-005 Release Decision](business-os/phase-1/BOS-005-business-automation/RELEASE_DECISION.md)
 - [BOS-005 Release Notes](business-os/phase-1/BOS-005-business-automation/RELEASE_NOTES.md)
 - [BOS-005 Next Phase Handoff](business-os/phase-1/BOS-005-business-automation/NEXT_PHASE_HANDOFF.md)
+
+BOS-006 Business Memory:
+
+- [BOS-006 Business Memory](business-os/phase-1/BOS-006-business-memory/README.md)
+- [BOS-006 Planning](business-os/phase-1/BOS-006-business-memory/PLANNING.md)
+- [BOS-006 Documentation Implementation Contract](business-os/phase-1/BOS-006-business-memory/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-006 Architecture](business-os/phase-1/BOS-006-business-memory/ARCHITECTURE.md)
+- [BOS-006 Capability Matrix](business-os/phase-1/BOS-006-business-memory/CAPABILITY_MATRIX.md)
+- [BOS-006 Dependency Model](business-os/phase-1/BOS-006-business-memory/DEPENDENCY_MODEL.md)
+- [BOS-006 Implementation Status](business-os/phase-1/BOS-006-business-memory/IMPLEMENTATION_STATUS.md)
+- [BOS-006 Requirements Verification](business-os/phase-1/BOS-006-business-memory/REQUIREMENTS_VERIFICATION.md)
+- [BOS-006 Audit Report](business-os/phase-1/BOS-006-business-memory/AUDIT_REPORT.md)
+- [BOS-006 Release Decision](business-os/phase-1/BOS-006-business-memory/RELEASE_DECISION.md)
+- [BOS-006 Release Notes](business-os/phase-1/BOS-006-business-memory/RELEASE_NOTES.md)
+- [BOS-006 Next Phase Handoff](business-os/phase-1/BOS-006-business-memory/NEXT_PHASE_HANDOFF.md)
 
 ---
 
@@ -799,6 +815,7 @@ Core:
 - [STD-003 Documentation Standard v1.0](engineering/STD-003_DOCUMENTATION_STANDARD_v1.0.md)
 - [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
 - [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+- [STD-006 Project Execution Orchestration Standard v1.1](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.1.md)
 - [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
 - [STD-007 Repository Canonical Resolution Standard v1.0](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
 - [Engineering Standards v1.1 Release Package](engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md)

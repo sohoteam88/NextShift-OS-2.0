@@ -22,7 +22,7 @@ Business OS documentation defines the AI-native operating foundation that enable
 | BOS-003 | AI Workflow | Released |
 | BOS-004 | Workspace Experience | Released |
 | BOS-005 | Business Automation | Released |
-| BOS-006 | Business Memory | Not Started |
+| BOS-006 | Business Memory | Released |
 | BOS-007 | Event Platform | Not Started |
 | BOS-008 | Business OS Integration | Not Started |
 
@@ -97,3 +97,18 @@ Business OS documentation defines the AI-native operating foundation that enable
 - [Release Decision](phase-1/BOS-005-business-automation/RELEASE_DECISION.md)
 - [Release Notes](phase-1/BOS-005-business-automation/RELEASE_NOTES.md)
 - [Next Phase Handoff](phase-1/BOS-005-business-automation/NEXT_PHASE_HANDOFF.md)
+
+### BOS-006 Business Memory
+
+- [README](phase-1/BOS-006-business-memory/README.md)
+- [Planning](phase-1/BOS-006-business-memory/PLANNING.md)
+- [Documentation Implementation Contract](phase-1/BOS-006-business-memory/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [Architecture](phase-1/BOS-006-business-memory/ARCHITECTURE.md)
+- [Capability Matrix](phase-1/BOS-006-business-memory/CAPABILITY_MATRIX.md)
+- [Dependency Model](phase-1/BOS-006-business-memory/DEPENDENCY_MODEL.md)
+- [Implementation Status](phase-1/BOS-006-business-memory/IMPLEMENTATION_STATUS.md)
+- [Requirements Verification](phase-1/BOS-006-business-memory/REQUIREMENTS_VERIFICATION.md)
+- [Audit Report](phase-1/BOS-006-business-memory/AUDIT_REPORT.md)
+- [Release Decision](phase-1/BOS-006-business-memory/RELEASE_DECISION.md)
+- [Release Notes](phase-1/BOS-006-business-memory/RELEASE_NOTES.md)
+- [Next Phase Handoff](phase-1/BOS-006-business-memory/NEXT_PHASE_HANDOFF.md)
