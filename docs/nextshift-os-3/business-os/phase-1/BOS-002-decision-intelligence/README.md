@@ -1,7 +1,7 @@
 # BOS-002 Decision Intelligence
 
 Version: v1.0
-Status: Requirements Verified
+Status: Released
 
 ## Purpose
 
@@ -30,6 +30,8 @@ BOS-002 covers:
 - [Dependency Model](DEPENDENCY_MODEL.md)
 - [Implementation Status](IMPLEMENTATION_STATUS.md)
 - [Requirements Verification](REQUIREMENTS_VERIFICATION.md)
+- [Audit Report](AUDIT_REPORT.md)
+- [Release Notes](RELEASE_NOTES.md)
 
 ## Foundation Rule
 

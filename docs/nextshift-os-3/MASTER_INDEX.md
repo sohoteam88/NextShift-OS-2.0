@@ -67,7 +67,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Audited |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -191,6 +191,7 @@ BOS-002 Decision Intelligence:
 - [BOS-002 Implementation Status](business-os/phase-1/BOS-002-decision-intelligence/IMPLEMENTATION_STATUS.md)
 - [BOS-002 Requirements Verification](business-os/phase-1/BOS-002-decision-intelligence/REQUIREMENTS_VERIFICATION.md)
 - [BOS-002 Audit Report](business-os/phase-1/BOS-002-decision-intelligence/AUDIT_REPORT.md)
+- [BOS-002 Release Notes](business-os/phase-1/BOS-002-decision-intelligence/RELEASE_NOTES.md)
 
 ---
 

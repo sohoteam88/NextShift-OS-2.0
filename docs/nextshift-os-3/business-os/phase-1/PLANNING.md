@@ -1,7 +1,7 @@
 # Business OS Phase 1 Planning
 
 Version: v1.0
-Status: Requirements Verified
+Status: Released
 
 ---
 
@@ -57,7 +57,7 @@ Documentation:
 
 ### BOS-002 Decision Intelligence
 
-Status: Requirements Verified
+Status: Released
 
 Scope:
 
@@ -83,6 +83,8 @@ Documentation:
 - [BOS-002 Dependency Model](BOS-002-decision-intelligence/DEPENDENCY_MODEL.md)
 - [BOS-002 Implementation Status](BOS-002-decision-intelligence/IMPLEMENTATION_STATUS.md)
 - [BOS-002 Requirements Verification](BOS-002-decision-intelligence/REQUIREMENTS_VERIFICATION.md)
+- [BOS-002 Audit Report](BOS-002-decision-intelligence/AUDIT_REPORT.md)
+- [BOS-002 Release Notes](BOS-002-decision-intelligence/RELEASE_NOTES.md)
 
 ### BOS-003 AI Workflow
 
