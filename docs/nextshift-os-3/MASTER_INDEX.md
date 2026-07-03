@@ -70,7 +70,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
-| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released |
+| Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released |
 | Design System        | Released        |
 | UI Kit               | Released        |
 | WEF                  | WEF v1.0 Released |
@@ -226,6 +226,21 @@ BOS-003 AI Workflow:
 - [BOS-003 Release Decision](business-os/phase-1/BOS-003-ai-workflow/RELEASE_DECISION.md)
 - [BOS-003 Release Notes](business-os/phase-1/BOS-003-ai-workflow/RELEASE_NOTES.md)
 - [BOS-003 Next Phase Handoff](business-os/phase-1/BOS-003-ai-workflow/NEXT_PHASE_HANDOFF.md)
+
+BOS-004 Workspace Experience:
+
+- [BOS-004 Workspace Experience](business-os/phase-1/BOS-004-workspace-experience/README.md)
+- [BOS-004 Planning](business-os/phase-1/BOS-004-workspace-experience/PLANNING.md)
+- [BOS-004 Documentation Implementation Contract](business-os/phase-1/BOS-004-workspace-experience/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-004 Architecture](business-os/phase-1/BOS-004-workspace-experience/ARCHITECTURE.md)
+- [BOS-004 Capability Matrix](business-os/phase-1/BOS-004-workspace-experience/CAPABILITY_MATRIX.md)
+- [BOS-004 Dependency Model](business-os/phase-1/BOS-004-workspace-experience/DEPENDENCY_MODEL.md)
+- [BOS-004 Implementation Status](business-os/phase-1/BOS-004-workspace-experience/IMPLEMENTATION_STATUS.md)
+- [BOS-004 Requirements Verification](business-os/phase-1/BOS-004-workspace-experience/REQUIREMENTS_VERIFICATION.md)
+- [BOS-004 Audit Report](business-os/phase-1/BOS-004-workspace-experience/AUDIT_REPORT.md)
+- [BOS-004 Release Decision](business-os/phase-1/BOS-004-workspace-experience/RELEASE_DECISION.md)
+- [BOS-004 Release Notes](business-os/phase-1/BOS-004-workspace-experience/RELEASE_NOTES.md)
+- [BOS-004 Next Phase Handoff](business-os/phase-1/BOS-004-workspace-experience/NEXT_PHASE_HANDOFF.md)
 
 ---
 

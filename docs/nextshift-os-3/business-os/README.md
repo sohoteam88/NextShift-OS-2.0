@@ -20,7 +20,7 @@ Business OS documentation defines the AI-native operating foundation that enable
 | BOS-001 | Business Foundation | Released |
 | BOS-002 | Decision Intelligence | Released |
 | BOS-003 | AI Workflow | Released |
-| BOS-004 | Workspace Experience | Not Started |
+| BOS-004 | Workspace Experience | Released |
 | BOS-005 | Business Automation | Not Started |
 | BOS-006 | Business Memory | Not Started |
 | BOS-007 | Event Platform | Not Started |
@@ -66,3 +66,18 @@ Business OS documentation defines the AI-native operating foundation that enable
 - [Release Decision](phase-1/BOS-003-ai-workflow/RELEASE_DECISION.md)
 - [Release Notes](phase-1/BOS-003-ai-workflow/RELEASE_NOTES.md)
 - [Next Phase Handoff](phase-1/BOS-003-ai-workflow/NEXT_PHASE_HANDOFF.md)
+
+### BOS-004 Workspace Experience
+
+- [README](phase-1/BOS-004-workspace-experience/README.md)
+- [Planning](phase-1/BOS-004-workspace-experience/PLANNING.md)
+- [Documentation Implementation Contract](phase-1/BOS-004-workspace-experience/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [Architecture](phase-1/BOS-004-workspace-experience/ARCHITECTURE.md)
+- [Capability Matrix](phase-1/BOS-004-workspace-experience/CAPABILITY_MATRIX.md)
+- [Dependency Model](phase-1/BOS-004-workspace-experience/DEPENDENCY_MODEL.md)
+- [Implementation Status](phase-1/BOS-004-workspace-experience/IMPLEMENTATION_STATUS.md)
+- [Requirements Verification](phase-1/BOS-004-workspace-experience/REQUIREMENTS_VERIFICATION.md)
+- [Audit Report](phase-1/BOS-004-workspace-experience/AUDIT_REPORT.md)
+- [Release Decision](phase-1/BOS-004-workspace-experience/RELEASE_DECISION.md)
+- [Release Notes](phase-1/BOS-004-workspace-experience/RELEASE_NOTES.md)
+- [Next Phase Handoff](phase-1/BOS-004-workspace-experience/NEXT_PHASE_HANDOFF.md)

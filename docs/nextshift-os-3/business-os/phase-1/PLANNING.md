@@ -122,6 +122,8 @@ Documentation:
 
 ### BOS-004 Workspace Experience
 
+Status: Released
+
 Scope:
 
 - Workspace Runtime
@@ -134,6 +136,21 @@ Scope:
 Deliverable:
 
 Unified AI workspace.
+
+Documentation:
+
+- [BOS-004 Workspace Experience](BOS-004-workspace-experience/README.md)
+- [BOS-004 Planning](BOS-004-workspace-experience/PLANNING.md)
+- [BOS-004 Documentation Implementation Contract](BOS-004-workspace-experience/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-004 Architecture](BOS-004-workspace-experience/ARCHITECTURE.md)
+- [BOS-004 Capability Matrix](BOS-004-workspace-experience/CAPABILITY_MATRIX.md)
+- [BOS-004 Dependency Model](BOS-004-workspace-experience/DEPENDENCY_MODEL.md)
+- [BOS-004 Implementation Status](BOS-004-workspace-experience/IMPLEMENTATION_STATUS.md)
+- [BOS-004 Requirements Verification](BOS-004-workspace-experience/REQUIREMENTS_VERIFICATION.md)
+- [BOS-004 Audit Report](BOS-004-workspace-experience/AUDIT_REPORT.md)
+- [BOS-004 Release Decision](BOS-004-workspace-experience/RELEASE_DECISION.md)
+- [BOS-004 Release Notes](BOS-004-workspace-experience/RELEASE_NOTES.md)
+- [BOS-004 Next Phase Handoff](BOS-004-workspace-experience/NEXT_PHASE_HANDOFF.md)
 
 ### BOS-005 Business Automation
 

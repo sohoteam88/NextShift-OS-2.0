@@ -97,6 +97,7 @@ Subordinate Business OS Phase 1 execution scope:
 - [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 - [BOS-002 Decision Intelligence](business-os/phase-1/BOS-002-decision-intelligence/README.md)
 - [BOS-003 AI Workflow](business-os/phase-1/BOS-003-ai-workflow/README.md)
+- [BOS-004 Workspace Experience](business-os/phase-1/BOS-004-workspace-experience/README.md)
 
 Deliverables:
 
