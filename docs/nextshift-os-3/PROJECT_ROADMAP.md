@@ -88,6 +88,7 @@ Subordinate Business OS Phase 1 execution scope:
 - [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 - [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 - [BOS-002 Decision Intelligence](business-os/phase-1/BOS-002-decision-intelligence/README.md)
+- [BOS-003 AI Workflow Planning](business-os/phase-1/BOS-003-ai-workflow/PLANNING.md)
 
 Deliverables:
 

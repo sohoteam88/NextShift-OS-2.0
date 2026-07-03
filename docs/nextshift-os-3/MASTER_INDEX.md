@@ -193,6 +193,12 @@ BOS-002 Decision Intelligence:
 - [BOS-002 Audit Report](business-os/phase-1/BOS-002-decision-intelligence/AUDIT_REPORT.md)
 - [BOS-002 Release Notes](business-os/phase-1/BOS-002-decision-intelligence/RELEASE_NOTES.md)
 
+BOS-003 AI Workflow:
+
+- [BOS-003 Planning](business-os/phase-1/BOS-003-ai-workflow/PLANNING.md)
+- [BOS-003 Documentation Implementation Contract](business-os/phase-1/BOS-003-ai-workflow/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [BOS-003 Execution Task](business-os/phase-1/BOS-003-ai-workflow/EXECUTION_TASK.md)
+
 ---
 
 ## Platform Projects

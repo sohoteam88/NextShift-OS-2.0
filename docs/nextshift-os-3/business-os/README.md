@@ -19,7 +19,7 @@ Business OS documentation defines the AI-native operating foundation that enable
 | --- | --- | --- |
 | BOS-001 | Business Foundation | Released |
 | BOS-002 | Decision Intelligence | Released |
-| BOS-003 | AI Workflow | Not Started |
+| BOS-003 | AI Workflow | Planning |
 | BOS-004 | Workspace Experience | Not Started |
 | BOS-005 | Business Automation | Not Started |
 | BOS-006 | Business Memory | Not Started |
@@ -50,3 +50,9 @@ Business OS documentation defines the AI-native operating foundation that enable
 - [Requirements Verification](phase-1/BOS-002-decision-intelligence/REQUIREMENTS_VERIFICATION.md)
 - [Audit Report](phase-1/BOS-002-decision-intelligence/AUDIT_REPORT.md)
 - [Release Notes](phase-1/BOS-002-decision-intelligence/RELEASE_NOTES.md)
+
+### BOS-003 AI Workflow
+
+- [Planning](phase-1/BOS-003-ai-workflow/PLANNING.md)
+- [Documentation Implementation Contract](phase-1/BOS-003-ai-workflow/DOCUMENTATION_IMPLEMENTATION_CONTRACT.md)
+- [Execution Task](phase-1/BOS-003-ai-workflow/EXECUTION_TASK.md)
