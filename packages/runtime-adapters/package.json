@@ -1,20 +1,19 @@
 {
-  "name": "@nextshift/event-bus",
+  "name": "@nextshift/runtime-adapters",
   "version": "0.1.0-alpha",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prebuild": "pnpm --filter @nextshift/contracts build",
+    "prebuild": "pnpm --filter @nextshift/runtime-core build",
     "build": "tsc -p tsconfig.json",
-    "pretypecheck": "pnpm --filter @nextshift/contracts build",
+    "pretypecheck": "pnpm --filter @nextshift/runtime-core build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --ext .ts",
     "test": "vitest run"
   },
   "dependencies": {
-    "@nextshift/shared": "workspace:*",
-    "@nextshift/contracts": "workspace:*"
+    "@nextshift/runtime-core": "workspace:*"
   }
 }
