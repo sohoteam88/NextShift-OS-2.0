@@ -14,6 +14,7 @@ Status: Frozen
 | Active cleanup | Complete |
 | Repository version target | Repository v4 |
 | Program health | Green |
+| Current cleanup framework | Repository Cleanup Framework v1.1 |
 
 ## Completed Waves
 
@@ -87,9 +88,19 @@ governance/repository/rcp/RCP-001-cleanup-pilot/RCP_001_WAVE_CLOSURE.md
 
 RCP-001 is frozen. Future cleanup work continues in RCP-002.
 
+## Cleanup Framework
+
+Repository Cleanup Framework v1.1 is integrated at:
+
+```text
+governance/repository/rcp/REPOSITORY_CLEANUP_FRAMEWORK_v1.1.md
+```
+
+RCP-002 through RCP-004 must follow this framework for cleanup strategy model selection, candidate checks, archive manifests, rollback evidence, wave metrics, lifecycle stops, and stop conditions.
+
 ## Working Tree Requirement
 
-RCP-001 wave closure requires the repository working tree to remain clean after validation.
+Repository Cleanup Framework v1.1 integration requires the repository working tree to remain clean after validation.
 
 ## Next Required Phase
 

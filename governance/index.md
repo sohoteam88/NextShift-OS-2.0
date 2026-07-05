@@ -75,6 +75,7 @@ This registry provides the RepoOS governance entry point while preserving curren
 | RCP program charter | [governance/repository/rcp/PROGRAM_CHARTER.md](repository/rcp/PROGRAM_CHARTER.md) |
 | RCP program roadmap | [governance/repository/rcp/PROGRAM_ROADMAP.md](repository/rcp/PROGRAM_ROADMAP.md) |
 | RCP program governance | [governance/repository/rcp/PROGRAM_GOVERNANCE.md](repository/rcp/PROGRAM_GOVERNANCE.md) |
+| RCP cleanup framework v1.1 | [governance/repository/rcp/REPOSITORY_CLEANUP_FRAMEWORK_v1.1.md](repository/rcp/REPOSITORY_CLEANUP_FRAMEWORK_v1.1.md) |
 | RCP status | [governance/repository/rcp/STATUS.md](repository/rcp/STATUS.md) |
 | RCP-000 release approval record | [governance/repository/rcp/releases/RCP_v1.0_INIT/APPROVAL_RECORD.md](repository/rcp/releases/RCP_v1.0_INIT/APPROVAL_RECORD.md) |
 | RCP-000 release checklist | [governance/repository/rcp/releases/RCP_v1.0_INIT/RELEASE_CHECKLIST.md](repository/rcp/releases/RCP_v1.0_INIT/RELEASE_CHECKLIST.md) |

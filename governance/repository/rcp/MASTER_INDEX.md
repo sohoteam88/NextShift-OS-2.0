@@ -15,6 +15,7 @@ This index registers Repository Cleanup Program documents and future cleanup wav
 | [Program Charter](PROGRAM_CHARTER.md) | Defines mission, scope, principles, and success criteria |
 | [Program Roadmap](PROGRAM_ROADMAP.md) | Defines RCP sequence and lifecycle path |
 | [Program Governance](PROGRAM_GOVERNANCE.md) | Defines cleanup governance principles and gates |
+| [Repository Cleanup Framework v1.1](REPOSITORY_CLEANUP_FRAMEWORK_v1.1.md) | Defines cleanup execution models and standards for RCP-002 through RCP-004 |
 | [Status](STATUS.md) | Tracks current phase, cleanup state, and program health |
 | [Master Index](MASTER_INDEX.md) | Registers program documents and future waves |
 
@@ -63,6 +64,12 @@ This index registers Repository Cleanup Program documents and future cleanup wav
 | Document | Purpose |
 | --- | --- |
 | [Wave Closure](RCP-001-cleanup-pilot/RCP_001_WAVE_CLOSURE.md) | Records RCP-001 final closure status and RCP-002 entry criteria |
+
+## RCP Framework Standards
+
+| Document | Purpose |
+| --- | --- |
+| [Repository Cleanup Framework v1.1](REPOSITORY_CLEANUP_FRAMEWORK_v1.1.md) | Standardizes compatibility decisions, candidate checks, archive manifests, rollback, metrics, lifecycle, and stop conditions for future cleanup waves |
 
 ## Future Cleanup Waves
 
