@@ -72,6 +72,7 @@ This registry provides the RepoOS governance entry point while preserving curren
 | Artifact | Current Path |
 | --- | --- |
 | Repository Operations Framework v1.0 | [governance/repository/REPOSITORY_OPERATIONS_FRAMEWORK_v1.0.md](repository/REPOSITORY_OPERATIONS_FRAMEWORK_v1.0.md) |
+| Repository Capability Model v1.0 | [governance/repository/REPOSITORY_CAPABILITY_MODEL_v1.0.md](repository/REPOSITORY_CAPABILITY_MODEL_v1.0.md) |
 | Repository Health Framework v1.0 | [governance/repository/REPOSITORY_HEALTH_FRAMEWORK_v1.0.md](repository/REPOSITORY_HEALTH_FRAMEWORK_v1.0.md) |
 | RCP master index | [governance/repository/rcp/MASTER_INDEX.md](repository/rcp/MASTER_INDEX.md) |
 | RCP program charter | [governance/repository/rcp/PROGRAM_CHARTER.md](repository/rcp/PROGRAM_CHARTER.md) |
