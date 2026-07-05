@@ -37,6 +37,8 @@ Repository Health Runtime
 
 NextShift Runtime Implementation v1.0 defines the executable implementation phases for this MVP.
 
+NextShift Runtime MVP Sprint-001 defines the first executable end-to-end runtime workflow slice.
+
 NRM-001 Runtime Core
 NRM-002 Event Bus
 NRM-003 Operator Console

@@ -21,6 +21,8 @@ Transition NextShift from platform foundation into executable runtime implementa
 - Workspace event bus
 - Operator workflow
 
+NextShift Runtime MVP Sprint-001 implements the first executable workflow across Workspace Runtime Core, event bus, repository adapter, business adapter, approval flow, and audit trail.
+
 ### Phase 2 — Repository Runtime Integration
 - Repository health events
 - Cleanup candidate queue
