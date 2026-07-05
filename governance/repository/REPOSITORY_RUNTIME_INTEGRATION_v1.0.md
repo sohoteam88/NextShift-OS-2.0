@@ -19,6 +19,10 @@ Define how Repository Runtime integrates with AI Workspace Runtime without allow
 - Feed metrics into Workspace dashboards.
 - Require operator approval before invoking Repository Cleanup Program.
 
+## Platform Relationship
+
+Repository Runtime Integration operates under NextShift Runtime Platform v1.0, which connects Repository, Business, and Workspace runtimes through a shared event model and unified audit trail.
+
 ## Runtime Flow
 
 Repository Health Runtime

@@ -14,6 +14,7 @@ Status: Frozen
 | Active cleanup | Complete |
 | Repository version target | Repository v4 |
 | Program health | Green |
+| Current runtime platform | NextShift Runtime Platform v1.0 |
 | Current operations framework | Repository Operations Framework v1.0 |
 | Current capability model | Repository Capability Model v1.0 |
 | Current runtime architecture | Repository Runtime Architecture v1.0 |
@@ -94,6 +95,12 @@ governance/repository/rcp/RCP-001-cleanup-pilot/RCP_001_WAVE_CLOSURE.md
 RCP-001 is frozen. Future cleanup work continues in RCP-002.
 
 ## Cleanup Framework
+
+NextShift Runtime Platform v1.0 is integrated at:
+
+```text
+platform/NEXTSHIFT_RUNTIME_PLATFORM_v1.0.md
+```
 
 Repository Operations Framework v1.0 is integrated at:
 
