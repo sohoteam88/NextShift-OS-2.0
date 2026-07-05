@@ -82,6 +82,14 @@ This registry provides the RepoOS governance entry point while preserving curren
 | RCP-001 planning | [governance/repository/rcp/RCP-001-cleanup-pilot/PLANNING.md](repository/rcp/RCP-001-cleanup-pilot/PLANNING.md) |
 | RCP-001 cleanup contract | [governance/repository/rcp/RCP-001-cleanup-pilot/CLEANUP_CONTRACT.md](repository/rcp/RCP-001-cleanup-pilot/CLEANUP_CONTRACT.md) |
 | RCP-001 execution task | [governance/repository/rcp/RCP-001-cleanup-pilot/EXECUTION_TASK.md](repository/rcp/RCP-001-cleanup-pilot/EXECUTION_TASK.md) |
+| RCP-001 implementation plan | [governance/repository/rcp/RCP-001-cleanup-pilot/IMPLEMENTATION_PLAN.md](repository/rcp/RCP-001-cleanup-pilot/IMPLEMENTATION_PLAN.md) |
+| RCP-001 implementation task | [governance/repository/rcp/RCP-001-cleanup-pilot/IMPLEMENTATION_TASK.md](repository/rcp/RCP-001-cleanup-pilot/IMPLEMENTATION_TASK.md) |
+| RCP-001 repository audit contract | [governance/repository/rcp/RCP-001-cleanup-pilot/REPOSITORY_AUDIT_CONTRACT.md](repository/rcp/RCP-001-cleanup-pilot/REPOSITORY_AUDIT_CONTRACT.md) |
+| RCP-001 archive manifest | [archive/audit/templates/ARCHIVE_MANIFEST.md](../archive/audit/templates/ARCHIVE_MANIFEST.md) |
+| RCP-001 release approval record | [governance/repository/rcp/releases/RCP_001_CLEANUP_PILOT/APPROVAL_RECORD.md](repository/rcp/releases/RCP_001_CLEANUP_PILOT/APPROVAL_RECORD.md) |
+| RCP-001 cleanup completion report | [governance/repository/rcp/releases/RCP_001_CLEANUP_PILOT/CLEANUP_COMPLETION_REPORT.md](repository/rcp/releases/RCP_001_CLEANUP_PILOT/CLEANUP_COMPLETION_REPORT.md) |
+| RCP-001 release checklist | [governance/repository/rcp/releases/RCP_001_CLEANUP_PILOT/RELEASE_CHECKLIST.md](repository/rcp/releases/RCP_001_CLEANUP_PILOT/RELEASE_CHECKLIST.md) |
+| RCP-001 release notes | [governance/repository/rcp/releases/RCP_001_CLEANUP_PILOT/RELEASE_NOTES.md](repository/rcp/releases/RCP_001_CLEANUP_PILOT/RELEASE_NOTES.md) |
 
 ## Release Governance Packages
 

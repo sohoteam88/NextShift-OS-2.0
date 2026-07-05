@@ -2,16 +2,16 @@
 
 Program: Repository Cleanup Program v1.0
 Phase: RCP-001 Cleanup Pilot
-Status: Planning
+Status: Released
 
 ## Current Phase
 
 | Field | Value |
 | --- | --- |
 | Current phase | RCP-001 Cleanup Pilot |
-| Current lifecycle state | Planning |
+| Current lifecycle state | Released |
 | Source baseline | Engineering OS v1.0 |
-| Active cleanup | None |
+| Active cleanup | Complete |
 | Repository version target | Repository v4 |
 | Program health | Green |
 
@@ -21,7 +21,7 @@ Status: Planning
 | --- | --- |
 | Engineering OS v1.0 | Complete |
 | RCP-000 Program Initialization | Released |
-| RCP-001 Cleanup Pilot | Planning |
+| RCP-001 Cleanup Pilot | Released |
 | RCP-002 Cleanup Wave 1 | Not started |
 | RCP-003 Cleanup Wave 2 | Not started |
 | RCP-004 Cleanup Wave 3 | Not started |
@@ -29,11 +29,10 @@ Status: Planning
 
 ## Active Cleanup
 
-No cleanup is active.
+RCP-001 completed an archive-copy-only cleanup pilot.
 
 No files are approved for:
 
-- Archive execution.
 - Deletion.
 - Migration.
 - Runtime change.
@@ -46,7 +45,19 @@ The planned RCP-001 candidate remains:
 audit/beta-user-interview-template.md
 ```
 
-This candidate is not approved for action until RCP-001 implementation is explicitly authorized.
+RCP-001 Stop B authorized an archive copy only. Deletion, migration, runtime change, and source removal remain unauthorized.
+
+## Current Archive Copy
+
+```text
+archive/audit/templates/beta-user-interview-template.md
+```
+
+The original source path remains in place for compatibility:
+
+```text
+audit/beta-user-interview-template.md
+```
 
 ## Repository Lifecycle
 
@@ -54,18 +65,18 @@ This candidate is not approved for action until RCP-001 implementation is explic
 Active -> Deprecated -> Archived -> Frozen -> Removed
 ```
 
-No repository asset has changed lifecycle state under RCP-000.
+No source asset has been removed, migrated, or deleted under RCP-001 Stop B.
 
 ## Working Tree Requirement
 
-RCP-001 Stop A requires the repository working tree to remain clean after planning package integration.
+RCP-001 Stop C requires the repository working tree to remain clean after release package integration and validation.
 
 ## Next Required Phase
 
-After RCP-001 Stop A planning:
+After RCP-001 release:
 
 ```text
-RCP-001 Stop B
+RCP-002 Cleanup Wave 1 Planning
 ```
 
-RCP-001 Stop B must begin with review and implementation authorization, not direct cleanup execution.
+RCP-002 must begin with planning authorization, not direct cleanup execution.
