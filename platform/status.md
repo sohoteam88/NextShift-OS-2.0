@@ -18,6 +18,7 @@ This status registry provides the current platform state for repository navigati
 | Migration mode | Registry-first platform navigation |
 | Runtime migration | Deferred to separate runtime migration lifecycle |
 | Runtime platform | NextShift Runtime Platform v1.0 integrated |
+| Runtime MVP | NextShift Runtime MVP v1.0 integrated |
 | File movement | Not authorized |
 | Release package migration | Not authorized |
 | Registry state | Platform registry finalized for audit |
@@ -37,6 +38,7 @@ This status registry provides the current platform state for repository navigati
 | Platform Area | Current State | Reference |
 | --- | --- | --- |
 | NextShift Runtime Platform | Integrated | [NextShift Runtime Platform v1.0](NEXTSHIFT_RUNTIME_PLATFORM_v1.0.md) |
+| NextShift Runtime MVP | Integrated | [NextShift Runtime MVP v1.0](NEXTSHIFT_RUNTIME_MVP_v1.0.md) |
 | Business OS | Released | [Business OS](../docs/nextshift-os-3/business-os/README.md) |
 | Business OS v1.0 | Released package exists at current path | [Business OS v1.0 release package](../docs/nextshift-os-3/business-os/releases/BUSINESS_OS_v1.0/README.md) |
 | Engineering Standards | v1.1 baseline | [Engineering Standards v1.1](../docs/nextshift-os-3/engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md) |
