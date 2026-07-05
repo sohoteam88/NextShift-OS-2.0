@@ -37,6 +37,7 @@ Use this registry before loading deep project documentation unless the operator 
 | NextShift Runtime MVP v1.0 | [platform/NEXTSHIFT_RUNTIME_MVP_v1.0.md](NEXTSHIFT_RUNTIME_MVP_v1.0.md) |
 | NextShift Runtime Implementation v1.0 | [platform/NEXTSHIFT_RUNTIME_IMPLEMENTATION_v1.0.md](NEXTSHIFT_RUNTIME_IMPLEMENTATION_v1.0.md) |
 | NextShift Runtime MVP Sprint-001 | [platform/NEXTSHIFT_RUNTIME_MVP_SPRINT_001.md](NEXTSHIFT_RUNTIME_MVP_SPRINT_001.md) |
+| NextShift Runtime Sprint-002 | [platform/NEXTSHIFT_RUNTIME_SPRINT_002.md](NEXTSHIFT_RUNTIME_SPRINT_002.md) |
 | NextShift OS documentation root | [docs/nextshift-os-3/README.md](../docs/nextshift-os-3/README.md) |
 | Master index | [docs/nextshift-os-3/MASTER_INDEX.md](../docs/nextshift-os-3/MASTER_INDEX.md) |
 | Project status | [docs/nextshift-os-3/PROJECT_STATUS.md](../docs/nextshift-os-3/PROJECT_STATUS.md) |

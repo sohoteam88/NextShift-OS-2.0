@@ -39,6 +39,8 @@ NextShift Runtime Implementation v1.0 defines the executable implementation phas
 
 NextShift Runtime MVP Sprint-001 defines the first executable end-to-end runtime workflow slice.
 
+NextShift Runtime Sprint-002 defines the Runtime Core implementation planning slice for package structure, event bus interfaces, orchestrator, adapters, and test strategy.
+
 NRM-001 Runtime Core
 NRM-002 Event Bus
 NRM-003 Operator Console
