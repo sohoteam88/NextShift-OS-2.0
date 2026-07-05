@@ -35,6 +35,8 @@ Repository Health Runtime
 
 ## Phase Plan
 
+NextShift Runtime Implementation v1.0 defines the executable implementation phases for this MVP.
+
 NRM-001 Runtime Core
 NRM-002 Event Bus
 NRM-003 Operator Console

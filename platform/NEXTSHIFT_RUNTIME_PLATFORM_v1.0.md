@@ -61,6 +61,8 @@ Repository Updates
 
 NextShift Runtime MVP v1.0 defines the first demonstrable end-to-end runtime target across Repository Runtime, Workspace Runtime, and Business Runtime.
 
+NextShift Runtime Implementation v1.0 defines the implementation phase plan for moving from platform foundation to executable runtime.
+
 NRP-001 Runtime Foundation
 NRP-002 Event Bus
 NRP-003 Runtime Dashboard
