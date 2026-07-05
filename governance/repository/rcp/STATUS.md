@@ -1,15 +1,15 @@
 # Repository Cleanup Program Status
 
 Program: Repository Cleanup Program v1.0
-Phase: RCP-000 Program Initialization
-Status: Released
+Phase: RCP-001 Cleanup Pilot
+Status: Planning
 
 ## Current Phase
 
 | Field | Value |
 | --- | --- |
-| Current phase | RCP-000 Program Initialization |
-| Current lifecycle state | Released |
+| Current phase | RCP-001 Cleanup Pilot |
+| Current lifecycle state | Planning |
 | Source baseline | Engineering OS v1.0 |
 | Active cleanup | None |
 | Repository version target | Repository v4 |
@@ -21,7 +21,7 @@ Status: Released
 | --- | --- |
 | Engineering OS v1.0 | Complete |
 | RCP-000 Program Initialization | Released |
-| RCP-001 Cleanup Pilot | Not started |
+| RCP-001 Cleanup Pilot | Planning |
 | RCP-002 Cleanup Wave 1 | Not started |
 | RCP-003 Cleanup Wave 2 | Not started |
 | RCP-004 Cleanup Wave 3 | Not started |
@@ -58,14 +58,14 @@ No repository asset has changed lifecycle state under RCP-000.
 
 ## Working Tree Requirement
 
-RCP-000 exit requires the repository working tree to remain clean after EngOS v1.0 checkpoint.
+RCP-001 Stop A requires the repository working tree to remain clean after planning package integration.
 
 ## Next Required Phase
 
-After RCP-000 approval:
+After RCP-001 Stop A planning:
 
 ```text
-RCP-001 Cleanup Pilot
+RCP-001 Stop B
 ```
 
-RCP-001 must begin with review and implementation authorization, not direct cleanup execution.
+RCP-001 Stop B must begin with review and implementation authorization, not direct cleanup execution.

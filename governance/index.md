@@ -79,6 +79,9 @@ This registry provides the RepoOS governance entry point while preserving curren
 | RCP-000 release approval record | [governance/repository/rcp/releases/RCP_v1.0_INIT/APPROVAL_RECORD.md](repository/rcp/releases/RCP_v1.0_INIT/APPROVAL_RECORD.md) |
 | RCP-000 release checklist | [governance/repository/rcp/releases/RCP_v1.0_INIT/RELEASE_CHECKLIST.md](repository/rcp/releases/RCP_v1.0_INIT/RELEASE_CHECKLIST.md) |
 | RCP-000 release notes | [governance/repository/rcp/releases/RCP_v1.0_INIT/RELEASE_NOTES.md](repository/rcp/releases/RCP_v1.0_INIT/RELEASE_NOTES.md) |
+| RCP-001 planning | [governance/repository/rcp/RCP-001-cleanup-pilot/PLANNING.md](repository/rcp/RCP-001-cleanup-pilot/PLANNING.md) |
+| RCP-001 cleanup contract | [governance/repository/rcp/RCP-001-cleanup-pilot/CLEANUP_CONTRACT.md](repository/rcp/RCP-001-cleanup-pilot/CLEANUP_CONTRACT.md) |
+| RCP-001 execution task | [governance/repository/rcp/RCP-001-cleanup-pilot/EXECUTION_TASK.md](repository/rcp/RCP-001-cleanup-pilot/EXECUTION_TASK.md) |
 
 ## Release Governance Packages
 

@@ -1,8 +1,8 @@
 # Repository Cleanup Program Master Index
 
 Program: Repository Cleanup Program v1.0
-Phase: RCP-000 Program Initialization
-Status: Released
+Phase: RCP-001 Cleanup Pilot
+Status: Planning
 
 ## Purpose
 
@@ -26,11 +26,19 @@ This index registers Repository Cleanup Program documents and future cleanup wav
 | [Release Checklist](releases/RCP_v1.0_INIT/RELEASE_CHECKLIST.md) | Tracks RCP-000 release validation and publication steps |
 | [Release Notes](releases/RCP_v1.0_INIT/RELEASE_NOTES.md) | Summarizes RCP-000 release result and next phase |
 
+## RCP-001 Stop A Planning Package
+
+| Document | Purpose |
+| --- | --- |
+| [Planning](RCP-001-cleanup-pilot/PLANNING.md) | Defines the RCP-001 pilot candidate and planning entry |
+| [Cleanup Contract](RCP-001-cleanup-pilot/CLEANUP_CONTRACT.md) | Defines RCP-001 cleanup contract ownership and next step |
+| [Execution Task](RCP-001-cleanup-pilot/EXECUTION_TASK.md) | Defines the RCP-001 execution task boundary for Stop B |
+
 ## Future Cleanup Waves
 
 | Wave | Name | Status |
 | --- | --- | --- |
-| RCP-001 | Cleanup Pilot | Not started |
+| RCP-001 | Cleanup Pilot | Planning |
 | RCP-002 | Cleanup Wave 1 | Not started |
 | RCP-003 | Cleanup Wave 2 | Not started |
 | RCP-004 | Cleanup Wave 3 | Not started |
