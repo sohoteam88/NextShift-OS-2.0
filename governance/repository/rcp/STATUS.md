@@ -15,6 +15,7 @@ Status: Frozen
 | Repository version target | Repository v4 |
 | Program health | Green |
 | Current operations framework | Repository Operations Framework v1.0 |
+| Current health framework | Repository Health Framework v1.0 |
 | Current cleanup framework | Repository Cleanup Framework v1.1 |
 
 ## Completed Waves
@@ -95,6 +96,12 @@ Repository Operations Framework v1.0 is integrated at:
 
 ```text
 governance/repository/REPOSITORY_OPERATIONS_FRAMEWORK_v1.0.md
+```
+
+Repository Health Framework v1.0 is integrated at:
+
+```text
+governance/repository/REPOSITORY_HEALTH_FRAMEWORK_v1.0.md
 ```
 
 Repository Cleanup Framework v1.1 is integrated at:

@@ -30,7 +30,7 @@ Repository Operations Framework (ROF)
 | --- | --- |
 | Cleanup | Released (Framework v1.1) |
 | Migration | Planned |
-| Health | Planned |
+| Health | Integrated (Framework v1.0) |
 | Maintenance | Planned |
 | Metrics | Planned |
 | Automation | Planned |
