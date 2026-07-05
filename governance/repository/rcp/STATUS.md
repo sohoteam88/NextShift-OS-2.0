@@ -14,6 +14,7 @@ Status: Frozen
 | Active cleanup | Complete |
 | Repository version target | Repository v4 |
 | Program health | Green |
+| Current operations framework | Repository Operations Framework v1.0 |
 | Current cleanup framework | Repository Cleanup Framework v1.1 |
 
 ## Completed Waves
@@ -90,17 +91,25 @@ RCP-001 is frozen. Future cleanup work continues in RCP-002.
 
 ## Cleanup Framework
 
+Repository Operations Framework v1.0 is integrated at:
+
+```text
+governance/repository/REPOSITORY_OPERATIONS_FRAMEWORK_v1.0.md
+```
+
 Repository Cleanup Framework v1.1 is integrated at:
 
 ```text
 governance/repository/rcp/REPOSITORY_CLEANUP_FRAMEWORK_v1.1.md
 ```
 
+Repository Cleanup Framework v1.1 operates as the cleanup capability under Repository Operations Framework v1.0.
+
 RCP-002 through RCP-004 must follow this framework for cleanup strategy model selection, candidate checks, archive manifests, rollback evidence, wave metrics, lifecycle stops, and stop conditions.
 
 ## Working Tree Requirement
 
-Repository Cleanup Framework v1.1 integration requires the repository working tree to remain clean after validation.
+Repository Operations Framework v1.0 integration requires the repository working tree to remain clean after validation.
 
 ## Next Required Phase
 

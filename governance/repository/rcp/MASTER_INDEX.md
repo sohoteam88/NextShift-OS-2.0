@@ -69,6 +69,7 @@ This index registers Repository Cleanup Program documents and future cleanup wav
 
 | Document | Purpose |
 | --- | --- |
+| [Repository Operations Framework v1.0](../REPOSITORY_OPERATIONS_FRAMEWORK_v1.0.md) | Defines the parent repository operations framework for cleanup, migration, health, maintenance, metrics, and automation |
 | [Repository Cleanup Framework v1.1](REPOSITORY_CLEANUP_FRAMEWORK_v1.1.md) | Standardizes compatibility decisions, candidate checks, archive manifests, rollback, metrics, lifecycle, and stop conditions for future cleanup waves |
 
 ## Future Cleanup Waves
