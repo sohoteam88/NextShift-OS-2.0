@@ -45,6 +45,10 @@ Health Scan
 - Metrics dashboard
 - Operational recommendations
 
+## Runtime Integration
+
+Repository Runtime Integration v1.0 defines the integration path from repository health runtime events into AI Workspace Runtime review queues, operator approval, repository cleanup execution, validation, and metrics updates.
+
 ## Principles
 
 - Continuous observation

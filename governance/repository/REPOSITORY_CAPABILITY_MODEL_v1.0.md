@@ -41,11 +41,14 @@ Framework
 
 Repository Runtime Architecture v1.0 defines how repository operations capabilities execute continuously through health scans, reports, candidate queues, validation, metrics updates, and continuous monitoring.
 
+Repository Runtime Integration v1.0 defines how repository runtime connects to AI Workspace Runtime while preserving operator approval before cleanup execution.
+
 ## Capability Registry
 
 | Capability | Framework | Program |
 |------------|-----------|---------|
 | Runtime Architecture | Released | Planned |
+| Runtime Integration | Released | Planned |
 | Cleanup | Released | RCP |
 | Health | Released | Planned |
 | Migration | Planned | Planned |
