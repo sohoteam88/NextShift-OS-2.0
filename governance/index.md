@@ -67,6 +67,19 @@ This registry provides the RepoOS governance entry point while preserving curren
 | Standards library | [docs/nextshift-os-3/standards/README.md](../docs/nextshift-os-3/standards/README.md) |
 | AI governance and execution | [docs/nextshift-os-3/ai/README.md](../docs/nextshift-os-3/ai/README.md) |
 
+## Repository Cleanup Program
+
+| Artifact | Current Path |
+| --- | --- |
+| RCP master index | [governance/repository/rcp/MASTER_INDEX.md](repository/rcp/MASTER_INDEX.md) |
+| RCP program charter | [governance/repository/rcp/PROGRAM_CHARTER.md](repository/rcp/PROGRAM_CHARTER.md) |
+| RCP program roadmap | [governance/repository/rcp/PROGRAM_ROADMAP.md](repository/rcp/PROGRAM_ROADMAP.md) |
+| RCP program governance | [governance/repository/rcp/PROGRAM_GOVERNANCE.md](repository/rcp/PROGRAM_GOVERNANCE.md) |
+| RCP status | [governance/repository/rcp/STATUS.md](repository/rcp/STATUS.md) |
+| RCP-000 release approval record | [governance/repository/rcp/releases/RCP_v1.0_INIT/APPROVAL_RECORD.md](repository/rcp/releases/RCP_v1.0_INIT/APPROVAL_RECORD.md) |
+| RCP-000 release checklist | [governance/repository/rcp/releases/RCP_v1.0_INIT/RELEASE_CHECKLIST.md](repository/rcp/releases/RCP_v1.0_INIT/RELEASE_CHECKLIST.md) |
+| RCP-000 release notes | [governance/repository/rcp/releases/RCP_v1.0_INIT/RELEASE_NOTES.md](repository/rcp/releases/RCP_v1.0_INIT/RELEASE_NOTES.md) |
+
 ## Release Governance Packages
 
 | Release Package | Current Path |
