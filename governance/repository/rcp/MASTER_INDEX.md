@@ -52,12 +52,24 @@ This index registers Repository Cleanup Program documents and future cleanup wav
 | [Release Checklist](releases/RCP_001_CLEANUP_PILOT/RELEASE_CHECKLIST.md) | Tracks RCP-001 release validation and publication steps |
 | [Release Notes](releases/RCP_001_CLEANUP_PILOT/RELEASE_NOTES.md) | Summarizes RCP-001 release result and next phase |
 
+## RCP-001 Retrospective
+
+| Document | Purpose |
+| --- | --- |
+| [Pilot Retrospective](RCP-001-cleanup-pilot/RCP_001_PILOT_RETROSPECTIVE.md) | Captures RCP-001 lessons learned and reusable standards for future cleanup waves |
+
+## RCP-001 Wave Closure
+
+| Document | Purpose |
+| --- | --- |
+| [Wave Closure](RCP-001-cleanup-pilot/RCP_001_WAVE_CLOSURE.md) | Records RCP-001 final closure status and RCP-002 entry criteria |
+
 ## Future Cleanup Waves
 
 | Wave | Name | Status |
 | --- | --- | --- |
-| RCP-001 | Cleanup Pilot | Released |
-| RCP-002 | Cleanup Wave 1 | Not started |
+| RCP-001 | Cleanup Pilot | Frozen |
+| RCP-002 | Cleanup Wave 1 | Ready for planning |
 | RCP-003 | Cleanup Wave 2 | Not started |
 | RCP-004 | Cleanup Wave 3 | Not started |
 | RCP-005 | Repository v4 Release | Not started |

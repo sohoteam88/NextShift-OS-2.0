@@ -2,14 +2,14 @@
 
 Program: Repository Cleanup Program v1.0
 Phase: RCP-001 Cleanup Pilot
-Status: Released
+Status: Frozen
 
 ## Current Phase
 
 | Field | Value |
 | --- | --- |
 | Current phase | RCP-001 Cleanup Pilot |
-| Current lifecycle state | Released |
+| Current lifecycle state | Frozen |
 | Source baseline | Engineering OS v1.0 |
 | Active cleanup | Complete |
 | Repository version target | Repository v4 |
@@ -21,8 +21,8 @@ Status: Released
 | --- | --- |
 | Engineering OS v1.0 | Complete |
 | RCP-000 Program Initialization | Released |
-| RCP-001 Cleanup Pilot | Released |
-| RCP-002 Cleanup Wave 1 | Not started |
+| RCP-001 Cleanup Pilot | Frozen |
+| RCP-002 Cleanup Wave 1 | Ready for planning |
 | RCP-003 Cleanup Wave 2 | Not started |
 | RCP-004 Cleanup Wave 3 | Not started |
 | RCP-005 Repository v4 Release | Not started |
@@ -67,9 +67,29 @@ Active -> Deprecated -> Archived -> Frozen -> Removed
 
 No source asset has been removed, migrated, or deleted under RCP-001 Stop B.
 
+## Retrospective
+
+RCP-001 retrospective is integrated at:
+
+```text
+governance/repository/rcp/RCP-001-cleanup-pilot/RCP_001_PILOT_RETROSPECTIVE.md
+```
+
+The retrospective prepares RCP-002 planning and does not authorize cleanup, archive movement, deletion, migration, or runtime changes.
+
+## Wave Closure
+
+RCP-001 wave closure is integrated at:
+
+```text
+governance/repository/rcp/RCP-001-cleanup-pilot/RCP_001_WAVE_CLOSURE.md
+```
+
+RCP-001 is frozen. Future cleanup work continues in RCP-002.
+
 ## Working Tree Requirement
 
-RCP-001 Stop C requires the repository working tree to remain clean after release package integration and validation.
+RCP-001 wave closure requires the repository working tree to remain clean after validation.
 
 ## Next Required Phase
 

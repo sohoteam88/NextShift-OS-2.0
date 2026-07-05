@@ -90,6 +90,8 @@ This registry provides the RepoOS governance entry point while preserving curren
 | RCP-001 cleanup completion report | [governance/repository/rcp/releases/RCP_001_CLEANUP_PILOT/CLEANUP_COMPLETION_REPORT.md](repository/rcp/releases/RCP_001_CLEANUP_PILOT/CLEANUP_COMPLETION_REPORT.md) |
 | RCP-001 release checklist | [governance/repository/rcp/releases/RCP_001_CLEANUP_PILOT/RELEASE_CHECKLIST.md](repository/rcp/releases/RCP_001_CLEANUP_PILOT/RELEASE_CHECKLIST.md) |
 | RCP-001 release notes | [governance/repository/rcp/releases/RCP_001_CLEANUP_PILOT/RELEASE_NOTES.md](repository/rcp/releases/RCP_001_CLEANUP_PILOT/RELEASE_NOTES.md) |
+| RCP-001 pilot retrospective | [governance/repository/rcp/RCP-001-cleanup-pilot/RCP_001_PILOT_RETROSPECTIVE.md](repository/rcp/RCP-001-cleanup-pilot/RCP_001_PILOT_RETROSPECTIVE.md) |
+| RCP-001 wave closure | [governance/repository/rcp/RCP-001-cleanup-pilot/RCP_001_WAVE_CLOSURE.md](repository/rcp/RCP-001-cleanup-pilot/RCP_001_WAVE_CLOSURE.md) |
 
 ## Release Governance Packages
 
