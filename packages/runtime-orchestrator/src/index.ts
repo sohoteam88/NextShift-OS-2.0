@@ -40,6 +40,7 @@ export interface RuntimeWorkflowExecution {
   readonly workflowId: string;
   readonly completedStepIds: readonly string[];
   readonly pendingApprovalStepId?: string;
+  readonly failedStepId?: string;
 }
 
 export class RuntimeOrchestrator {
@@ -51,6 +52,7 @@ export class RuntimeOrchestrator {
   ): Promise<RuntimeResult<RuntimeWorkflowExecution>> {
     const emittedEvents: RuntimeEvent[] = [];
     const completedStepIds: string[] = [];
+    const errors: string[] = [];
 
     await this.publish(
       createRuntimeEvent({
@@ -63,38 +65,67 @@ export class RuntimeOrchestrator {
     );
 
     for (const step of workflow.steps) {
-      if (isApprovalGate(step)) {
-        const approved = await step.isApproved(context);
+      try {
+        if (isApprovalGate(step)) {
+          const approved = await step.isApproved(context);
 
-        if (!approved) {
-          await this.publish(
-            createRuntimeEvent({
-              type: "runtime.workflow.approval_required",
-              source: "runtime-orchestrator",
-              payload: {
+          if (!approved) {
+            await this.publish(
+              createRuntimeEvent({
+                type: "runtime.workflow.approval_required",
+                source: "runtime-orchestrator",
+                payload: {
+                  workflowId: workflow.id,
+                  stepId: step.id,
+                  reason: step.reason,
+                },
+                context,
+              }),
+              emittedEvents
+            );
+
+            return {
+              status: "approval_required",
+              output: {
                 workflowId: workflow.id,
-                stepId: step.id,
-                reason: step.reason,
+                completedStepIds,
+                pendingApprovalStepId: step.id,
               },
-              context,
-            }),
-            emittedEvents
-          );
+              events: emittedEvents,
+            };
+          }
+        } else {
+          const result = await step.execute(context);
 
-          return {
-            status: "approval_required",
-            output: {
-              workflowId: workflow.id,
-              completedStepIds,
-              pendingApprovalStepId: step.id,
-            },
-            events: emittedEvents,
-          };
+          emittedEvents.push(...(result.events ?? []));
         }
-      } else {
-        const result = await step.execute(context);
+      } catch (error) {
+        errors.push(describeRuntimeError(error));
 
-        emittedEvents.push(...(result.events ?? []));
+        await this.publish(
+          createRuntimeEvent({
+            type: "runtime.workflow.failed",
+            source: "runtime-orchestrator",
+            payload: {
+              workflowId: workflow.id,
+              stepId: step.id,
+              error: describeRuntimeError(error),
+            },
+            context,
+          }),
+          emittedEvents
+        );
+
+        return {
+          status: "failed",
+          output: {
+            workflowId: workflow.id,
+            completedStepIds,
+            failedStepId: step.id,
+          },
+          events: emittedEvents,
+          errors,
+        };
       }
 
       completedStepIds.push(step.id);
@@ -127,6 +158,7 @@ export class RuntimeOrchestrator {
         completedStepIds,
       },
       events: emittedEvents,
+      errors: errors.length > 0 ? errors : undefined,
     };
   }
 
@@ -141,4 +173,12 @@ export class RuntimeOrchestrator {
 
 function isApprovalGate(step: RuntimeWorkflowStep): step is RuntimeApprovalGate {
   return "isApproved" in step;
+}
+
+function describeRuntimeError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
 }

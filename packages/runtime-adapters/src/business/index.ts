@@ -23,17 +23,35 @@ export interface BusinessRuntimeAdapter {
   decide(request: BusinessDecisionRequest): Promise<BusinessDecisionResult>;
 }
 
+export interface CreateBusinessDecisionResultInput {
+  readonly requestId: string;
+  readonly decision: BusinessDecision;
+  readonly reason?: string;
+  readonly metadata?: Readonly<Record<string, unknown>>;
+}
+
+export function createBusinessDecisionResult(
+  input: CreateBusinessDecisionResultInput
+): BusinessDecisionResult {
+  return {
+    requestId: input.requestId,
+    decision: input.decision,
+    approved: input.decision === "approved",
+    reason: input.reason,
+    metadata: input.metadata,
+  };
+}
+
 export class StaticBusinessRuntimeAdapter implements BusinessRuntimeAdapter {
   constructor(private readonly decision: BusinessDecision = "needs_review") {}
 
   async decide(
     request: BusinessDecisionRequest
   ): Promise<BusinessDecisionResult> {
-    return {
+    return createBusinessDecisionResult({
       requestId: request.requestId,
       decision: this.decision,
-      approved: this.decision === "approved",
       reason: "Static runtime decision",
-    };
+    });
   }
 }

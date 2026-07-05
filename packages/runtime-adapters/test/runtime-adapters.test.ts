@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createBusinessDecisionResult,
   createRepositoryHealthEvent,
   StaticBusinessRuntimeAdapter,
   type RepositoryRuntimeAdapter,
@@ -40,5 +41,27 @@ describe("runtime adapters", () => {
 
     expect(result.approved).toBe(true);
     expect(result.decision).toBe("approved");
+  });
+
+  it("creates business decision results with consistent approval state", () => {
+    expect(
+      createBusinessDecisionResult({
+        requestId: "decision-1",
+        decision: "approved",
+      })
+    ).toMatchObject({
+      decision: "approved",
+      approved: true,
+    });
+
+    expect(
+      createBusinessDecisionResult({
+        requestId: "decision-2",
+        decision: "rejected",
+      })
+    ).toMatchObject({
+      decision: "rejected",
+      approved: false,
+    });
   });
 });

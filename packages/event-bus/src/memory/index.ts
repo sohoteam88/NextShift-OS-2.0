@@ -2,15 +2,51 @@ import type { BusinessEvent } from "@nextshift/contracts";
 import type { EventBus, EventEnvelope } from "../bus";
 import type { EventHandler, EventSubscription } from "../types";
 
+export interface EventBusHandlerFailure {
+  readonly eventType: string;
+  readonly handlerIndex: number;
+  readonly error: unknown;
+}
+
+export class EventBusPublishError extends Error {
+  readonly failures: readonly EventBusHandlerFailure[];
+
+  constructor(eventType: string, failures: readonly EventBusHandlerFailure[]) {
+    super(
+      `Event bus publish failed for ${eventType}: ${failures.length} handler failure(s)`
+    );
+    this.name = "EventBusPublishError";
+    this.failures = failures;
+  }
+}
+
 export class InMemoryEventBus<TEvent extends EventEnvelope = BusinessEvent>
   implements EventBus<TEvent>
 {
   private readonly handlers = new Map<string, Set<EventHandler<TEvent>>>();
 
   async publish(event: TEvent): Promise<void> {
-    const handlers = this.handlers.get(event.eventType) ?? new Set();
+    const handlers = Array.from(this.handlers.get(event.eventType) ?? []);
 
-    await Promise.all(Array.from(handlers).map((handler) => handler(event)));
+    const results = await Promise.allSettled(
+      handlers.map((handler) => Promise.resolve().then(() => handler(event)))
+    );
+
+    const failures = results.flatMap((result, index) =>
+      result.status === "rejected"
+        ? [
+            {
+              eventType: event.eventType,
+              handlerIndex: index,
+              error: result.reason,
+            },
+          ]
+        : []
+    );
+
+    if (failures.length > 0) {
+      throw new EventBusPublishError(event.eventType, failures);
+    }
   }
 
   subscribe(
