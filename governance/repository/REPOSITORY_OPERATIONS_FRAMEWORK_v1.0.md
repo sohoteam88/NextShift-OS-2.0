@@ -18,6 +18,7 @@ Establish a unified governance framework for long-term repository operations.
 Repository Operations Framework (ROF)
 
 - Repository Capability Model
+- Repository Runtime Architecture
 - Repository Cleanup Framework
 - Repository Migration Framework
 - Repository Health Framework
@@ -30,6 +31,7 @@ Repository Operations Framework (ROF)
 | Capability | Status |
 | --- | --- |
 | Capability Model | Integrated (Model v1.0) |
+| Runtime Architecture | Integrated (Architecture v1.0) |
 | Cleanup | Released (Framework v1.1) |
 | Migration | Planned |
 | Health | Integrated (Framework v1.0) |

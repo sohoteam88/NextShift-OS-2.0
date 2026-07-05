@@ -16,6 +16,7 @@ Status: Frozen
 | Program health | Green |
 | Current operations framework | Repository Operations Framework v1.0 |
 | Current capability model | Repository Capability Model v1.0 |
+| Current runtime architecture | Repository Runtime Architecture v1.0 |
 | Current health framework | Repository Health Framework v1.0 |
 | Current cleanup framework | Repository Cleanup Framework v1.1 |
 
@@ -105,6 +106,12 @@ Repository Capability Model v1.0 is integrated at:
 governance/repository/REPOSITORY_CAPABILITY_MODEL_v1.0.md
 ```
 
+Repository Runtime Architecture v1.0 is integrated at:
+
+```text
+governance/repository/REPOSITORY_RUNTIME_ARCHITECTURE_v1.0.md
+```
+
 Repository Health Framework v1.0 is integrated at:
 
 ```text
@@ -120,6 +127,8 @@ governance/repository/rcp/REPOSITORY_CLEANUP_FRAMEWORK_v1.1.md
 Repository Cleanup Framework v1.1 operates as the cleanup capability under Repository Operations Framework v1.0.
 
 RCP-002 through RCP-004 must follow this framework for cleanup strategy model selection, candidate checks, archive manifests, rollback evidence, wave metrics, lifecycle stops, and stop conditions.
+
+Repository Runtime Architecture v1.0 does not authorize autonomous destructive action. Cleanup execution still requires human approval and RCP governance.
 
 ## Working Tree Requirement
 

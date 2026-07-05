@@ -37,10 +37,15 @@ Framework
 → Release
 → Continuous Operation
 
+## Runtime Architecture
+
+Repository Runtime Architecture v1.0 defines how repository operations capabilities execute continuously through health scans, reports, candidate queues, validation, metrics updates, and continuous monitoring.
+
 ## Capability Registry
 
 | Capability | Framework | Program |
 |------------|-----------|---------|
+| Runtime Architecture | Released | Planned |
 | Cleanup | Released | RCP |
 | Health | Released | Planned |
 | Migration | Planned | Planned |
