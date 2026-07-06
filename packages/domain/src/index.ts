@@ -23,6 +23,7 @@ export * from "./learning";
 export * from "./agent";
 export * from "./capability";
 export * from "./analytics";
+export * from "./analytics-insight-review";
 export * from "./business-brain";
 export * from "./opportunity-evaluation";
 export * as CampaignExecutionWorkflow from "./campaign-execution";
