@@ -6,6 +6,8 @@ node_modules/
 test-results/
 coverage/
 playwright-report/
+.chatgpt-context/
+outputs/chatgpt-context-*.zip
 packages/*/dist/
 *.tsbuildinfo
 .env
