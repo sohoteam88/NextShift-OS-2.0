@@ -22,6 +22,7 @@ This status registry provides the current platform state for repository navigati
 | Runtime implementation | NextShift Runtime Implementation v1.0 integrated |
 | Runtime MVP Sprint-001 | Integrated |
 | Runtime Sprint-002 | Integrated |
+| Workflow catalog | NextShift Workflow Catalog v1.0 integrated |
 | File movement | Not authorized |
 | Release package migration | Not authorized |
 | Registry state | Platform registry finalized for audit |
@@ -45,6 +46,7 @@ This status registry provides the current platform state for repository navigati
 | NextShift Runtime Implementation | Integrated | [NextShift Runtime Implementation v1.0](NEXTSHIFT_RUNTIME_IMPLEMENTATION_v1.0.md) |
 | NextShift Runtime MVP Sprint-001 | Integrated | [NextShift Runtime MVP Sprint-001](NEXTSHIFT_RUNTIME_MVP_SPRINT_001.md) |
 | NextShift Runtime Sprint-002 | Integrated | [NextShift Runtime Sprint-002](NEXTSHIFT_RUNTIME_SPRINT_002.md) |
+| NextShift Workflow Catalog | Integrated | [NextShift Workflow Catalog v1.0](NEXTSHIFT_WORKFLOW_CATALOG_v1.0.md) |
 | Business OS | Released | [Business OS](../docs/nextshift-os-3/business-os/README.md) |
 | Business OS v1.0 | Released package exists at current path | [Business OS v1.0 release package](../docs/nextshift-os-3/business-os/releases/BUSINESS_OS_v1.0/README.md) |
 | Engineering Standards | v1.1 baseline | [Engineering Standards v1.1](../docs/nextshift-os-3/engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md) |
