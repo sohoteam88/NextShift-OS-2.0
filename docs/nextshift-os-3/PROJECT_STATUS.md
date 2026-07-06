@@ -33,6 +33,8 @@ Canonical navigation:
 - [Repository Status](REPOSITORY_STATUS.md)
 - [Next Action](NEXT_ACTION.md)
 - [AI Handover](AI_HANDOVER.md)
+- [Generated Project Context Package](context-package/PROJECT_CONTEXT_PACKAGE.md)
+- [Project Context Package Release Manifest](context-package/RELEASE_MANIFEST.md)
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
 - [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)

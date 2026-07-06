@@ -15,6 +15,7 @@
     "e2e:ui": "playwright test --ui",
     "e2e:debug": "playwright test --debug",
     "i18n:audit": "tsx scripts/i18n-audit.ts",
+    "context:generate": "tsx scripts/generate-project-context-package.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
