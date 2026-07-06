@@ -1,0 +1,38 @@
+name: Repository Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Repository package profile"
+        required: true
+        default: "general"
+        type: choice
+        options:
+          - general
+          - auth
+          - crm
+          - dashboard
+          - workspace
+          - billing
+
+jobs:
+  build-repository-package:
+    name: Build Repository.zip
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build filtered repository package
+        run: bash scripts/create-repository-zip.sh "${{ inputs.profile }}"
+
+      - name: Upload Repository.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Repository-${{ inputs.profile }}
+          path: |
+            .chatgpt-context/Repository.zip
+            .chatgpt-context/Repository.zip.sha256
+          if-no-files-found: error
