@@ -29,6 +29,10 @@ It summarizes project state for AI assistants and human contributors without rep
 
 Canonical navigation:
 
+- [Project Context](PROJECT_CONTEXT.md)
+- [Repository Status](REPOSITORY_STATUS.md)
+- [Next Action](NEXT_ACTION.md)
+- [AI Handover](AI_HANDOVER.md)
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
 - [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
@@ -130,10 +134,14 @@ Planning branch documentation changes are not deployed to production until a ver
 
 For any AI assistant continuing NextShift OS work:
 
-1. Read [AI Bootstrap](ai/AI_BOOTSTRAP.md).
-2. Read this [Project Status](PROJECT_STATUS.md).
-3. Read the [Master Index](MASTER_INDEX.md).
-4. Read [Workflow Status](WORKFLOW_STATUS.md) and [Workflow Releases](WORKFLOW_RELEASES.md) when continuing workflow or runtime work.
-5. Load only the standards required for the current task from [Engineering Standards v1.1](engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md).
-6. Determine the current phase with [AI Context Loading](ai/AI_CONTEXT_LOADING.md) and [STD-006](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md).
-7. Continue from the current phase; do not restart completed lifecycle phases.
+1. Read [Project Context](PROJECT_CONTEXT.md).
+2. Read [Repository Status](REPOSITORY_STATUS.md).
+3. Read [Next Action](NEXT_ACTION.md).
+4. Read [AI Handover](AI_HANDOVER.md).
+5. Read [AI Bootstrap](ai/AI_BOOTSTRAP.md).
+6. Read this [Project Status](PROJECT_STATUS.md).
+7. Read the [Master Index](MASTER_INDEX.md).
+8. Read [Workflow Status](WORKFLOW_STATUS.md) and [Workflow Releases](WORKFLOW_RELEASES.md) when continuing workflow or runtime work.
+9. Load only the standards required for the current task from [Engineering Standards v1.1](engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md).
+10. Determine the current phase with [AI Context Loading](ai/AI_CONTEXT_LOADING.md) and [STD-006](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md).
+11. Continue from the current phase; do not restart completed lifecycle phases.
