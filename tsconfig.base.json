@@ -23,6 +23,9 @@
       "@nextshift/runtime-adapters": [
         "packages/runtime-adapters/src/index.ts"
       ],
+      "@nextshift/workspace-runtime": [
+        "packages/workspace-runtime/src/index.ts"
+      ],
       "@nextshift/business-brain": ["packages/business-brain/src/index.ts"],
       "@nextshift/decision-brain": ["packages/decision-brain/src/index.ts"],
       "@nextshift/execution-layer": ["packages/execution-layer/src/index.ts"],
