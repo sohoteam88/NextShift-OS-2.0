@@ -21,6 +21,7 @@ This framework complements the Engineering Standards and references their canoni
 - [AI Engineering Foundation](AI_ENGINEERING_FOUNDATION.md)
 - [NextShift Context](NEXTSHIFT_CONTEXT.md)
 - [AI Session Starter](AI_SESSION_STARTER.md)
+- [NextShift Session Kit v1.0](session-kit/01_NEXTSHIFT_NEW_CHAT_STARTER.md)
 - [AI Bootstrap](AI_BOOTSTRAP.md)
 - [AI Onboarding Guide](AI_ONBOARDING_GUIDE.md)
 - [AI Execution Guide](AI_EXECUTION_GUIDE.md)
