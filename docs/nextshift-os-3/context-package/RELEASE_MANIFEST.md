@@ -2,11 +2,11 @@
 
 Generated: 2026-07-06
 
-Release: 12888c3
+Release: OS_3_2_DEVELOPER_PLATFORM_v3.2
 
 Branch: `planning/os-3.1-mvp-governance`
 
-HEAD: `12888c3319a4277b079dd861742735bca5d5addd`
+HEAD: `4663ea85417b396e02f5e7e7b24806b7602c5966`
 
 ---
 

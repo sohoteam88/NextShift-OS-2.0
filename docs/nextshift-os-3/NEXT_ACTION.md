@@ -18,16 +18,15 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-Complete PCS-001 Project Context System verification and audit.
+Complete OS 3.2 Developer Platform release package audit and production approval decision.
 
 Required validation:
 
-1. Confirm the Project Context package files exist.
-2. Confirm [Project Context](PROJECT_CONTEXT.md) is linked from canonical navigation.
-3. Confirm [Next Action](NEXT_ACTION.md) and [AI Handover](AI_HANDOVER.md) reflect the current continuation point.
-4. Confirm [Repository Status](REPOSITORY_STATUS.md) captures the current branch and repository baseline.
-5. Confirm [Context Checksum](CONTEXT_CHECKSUM.md) is updated after context package changes.
-6. Run repository documentation validation required by the active task.
+1. Confirm the [OS 3.2 release package](releases/OS_3_2_DEVELOPER_PLATFORM/README.md) is complete.
+2. Confirm [Final Verification](releases/OS_3_2_DEVELOPER_PLATFORM/FINAL_VERIFICATION.md) reflects current validation evidence.
+3. Confirm [Tag Preparation](releases/OS_3_2_DEVELOPER_PLATFORM/TAG_PREPARATION.md) is prepared but no tag has been created.
+4. Confirm [Project Context](PROJECT_CONTEXT.md), [Repository Status](REPOSITORY_STATUS.md), [AI Handover](AI_HANDOVER.md), and [Context Checksum](CONTEXT_CHECKSUM.md) are current.
+5. Run repository documentation validation required by the active task.
 
 ---
 
@@ -36,8 +35,10 @@ Required validation:
 Do not restart:
 
 - RM-001 workflow metadata synchronization
-- RM-001 audit verification
-- Business OS v1.0 release preparation
+- PCS-001 Project Context System implementation
+- PCS-002 Context Package Generator implementation
+- INT-001 platform integration validation
+- DEP-001 deployment readiness review
 - WF-001 through WF-007 workflow implementation
 
 Those phases are already represented by repository artifacts.
@@ -46,8 +47,8 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-After PCS-001 verification:
+After OS 3.2 release package audit:
 
-- If validation passes, prepare the PCS-001 audit or release artifact only when requested.
-- If validation fails, correct only the failing Project Context System artifact.
-- Do not commit or push unless explicitly requested.
+- If audit passes, request production approval or release authorization.
+- If audit fails, correct only the failing OS 3.2 release artifact.
+- Do not create or push the release tag unless explicitly requested.

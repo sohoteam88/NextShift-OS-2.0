@@ -33,9 +33,9 @@ For a new AI session:
 
 The repository is on `planning/os-3.1-mvp-governance`.
 
-RM-001 repository synchronization has been implemented, audited, committed, and pushed.
+RM-001 repository synchronization, PCS-001 context system, PCS-002 context package generator, INT-001 platform integration validation, and DEP-001 deployment readiness review have been completed and pushed.
 
-PCS-001 is the active context-system implementation task. It is documentation-only and must not modify runtime code.
+OS 3.2 Developer Platform release preparation is the active task. It is documentation-only and must not modify runtime code.
 
 ---
 
@@ -53,4 +53,5 @@ PCS-001 is the active context-system implementation task. It is documentation-on
 
 - Conversation history may include older repository paths and older branch names.
 - Use the repository artifacts in this checkout as the current source of truth.
-- Do not infer runtime changes from documentation-only PCS tasks.
+- Do not infer runtime changes from documentation-only OS 3.2 release preparation.
+- Do not create or push the OS 3.2 release tag unless explicitly requested.

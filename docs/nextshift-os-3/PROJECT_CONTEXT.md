@@ -23,7 +23,7 @@ It routes humans and AI assistants to the current repository state, next action,
 | Project | NextShift OS |
 | Repository | `sohoteam88/NextShift-OS-2.0` |
 | Current Branch | `planning/os-3.1-mvp-governance` |
-| Current Context Package | PCS-001 Project Context System |
+| Current Context Package | OS 3.2 Developer Platform context package |
 | Context Authority | This document |
 | Production Baseline | OS 3.1 RC1 production baseline remains governed by [Project Status](PROJECT_STATUS.md) |
 
@@ -58,6 +58,7 @@ Then load only task-relevant supporting records:
 | Repository synchronization | RM-001 metadata synchronization and audit complete | [Workflow Status](WORKFLOW_STATUS.md) |
 | Workflow baseline | WF-001 through WF-007 released and audited | [Workflow Releases](WORKFLOW_RELEASES.md) |
 | Capability baseline | CAP-001 frozen; CAP-002, CAP-003, and CAP-004 released; CAP-005 in implementation | [Capability Status](CAPABILITY_STATUS.md) |
+| Developer platform release | OS 3.2 Developer Platform prepared for production approval | [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md) |
 | Repository status | Current branch and working tree state captured separately | [Repository Status](REPOSITORY_STATUS.md) |
 | Immediate next action | Maintained separately to avoid stale conversation context | [Next Action](NEXT_ACTION.md) |
 | AI continuation | Maintained separately for handoff between sessions | [AI Handover](AI_HANDOVER.md) |

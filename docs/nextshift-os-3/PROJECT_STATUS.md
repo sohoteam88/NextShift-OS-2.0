@@ -21,8 +21,8 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | OS 3.1 RC1 production baseline with OS 3.1 MVP governance planning in progress |
-| Current Release | `v3.1.0-rc1` |
+| Current Version | OS 3.2 Developer Platform prepared on OS 3.1 RC1 production baseline |
+| Current Release | `v3.1.0-rc1` production baseline; OS 3.2 Developer Platform release prepared for approval |
 | Current Planning Branch | `planning/os-3.1-mvp-governance` |
 | Repository Default Branch | `main` |
 | Production Status | Production is aligned to the verified OS 3.1 RC1 release commit and is not changed by planning branch documentation work |
@@ -35,6 +35,8 @@ Canonical navigation:
 - [AI Handover](AI_HANDOVER.md)
 - [Generated Project Context Package](context-package/PROJECT_CONTEXT_PACKAGE.md)
 - [Project Context Package Release Manifest](context-package/RELEASE_MANIFEST.md)
+- [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md)
+- [OS 3.2 Release Manifest](releases/OS_3_2_DEVELOPER_PLATFORM/RELEASE_MANIFEST.md)
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
 - [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
@@ -84,6 +86,7 @@ Components:
 | UI Kit | Released | [UI Kit](ui-kit/README.md) |
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
+| Developer Platform | OS 3.2 Developer Platform prepared for production approval | [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md) |
 | Current Capability Focus | CAP-005 S-004 implementation track | [Master Index](MASTER_INDEX.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
@@ -95,11 +98,11 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Field | Current State |
 | --- | --- |
 | Active Planning Branch | `planning/os-3.1-mvp-governance` |
-| Active Milestone | OS 3.1 MVP governance expansion |
-| Current Phase | Repository metadata synchronization for released runtime workflows |
-| Current Focus | RM-001 Workflow Status, Workflow Releases, Workflow Catalog, release tag governance, and roadmap synchronization |
-| Current Blockers | Release promotion and formal approval records are pending; there is no known production blocker for the current planning documentation work |
-| Current Priorities | Keep PROJECT_STATUS.md current after every workflow or release milestone, preserve workflow audit evidence, maintain repository metadata alignment, and resume implementation work only after synchronization is complete |
+| Active Milestone | OS 3.2 Developer Platform release preparation |
+| Current Phase | Release package prepared for production approval |
+| Current Focus | OS 3.2 release notes, manifest, version history, final verification, and tag preparation |
+| Current Blockers | Production approval is pending; release promotion also requires explicit handling of the Prisma migration-chain limitation |
+| Current Priorities | Audit the OS 3.2 release package, confirm target commit and tag, resolve or accept migration-chain limitation, then decide production approval |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -124,11 +127,11 @@ Planning branch documentation changes are not deployed to production until a ver
 
 ## 6. Next Recommended Actions
 
-1. Complete RM-001 repository synchronization validation.
-2. Confirm [Workflow Status](WORKFLOW_STATUS.md), [Workflow Releases](WORKFLOW_RELEASES.md), and [NextShift Workflow Catalog v1.0](../../platform/NEXTSHIFT_WORKFLOW_CATALOG_v1.0.md) remain aligned after each workflow release.
-3. Preserve the released WF-001 through WF-007 audit records as repository evidence.
-4. Apply STD-004 and STD-005 release alignment gates before any workflow tag, release branch, or production promotion.
-5. Resume implementation work only after repository metadata synchronization is accepted.
+1. Audit the [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md).
+2. Confirm the target release commit and proposed tag in [Tag Preparation](releases/OS_3_2_DEVELOPER_PLATFORM/TAG_PREPARATION.md).
+3. Resolve or explicitly approve the Prisma migration-chain limitation documented in [Final Verification](releases/OS_3_2_DEVELOPER_PLATFORM/FINAL_VERIFICATION.md).
+4. Apply STD-004 and STD-005 release alignment gates before tag creation, release branch promotion, or production deployment.
+5. Proceed to production approval only after release package audit passes.
 
 ---
 

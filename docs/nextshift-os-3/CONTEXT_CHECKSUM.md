@@ -33,15 +33,15 @@ This file is excluded from the combined checksum to avoid self-referential check
 
 | File | SHA-256 |
 | --- | --- |
-| [Project Context](PROJECT_CONTEXT.md) | `fff00cf7e5209ef1c99b18ff9c507f608e654859e2f897f9f0952a6faf040dc8` |
-| [Repository Status](REPOSITORY_STATUS.md) | `3a7a8a70b4069263236dd41292eb1039671012315355de9e9a384cea801cf6ff` |
-| [Next Action](NEXT_ACTION.md) | `e62c9386ff04f5705ca59c4d3cbb030a1fff11fb640969b6cd228ba8b72dbbfb` |
-| [AI Handover](AI_HANDOVER.md) | `57eae8b9fe8cad08d4e37ae17bc028d60549019638666c32639348368650df69` |
+| [Project Context](PROJECT_CONTEXT.md) | `922ac405734061b41298e4a36f82945b2773b8d20d5f3850537a0c0d9ab720f7` |
+| [Repository Status](REPOSITORY_STATUS.md) | `928a2846f62ea2cb30fc1fbab5a9df98915c6cc012f772e820647c9f8bc6ce69` |
+| [Next Action](NEXT_ACTION.md) | `568079861c3ddbc15cb612541e582efa3bb93714a2ffbc1e5c4c2f5951bd650a` |
+| [AI Handover](AI_HANDOVER.md) | `23c7005470223c607ae9e93e935e1922eea3a9f96fb3681a0cadb648e3f1a507` |
 
 Package checksum over the checksum manifest above:
 
 ```text
-f6de352235a965a757b4c5d94054ae54ce5413ea09ea539761dbedee214fe271
+e132d44d79b0e83a565dfccea49b24af3298be29a35437c8eea665827ae0a742
 ```
 
 ---
