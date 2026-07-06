@@ -7,3 +7,4 @@ export * from "./learning-system";
 export * from "./events";
 export * from "./content-plan";
 export * from "./opportunity-evaluation";
+export * as CampaignExecutionWorkflowContracts from "./campaign-execution";

@@ -30,3 +30,4 @@ export * from "./revenue-forecast";
 export * from "./analytics";
 export * from "./business-brain";
 export * from "./opportunity-evaluation";
+export * as CampaignExecutionWorkflowApplication from "./campaign-execution";
