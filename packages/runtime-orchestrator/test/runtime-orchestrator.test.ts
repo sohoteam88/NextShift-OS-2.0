@@ -2,7 +2,16 @@ import { describe, expect, it } from "vitest";
 import { InMemoryEventBus } from "@nextshift/event-bus";
 import type { RuntimeEvent } from "@nextshift/runtime-core";
 import {
+  createBusinessDecisionResult,
+  createRepositoryHealthEvent,
+  type BusinessRuntimeAdapter,
+  type RepositoryRuntimeAdapter,
+} from "@nextshift/runtime-adapters";
+import {
+  InMemoryAuditTrailRecorder,
+  RepositoryHealthWorkflow,
   RuntimeOrchestrator,
+  StaticOperatorApprovalService,
   type RuntimeWorkflow,
 } from "@nextshift/runtime-orchestrator";
 
@@ -116,3 +125,140 @@ describe("RuntimeOrchestrator", () => {
     });
   });
 });
+
+describe("RepositoryHealthWorkflow", () => {
+  it("executes the end-to-end repository health review flow", async () => {
+    const eventBus = new InMemoryEventBus<RuntimeEvent>();
+    const routedEvents: RuntimeEvent[] = [];
+    const auditTrail = new InMemoryAuditTrailRecorder();
+    const repositoryAdapter = createRepositoryAdapter();
+    const businessAdapter: BusinessRuntimeAdapter = {
+      async decide(request) {
+        return createBusinessDecisionResult({
+          requestId: request.requestId,
+          decision: "approved",
+          reason: "Approved for repository health simulation",
+        });
+      },
+    };
+
+    for (const eventType of [
+      "repository.health",
+      "repository.cleanup_candidate",
+      "workspace.operator.approval_requested",
+      "business.decision.requested",
+      "business.decision.completed",
+      "repository.action.simulated",
+      "repository.validation_completed",
+    ]) {
+      eventBus.subscribe(eventType, (event) => {
+        routedEvents.push(event);
+      });
+    }
+
+    const workflow = new RepositoryHealthWorkflow({
+      repositoryAdapter,
+      businessAdapter,
+      approvalService: new StaticOperatorApprovalService(true, "operator-1"),
+      eventBus,
+      auditTrail,
+      now: fixedNow,
+      idFactory: createSequenceIdFactory(),
+    });
+
+    const result = await workflow.execute(context);
+
+    expect(result.status).toBe("completed");
+    expect(result.output?.candidate?.path).toBe("audit/template.md");
+    expect(result.output?.operatorApproval?.approved).toBe(true);
+    expect(result.output?.businessDecision?.approved).toBe(true);
+    expect(result.output?.action).toMatchObject({
+      candidateId: "candidate-1",
+      simulated: true,
+      destructive: false,
+    });
+    expect(result.output?.validation).toMatchObject({
+      candidateId: "candidate-1",
+      valid: true,
+    });
+    expect(auditTrail.list()).toHaveLength(5);
+    expect(routedEvents.map((event) => event.eventType)).toEqual([
+      "repository.health",
+      "repository.cleanup_candidate",
+      "workspace.operator.approval_requested",
+      "business.decision.requested",
+      "business.decision.completed",
+      "repository.action.simulated",
+      "repository.validation_completed",
+    ]);
+  });
+
+  it("requires operator approval before simulated repository action", async () => {
+    const eventBus = new InMemoryEventBus<RuntimeEvent>();
+    const simulatedActions: RuntimeEvent[] = [];
+    const businessDecisions: RuntimeEvent[] = [];
+
+    eventBus.subscribe("repository.action.simulated", (event) => {
+      simulatedActions.push(event);
+    });
+    eventBus.subscribe("business.decision.requested", (event) => {
+      businessDecisions.push(event);
+    });
+
+    const workflow = new RepositoryHealthWorkflow({
+      repositoryAdapter: createRepositoryAdapter(),
+      businessAdapter: {
+        async decide(request) {
+          return createBusinessDecisionResult({
+            requestId: request.requestId,
+            decision: "approved",
+          });
+        },
+      },
+      approvalService: new StaticOperatorApprovalService(false),
+      eventBus,
+      now: fixedNow,
+      idFactory: createSequenceIdFactory(),
+    });
+
+    const result = await workflow.execute(context);
+
+    expect(result.status).toBe("approval_required");
+    expect(result.output?.operatorApproval?.approved).toBe(false);
+    expect(simulatedActions).toEqual([]);
+    expect(businessDecisions).toEqual([]);
+  });
+});
+
+function createRepositoryAdapter(): RepositoryRuntimeAdapter {
+  return {
+    async emitHealthEvent(runtimeContext) {
+      return createRepositoryHealthEvent({
+        context: runtimeContext,
+        status: "degraded",
+        checkedAt: fixedNow(),
+        summary: "Cleanup candidate detected",
+      });
+    },
+    async listCleanupCandidates() {
+      return [
+        {
+          id: "candidate-1",
+          path: "audit/template.md",
+          reason: "Legacy audit template ready for simulated cleanup",
+          risk: "low",
+        },
+      ];
+    },
+  };
+}
+
+function fixedNow(): Date {
+  return new Date("2026-07-06T00:00:00.000Z");
+}
+
+function createSequenceIdFactory(): () => string {
+  let id = 0;
+
+  return () => `runtime-id-${(id += 1)}`;
+}

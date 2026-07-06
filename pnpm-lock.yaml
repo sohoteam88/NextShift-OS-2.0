@@ -299,6 +299,9 @@ importers:
       '@nextshift/event-bus':
         specifier: workspace:*
         version: link:../event-bus
+      '@nextshift/runtime-adapters':
+        specifier: workspace:*
+        version: link:../runtime-adapters
       '@nextshift/runtime-core':
         specifier: workspace:*
         version: link:../runtime-core

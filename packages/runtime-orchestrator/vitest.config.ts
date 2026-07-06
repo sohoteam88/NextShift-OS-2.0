@@ -10,6 +10,9 @@ export default defineConfig({
       "@nextshift/runtime-core": fileURLToPath(
         new URL("../runtime-core/src/index.ts", import.meta.url)
       ),
+      "@nextshift/runtime-adapters": fileURLToPath(
+        new URL("../runtime-adapters/src/index.ts", import.meta.url)
+      ),
       "@nextshift/runtime-orchestrator": fileURLToPath(
         new URL("src/index.ts", import.meta.url)
       ),

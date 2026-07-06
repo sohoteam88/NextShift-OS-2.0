@@ -6,15 +6,16 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "prebuild": "pnpm --filter @nextshift/runtime-core build && pnpm --filter @nextshift/event-bus build",
+    "prebuild": "pnpm --filter @nextshift/runtime-core build && pnpm --filter @nextshift/event-bus build && pnpm --filter @nextshift/runtime-adapters build",
     "build": "tsc -p tsconfig.json",
-    "pretypecheck": "pnpm --filter @nextshift/runtime-core build && pnpm --filter @nextshift/event-bus build",
+    "pretypecheck": "pnpm --filter @nextshift/runtime-core build && pnpm --filter @nextshift/event-bus build && pnpm --filter @nextshift/runtime-adapters build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --ext .ts",
     "test": "vitest run"
   },
   "dependencies": {
     "@nextshift/runtime-core": "workspace:*",
-    "@nextshift/event-bus": "workspace:*"
+    "@nextshift/event-bus": "workspace:*",
+    "@nextshift/runtime-adapters": "workspace:*"
   }
 }
