@@ -29,3 +29,4 @@ export * from "./revenue-progress";
 export * from "./revenue-forecast";
 export * from "./analytics";
 export * from "./business-brain";
+export * from "./opportunity-evaluation";

@@ -23,3 +23,4 @@ export * from "./agent";
 export * from "./capability";
 export * from "./analytics";
 export * from "./business-brain";
+export * from "./opportunity-evaluation";
