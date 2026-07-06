@@ -178,6 +178,141 @@ describe("ContentPlanApplicationService", () => {
     });
   });
 
+  it("creates, submits, and approves content approval plans", async () => {
+    const { publisher, service } = createService();
+
+    const created = await service.createApprovalContentPlan({
+      commandType: "CreateApprovalContentPlan",
+      context,
+      planId,
+      title: "Launch approval content",
+      objective: "Prepare launch messaging",
+      audience: "Retail operators",
+      channel: "email",
+      priority: "high",
+      recommendedPublishDate: "2026-06-30T09:00:00.000Z",
+    });
+
+    expect(created.ok).toBe(true);
+
+    const submitted = await service.submitForReview({
+      commandType: "SubmitContentPlanForReview",
+      context,
+      planId,
+    });
+
+    expect(submitted.ok).toBe(true);
+
+    const pending = await service.getPendingApprovals({
+      queryType: "GetPendingApprovals",
+      context,
+    });
+    expect(pending.plans).toHaveLength(1);
+
+    const approved = await service.approveContent({
+      commandType: "ApproveContent",
+      context,
+      planId,
+      reviewer: "Marketing Lead",
+      reason: "Ready to publish",
+    });
+
+    expect(approved.ok).toBe(true);
+
+    if (approved.ok) {
+      expect(approved.value.plan.toSnapshot()).toMatchObject({
+        status: "approved",
+        approvalHistory: [
+          {
+            reviewer: "Marketing Lead",
+            decision: "approved",
+            reason: "Ready to publish",
+          },
+        ],
+      });
+    }
+
+    const approvedContent = await service.getApprovedContent({
+      queryType: "GetApprovedContent",
+      context,
+    });
+    expect(approvedContent.plans).toHaveLength(1);
+    expect(publisher.events.map((event) => event.eventType)).toEqual([
+      "ContentPlanCreated",
+      "ContentSubmittedForReview",
+      "ContentApproved",
+    ]);
+  });
+
+  it("rejects and requests revisions for pending content approvals", async () => {
+    const { publisher, service } = createService();
+
+    await service.createApprovalContentPlan({
+      commandType: "CreateApprovalContentPlan",
+      context,
+      planId,
+      title: "Launch approval content",
+      objective: "Prepare launch messaging",
+      audience: "Retail operators",
+      channel: "email",
+      priority: "medium",
+      recommendedPublishDate: "2026-06-30T09:00:00.000Z",
+    });
+    await service.submitForReview({
+      commandType: "SubmitContentPlanForReview",
+      context,
+      planId,
+    });
+
+    const revision = await service.requestRevision({
+      commandType: "RequestContentRevision",
+      context,
+      planId,
+      reviewer: "Marketing Lead",
+      reason: "Add proof points",
+    });
+
+    expect(revision.ok).toBe(true);
+
+    if (revision.ok) {
+      expect(revision.value.plan.toSnapshot().status).toBe("needs_revision");
+    }
+
+    await service.submitForReview({
+      commandType: "SubmitContentPlanForReview",
+      context,
+      planId,
+    });
+
+    const rejected = await service.rejectContent({
+      commandType: "RejectContent",
+      context,
+      planId,
+      reviewer: "Marketing Lead",
+      reason: "Campaign no longer active",
+    });
+
+    expect(rejected.ok).toBe(true);
+
+    if (rejected.ok) {
+      expect(rejected.value.plan.toSnapshot()).toMatchObject({
+        status: "rejected",
+        approvalHistory: [
+          { decision: "needs_revision" },
+          { decision: "rejected", reason: "Campaign no longer active" },
+        ],
+      });
+    }
+
+    expect(publisher.events.map((event) => event.eventType)).toEqual([
+      "ContentPlanCreated",
+      "ContentSubmittedForReview",
+      "ContentRevisionRequested",
+      "ContentSubmittedForReview",
+      "ContentRejected",
+    ]);
+  });
+
   it("schedules planned content onto the linked calendar", async () => {
     const { calendarRepository, contentRepository, publisher, service } =
       createService();

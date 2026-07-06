@@ -5,3 +5,4 @@ export * from "./decision-brain";
 export * from "./execution-layer";
 export * from "./learning-system";
 export * from "./events";
+export * from "./content-plan";

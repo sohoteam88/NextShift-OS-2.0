@@ -39,6 +39,27 @@ export class InMemoryContentPlanRepository implements ContentPlanRepository {
       .map((plan) => ContentPlan.rehydrate(plan));
   }
 
+  async findPendingApprovals(
+    businessId: BusinessId
+  ): Promise<readonly ContentPlan[]> {
+    return [...this.plans.values()]
+      .filter(
+        (plan) =>
+          plan.businessId === businessId && plan.status === "pending_review"
+      )
+      .sort(comparePlans)
+      .map((plan) => ContentPlan.rehydrate(plan));
+  }
+
+  async findApproved(businessId: BusinessId): Promise<readonly ContentPlan[]> {
+    return [...this.plans.values()]
+      .filter(
+        (plan) => plan.businessId === businessId && plan.status === "approved"
+      )
+      .sort(comparePlans)
+      .map((plan) => ContentPlan.rehydrate(plan));
+  }
+
   async listEntries(
     planId: ContentPlanId
   ): Promise<readonly PlannedContentSnapshot[]> {
@@ -61,6 +82,12 @@ function cloneSnapshot(snapshot: ContentPlanSnapshot): ContentPlanSnapshot {
   return {
     ...snapshot,
     entries: cloneEntries(snapshot.entries),
+    approvalHistory:
+      snapshot.approvalHistory === undefined
+        ? undefined
+        : Object.freeze(
+            snapshot.approvalHistory.map((approval) => ({ ...approval }))
+          ),
   };
 }
 
