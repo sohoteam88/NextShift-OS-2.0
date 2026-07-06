@@ -12,7 +12,7 @@ This document records the official release tags for NextShift OS capabilities.
 
 Release tags provide stable engineering checkpoints that can be referenced by source control, documentation, audits, and future capability development.
 
-This document is the authoritative registry for capability releases.
+This document is the authoritative registry for capability releases and the governance reference for future workflow release tags.
 
 ---
 
@@ -31,9 +31,22 @@ Reference tags identify the current engineering reference implementation.
 
 ## Current Release Registry
 
-| Capability               | Release Tag  | Reference Tag               | Status |
-| ------------------------ | ------------ | --------------------------- | ------ |
-| CAP-001 Business Profile | CAP-001-v1.0 | reference-capability-cap001 | Active |
+| Capability | Release Artifact | Recorded Release Tag | Reference Tag | Status |
+| --- | --- | --- | --- | --- |
+| CAP-001 Business Profile | Capability release recorded | CAP-001-v1.0 | reference-capability-cap001 | Active reference capability |
+| CAP-002 CRM | [CAP-002 CRM Release](CAP-002_CRM_RELEASE.md) | CAP-002-v1.0 | None | Released; Git tag not verified in local repository |
+| CAP-003 Content | [CAP-003 Content Release](CAP-003_CONTENT_RELEASE.md) | CAP-003-v1.0 | None | Released; Git tag not verified in local repository |
+| CAP-004 Campaign | [CAP-004 Campaign Release](CAP-004_CAMPAIGN_RELEASE.md) | CAP-004-v1.0 | None | Released; Git tag not verified in local repository |
+
+Registry governance note:
+
+- CAP-002, CAP-003, and CAP-004 are released by documentation artifact.
+- Local Git tag verification found no `CAP-*` tags at the time of RM-001 S-002 synchronization cleanup.
+- Future Git tag creation must use the recorded release tag names above and follow STD-004 and STD-005 release alignment gates.
+
+Workflow release records are maintained in [Workflow Releases](../WORKFLOW_RELEASES.md).
+
+Workflow release records do not automatically create Git tags. A workflow Git tag may be added only after release governance approval and must be reflected in both this document and [Workflow Releases](../WORKFLOW_RELEASES.md).
 
 ---
 
@@ -145,18 +158,29 @@ reference-capability-cap001
 
 Future reference tags should change only when a newer capability supersedes the previous reference implementation.
 
+Workflow release tags, if approved, should use:
+
+```text
+WF-003-v1.0
+WF-004-v1.0
+```
+
+Workflow tags must point to the approved workflow release commit or an approved workflow release checkpoint commit.
+
+Until workflow Git tags are explicitly created, the authoritative workflow release references are the implementation and audit commit pairs recorded in [Workflow Releases](../WORKFLOW_RELEASES.md).
+
 ---
 
 ## Future Releases
 
-Planned:
+Planned and governed:
 
 | Capability        | Planned Release |
 | ----------------- | --------------- |
-| CAP-002 CRM       | Pending         |
-| CAP-003 Content   | Pending         |
-| CAP-004 Campaign  | Released v1.0   |
-| CAP-005 Revenue   | Pending         |
+| CAP-002 CRM       | Released v1.0; Git tag pending verification or creation |
+| CAP-003 Content   | Released v1.0; Git tag pending verification or creation |
+| CAP-004 Campaign  | Released v1.0; Git tag pending verification or creation |
+| CAP-005 Revenue   | In progress     |
 | CAP-006 Analytics | Pending         |
 | CAP-007 AI Coach  | Pending         |
 
@@ -164,9 +188,12 @@ Planned:
 
 ## Release History
 
-| Date       | Capability               | Version | Notes                      |
-| ---------- | ------------------------ | ------- | -------------------------- |
+| Date       | Capability               | Version | Notes |
+| ---------- | ------------------------ | ------- | ----- |
 | 2026-06-26 | CAP-001 Business Profile | 1.0     | First Reference Capability |
+| 2026-06-27 | CAP-002 CRM              | 1.0     | Released by [CAP-002 CRM Release](CAP-002_CRM_RELEASE.md); Git tag pending verification or creation |
+| 2026-06-27 | CAP-003 Content          | 1.0     | Released by [CAP-003 Content Release](CAP-003_CONTENT_RELEASE.md); Git tag pending verification or creation |
+| 2026-06-28 | CAP-004 Campaign         | 1.0     | Released by [CAP-004 Campaign Release](CAP-004_CAMPAIGN_RELEASE.md); Git tag pending verification or creation |
 
 ---
 

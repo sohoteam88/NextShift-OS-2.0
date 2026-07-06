@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Approved
 
-Last Updated: 2026-07-02
+Last Updated: 2026-07-06
 
 ---
 
@@ -55,6 +55,13 @@ Exit Criteria:
 ---
 
 ## Phase 2 - AI Business Workspace
+
+Runtime workflow baseline:
+
+- [Workflow Status](WORKFLOW_STATUS.md)
+- [Workflow Releases](WORKFLOW_RELEASES.md)
+- [NextShift Workflow Catalog v1.0](../../platform/NEXTSHIFT_WORKFLOW_CATALOG_v1.0.md)
+- WF-001 through WF-007 released and audited
 
 ## Workspace Rollout
 

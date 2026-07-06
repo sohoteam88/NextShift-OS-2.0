@@ -29,7 +29,14 @@ Blueprint status:
 
 Current milestone:
 
-Blueprint Freeze Preparation
+Repository metadata synchronization for released runtime workflows
+
+Current workflow baseline:
+
+- [Workflow Status](WORKFLOW_STATUS.md)
+- [Workflow Releases](WORKFLOW_RELEASES.md)
+- [NextShift Workflow Catalog v1.0](../../platform/NEXTSHIFT_WORKFLOW_CATALOG_v1.0.md)
+- WF-001 through WF-007 are released and audited on `planning/os-3.1-mvp-governance`.
 
 ## Engineering Foundation
 
@@ -151,6 +158,16 @@ Deliverables:
 - Communication Services
 - Landing Pages
 - Automation
+
+Released workflow baseline:
+
+- WF-001 Repository Health Review
+- WF-002 CRM Lead Qualification
+- WF-003 Content Planning & Approval
+- WF-004 Opportunity Evaluation
+- WF-005 Campaign Execution
+- WF-006 Revenue Forecast Review
+- WF-007 Analytics Insight Review
 
 Primary success metric:
 

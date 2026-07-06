@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-06-30
+Last Updated: 2026-07-06
 
 ---
 
@@ -40,19 +40,21 @@ For first-time contributors:
 16. [Blueprint Status](BLUEPRINT_STATUS.md)
 17. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
 18. [Runtime Status](RUNTIME_STATUS.md)
-19. [Capability Status](CAPABILITY_STATUS.md)
-20. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
-21. [NextShift Standards v1.0](standards/README.md)
-22. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
-23. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
-24. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
-25. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
-26. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
-27. [STD-006 Project Execution Orchestration Standard v1.1](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.1.md)
-28. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
-29. [STD-007 Repository Canonical Resolution Standard v1.0](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
-30. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-31. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+19. [Workflow Status](WORKFLOW_STATUS.md)
+20. [Workflow Releases](WORKFLOW_RELEASES.md)
+21. [Capability Status](CAPABILITY_STATUS.md)
+22. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
+23. [NextShift Standards v1.0](standards/README.md)
+24. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
+25. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
+26. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
+27. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
+28. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+29. [STD-006 Project Execution Orchestration Standard v1.1](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.1.md)
+30. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+31. [STD-007 Repository Canonical Resolution Standard v1.0](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
+32. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+33. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -72,6 +74,7 @@ After completing the above:
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
+| Runtime Workflows    | WF-001 Released · WF-002 Released · WF-003 Released · WF-004 Released · WF-005 Released · WF-006 Released · WF-007 Released |
 | Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released · BOS-008 Released · Business OS v1.0 Release Package Audited (Pass) |
 | Design System        | Released        |
 | UI Kit               | Released        |
@@ -139,6 +142,9 @@ Supporting:
 Status:
 
 - [Runtime Status](RUNTIME_STATUS.md)
+- [Workflow Status](WORKFLOW_STATUS.md)
+- [Workflow Releases](WORKFLOW_RELEASES.md)
+- [NextShift Workflow Catalog v1.0](../../platform/NEXTSHIFT_WORKFLOW_CATALOG_v1.0.md)
 
 Packages:
 
@@ -951,20 +957,29 @@ Completed:
 - Blueprint
 - Runtime
 - CAP-001 Business Profile
+- CAP-002 CRM
+- CAP-003 Content
+- CAP-004 Campaign
+- WF-001 Repository Health Review
+- WF-002 CRM Lead Qualification
+- WF-003 Content Planning & Approval
+- WF-004 Opportunity Evaluation
+- WF-005 Campaign Execution
+- WF-006 Revenue Forecast Review
+- WF-007 Analytics Insight Review
 
 Current:
 
 ```text
-CAP-002 CRM
+CAP-005 Revenue S-004 Implementation and RM-001 repository synchronization
 ```
 
 Future:
 
-- Content
-- Campaign
-- Revenue
-- Analytics
+- CAP-005 Revenue completion
+- CAP-006 Analytics
 - AI Coach
+- Additional workflow releases governed through Workflow Status and Workflow Releases
 
 ---
 
