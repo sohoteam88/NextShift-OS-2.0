@@ -23,6 +23,9 @@ It consolidates release notes, manifest, version history, final repository verif
 - [Version History](VERSION_HISTORY.md)
 - [Final Verification](FINAL_VERIFICATION.md)
 - [Tag Preparation](TAG_PREPARATION.md)
+- [Release Ceremony Checklist](RELEASE_CEREMONY_CHECKLIST.md)
+- [Release Ceremony Script](RELEASE_CEREMONY_SCRIPT.md)
+- [Release Ceremony Manifest](RELEASE_CEREMONY_MANIFEST.md)
 
 ---
 

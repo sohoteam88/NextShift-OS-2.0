@@ -31,6 +31,9 @@ Last Updated: 2026-07-06
 | [Version History](VERSION_HISTORY.md) | Version lineage |
 | [Final Verification](FINAL_VERIFICATION.md) | Repository verification evidence |
 | [Tag Preparation](TAG_PREPARATION.md) | Release tag plan |
+| [Release Ceremony Checklist](RELEASE_CEREMONY_CHECKLIST.md) | Release ceremony gate checklist |
+| [Release Ceremony Script](RELEASE_CEREMONY_SCRIPT.md) | Release ceremony execution script |
+| [Release Ceremony Manifest](RELEASE_CEREMONY_MANIFEST.md) | Release ceremony state summary |
 
 ---
 
