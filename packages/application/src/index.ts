@@ -27,6 +27,7 @@ export * from "./revenue";
 export * from "./revenue-target";
 export * from "./revenue-progress";
 export * from "./revenue-forecast";
+export * from "./revenue-forecast-review";
 export * from "./analytics";
 export * from "./business-brain";
 export * from "./opportunity-evaluation";
