@@ -50,7 +50,7 @@ Runtime Platform v1.0 does not implement:
 | RP-001 Runtime Kernel Foundation | Ready for Release | [RP-001](slices/RP-001-runtime-kernel-foundation/README.md) |
 | RP-002 Context Runtime | Ready for Release | [RP-002](slices/RP-002-context-runtime/README.md) |
 | RP-003 Session Runtime | Released | [RP-003](slices/RP-003-session-runtime/README.md) |
-| RP-004 Workspace Runtime | Not started | Pending Stop B |
+| RP-004 Workspace Runtime | Released | [RP-004](slices/RP-004-workspace-runtime/README.md) |
 | RP-005 Capability Runtime | Not started | Pending Stop B |
 | RP-006 Event Runtime | Not started | Pending Stop B |
 | RP-007 Runtime Permission Boundary | Not started | Pending Stop B |
@@ -76,17 +76,17 @@ Public package name:
 
 ## Validation
 
-RP-001 through RP-003 validation:
+RP-001 through RP-004 validation:
 
 ```bash
 pnpm --filter @nextshift/runtime test
 pnpm --filter @nextshift/runtime typecheck
 ```
 
-Both commands passed for RP-001, RP-002, and RP-003.
+Both commands passed for RP-001, RP-002, RP-003, and RP-004.
 
 ---
 
 ## Lifecycle Rule
 
-Perform Git Release Checkpoint for RP-003, then continue to RP-004 Workspace Runtime.
+Perform Git Release Checkpoint for RP-004, then continue to RP-005 Capability Runtime.

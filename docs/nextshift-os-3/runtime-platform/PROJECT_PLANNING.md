@@ -47,7 +47,7 @@ These belong to later OS 3.3 projects.
 | RP-001 Runtime Kernel Foundation | Establish base runtime kernel and lifecycle model | Ready for Release |
 | RP-002 Context Runtime | Define context creation, scoping, validation, and isolation | Ready for Release |
 | RP-003 Session Runtime | Define runtime session identity, lifecycle, expiration, renewal, and isolation | Released |
-| RP-004 Workspace Runtime | Provide the workspace execution boundary | Not started |
+| RP-004 Workspace Runtime | Provide workspace identity, lifecycle, state snapshot, validation, and isolation | Released |
 | RP-005 Capability Runtime | Register, resolve, and execute capabilities | Not started |
 | RP-006 Event Runtime | Provide runtime-level event dispatch infrastructure | Not started |
 | RP-007 Runtime Permission Boundary | Enforce permission-aware runtime boundaries | Not started |
@@ -71,10 +71,10 @@ Runtime Platform v1.0 is successful when:
 
 ## Current State
 
-RP-003 Session Runtime is released on:
+RP-004 Workspace Runtime is released on:
 
 ```text
 planning/os-3.3-runtime-platform
 ```
 
-Perform Git Release Checkpoint for RP-003, then continue to RP-004 Workspace Runtime.
+Perform Git Release Checkpoint for RP-004, then continue to RP-005 Capability Runtime.
