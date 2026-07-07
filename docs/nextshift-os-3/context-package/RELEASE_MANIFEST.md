@@ -1,12 +1,12 @@
 # Project Context Package Release Manifest
 
-Generated: 2026-07-06
+Generated: 2026-07-07
 
-Release: OS_3_2_DEVELOPER_PLATFORM_v3.2
+Release: d0a08ea
 
-Branch: `planning/os-3.1-mvp-governance`
+Branch: `release/v3.2`
 
-HEAD: `4663ea85417b396e02f5e7e7b24806b7602c5966`
+HEAD: `d0a08eaebc4357b4f986f49982513da02fa790d4`
 
 ---
 

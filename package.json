@@ -17,6 +17,7 @@
     "i18n:audit": "tsx scripts/i18n-audit.ts",
     "context:generate": "tsx scripts/generate-project-context-package.ts",
     "artifact:generate": "tsx scripts/generate-artifact-package.ts",
+    "chat:prepare": "tsx scripts/prepare-chat-bootstrap.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
