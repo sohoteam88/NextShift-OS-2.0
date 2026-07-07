@@ -48,7 +48,7 @@ Runtime Platform v1.0 does not implement:
 | Slice | Status | Documentation |
 | --- | --- | --- |
 | RP-001 Runtime Kernel Foundation | Ready for Release | [RP-001](slices/RP-001-runtime-kernel-foundation/README.md) |
-| RP-002 Context Runtime | Not started | Pending Stop B |
+| RP-002 Context Runtime | Ready for Release | [RP-002](slices/RP-002-context-runtime/README.md) |
 | RP-003 Session Runtime | Not started | Pending Stop B |
 | RP-004 Workspace Runtime | Not started | Pending Stop B |
 | RP-005 Capability Runtime | Not started | Pending Stop B |
@@ -76,17 +76,17 @@ Public package name:
 
 ## Validation
 
-RP-001 validation:
+RP-001 and RP-002 validation:
 
 ```bash
 pnpm --filter @nextshift/runtime test
 pnpm --filter @nextshift/runtime typecheck
 ```
 
-Both commands passed for RP-001.
+Both commands passed for RP-001 and RP-002.
 
 ---
 
 ## Lifecycle Rule
 
-Stop after RP-001 until Stop B is generated.
+Perform Git Release Checkpoint for RP-002, then continue to RP-003 Session Runtime.

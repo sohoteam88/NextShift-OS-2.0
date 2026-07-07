@@ -45,7 +45,7 @@ These belong to later OS 3.3 projects.
 | Slice | Purpose | Status |
 | --- | --- | --- |
 | RP-001 Runtime Kernel Foundation | Establish base runtime kernel and lifecycle model | Ready for Release |
-| RP-002 Context Runtime | Define context creation, scoping, validation, and isolation | Not started |
+| RP-002 Context Runtime | Define context creation, scoping, validation, and isolation | Ready for Release |
 | RP-003 Session Runtime | Define user, workspace, and AI session state | Not started |
 | RP-004 Workspace Runtime | Provide the workspace execution boundary | Not started |
 | RP-005 Capability Runtime | Register, resolve, and execute capabilities | Not started |
@@ -71,10 +71,10 @@ Runtime Platform v1.0 is successful when:
 
 ## Current State
 
-RP-001 Runtime Kernel Foundation is ready for release on:
+RP-002 Context Runtime is ready for release on:
 
 ```text
 planning/os-3.3-runtime-platform
 ```
 
-Stop after RP-001 until Stop B is generated.
+Perform Git Release Checkpoint for RP-002, then continue to RP-003 Session Runtime.
