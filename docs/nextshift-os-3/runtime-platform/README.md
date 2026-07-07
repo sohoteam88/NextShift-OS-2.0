@@ -54,7 +54,7 @@ Runtime Platform v1.0 does not implement:
 | RP-005 Capability Runtime | Released | [RP-005](slices/RP-005-capability-runtime/README.md) |
 | RP-006 Event Runtime | Released | [RP-006](slices/RP-006-event-runtime/README.md) |
 | RP-007 Permission / Diagnostics Runtime | Released | [RP-007](slices/RP-007-permission-diagnostics-runtime/README.md) |
-| RP-008 Runtime Platform Consolidation | Not started | Pending Stop B |
+| RP-008 Runtime Platform Consolidation | Released | [RP-008](slices/RP-008-runtime-platform-consolidation/README.md) |
 
 ---
 
@@ -76,7 +76,7 @@ Public package name:
 
 ## Validation
 
-RP-001 through RP-007 validation:
+RP-001 through RP-008 validation:
 
 ```bash
 pnpm --filter @nextshift/runtime test
@@ -84,10 +84,10 @@ pnpm --filter @nextshift/runtime typecheck
 pnpm type-check
 ```
 
-Required runtime and root validation commands passed through RP-007.
+Required runtime and root validation commands passed through RP-008.
 
 ---
 
 ## Lifecycle Rule
 
-Perform Git Release Checkpoint for RP-007, then continue to RP-008 Runtime Platform Consolidation.
+Perform Git Release Checkpoint for RP-008, then generate the Runtime Platform v1.0 project release package.
