@@ -2,11 +2,11 @@
 
 Generated: 2026-07-07
 
-Release: d0a08ea
+Release: 23a5412
 
 Branch: `release/v3.2`
 
-HEAD: `d0a08eaebc4357b4f986f49982513da02fa790d4`
+HEAD: `23a5412208e2d9eaea8d8eadd2980d2573df45a0`
 
 ---
 

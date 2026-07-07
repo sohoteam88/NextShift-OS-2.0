@@ -45,26 +45,27 @@ For first-time contributors:
 21. [Project Context Package Release Manifest](context-package/RELEASE_MANIFEST.md)
 22. [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md)
 23. [OS 3.2 Release Manifest](releases/OS_3_2_DEVELOPER_PLATFORM/RELEASE_MANIFEST.md)
-24. [Artifact Generator](ARTIFACT_GENERATOR.md)
-25. [Project Status](PROJECT_STATUS.md)
-26. [Blueprint Status](BLUEPRINT_STATUS.md)
-27. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
-28. [Runtime Status](RUNTIME_STATUS.md)
-29. [Workflow Status](WORKFLOW_STATUS.md)
-30. [Workflow Releases](WORKFLOW_RELEASES.md)
-31. [Capability Status](CAPABILITY_STATUS.md)
-32. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
-33. [NextShift Standards v1.0](standards/README.md)
-34. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
-35. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
-36. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
-37. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
-38. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
-39. [STD-006 Project Execution Orchestration Standard v1.1](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.1.md)
-40. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
-41. [STD-007 Repository Canonical Resolution Standard v1.0](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
-42. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
-43. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
+24. [Developer Platform v1.0 Freeze Record](releases/OS_3_2_DEVELOPER_PLATFORM/DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md)
+25. [Artifact Generator](ARTIFACT_GENERATOR.md)
+26. [Project Status](PROJECT_STATUS.md)
+27. [Blueprint Status](BLUEPRINT_STATUS.md)
+28. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
+29. [Runtime Status](RUNTIME_STATUS.md)
+30. [Workflow Status](WORKFLOW_STATUS.md)
+31. [Workflow Releases](WORKFLOW_RELEASES.md)
+32. [Capability Status](CAPABILITY_STATUS.md)
+33. [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
+34. [NextShift Standards v1.0](standards/README.md)
+35. [Engineering Workflow](engineering/ENGINEERING_WORKFLOW.md)
+36. [NextShift Engineering Workflow Standard (NEWS) v1.0](engineering/NEXTSHIFT_ENGINEERING_WORKFLOW_STANDARD_v1.0.md)
+37. [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
+38. [STD-004 Release Governance v1.0](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md)
+39. [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
+40. [STD-006 Project Execution Orchestration Standard v1.1](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.1.md)
+41. [STD-006 Project Execution Orchestration Standard v1.0](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
+42. [STD-007 Repository Canonical Resolution Standard v1.0](engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
+43. [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+44. [Reference Capability](capabilities/REFERENCE_CAPABILITY.md)
 
 After completing the above:
 
@@ -82,7 +83,7 @@ After completing the above:
 | Blueprint            | Complete        |
 | Core Runtime         | Complete        |
 | Architecture 3.1     | ARC-006 Released · OS 3.1 RC1 Approved |
-| Developer Platform   | OS 3.2 Developer Platform Prepared for Production Approval |
+| Developer Platform   | Developer Platform v1.0 Frozen |
 | Reference Capability | CAP-001         |
 | Current Capability   | CAP-005 S-004 Implementation |
 | Runtime Workflows    | WF-001 Released · WF-002 Released · WF-003 Released · WF-004 Released · WF-005 Released · WF-006 Released · WF-007 Released |
@@ -107,6 +108,7 @@ Core documents:
 - [Project Context Package Release Manifest](context-package/RELEASE_MANIFEST.md)
 - [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md)
 - [OS 3.2 Release Manifest](releases/OS_3_2_DEVELOPER_PLATFORM/RELEASE_MANIFEST.md)
+- [Developer Platform v1.0 Freeze Record](releases/OS_3_2_DEVELOPER_PLATFORM/DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md)
 - [Artifact Generator](ARTIFACT_GENERATOR.md)
 - [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
 - [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)

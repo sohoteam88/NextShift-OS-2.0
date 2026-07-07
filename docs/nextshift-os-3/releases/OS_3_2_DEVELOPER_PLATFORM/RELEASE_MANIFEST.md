@@ -2,9 +2,9 @@
 
 Version: 3.2
 
-Status: Release Prepared
+Status: Frozen
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-07
 
 ---
 
@@ -15,8 +15,8 @@ Last Updated: 2026-07-06
 | Release Name | OS 3.2 Developer Platform |
 | Release Version | 3.2 |
 | Release Package | `docs/nextshift-os-3/releases/OS_3_2_DEVELOPER_PLATFORM/` |
-| Source Branch | `planning/os-3.1-mvp-governance` |
-| Release State | Prepared for Production Approval |
+| Source Branch | `release/v3.2` |
+| Release State | Developer Platform v1.0 Frozen |
 | Tag Status | Prepared, not created |
 
 ---
@@ -34,6 +34,7 @@ Last Updated: 2026-07-06
 | [Release Ceremony Checklist](RELEASE_CEREMONY_CHECKLIST.md) | Release ceremony gate checklist |
 | [Release Ceremony Script](RELEASE_CEREMONY_SCRIPT.md) | Release ceremony execution script |
 | [Release Ceremony Manifest](RELEASE_CEREMONY_MANIFEST.md) | Release ceremony state summary |
+| [Developer Platform v1.0 Freeze Record](DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md) | Official Developer Platform v1.0 freeze baseline |
 
 ---
 
@@ -74,13 +75,13 @@ Last Updated: 2026-07-06
 
 | Gate | Status | Evidence |
 | --- | --- | --- |
-| Developer Platform frozen | PASS | Release package prepared; no feature work in scope |
+| Developer Platform frozen | PASS | [Developer Platform v1.0 Freeze Record](DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md) |
 | Repository synchronized | PASS | [Workflow Status](../../WORKFLOW_STATUS.md), [Workflow Releases](../../WORKFLOW_RELEASES.md) |
 | Context package current | PASS | [Project Context Package Release Manifest](../../context-package/RELEASE_MANIFEST.md) |
 | Platform integration validated | PASS with migration-chain limitation | [INT-001 Validation Report](../../../../audit/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md) |
 | Deployment readiness documented | PASS with approval gates | [DEP-001 Deployment Readiness Report](../../../../audit/DEP_001_DEPLOYMENT_READINESS_REPORT.md) |
 | Release tag prepared | PASS, not created | [Tag Preparation](TAG_PREPARATION.md) |
-| Production approval | PENDING | Requires explicit approval |
+| Successor phase identified | PASS | [Developer Platform v1.0 Freeze Record](DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md) |
 
 ---
 

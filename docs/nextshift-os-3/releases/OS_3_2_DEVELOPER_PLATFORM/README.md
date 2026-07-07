@@ -2,17 +2,17 @@
 
 Version: 3.2
 
-Status: Release Prepared
+Status: Frozen
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-07
 
 ---
 
 ## Purpose
 
-This release package prepares the NextShift OS 3.2 Developer Platform release for production approval.
+This release package records the NextShift OS 3.2 Developer Platform release and the official Developer Platform v1.0 freeze.
 
-It consolidates release notes, manifest, version history, final repository verification, and release tag preparation without implementing new product or runtime features.
+It consolidates release notes, manifest, version history, final repository verification, release ceremony, release tag preparation, and the Developer Platform v1.0 freeze record without implementing new product or runtime features.
 
 ---
 
@@ -26,12 +26,13 @@ It consolidates release notes, manifest, version history, final repository verif
 - [Release Ceremony Checklist](RELEASE_CEREMONY_CHECKLIST.md)
 - [Release Ceremony Script](RELEASE_CEREMONY_SCRIPT.md)
 - [Release Ceremony Manifest](RELEASE_CEREMONY_MANIFEST.md)
+- [Developer Platform v1.0 Freeze Record](DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md)
 
 ---
 
 ## Release Scope
 
-OS 3.2 Developer Platform packages the repository and platform readiness work completed on `planning/os-3.1-mvp-governance` after OS 3.1 RC1.
+OS 3.2 Developer Platform packages the repository and platform readiness work completed on `release/v3.2` after OS 3.1 RC1.
 
 Included:
 
@@ -56,12 +57,9 @@ Excluded:
 Current decision:
 
 ```text
-Prepared for Production Approval
+Developer Platform v1.0 Frozen
 ```
 
-Approval remains required before:
+The Developer Platform is now in maintenance mode. Future work should prioritize product development unless a critical platform issue or approved platform roadmap requires otherwise.
 
-- Creating the release tag
-- Promoting a release branch
-- Running production deployment
-- Running production database migrations
+See the [Developer Platform v1.0 Freeze Record](DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md) for the approved freeze baseline and successor phase.
