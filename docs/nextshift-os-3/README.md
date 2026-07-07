@@ -24,6 +24,7 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 - [Architecture Layer Definitions](ARCHITECTURE_LAYER_DEFINITIONS.md)
 - [Blueprint Status](BLUEPRINT_STATUS.md)
 - [Runtime Status](RUNTIME_STATUS.md)
+- [Runtime Platform v1.0](runtime-platform/README.md)
 - [Capability Status](CAPABILITY_STATUS.md)
 - [Capabilities](capabilities/README.md)
 - [Design System](design-system/README.md)
@@ -84,6 +85,7 @@ Foundation documents:
 
 ## Platform Projects
 
+- [Runtime Platform v1.0](runtime-platform/README.md)
 - [NextShift Design System v1.0](design-system/README.md)
 - [NextShift UI Kit v1.0](ui-kit/README.md)
 
