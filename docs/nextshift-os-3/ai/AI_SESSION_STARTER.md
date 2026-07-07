@@ -27,6 +27,7 @@ Bootstrap order:
 3. Read docs/nextshift-os-3/PROJECT_STATUS.md.
 4. Read docs/nextshift-os-3/MASTER_INDEX.md.
 5. Load only the standards required for the requested task.
+6. If package generation or cross-chat handoff is needed, read docs/nextshift-os-3/engineering/ENGINEERING_AUTOMATION.md.
 
 Context loading order:
 1. Confirm active branch and working tree status.

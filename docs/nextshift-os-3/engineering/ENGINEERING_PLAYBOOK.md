@@ -369,6 +369,36 @@ Applies to:
 
 The mandatory role-based execution workflow is defined in [NextShift Engineering Execution Playbook v1.0](NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md).
 
+## Engineering Automation Extension
+
+Engineering automation supports the mandatory delivery lifecycle. It does not replace or redefine it.
+
+The lifecycle remains:
+
+```text
+Planning
+  -> Implementation
+  -> Verification
+  -> Audit
+  -> Release
+```
+
+AG-001 Artifact Generator packages repository Markdown sources into standardized artifact ZIP files. It supports context, execution, audit, release, and deployment evidence packaging.
+
+AG-002 Chat Bootstrap Generator prepares AI handoff packages for Codex, Claude, ChatGPT, or another assistant. It generates the current context package, repository snapshot, bootstrap manifest, and upload checklist.
+
+Use [Engineering Automation](ENGINEERING_AUTOMATION.md) for generator commands, package policies, handoff flow, and Stop A / Stop B / Stop C convenience mapping.
+
+Automation rules:
+
+- Use automation to package evidence, not to prove lifecycle completion.
+- Keep Engineering Playbook v1.1 as the lifecycle authority.
+- Do not create or reintroduce Engineering Orchestrator v1.0.
+- Do not commit generated ZIPs or generated files under `artifacts/`.
+- Regenerate chat bootstrap packages before cross-chat handoff, audit handoff, long context transfer, or continuation in a fresh AI window.
+- Confirm no secrets, local environment files, service keys, or unapproved generated artifacts are included in packages.
+- Preserve Git hygiene: stage only scoped source and documentation changes for the current task.
+
 ## Delivery Order Principle
 
 The mandatory order is:

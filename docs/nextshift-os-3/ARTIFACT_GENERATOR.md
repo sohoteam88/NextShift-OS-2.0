@@ -14,6 +14,12 @@ The NextShift Artifact Generator creates standardized delivery package ZIP files
 
 It makes the repository the source of truth for package generation and prevents generated ZIP artifacts from being committed.
 
+AG-001 is a packaging utility. It does not define lifecycle policy, approve release state, or replace engineering governance.
+
+For lifecycle usage, handoff flow, and generator operating rules, see [Engineering Automation](engineering/ENGINEERING_AUTOMATION.md).
+
+The engineering lifecycle authority remains [Engineering Playbook v1.1](engineering/ENGINEERING_PLAYBOOK.md).
+
 ---
 
 ## Command

@@ -58,6 +58,7 @@ All AI execution must align with:
 - [STD-005 GitHub Alignment Standard](../engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
 - [STD-006 Project Execution Orchestration Standard](../engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
 - [STD-007 Repository Canonical Resolution Standard](../engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
+- [Engineering Automation](../engineering/ENGINEERING_AUTOMATION.md) for AG-001 / AG-002 package and handoff usage.
 
 ---
 
@@ -81,3 +82,4 @@ Release work must not move tags, modify release branches, or touch production un
 - Load the canonical documents listed above.
 - Identify current project state using [AI Context Loading](AI_CONTEXT_LOADING.md).
 - Follow the role and handoff rules in [AI Execution Guide](AI_EXECUTION_GUIDE.md).
+- Use [Engineering Automation](../engineering/ENGINEERING_AUTOMATION.md) before generating artifact or chat bootstrap packages.

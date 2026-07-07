@@ -44,7 +44,8 @@ This file complements [AI Bootstrap](AI_BOOTSTRAP.md), [Project Context](../PROJ
 6. Read [Project Status](../PROJECT_STATUS.md).
 7. Read [Master Index](../MASTER_INDEX.md).
 8. Load only required standards for the current task.
-9. Wait for user task.
+9. Load [Engineering Automation](../engineering/ENGINEERING_AUTOMATION.md) before using AG-001 or AG-002.
+10. Wait for user task.
 
 ---
 

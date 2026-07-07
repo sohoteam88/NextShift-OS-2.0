@@ -30,6 +30,7 @@ This framework complements the Engineering Standards and references their canoni
 - [AI Prompt Library Audit Contract](prompts/AI_PROMPT_LIBRARY_AUDIT_CONTRACT.md)
 - [AI Knowledge Base Framework](knowledge/AI_KNOWLEDGE_BASE_FRAMEWORK.md)
 - [AI Engineering Foundation v1.0 Release Package](releases/AI_ENGINEERING_FOUNDATION_v1.0/README.md)
+- [Engineering Automation](../engineering/ENGINEERING_AUTOMATION.md)
 
 ---
 
@@ -44,6 +45,7 @@ AI assistants must follow the standards baseline:
 - [STD-005 GitHub Alignment Standard](../engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
 - [STD-006 Project Execution Orchestration Standard](../engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
 - [STD-007 Repository Canonical Resolution Standard](../engineering/STD-007_REPOSITORY_CANONICAL_RESOLUTION_STANDARD_v1.0.md)
+- [Engineering Automation](../engineering/ENGINEERING_AUTOMATION.md)
 
 ---
 

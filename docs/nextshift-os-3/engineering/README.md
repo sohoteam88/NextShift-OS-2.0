@@ -18,6 +18,7 @@ Status: In Progress
 - [STD-006 Project Execution Orchestration Standard v1.1](STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.1.md)
 - [STD-006 Project Execution Orchestration Standard v1.0](STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
 - [Engineering Playbook](ENGINEERING_PLAYBOOK.md)
+- [Engineering Automation](ENGINEERING_AUTOMATION.md)
 - [Implementation Cycle](IMPLEMENTATION_CYCLE.md)
 - [Implementation Cycles](implementation-cycles/README.md)
 - [Naming Conventions](NAMING_CONVENTIONS.md)

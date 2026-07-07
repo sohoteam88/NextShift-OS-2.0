@@ -22,6 +22,7 @@ Define how AI assistants load enough context to act safely without overloading t
 4. Load the relevant engineering standard for the task.
 5. Load the project, capability, platform, workspace, or release package in scope.
 6. Load recent implementation, verification, audit, or release artifacts if continuation is requested.
+7. Load [Engineering Automation](../engineering/ENGINEERING_AUTOMATION.md) before using artifact or chat bootstrap generators.
 
 ---
 
