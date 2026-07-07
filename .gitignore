@@ -6,6 +6,7 @@ node_modules/
 test-results/
 coverage/
 playwright-report/
+artifacts/
 packages/*/dist/
 *.tsbuildinfo
 .env
