@@ -1,10 +1,10 @@
 # Engineering Playbook
 
-Version: 1.1
+Version: 1.2
 
 Status: Approved
 
-Supersedes: Engineering Playbook v1.0 Delivery Process
+Supersedes: Engineering Playbook v1.1
 
 ## Purpose
 
@@ -389,15 +389,55 @@ AG-002 Chat Bootstrap Generator prepares AI handoff packages for Codex, Claude, 
 
 Use [Engineering Automation](ENGINEERING_AUTOMATION.md) for generator commands, package policies, handoff flow, and Stop A / Stop B / Stop C convenience mapping.
 
+## Engineering Playbook v1.2 Governed Automation Workflow
+
+Engineering Playbook v1.2 promotes the validated Developer Platform automation workflow to:
+
+```text
+Governed Engineering Automation Workflow
+```
+
+The governance source set is maintained in [Engineering Playbook v1.2](../engineering-playbook-v1.2/README.md).
+
+The governed workflow includes:
+
+- [Automation Governance](../engineering-playbook-v1.2/AUTOMATION_GOVERNANCE.md)
+- [AI Workflow Governance](../engineering-playbook-v1.2/AI_WORKFLOW_GOVERNANCE.md)
+- [Git Release Policy](../engineering-playbook-v1.2/GIT_RELEASE_POLICY.md)
+- [Documentation Validation Policy](../engineering-playbook-v1.2/DOCUMENTATION_VALIDATION_POLICY.md)
+- [Navigation Consistency Policy](../engineering-playbook-v1.2/NAVIGATION_CONSISTENCY_POLICY.md)
+- [Advisory Registry Policy](../engineering-playbook-v1.2/ADVISORY_REGISTRY_POLICY.md)
+- [Project Closure Policy](../engineering-playbook-v1.2/PROJECT_CLOSURE_POLICY.md)
+- [Branch Synchronization Policy](../engineering-playbook-v1.2/BRANCH_SYNCHRONIZATION_POLICY.md)
+
+Governed automation is permitted only as lifecycle support. It packages evidence, prepares handoffs, validates documentation, and reports branch state. It does not approve lifecycle state.
+
+Required documentation validation commands:
+
+```bash
+pnpm docs:links
+pnpm docs:navigation
+```
+
+Required release and closure support commands when in scope:
+
+```bash
+pnpm project:closure-package
+pnpm git:branch-sync
+```
+
 Automation rules:
 
 - Use automation to package evidence, not to prove lifecycle completion.
-- Keep Engineering Playbook v1.1 as the lifecycle authority.
+- Keep Engineering Playbook v1.2 as the governed workflow authority.
 - Do not create or reintroduce Engineering Orchestrator v1.0.
 - Do not commit generated ZIPs or generated files under `artifacts/`.
 - Regenerate chat bootstrap packages before cross-chat handoff, audit handoff, long context transfer, or continuation in a fresh AI window.
 - Confirm no secrets, local environment files, service keys, or unapproved generated artifacts are included in packages.
 - Preserve Git hygiene: stage only scoped source and documentation changes for the current task.
+- Do not stage `docs/nextshift-os-3/context-package/` unless the task explicitly authorizes context package updates.
+- Run Markdown link and navigation validation when documentation changes are part of implementation, release, or project closure.
+- Report branch synchronization after release checkpoint pushes when required.
 
 ## Delivery Order Principle
 

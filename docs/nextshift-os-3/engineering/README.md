@@ -19,6 +19,7 @@ Status: In Progress
 - [STD-006 Project Execution Orchestration Standard v1.0](STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md)
 - [Engineering Playbook](ENGINEERING_PLAYBOOK.md)
 - [Engineering Automation](ENGINEERING_AUTOMATION.md)
+- [Engineering Playbook v1.2](../engineering-playbook-v1.2/README.md)
 - [Implementation Cycle](IMPLEMENTATION_CYCLE.md)
 - [Implementation Cycles](implementation-cycles/README.md)
 - [Naming Conventions](NAMING_CONVENTIONS.md)
@@ -34,3 +35,9 @@ Release branch, release tag, VPS deployed revision, archive deployment compatibi
 ## Project Orchestration
 
 Project state detection, three stop point handoffs, audit resolution, continuation behavior, and cross-standard orchestration are governed by [STD-006 Project Execution Orchestration Standard v1.1](STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.1.md).
+
+## Governed Automation Workflow
+
+Engineering automation workflow governance is defined by [Engineering Playbook v1.2](../engineering-playbook-v1.2/README.md).
+
+It promotes the validated Developer Platform automation workflow to governed status while preserving Engineering Standards, release governance, audit requirements, and scoped Git checkpoint discipline.
