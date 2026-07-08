@@ -31,7 +31,8 @@ For first-time contributors:
 7. [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
 8. [Business Architecture v1.0 - Architecture Frozen](business-architecture-v1/README.md)
 9. [Business Foundation v1.0 - Released](business-foundation-v1/README.md)
-10. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+10. [Business Brain v1.0 - Released](business-brain-v1/README.md)
+11. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
 7. [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 8. [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 9. [AI Bootstrap Framework](ai/README.md)
@@ -110,6 +111,17 @@ For first-time contributors:
 82. [BF-001 Release Checklist](business-foundation-v1/RELEASE_CHECKLIST.md)
 83. [BF-001 Approval Record](business-foundation-v1/APPROVAL_RECORD.md)
 84. [BF-001 Release Summary](business-foundation-v1/RELEASE_SUMMARY.md)
+85. [BB-001 Business Brain v1.0 - Released](business-brain-v1/README.md)
+86. [BB-001 Project Planning](business-brain-v1/PROJECT_PLANNING.md)
+87. [BB-001 Implementation Contract](business-brain-v1/IMPLEMENTATION_CONTRACT.md)
+88. [BB-001 Execution Task](business-brain-v1/EXECUTION_TASK.md)
+89. [BB-001 Implementation Report](business-brain-v1/IMPLEMENTATION_REPORT.md)
+90. [BB-001 Requirements Verification](business-brain-v1/REQUIREMENTS_VERIFICATION.md)
+91. [BB-001 Repository Audit Contract](business-brain-v1/REPOSITORY_AUDIT_CONTRACT.md)
+92. [BB-001 Release Notes](business-brain-v1/RELEASE_NOTES.md)
+93. [BB-001 Release Checklist](business-brain-v1/RELEASE_CHECKLIST.md)
+94. [BB-001 Approval Record](business-brain-v1/APPROVAL_RECORD.md)
+95. [BB-001 Release Summary](business-brain-v1/RELEASE_SUMMARY.md)
 25. [Runtime Platform v1.0](runtime-platform/README.md)
 26. [RP-001 Runtime Kernel Foundation](runtime-platform/slices/RP-001-runtime-kernel-foundation/README.md)
 27. [RP-001 Release Notes](runtime-platform/slices/RP-001-runtime-kernel-foundation/RELEASE_NOTES.md)
@@ -245,6 +257,7 @@ After completing the above:
 | Current Capability   | CAP-005 S-004 Implementation |
 | Runtime Workflows    | WF-001 Released · WF-002 Released · WF-003 Released · WF-004 Released · WF-005 Released · WF-006 Released · WF-007 Released |
 | Business Foundation  | BF-001 Released |
+| Business Brain       | BB-001 Released |
 | Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released · BOS-008 Released · Business OS v1.0 Release Package Audited (Pass) |
 | Design System        | Released        |
 | UI Kit               | Released        |

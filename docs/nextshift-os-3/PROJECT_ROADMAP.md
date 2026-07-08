@@ -29,7 +29,7 @@ Blueprint status:
 
 Current milestone:
 
-Business Foundation v1.0 release
+Business Brain v1.0 release
 
 Current architecture baseline:
 
@@ -38,6 +38,7 @@ Current architecture baseline:
 Current product implementation baseline:
 
 - [Business Foundation v1.0](business-foundation-v1/README.md) — Released
+- [Business Brain v1.0](business-brain-v1/README.md) — Released
 
 Current workflow baseline:
 
@@ -123,7 +124,7 @@ Subordinate Business OS Phase 1 execution scope:
 Deliverables:
 
 - [Business Foundation v1.0](business-foundation-v1/README.md) — Released
-- Business Brain
+- [Business Brain v1.0](business-brain-v1/README.md) — Released
 - Business Twin
 - Story Vault
 - Business Memory

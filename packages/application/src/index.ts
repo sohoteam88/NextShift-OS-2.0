@@ -31,6 +31,7 @@ export * from "./revenue-forecast-review";
 export * from "./analytics";
 export * from "./analytics-insight-review";
 export * from "./business-brain";
+export * from "./business-brain-v1";
 export * from "./business-foundation";
 export * from "./opportunity-evaluation";
 export * as CampaignExecutionWorkflowApplication from "./campaign-execution";
