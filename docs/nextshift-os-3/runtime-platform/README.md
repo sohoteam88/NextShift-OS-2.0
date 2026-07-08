@@ -88,6 +88,15 @@ Required runtime and root validation commands passed through RP-008.
 
 ---
 
+## Release Documentation
+
+- [Runtime Platform v1.0 Retrospective](release/RUNTIME_PLATFORM_V1_RETROSPECTIVE.md)
+- [Runtime Platform v1.0 Release Summary](release/RUNTIME_PLATFORM_V1_RELEASE_SUMMARY.md)
+- [Runtime Platform v1.0 Lessons Learned](release/RUNTIME_PLATFORM_V1_LESSONS_LEARNED.md)
+- [Runtime Platform v1.0 Automation Review](release/RUNTIME_PLATFORM_V1_AUTOMATION_REVIEW.md)
+
+---
+
 ## Lifecycle Rule
 
 Perform Git Release Checkpoint for RP-008, then generate the Runtime Platform v1.0 project release package.
