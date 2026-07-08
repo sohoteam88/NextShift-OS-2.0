@@ -13,6 +13,7 @@ Last Updated: 2026-07-08
 | Purpose | Source MD | Why It Matters |
 | --- | --- | --- |
 | System authority router | [System Authority](../README.md) | Tells you what is protected and how to change authority safely |
+| Authority boundaries | [Authority Boundaries](../AUTHORITY_BOUNDARIES.md) | Defines responsibility boundaries without replacing source documents |
 | Iron laws | [Iron Laws](../IRON_LAWS.md) | Non-negotiable rules before changing the system |
 | Protected files | [Protected Files](../PROTECTED_FILES.md) | List of files that cannot be casually edited |
 | Change control | [Change Control](../CHANGE_CONTROL.md) | Required process before touching protected authority |
@@ -26,10 +27,17 @@ Last Updated: 2026-07-08
 | System context | [System Context](../../SYSTEM_CONTEXT.md) | Primary onboarding guide for AI contributors |
 | Master navigation | [Master Index](../../MASTER_INDEX.md) | Complete documentation navigation |
 | Blueprint | [NextShift OS 3 Blueprint](../../NEXTSHIFT_OS_3_BLUEPRINT.md) | Top-level system blueprint |
+| Product roadmap | [Project Roadmap](../../PROJECT_ROADMAP.md) | Canonical Product Authority for direction, phases, sequencing, and dependencies |
 | MVP alignment | [MVP 1.0 Alignment](../../MVP_1_ALIGNMENT.md) | MVP authority and scope |
 | MVP master plan | [MVP 1.0 Implementation Master Plan](../../MVP_1_IMPLEMENTATION_MASTER_PLAN.md) | MVP sequencing authority |
 | MVP tracker | [MVP 1.0 Phase Tracker](../../MVP_1_PHASE_TRACKER.md) | MVP progress authority |
 | Implementation roadmap | [Implementation Master Roadmap](../../IMPLEMENTATION_MASTER_ROADMAP.md) | Implementation sequencing map |
+
+## Product Authority
+
+| Purpose | Source MD | Current Role |
+| --- | --- | --- |
+| Product direction, product phases, delivery sequencing, and product dependency | [Project Roadmap](../../PROJECT_ROADMAP.md) | Canonical Product Authority |
 
 ## Current State Authority
 

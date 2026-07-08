@@ -57,3 +57,15 @@ Last Updated: 2026-07-08
 12. No secret leakage.
 
     Never place live credentials, `.env` contents, Supabase service-role keys, database passwords, or private API keys in docs, artifacts, prompts, commits, logs, or handoff packages.
+
+13. System Authority is an Authority Router only.
+
+    System Authority locates authority. It is never the Source of Truth.
+
+14. Every authority domain has exactly one authoritative source document.
+
+    Use the canonical source for the domain. Do not split direction, architecture, workflow, standards, or status authority across competing documents.
+
+15. No parallel authority.
+
+    If an authoritative Blueprint, Roadmap, Architecture, Playbook, or Standard already exists, do not create a parallel authority. Changes may occur only through amendment, RFC, or versioned successor.

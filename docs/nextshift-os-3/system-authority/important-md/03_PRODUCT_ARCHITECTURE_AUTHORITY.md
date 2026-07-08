@@ -14,8 +14,22 @@ Last Updated: 2026-07-08
 | --- | --- |
 | What is NextShift? | [System Context](../../SYSTEM_CONTEXT.md) |
 | What is the blueprint? | [NextShift OS 3 Blueprint](../../NEXTSHIFT_OS_3_BLUEPRINT.md) |
+| What is the product roadmap? | [Project Roadmap](../../PROJECT_ROADMAP.md) |
 | What is MVP scope? | [MVP 1.0 Alignment](../../MVP_1_ALIGNMENT.md) |
 | What is the implementation sequence? | [Implementation Master Roadmap](../../IMPLEMENTATION_MASTER_ROADMAP.md) |
+
+## Product Authority
+
+| Authority Domain | Source MD |
+| --- | --- |
+| Product direction | [Project Roadmap](../../PROJECT_ROADMAP.md) |
+| Product phases | [Project Roadmap](../../PROJECT_ROADMAP.md) |
+| Delivery sequencing | [Project Roadmap](../../PROJECT_ROADMAP.md) |
+| Product dependency | [Project Roadmap](../../PROJECT_ROADMAP.md) |
+
+The Product Authority source is [Project Roadmap](../../PROJECT_ROADMAP.md).
+
+This router references the source. It does not replace it.
 
 ## Architecture Authority
 
@@ -43,4 +57,4 @@ Last Updated: 2026-07-08
 
 ## Duplicate Warning
 
-Do not create a new architecture layer, product operating model, workspace model, AI framework, design system, UI kit, or capability lifecycle until these files have been checked.
+Do not create a new roadmap, architecture layer, product operating model, workspace model, AI framework, design system, UI kit, or capability lifecycle until these files have been checked.
