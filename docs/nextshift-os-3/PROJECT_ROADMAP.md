@@ -29,7 +29,7 @@ Blueprint status:
 
 Current milestone:
 
-Business Brain v1.0 release
+Decision Engine v1.0 release
 
 Current architecture baseline:
 
@@ -39,6 +39,7 @@ Current product implementation baseline:
 
 - [Business Foundation v1.0](business-foundation-v1/README.md) — Released
 - [Business Brain v1.0](business-brain-v1/README.md) — Released
+- [Decision Engine v1.0](decision-engine-v1/README.md) — Released
 
 Current workflow baseline:
 
@@ -143,6 +144,7 @@ Enable AI-guided business decisions.
 
 Deliverables:
 
+- [Decision Engine v1.0](decision-engine-v1/README.md) — Released
 - Recommendation Engine
 - Strategy Engine
 - Opportunity Engine
