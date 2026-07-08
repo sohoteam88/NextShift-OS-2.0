@@ -29,11 +29,15 @@ Blueprint status:
 
 Current milestone:
 
-Repository metadata synchronization for released runtime workflows
+Business Foundation v1.0 release
 
 Current architecture baseline:
 
 - [Business Architecture v1.0](business-architecture-v1/README.md) — Architecture Frozen
+
+Current product implementation baseline:
+
+- [Business Foundation v1.0](business-foundation-v1/README.md) — Released
 
 Current workflow baseline:
 
@@ -118,6 +122,7 @@ Subordinate Business OS Phase 1 execution scope:
 
 Deliverables:
 
+- [Business Foundation v1.0](business-foundation-v1/README.md) — Released
 - Business Brain
 - Business Twin
 - Story Vault

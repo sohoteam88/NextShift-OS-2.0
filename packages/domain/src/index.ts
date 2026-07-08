@@ -25,5 +25,6 @@ export * from "./capability";
 export * from "./analytics";
 export * from "./analytics-insight-review";
 export * from "./business-brain";
+export * from "./business-foundation";
 export * from "./opportunity-evaluation";
 export * as CampaignExecutionWorkflow from "./campaign-execution";

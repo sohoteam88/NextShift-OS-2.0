@@ -1,4 +1,5 @@
 export * from "./business-brain";
+export * from "./business-foundation";
 export * from "./business-twin";
 export * from "./business-profile";
 export * from "./decision-brain";
