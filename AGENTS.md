@@ -30,6 +30,16 @@ Before executing any skill, check the `architecture_refs` field in its SKILL.md 
 
 Architecture docs location: `docs/architecture/`
 
+## Fresh ChatGPT / Codex Context
+
+For a new AI chat window that needs to understand the whole system, start with `docs/chatgpt-system-context/README.md`.
+
+Do not propose a new `Engineering Orchestrator v1.0`. The engineering authority is `docs/nextshift-os-3/engineering/ENGINEERING_PLAYBOOK.md`.
+
+Do not invent document versions. Engineering Playbook v1.2 is valid only on branches that contain the approved release/audit evidence (`6dec2e4` release and `f442e4a` audit). If the current branch still shows v1.1, treat the branch as stale for that authority and sync or inspect the target branch before advising.
+
+Before broad Markdown cleanup, duplicate-file review, or version-authority work, run `pnpm docs:audit-authority` and read `docs/nextshift-os-3/docs-hygiene/MARKDOWN_AUTHORITY_AUDIT.md`.
+
 ## Language Policy
 
 NextShift should support three languages by default:

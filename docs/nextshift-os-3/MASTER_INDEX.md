@@ -20,6 +20,11 @@ Every authoritative document should be reachable from this index.
 
 ## Recommended Reading Order
 
+For fresh AI chat windows:
+
+- [ChatGPT System Context](../chatgpt-system-context/README.md)
+- [Docs Hygiene](docs-hygiene/README.md)
+
 For first-time contributors:
 
 1. [README](README.md)
@@ -128,6 +133,14 @@ UI Kit:
 - [NextShift UI Kit v1.0](ui-kit/README.md)
 - [UI Kit Project Planning](ui-kit/PROJECT_PLANNING.md)
 - [UK-001 Design Language Planning](ui-kit/slices/UK-001-design-language/PLANNING.md)
+
+Developer Platform:
+
+- [Developer Platform](developer-platform/README.md)
+- [Developer Platform Review](developer-platform/review/DEVELOPER_PLATFORM_REVIEW.md)
+- [Automation Workflow Review](developer-platform/review/AUTOMATION_WORKFLOW_REVIEW.md)
+- [Engineering Playbook v1.2 Recommendation](developer-platform/review/ENGINEERING_PLAYBOOK_V1_2_RECOMMENDATION.md)
+- [Developer Platform v1.1 Workflow Hardening](developer-platform-v1.1/README.md)
 
 ---
 
@@ -353,6 +366,8 @@ Core:
 
 - [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
 - [Engineering Playbook](engineering/ENGINEERING_PLAYBOOK.md)
+- [Engineering Playbook v1.2](engineering-playbook-v1.2/README.md)
+- [Docs Hygiene](docs-hygiene/README.md)
 
 Implementation:
 
