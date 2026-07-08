@@ -8,7 +8,7 @@
 
 - NextShift Blueprint v1.0
 - NextShift Core Runtime v1.0
-- Engineering Playbook v1.1
+- Engineering Playbook v1.2
 - Continuous Engineering Mode (CEM v2)
 
 ### Released Foundations

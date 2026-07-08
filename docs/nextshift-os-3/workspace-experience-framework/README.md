@@ -19,7 +19,7 @@ MVP 1.0 workspace-specific standards:
 
 - NextShift Blueprint v1.0
 - NextShift Core Runtime v1.0
-- Engineering Playbook v1.1
+- Engineering Playbook v1.2
 - Continuous Engineering Mode v2
 - NextShift Standards v1.0 (Released)
 - NextShift Design System v1.0 (Released)

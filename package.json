@@ -19,6 +19,7 @@
     "artifact:generate": "tsx scripts/generate-artifact-package.ts",
     "chat:prepare": "tsx scripts/prepare-chat-bootstrap.ts",
     "engineering:prepare": "pnpm chat:prepare",
+    "docs:audit-authority": "tsx scripts/audit-markdown-authority.ts",
     "docs:links": "tsx scripts/validate-doc-links.ts",
     "docs:navigation": "tsx scripts/validate-navigation-consistency.ts",
     "project:closure-package": "tsx scripts/generate-project-closure-package.ts",

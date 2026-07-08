@@ -6,6 +6,7 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 
 ## Start Here
 
+- [System Authority](system-authority/README.md)
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
 - [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
 - [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
@@ -91,6 +92,7 @@ Foundation documents:
 
 ## Governance
 
+- [System Authority](system-authority/README.md)
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
 - [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
 - [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)

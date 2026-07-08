@@ -24,7 +24,7 @@ The objective is to document how components should be selected, composed, and re
 
 - NextShift Blueprint v1.0
 - NextShift Core Runtime v1.0
-- Engineering Playbook v1.1
+- Engineering Playbook v1.2
 - Continuous Engineering Mode (CEM v2)
 - NextShift Design System v1.0 (Released)
 - UK-001 Design Language (Released)

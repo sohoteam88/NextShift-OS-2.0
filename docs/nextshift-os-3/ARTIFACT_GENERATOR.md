@@ -18,7 +18,7 @@ AG-001 is a packaging utility. It does not define lifecycle policy, approve rele
 
 For lifecycle usage, handoff flow, and generator operating rules, see [Engineering Automation](engineering/ENGINEERING_AUTOMATION.md).
 
-The engineering lifecycle authority remains [Engineering Playbook v1.1](engineering/ENGINEERING_PLAYBOOK.md).
+The engineering lifecycle authority remains [Engineering Playbook v1.2](engineering/ENGINEERING_PLAYBOOK.md).
 
 ---
 

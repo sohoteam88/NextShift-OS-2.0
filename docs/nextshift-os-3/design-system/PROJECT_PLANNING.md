@@ -14,7 +14,7 @@ NextShift Design System v1.0 is a platform foundation project that establishes a
 
 - Blueprint v1.0
 - Core Runtime v1.0
-- Engineering Playbook v1.1
+- Engineering Playbook v1.2
 - Continuous Engineering Mode v2
 
 Reference platforms:

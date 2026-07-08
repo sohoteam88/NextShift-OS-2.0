@@ -22,11 +22,12 @@ Every authoritative document should be reachable from this index.
 
 For first-time contributors:
 
-1. [README](README.md)
-2. [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
-3. [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
-4. [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md)
-5. [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
+1. [System Authority](system-authority/README.md)
+2. [README](README.md)
+3. [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
+4. [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
+5. [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md)
+6. [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
 6. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
 7. [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 8. [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
@@ -170,6 +171,7 @@ For first-time contributors:
 115. [AG-003 Approval Record](developer-platform/slices/AG-003-engineering-playbook-automation-extension/APPROVAL_RECORD.md)
 116. [AG-003 Release Summary](developer-platform/slices/AG-003-engineering-playbook-automation-extension/RELEASE_SUMMARY.md)
 117. [Project Status](PROJECT_STATUS.md)
+118. [System Authority](system-authority/README.md)
 118. [Blueprint Status](BLUEPRINT_STATUS.md)
 119. [NextShift Reference Architecture](phase-2-architecture/NEXTSHIFT_REFERENCE_ARCHITECTURE.md)
 120. [Runtime Status](RUNTIME_STATUS.md)

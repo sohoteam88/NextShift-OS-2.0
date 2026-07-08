@@ -10,7 +10,7 @@
 
 - NextShift Blueprint v1.0
 - NextShift Core Runtime v1.0
-- NextShift Engineering Playbook v1.1
+- NextShift Engineering Playbook v1.2
 - Continuous Engineering Mode v2
 - NextShift Design System v1.0 (Released)
 - UK-001 Design Language v1.0.0 (Released)

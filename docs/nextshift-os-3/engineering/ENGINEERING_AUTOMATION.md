@@ -23,7 +23,7 @@ This guide covers:
 
 ## Authority
 
-[Engineering Playbook v1.1](ENGINEERING_PLAYBOOK.md) remains the lifecycle authority.
+[Engineering Playbook v1.2](ENGINEERING_PLAYBOOK.md) remains the lifecycle authority.
 
 This guide is operational documentation. It does not define lifecycle policy, approve release state, or replace:
 
