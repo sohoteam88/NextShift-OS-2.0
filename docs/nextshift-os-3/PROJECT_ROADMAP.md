@@ -29,7 +29,7 @@ Blueprint status:
 
 Current milestone:
 
-Conversation Engine v1.0 release
+Creative Studio v1.0 release
 
 Current architecture baseline:
 
@@ -41,6 +41,7 @@ Current product implementation baseline:
 - [Business Brain v1.0](business-brain-v1/README.md) — Released
 - [Decision Engine v1.0](decision-engine-v1/README.md) — Released
 - [Conversation Engine v1.0](conversation-engine-v1/README.md) — Released
+- [Creative Studio v1.0](creative-studio-v1/README.md) — Released
 
 Current workflow baseline:
 
@@ -152,6 +153,7 @@ Deliverables:
 - Risk Engine
 - Priority Engine
 - [Conversation Engine v1.0](conversation-engine-v1/README.md) — Released
+- [Creative Studio v1.0](creative-studio-v1/README.md) — Released
 
 Primary success metric:
 

@@ -34,7 +34,8 @@ For first-time contributors:
 10. [Business Brain v1.0 - Released](business-brain-v1/README.md)
 11. [Decision Engine v1.0 - Released](decision-engine-v1/README.md)
 12. [Conversation Engine v1.0 - Released](conversation-engine-v1/README.md)
-13. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+13. [Creative Studio v1.0 - Released](creative-studio-v1/README.md)
+14. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
 7. [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 8. [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 9. [AI Bootstrap Framework](ai/README.md)
@@ -146,6 +147,17 @@ For first-time contributors:
 115. [CE-001 Release Checklist](conversation-engine-v1/RELEASE_CHECKLIST.md)
 116. [CE-001 Approval Record](conversation-engine-v1/APPROVAL_RECORD.md)
 117. [CE-001 Release Summary](conversation-engine-v1/RELEASE_SUMMARY.md)
+118. [CS-001 Creative Studio v1.0 - Released](creative-studio-v1/README.md)
+119. [CS-001 Project Planning](creative-studio-v1/PROJECT_PLANNING.md)
+120. [CS-001 Implementation Contract](creative-studio-v1/IMPLEMENTATION_CONTRACT.md)
+121. [CS-001 Execution Task](creative-studio-v1/EXECUTION_TASK.md)
+122. [CS-001 Implementation Report](creative-studio-v1/IMPLEMENTATION_REPORT.md)
+123. [CS-001 Requirements Verification](creative-studio-v1/REQUIREMENTS_VERIFICATION.md)
+124. [CS-001 Repository Audit Contract](creative-studio-v1/REPOSITORY_AUDIT_CONTRACT.md)
+125. [CS-001 Release Notes](creative-studio-v1/RELEASE_NOTES.md)
+126. [CS-001 Release Checklist](creative-studio-v1/RELEASE_CHECKLIST.md)
+127. [CS-001 Approval Record](creative-studio-v1/APPROVAL_RECORD.md)
+128. [CS-001 Release Summary](creative-studio-v1/RELEASE_SUMMARY.md)
 25. [Runtime Platform v1.0](runtime-platform/README.md)
 26. [RP-001 Runtime Kernel Foundation](runtime-platform/slices/RP-001-runtime-kernel-foundation/README.md)
 27. [RP-001 Release Notes](runtime-platform/slices/RP-001-runtime-kernel-foundation/RELEASE_NOTES.md)
@@ -282,6 +294,9 @@ After completing the above:
 | Runtime Workflows    | WF-001 Released · WF-002 Released · WF-003 Released · WF-004 Released · WF-005 Released · WF-006 Released · WF-007 Released |
 | Business Foundation  | BF-001 Released |
 | Business Brain       | BB-001 Released |
+| Decision Engine      | DE-001 Released |
+| Conversation Engine  | CE-001 Released |
+| Creative Studio      | CS-001 Released |
 | Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released · BOS-008 Released · Business OS v1.0 Release Package Audited (Pass) |
 | Design System        | Released        |
 | UI Kit               | Released        |
