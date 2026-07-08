@@ -84,6 +84,8 @@ export default function SignupPage() {
     setError('');
 
     const normalizedSlug = slug.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+    const registrationIntent = crypto.randomUUID();
     if (slugState === 'taken') {
       setError(slugSuggestion ? `团队 URL 已被占用，建议使用 ${slugSuggestion}` : '团队 URL 已被占用');
       setLoading(false);
@@ -92,10 +94,15 @@ export default function SignupPage() {
 
     const supabase = createClient();
     const { error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/login`,
+        data: {
+          name,
+          tenant_slug: normalizedSlug,
+          registration_intent: registrationIntent,
+        },
       },
     });
 
@@ -113,6 +120,8 @@ export default function SignupPage() {
         slug: normalizedSlug,
         plan,
         owner_name: name,
+        email: normalizedEmail,
+        registration_intent: registrationIntent,
       }),
     });
 

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { createClient } from '@/lib/supabase/client';
 
 type InviteData = {
   tenantId: string;
@@ -61,13 +62,36 @@ export function JoinInviteForm({ code }: { code: string }) {
     setLoading(true);
     setError('');
 
+    const normalizedEmail = email.trim().toLowerCase();
+    const supabase = createClient();
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+        data: {
+          name,
+          phone,
+          whatsapp: whatsappSameAsPhone ? phone : whatsapp,
+          preferred_language: language,
+          invite_code: code,
+        },
+      },
+    });
+
+    if (signUpError && !signUpError.message.toLowerCase().includes('already')) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
     const response = await fetch('/api/v1/member/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         invite_code: code,
         name,
-        email,
+        email: normalizedEmail,
         password,
         phone: phone || undefined,
         whatsapp: whatsappSameAsPhone ? phone || undefined : whatsapp || undefined,

@@ -10,24 +10,31 @@ const TenantRegisterSchema = z.object({
   slug: z.string().min(3).max(30).regex(/^[a-z0-9-]+$/, 'Only lowercase letters, numbers, and hyphens'),
   plan: z.enum(['starter', 'growth', 'pro']).default('starter'),
   owner_name: z.string().min(1).max(100),
+  email: z.string().email().optional(),
+  registration_intent: z.string().uuid().optional(),
 });
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.json();
+    const input = TenantRegisterSchema.parse(body);
     const supabase = await createServerSupabaseClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    const fallbackUser = user
+      ? null
+      : await findRecentSignupUser(input.email, input.registration_intent);
+    const authUser = user ?? fallbackUser;
+
+    if (!authUser) {
       return NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Authentication required' } },
         { status: 401 },
       );
     }
 
-    const body = await request.json();
-    const input = TenantRegisterSchema.parse(body);
     const slug = normalizeSlug(input.slug);
 
     if (!slug) {
@@ -65,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     const existingUser = await prisma.user.findFirst({
-      where: { id: user.id },
+      where: { id: authUser.id },
     });
 
     if (existingUser) {
@@ -79,8 +86,8 @@ export async function POST(request: NextRequest) {
       name: input.name,
       slug,
       plan: input.plan,
-      ownerId: user.id,
-      ownerEmail: user.email!,
+      ownerId: authUser.id,
+      ownerEmail: authUser.email!,
       ownerName: input.owner_name,
     });
 
@@ -109,4 +116,22 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+async function findRecentSignupUser(email?: string, registrationIntent?: string) {
+  if (!email || !registrationIntent) return null;
+
+  const rows = await prisma.$queryRaw<Array<{ id: string; email: string | null }>>`
+    select id::text, email::text
+    from auth.users
+    where lower(email) = lower(${email})
+      and raw_user_meta_data ->> 'registration_intent' = ${registrationIntent}
+      and created_at > now() - interval '30 minutes'
+    order by created_at desc
+    limit 1
+  `;
+
+  const row = rows[0];
+  if (!row?.id || !row.email) return null;
+  return { id: row.id, email: row.email };
 }

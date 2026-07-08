@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { DashboardProjection } from '../adapters/DashboardProjectionAdapter';
 import type { Mission, MissionStage } from '@/modules/mission-engine/types/mission.types';
 
+const DASHBOARD_PROJECTION_TIMEOUT_MS = 12_000;
+
 function toMissionStage(stage: string): MissionStage {
   const stages: MissionStage[] = [
     'brand_foundation',
@@ -44,12 +46,22 @@ export function useDashboardMission() {
   const projection = useQuery({
     queryKey: ['dashboard-projection'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/dashboard/projection');
-      if (!res.ok) throw new Error('Failed to load dashboard projection');
-      const json = await res.json() as { data: DashboardProjection };
-      return json.data;
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), DASHBOARD_PROJECTION_TIMEOUT_MS);
+
+      try {
+        const res = await fetch('/api/v1/dashboard/projection', {
+          signal: controller.signal,
+        });
+        if (!res.ok) throw new Error('Failed to load dashboard projection');
+        const json = await res.json() as { data: DashboardProjection };
+        return json.data;
+      } finally {
+        window.clearTimeout(timeout);
+      }
     },
     staleTime: 60_000,
+    retry: 1,
   });
 
   const data = projection.data;
