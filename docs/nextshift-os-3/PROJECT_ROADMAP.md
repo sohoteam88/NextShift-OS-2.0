@@ -29,7 +29,7 @@ Blueprint status:
 
 Current milestone:
 
-Decision Engine v1.0 release
+Conversation Engine v1.0 release
 
 Current architecture baseline:
 
@@ -40,6 +40,7 @@ Current product implementation baseline:
 - [Business Foundation v1.0](business-foundation-v1/README.md) — Released
 - [Business Brain v1.0](business-brain-v1/README.md) — Released
 - [Decision Engine v1.0](decision-engine-v1/README.md) — Released
+- [Conversation Engine v1.0](conversation-engine-v1/README.md) — Released
 
 Current workflow baseline:
 
@@ -150,7 +151,7 @@ Deliverables:
 - Opportunity Engine
 - Risk Engine
 - Priority Engine
-- Conversation Engine
+- [Conversation Engine v1.0](conversation-engine-v1/README.md) — Released
 
 Primary success metric:
 

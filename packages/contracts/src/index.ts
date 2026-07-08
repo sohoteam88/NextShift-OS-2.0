@@ -2,6 +2,7 @@ export * from "./business-brain";
 export * from "./business-brain-v1";
 export * from "./business-foundation";
 export * from "./decision-engine-v1";
+export * from "./conversation-engine-v1";
 export * from "./business-twin";
 export * from "./business-profile";
 export * from "./decision-brain";
