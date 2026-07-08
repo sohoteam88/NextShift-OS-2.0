@@ -31,6 +31,10 @@ Current milestone:
 
 Repository metadata synchronization for released runtime workflows
 
+Current architecture baseline:
+
+- [Business Architecture v1.0](business-architecture-v1/README.md) — Architecture Frozen
+
 Current workflow baseline:
 
 - [Workflow Status](WORKFLOW_STATUS.md)
