@@ -19,10 +19,11 @@ This folder does not replace the source documents it references. It prevents new
 ## Read Order
 
 1. [Important MD Folder](important-md/README.md)
-2. [Iron Laws](IRON_LAWS.md)
-3. [Entry Points](ENTRYPOINTS.md)
-4. [Protected Files](PROTECTED_FILES.md)
-5. [Change Control](CHANGE_CONTROL.md)
+2. [Authority Boundaries](AUTHORITY_BOUNDARIES.md)
+3. [Iron Laws](IRON_LAWS.md)
+4. [Entry Points](ENTRYPOINTS.md)
+5. [Protected Files](PROTECTED_FILES.md)
+6. [Change Control](CHANGE_CONTROL.md)
 
 After that, read the source files linked from [Entry Points](ENTRYPOINTS.md).
 

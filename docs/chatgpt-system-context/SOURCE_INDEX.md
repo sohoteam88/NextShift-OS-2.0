@@ -8,6 +8,7 @@ Use these original files as source of truth.
 - `docs/nextshift-os-3/system-authority/important-md/README.md`
 - `docs/nextshift-os-3/system-authority/important-md/00_CANONICAL_INDEX.md`
 - `docs/nextshift-os-3/system-authority/important-md/01_DO_NOT_DUPLICATE.md`
+- `docs/nextshift-os-3/system-authority/AUTHORITY_BOUNDARIES.md`
 - `docs/nextshift-os-3/system-authority/IRON_LAWS.md`
 - `docs/nextshift-os-3/system-authority/ENTRYPOINTS.md`
 - `docs/nextshift-os-3/system-authority/PROTECTED_FILES.md`
