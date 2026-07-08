@@ -21,6 +21,7 @@ export * from "./decision";
 export * from "./decision-engine-v1";
 export * from "./conversation-engine-v1";
 export * from "./creative-studio-v1";
+export * from "./growth-revenue-v1";
 export * from "./execution";
 export * from "./learning";
 export * from "./agent";

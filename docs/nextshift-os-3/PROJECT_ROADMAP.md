@@ -29,7 +29,7 @@ Blueprint status:
 
 Current milestone:
 
-Creative Studio v1.0 release
+Growth & Revenue v1.0 release
 
 Current architecture baseline:
 
@@ -42,6 +42,7 @@ Current product implementation baseline:
 - [Decision Engine v1.0](decision-engine-v1/README.md) — Released
 - [Conversation Engine v1.0](conversation-engine-v1/README.md) — Released
 - [Creative Studio v1.0](creative-studio-v1/README.md) — Released
+- [Growth & Revenue v1.0](growth-revenue-v1/README.md) — Released
 
 Current workflow baseline:
 
@@ -154,6 +155,7 @@ Deliverables:
 - Priority Engine
 - [Conversation Engine v1.0](conversation-engine-v1/README.md) — Released
 - [Creative Studio v1.0](creative-studio-v1/README.md) — Released
+- [Growth & Revenue v1.0](growth-revenue-v1/README.md) — Released
 
 Primary success metric:
 

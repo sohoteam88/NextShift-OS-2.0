@@ -35,7 +35,8 @@ For first-time contributors:
 11. [Decision Engine v1.0 - Released](decision-engine-v1/README.md)
 12. [Conversation Engine v1.0 - Released](conversation-engine-v1/README.md)
 13. [Creative Studio v1.0 - Released](creative-studio-v1/README.md)
-14. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+14. [Growth & Revenue v1.0 - Released](growth-revenue-v1/README.md)
+15. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
 7. [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 8. [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 9. [AI Bootstrap Framework](ai/README.md)
@@ -158,6 +159,17 @@ For first-time contributors:
 126. [CS-001 Release Checklist](creative-studio-v1/RELEASE_CHECKLIST.md)
 127. [CS-001 Approval Record](creative-studio-v1/APPROVAL_RECORD.md)
 128. [CS-001 Release Summary](creative-studio-v1/RELEASE_SUMMARY.md)
+129. [GR-001 Growth & Revenue v1.0 - Released](growth-revenue-v1/README.md)
+130. [GR-001 Project Planning](growth-revenue-v1/PROJECT_PLANNING.md)
+131. [GR-001 Implementation Contract](growth-revenue-v1/IMPLEMENTATION_CONTRACT.md)
+132. [GR-001 Execution Task](growth-revenue-v1/EXECUTION_TASK.md)
+133. [GR-001 Implementation Report](growth-revenue-v1/IMPLEMENTATION_REPORT.md)
+134. [GR-001 Requirements Verification](growth-revenue-v1/REQUIREMENTS_VERIFICATION.md)
+135. [GR-001 Repository Audit Contract](growth-revenue-v1/REPOSITORY_AUDIT_CONTRACT.md)
+136. [GR-001 Release Notes](growth-revenue-v1/RELEASE_NOTES.md)
+137. [GR-001 Release Checklist](growth-revenue-v1/RELEASE_CHECKLIST.md)
+138. [GR-001 Approval Record](growth-revenue-v1/APPROVAL_RECORD.md)
+139. [GR-001 Release Summary](growth-revenue-v1/RELEASE_SUMMARY.md)
 25. [Runtime Platform v1.0](runtime-platform/README.md)
 26. [RP-001 Runtime Kernel Foundation](runtime-platform/slices/RP-001-runtime-kernel-foundation/README.md)
 27. [RP-001 Release Notes](runtime-platform/slices/RP-001-runtime-kernel-foundation/RELEASE_NOTES.md)
@@ -297,6 +309,7 @@ After completing the above:
 | Decision Engine      | DE-001 Released |
 | Conversation Engine  | CE-001 Released |
 | Creative Studio      | CS-001 Released |
+| Growth & Revenue     | GR-001 Released |
 | Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released · BOS-008 Released · Business OS v1.0 Release Package Audited (Pass) |
 | Design System        | Released        |
 | UI Kit               | Released        |
