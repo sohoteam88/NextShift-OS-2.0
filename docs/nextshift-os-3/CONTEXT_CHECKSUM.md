@@ -34,14 +34,14 @@ This file is excluded from the combined checksum to avoid self-referential check
 | File | SHA-256 |
 | --- | --- |
 | [Project Context](PROJECT_CONTEXT.md) | `9cd1ec00e869b8882995eff40ca8787bfd18c4a71d4bbd6e959df3fcacae0900` |
-| [Repository Status](REPOSITORY_STATUS.md) | `25d3fa8b59ec20a6eaf70980521f5f3f11c7956ca1103536bc46fed445cb1af6` |
-| [Next Action](NEXT_ACTION.md) | `0bcd04c830c9f5e046c3968033f6f33ffed7c95a436e3f8559c8eafb9c94f4e2` |
-| [AI Handover](AI_HANDOVER.md) | `36a69bb4da1fcbdad578e2cf6d524ffa02838775713a9aa69c83f1ef53cd96f8` |
+| [Repository Status](REPOSITORY_STATUS.md) | `c631102fffac7cff25bc096ed9a0a2fd6142e83e3e32208826da0ffefda8a739` |
+| [Next Action](NEXT_ACTION.md) | `6ed9f6c1d6f00ec02196e3edb74e302847a536f174ff6adfdb90314d9bf31810` |
+| [AI Handover](AI_HANDOVER.md) | `c6367ac6a015abccd607f6a517511fe3666c92bc6482fd3a8ecbf0dd633e18c1` |
 
 Package checksum over the checksum manifest above:
 
 ```text
-db67f4d5b99a5babf5338ff2ea8355bf77f334c89030046cc8502b2dec32df32
+777d5f258c57d3209e48356a9e75b1f4cf74e7f52e7ada63a5601130be7204ef
 ```
 
 ---
