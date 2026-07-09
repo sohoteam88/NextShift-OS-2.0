@@ -26,6 +26,7 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 - [Blueprint Status](BLUEPRINT_STATUS.md)
 - [Runtime Status](RUNTIME_STATUS.md)
 - [Runtime Platform v1.0](runtime-platform/README.md)
+- [OS 3.3 Runtime Readiness Report](runtime-review/OS33_RUNTIME_READINESS_REPORT.md)
 - [Capability Status](CAPABILITY_STATUS.md)
 - [Capabilities](capabilities/README.md)
 - [Design System](design-system/README.md)
@@ -87,6 +88,9 @@ Foundation documents:
 ## Platform Projects
 
 - [Runtime Platform v1.0](runtime-platform/README.md)
+- [OS 3.3 Runtime Readiness Report](runtime-review/OS33_RUNTIME_READINESS_REPORT.md)
+- [OS 3.3 Integration Priority](runtime-review/INTEGRATION_PRIORITY.md)
+- [OS 3.3 Runtime Integration Roadmap](runtime-review/RUNTIME_INTEGRATION_ROADMAP.md)
 - [NextShift Design System v1.0](design-system/README.md)
 - [NextShift UI Kit v1.0](ui-kit/README.md)
 
