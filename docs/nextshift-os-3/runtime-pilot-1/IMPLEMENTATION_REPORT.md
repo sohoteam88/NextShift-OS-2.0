@@ -24,6 +24,14 @@ The implementation adds a thin adapter between Revenue Driver UI intent resoluti
 
 ---
 
+## Code Review Archive
+
+The Claude Code Review report for Pilot 1 is archived at:
+
+- [OS 3.3 Pilot 1 Runtime Revenue Adapter Code Review Report](CODE_REVIEW_REPORT.md)
+
+---
+
 ## Implemented Files
 
 - `src/modules/revenue-drivers/runtime/RevenueRuntimeAdapter.ts`
