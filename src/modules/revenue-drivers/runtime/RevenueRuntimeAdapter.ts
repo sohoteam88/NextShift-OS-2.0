@@ -9,7 +9,7 @@ import {
   type RuntimeContext,
   type RuntimeDiagnostics,
   type RuntimeEvent,
-} from '../../../../packages/runtime/src/index';
+} from '@nextshift/runtime';
 import {
   resolveRevenueDriverIntent,
   type RevenueDriverIntentResolution,
@@ -35,6 +35,7 @@ export type RevenueRuntimeMetadata = {
   diagnosticsId?: string;
   diagnosticsStatus?: RevenueRuntimeDiagnosticsStatus;
   warning?: 'runtime-adapter-fallback' | 'runtime-adapter-invalid-output';
+  errorKind?: string;
 };
 
 export type ResolveRevenueRuntimeInput = {
@@ -58,6 +59,7 @@ type RuntimeArtifacts = {
 };
 
 type RevenueRuntimeLogger = Pick<Console, 'warn'>;
+type RevenueRuntimeWarning = NonNullable<RevenueRuntimeMetadata['warning']>;
 
 type RevenueRuntimeAdapterDependencies = {
   isEnabled?: () => boolean;
@@ -128,9 +130,16 @@ export function resolveRevenueRuntimeIntent(
     }
 
     return { resolution, runtime };
-  } catch {
-    warnRuntimeFallback(dependencies.logger, input, resolution, 'runtime-adapter-fallback');
-    return legacyRuntimeFallback(resolution, input.source, confidence, 'runtime-adapter-fallback');
+  } catch (error) {
+    const errorKind = classifyRuntimeAdapterError(error);
+    warnRuntimeFallback(dependencies.logger, input, resolution, 'runtime-adapter-fallback', errorKind);
+    return legacyRuntimeFallback(
+      resolution,
+      input.source,
+      confidence,
+      'runtime-adapter-fallback',
+      errorKind,
+    );
   }
 }
 
@@ -242,6 +251,14 @@ function confidenceForResolution(resolution: RevenueDriverIntentResolution) {
   return 0;
 }
 
+function classifyRuntimeAdapterError(error: unknown) {
+  if (error instanceof Error && error.constructor.name.trim()) {
+    return error.constructor.name;
+  }
+
+  return 'unknown';
+}
+
 function isRuntimeMetadataComplete(runtime: RevenueRuntimeMetadata) {
   return Boolean(
     runtime.contextId &&
@@ -259,19 +276,24 @@ function legacyRuntimeFallback(
   resolution: RevenueDriverIntentResolution,
   source: RevenueRuntimeSource,
   confidence: number,
-  warning: RevenueRuntimeMetadata['warning'],
+  warning: RevenueRuntimeWarning,
+  errorKind?: string,
 ): ResolveRevenueRuntimeOutput {
+  const runtime: RevenueRuntimeMetadata = {
+    enabled: true,
+    mode: 'legacy',
+    source,
+    fallback: true,
+    confidence,
+    diagnosticsStatus: 'degraded',
+    warning,
+  };
+
+  if (errorKind) runtime.errorKind = errorKind;
+
   return {
     resolution,
-    runtime: {
-      enabled: true,
-      mode: 'legacy',
-      source,
-      fallback: true,
-      confidence,
-      diagnosticsStatus: 'degraded',
-      warning,
-    },
+    runtime,
   };
 }
 
@@ -279,13 +301,18 @@ function warnRuntimeFallback(
   logger: RevenueRuntimeLogger | undefined,
   input: ResolveRevenueRuntimeInput,
   resolution: RevenueDriverIntentResolution,
-  warning: RevenueRuntimeMetadata['warning'],
+  warning: RevenueRuntimeWarning,
+  errorKind?: string,
 ) {
-  (logger ?? console).warn('[revenue-runtime-adapter] falling back to legacy resolver', {
+  const payload: Record<string, string | null> = {
     warning,
     route: input.route,
     intent: input.intent ?? null,
     status: resolution.status,
     source: input.source,
-  });
+  };
+
+  if (errorKind) payload.errorKind = errorKind;
+
+  (logger ?? console).warn('[revenue-runtime-adapter] falling back to legacy resolver', payload);
 }

@@ -94,12 +94,36 @@ No env files were modified.
 Runtime fallback is explicit and safe:
 
 - Runtime construction exceptions are caught.
+- Runtime construction exceptions are classified by safe `errorKind` only.
 - Incomplete runtime metadata is treated as invalid runtime output.
 - Adapter logs a safe warning with normalized fields only.
 - Legacy resolver output is returned.
 - Fallback metadata includes `fallback: true`, `mode: legacy`, and `diagnosticsStatus: degraded`.
 
-The warning does not include tokens, passwords, raw cookies, raw headers, API keys, credentials, or full user or tenant payloads.
+The warning does not include tokens, passwords, raw cookies, raw headers, API keys, credentials, tenant IDs, user IDs, raw error messages, stack traces, or full user or tenant payloads.
+
+---
+
+## Runtime Metadata Contract
+
+Runtime metadata has two boundaries:
+
+1. Internal runtime context metadata.
+2. UI-facing adapter metadata.
+
+`tenantId` and `userId` may exist only in internal runtime context metadata when needed for runtime isolation, correlation, or future server-side observability.
+
+`tenantId` and `userId` must not be returned through UI-facing `RevenueRuntimeMetadata`.
+
+`tenantId` and `userId` must not be logged by adapter fallback warnings.
+
+Future Runtime Capability Adapters must preserve this boundary:
+
+- tenant and user identifiers may be passed to runtime primitives only through explicit internal metadata fields.
+- tenant and user identifiers must not be copied into UI metadata.
+- tenant and user identifiers must not be copied into fallback warning logs.
+- fallback warning logs may include only safe classification fields such as `errorKind`.
+- fallback warning logs must not include raw error messages or stack traces.
 
 ---
 
@@ -120,6 +144,8 @@ Coverage:
 - runtime construction failure falls back to legacy path
 - incomplete runtime artifacts fall back to legacy path
 - runtime metadata avoids forbidden secret-like keys
+- non-`true` feature flag values remain OFF
+- fallback warning includes safe `errorKind` only and excludes tenant/user identifiers
 
 Existing Revenue Driver tests remain unchanged.
 

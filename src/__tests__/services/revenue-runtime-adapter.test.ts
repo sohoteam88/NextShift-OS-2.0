@@ -45,6 +45,27 @@ describe('RevenueRuntimeAdapter', () => {
     });
   });
 
+  it.each(['false', 'FALSE', 'True', '1', '0', ''])(
+    'treats %s as flag OFF',
+    (flagValue) => {
+      setRuntimeRevenueFlag(flagValue);
+
+      const output = resolveRevenueRuntimeIntent({
+        route: '/content-engine',
+        intent: 'facebook-post',
+        source: 'deep-link',
+      });
+
+      expect(output.runtime).toMatchObject({
+        enabled: false,
+        mode: 'legacy',
+        fallback: false,
+      });
+      expect(output.runtime.contextId).toBeUndefined();
+      expect(output.runtime.correlationId).toBeUndefined();
+    },
+  );
+
   it('creates runtime metadata when the runtime revenue flag is ON', () => {
     setRuntimeRevenueFlag('true');
 
@@ -114,6 +135,8 @@ describe('RevenueRuntimeAdapter', () => {
       route: '/content-engine',
       intent: 'facebook-post',
       source: 'deep-link',
+      tenantId: 'tenant_1',
+      userId: 'user_1',
     }, {
       isEnabled: () => true,
       createRuntimeArtifacts: () => {
@@ -132,17 +155,23 @@ describe('RevenueRuntimeAdapter', () => {
       fallback: true,
       diagnosticsStatus: 'degraded',
       warning: 'runtime-adapter-fallback',
+      errorKind: 'Error',
     });
     expect(warn).toHaveBeenCalledWith(
       '[revenue-runtime-adapter] falling back to legacy resolver',
       expect.objectContaining({
         warning: 'runtime-adapter-fallback',
+        errorKind: 'Error',
         route: '/content-engine',
         intent: 'facebook-post',
         status: 'resolved',
         source: 'deep-link',
       }),
     );
+    expect(warn.mock.calls[0]?.[1]).not.toHaveProperty('tenantId');
+    expect(warn.mock.calls[0]?.[1]).not.toHaveProperty('userId');
+    expect(warn.mock.calls[0]?.[1]).not.toHaveProperty('message');
+    expect(warn.mock.calls[0]?.[1]).not.toHaveProperty('stack');
   });
 
   it('falls back when injected runtime artifacts produce incomplete metadata', () => {
