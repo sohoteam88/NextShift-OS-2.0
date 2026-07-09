@@ -16,7 +16,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -34,8 +34,8 @@ It routes humans and AI assistants to the current repository state, next action,
 | --- | --- |
 | Project | NextShift OS |
 | Repository | `sohoteam88/NextShift-OS-2.0` |
-| Current Branch | `planning/os-3.1-mvp-governance` |
-| Current Context Package | OS 3.2 Developer Platform context package |
+| Current Branch | `planning/os-3.3-runtime-platform` |
+| Current Context Package | OS 3.3 Runtime Platform context package |
 | Context Authority | This document |
 | Production Baseline | OS 3.1 RC1 production baseline remains governed by [Project Status](../PROJECT_STATUS.md) |
 
@@ -70,7 +70,7 @@ Then load only task-relevant supporting records:
 | Repository synchronization | RM-001 metadata synchronization and audit complete | [Workflow Status](../WORKFLOW_STATUS.md) |
 | Workflow baseline | WF-001 through WF-007 released and audited | [Workflow Releases](../WORKFLOW_RELEASES.md) |
 | Capability baseline | CAP-001 frozen; CAP-002, CAP-003, and CAP-004 released; CAP-005 in implementation | [Capability Status](../CAPABILITY_STATUS.md) |
-| Developer platform release | OS 3.2 Developer Platform prepared for production approval | [OS 3.2 Developer Platform Release](../releases/OS_3_2_DEVELOPER_PLATFORM/README.md) |
+| Developer platform release | OS 3.2 Developer Platform records remain historical; current planning branch is OS 3.3 Runtime Platform | [OS 3.2 Developer Platform Release](../releases/OS_3_2_DEVELOPER_PLATFORM/README.md) |
 | Repository status | Current branch and working tree state captured separately | [Repository Status](../REPOSITORY_STATUS.md) |
 | Immediate next action | Maintained separately to avoid stale conversation context | [Next Action](../NEXT_ACTION.md) |
 | AI continuation | Maintained separately for handoff between sessions | [AI Handover](../AI_HANDOVER.md) |
@@ -103,7 +103,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -120,23 +120,21 @@ This file supports [Project Context](../PROJECT_CONTEXT.md) and does not replace
 | Field | Current State |
 | --- | --- |
 | Repository Remote | `https://github.com/sohoteam88/NextShift-OS-2.0.git` |
-| Current Branch | `planning/os-3.1-mvp-governance` |
-| Current HEAD | `4663ea85417b396e02f5e7e7b24806b7602c5966` |
-| Latest Commit | `4663ea8 audit(deployment): review deployment readiness` |
-| Repository Mode | OS 3.2 Developer Platform release preparation |
-| Runtime Code Changes In OS 3.2 Release Preparation | None |
+| Current Branch | `planning/os-3.3-runtime-platform` |
+| Current HEAD | `1f91c18af2f223275f152b615f70d9bb3672fa76` |
+| Latest Commit | `1f91c18 docs(product-intelligence): freeze product intelligence v1.0` |
+| Repository Mode | OS 3.3 Runtime Platform planning branch alignment |
+| Runtime Code Changes In OS 3.3 Planning Branch | Runtime and package-layer planning artifacts are present on the planning branch and are not production deployment changes |
 
 ---
 
 ## Current Working Tree Context
 
-Current release preparation introduces documentation-only OS 3.2 Developer Platform release artifacts:
+Current planning branch context includes OS 3.3 Runtime Platform, Business Architecture, Business Foundation, Business Brain, Decision Engine, Conversation Engine, Creative Studio, Growth & Revenue, Business Command Center, and Product Intelligence planning artifacts.
 
-- [OS 3.2 Developer Platform Release](../releases/OS_3_2_DEVELOPER_PLATFORM/README.md)
-- [OS 3.2 Release Manifest](../releases/OS_3_2_DEVELOPER_PLATFORM/RELEASE_MANIFEST.md)
-- [OS 3.2 Final Verification](../releases/OS_3_2_DEVELOPER_PLATFORM/FINAL_VERIFICATION.md)
+Status documentation repair for Phase 1 must not modify Prisma, env, deployment configuration, runtime packages, tags, or release promotion state.
 
-No runtime code, package code, migrations, or deployment files are part of OS 3.2 release preparation.
+Production remains governed separately by release governance and the deployed production baseline in [Project Status](../PROJECT_STATUS.md).
 
 ---
 
@@ -174,7 +172,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -188,15 +186,15 @@ This file is maintained by [Project Context](../PROJECT_CONTEXT.md) and is inten
 
 ## Current Next Action
 
-Complete OS 3.2 Developer Platform release package audit and production approval decision.
+Complete CODEX execution plan Phase 1 status documentation repair.
 
 Required validation:
 
-1. Confirm the [OS 3.2 release package](../releases/OS_3_2_DEVELOPER_PLATFORM/README.md) is complete.
-2. Confirm [Final Verification](../releases/OS_3_2_DEVELOPER_PLATFORM/FINAL_VERIFICATION.md) reflects current validation evidence.
-3. Confirm [Tag Preparation](../releases/OS_3_2_DEVELOPER_PLATFORM/TAG_PREPARATION.md) is prepared but no tag has been created.
-4. Confirm [Project Context](../PROJECT_CONTEXT.md), [Repository Status](../REPOSITORY_STATUS.md), [AI Handover](../AI_HANDOVER.md), and [Context Checksum](../CONTEXT_CHECKSUM.md) are current.
-5. Run repository documentation validation required by the active task.
+1. Confirm [Project Context](../PROJECT_CONTEXT.md), [Repository Status](../REPOSITORY_STATUS.md), [AI Handover](../AI_HANDOVER.md), and [Context Checksum](../CONTEXT_CHECKSUM.md) point to `planning/os-3.3-runtime-platform`.
+2. Confirm current status documents no longer identify the previous planning branch as the active planning branch.
+3. Run `pnpm docs:links`.
+4. Run `pnpm docs:navigation`.
+5. Run whitespace validation with `git diff --check` and `git diff --cached --check`.
 
 ---
 
@@ -210,6 +208,7 @@ Do not restart:
 - INT-001 platform integration validation
 - DEP-001 deployment readiness review
 - WF-001 through WF-007 workflow implementation
+- Phase 0 baseline snapshot
 
 Those phases are already represented by repository artifacts.
 
@@ -217,11 +216,11 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-After OS 3.2 release package audit:
+After Phase 1 status documentation repair:
 
-- If audit passes, request production approval or release authorization.
-- If audit fails, correct only the failing OS 3.2 release artifact.
-- Do not create or push the release tag unless explicitly requested.
+- Stop and report Phase 1 results.
+- Do not execute Phase 1.5 until explicitly approved.
+- Do not create tags, force push, modify Prisma, modify env, or change deployment configuration.
 
 ---
 
@@ -235,7 +234,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -262,11 +261,11 @@ For a new AI session:
 
 ## Current Handover
 
-The repository is on `planning/os-3.1-mvp-governance`.
+The repository is on `planning/os-3.3-runtime-platform`.
 
 RM-001 repository synchronization, PCS-001 context system, PCS-002 context package generator, INT-001 platform integration validation, and DEP-001 deployment readiness review have been completed and pushed.
 
-OS 3.2 Developer Platform release preparation is the active task. It is documentation-only and must not modify runtime code.
+CODEX execution plan Phase 1 status documentation repair is the active task. It is documentation-only and must not modify Prisma, env, deployment configuration, runtime packages, tags, or release promotion state.
 
 ---
 
@@ -284,8 +283,8 @@ OS 3.2 Developer Platform release preparation is the active task. It is document
 
 - Conversation history may include older repository paths and older branch names.
 - Use the repository artifacts in this checkout as the current source of truth.
-- Do not infer runtime changes from documentation-only OS 3.2 release preparation.
-- Do not create or push the OS 3.2 release tag unless explicitly requested.
+- Do not infer production deployment from OS 3.3 planning branch artifacts.
+- Do not execute Phase 1.5 or later phases unless explicitly requested.
 
 ---
 
@@ -299,7 +298,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -328,15 +327,15 @@ This file is excluded from the combined checksum to avoid self-referential check
 
 | File | SHA-256 |
 | --- | --- |
-| [Project Context](../PROJECT_CONTEXT.md) | `922ac405734061b41298e4a36f82945b2773b8d20d5f3850537a0c0d9ab720f7` |
-| [Repository Status](../REPOSITORY_STATUS.md) | `928a2846f62ea2cb30fc1fbab5a9df98915c6cc012f772e820647c9f8bc6ce69` |
-| [Next Action](../NEXT_ACTION.md) | `568079861c3ddbc15cb612541e582efa3bb93714a2ffbc1e5c4c2f5951bd650a` |
-| [AI Handover](../AI_HANDOVER.md) | `23c7005470223c607ae9e93e935e1922eea3a9f96fb3681a0cadb648e3f1a507` |
+| [Project Context](../PROJECT_CONTEXT.md) | `9cd1ec00e869b8882995eff40ca8787bfd18c4a71d4bbd6e959df3fcacae0900` |
+| [Repository Status](../REPOSITORY_STATUS.md) | `25d3fa8b59ec20a6eaf70980521f5f3f11c7956ca1103536bc46fed445cb1af6` |
+| [Next Action](../NEXT_ACTION.md) | `0bcd04c830c9f5e046c3968033f6f33ffed7c95a436e3f8559c8eafb9c94f4e2` |
+| [AI Handover](../AI_HANDOVER.md) | `36a69bb4da1fcbdad578e2cf6d524ffa02838775713a9aa69c83f1ef53cd96f8` |
 
 Package checksum over the checksum manifest above:
 
 ```text
-e132d44d79b0e83a565dfccea49b24af3298be29a35437c8eea665827ae0a742
+db67f4d5b99a5babf5338ff2ea8355bf77f334c89030046cc8502b2dec32df32
 ```
 
 ---

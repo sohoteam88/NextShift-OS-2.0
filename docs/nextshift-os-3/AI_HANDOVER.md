@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -31,11 +31,11 @@ For a new AI session:
 
 ## Current Handover
 
-The repository is on `planning/os-3.1-mvp-governance`.
+The repository is on `planning/os-3.3-runtime-platform`.
 
 RM-001 repository synchronization, PCS-001 context system, PCS-002 context package generator, INT-001 platform integration validation, and DEP-001 deployment readiness review have been completed and pushed.
 
-OS 3.2 Developer Platform release preparation is the active task. It is documentation-only and must not modify runtime code.
+CODEX execution plan Phase 1 status documentation repair is the active task. It is documentation-only and must not modify Prisma, env, deployment configuration, runtime packages, tags, or release promotion state.
 
 ---
 
@@ -53,5 +53,5 @@ OS 3.2 Developer Platform release preparation is the active task. It is document
 
 - Conversation history may include older repository paths and older branch names.
 - Use the repository artifacts in this checkout as the current source of truth.
-- Do not infer runtime changes from documentation-only OS 3.2 release preparation.
-- Do not create or push the OS 3.2 release tag unless explicitly requested.
+- Do not infer production deployment from OS 3.3 planning branch artifacts.
+- Do not execute Phase 1.5 or later phases unless explicitly requested.

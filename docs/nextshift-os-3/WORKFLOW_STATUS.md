@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -12,7 +12,7 @@ Last Updated: 2026-07-06
 
 This document is the canonical status dashboard for released NextShift runtime workflows.
 
-It synchronizes repository metadata with the workflow implementation and audit records already present on `planning/os-3.1-mvp-governance`.
+It synchronizes repository metadata with the workflow implementation and audit records already present on `planning/os-3.3-runtime-platform`.
 
 ---
 
