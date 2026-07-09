@@ -2,7 +2,8 @@ import prisma from '@/lib/prisma';
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { AnalyticsCenter, KPIOverview } from './businessTypes';
 import { detectAnomalies } from './analyticsEngines';
-import { applyProjectionToAnalyticsCenter, getAnalyticsProjection } from './adapters/AnalyticsProjectionAdapter';
+import { applyProjectionToAnalyticsCenter } from './adapters/AnalyticsProjectionAdapter';
+import { resolveAnalyticsRuntimeProjection } from './runtime';
 
 export const analyticsService = {
   async getAnalyticsCenter(userId: string, tenantId: string, workspaceContext?: WorkspaceContext): Promise<AnalyticsCenter> {
@@ -37,7 +38,13 @@ export const analyticsService = {
     const contentBreakdown: Record<string,number> = {};
     for (const g of contentPlatforms) { if (g.platform) contentBreakdown[g.platform] = g._count; }
 
-    const projection = await getAnalyticsProjection(userId, tenantId);
+    const { projection } = await resolveAnalyticsRuntimeProjection({
+      userId,
+      tenantId,
+      source: 'analytics-center',
+      projectionType: 'analytics-center',
+      workspaceFocus: analyticsFocus,
+    });
 
     return applyProjectionToAnalyticsCenter({
       kpi, anomalies, contentBreakdown,
