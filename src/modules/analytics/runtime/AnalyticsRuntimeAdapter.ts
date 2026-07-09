@@ -1,10 +1,12 @@
 import {
   activateRuntimeCapability,
+  createRuntimeAdapter,
   createRuntimeCapability,
   createRuntimeContext,
   createRuntimeDiagnostics,
   createRuntimeEvent,
   deriveRuntimeContext,
+  type RuntimeAdapterBaseMetadata,
   type RuntimeCapability,
   type RuntimeContext,
   type RuntimeDiagnostics,
@@ -26,22 +28,17 @@ export type AnalyticsRuntimeSource =
 export type AnalyticsRuntimeDiagnosticsStatus = 'healthy' | 'degraded' | 'failed';
 export type AnalyticsRuntimeConfidence = 'derived' | 'fallback';
 
-export type AnalyticsRuntimeMetadata = {
-  enabled: boolean;
-  mode: 'legacy' | 'runtime';
-  source: AnalyticsRuntimeSource;
-  fallback: boolean;
-  confidence: AnalyticsRuntimeConfidence;
-  contextId?: string;
-  correlationId?: string;
-  capabilityId?: string;
-  capabilityRuntimeId?: string;
-  eventId?: string;
-  eventType?: string;
-  diagnosticsId?: string;
+type AnalyticsRuntimeWarning =
+  | 'runtime-analytics-adapter-fallback'
+  | 'runtime-analytics-adapter-invalid-output';
+
+export type AnalyticsRuntimeMetadata = RuntimeAdapterBaseMetadata<
+  AnalyticsRuntimeSource,
+  AnalyticsRuntimeConfidence,
+  AnalyticsRuntimeWarning
+> & {
   diagnosticsStatus?: AnalyticsRuntimeDiagnosticsStatus;
-  warning?: 'runtime-analytics-adapter-fallback' | 'runtime-analytics-adapter-invalid-output';
-  errorKind?: string;
+  warning?: AnalyticsRuntimeWarning;
 };
 
 export type AnalyticsRuntimeProjectionType = 'analytics-center';
@@ -67,7 +64,6 @@ type RuntimeArtifacts = {
 };
 
 type AnalyticsRuntimeLogger = Pick<Console, 'warn'>;
-type AnalyticsRuntimeWarning = NonNullable<AnalyticsRuntimeMetadata['warning']>;
 
 type AnalyticsRuntimeAdapterDependencies = {
   isEnabled?: () => boolean;
@@ -88,28 +84,24 @@ const CAPABILITY_VERSION = '1.0.0';
 const EVENT_SOURCE = 'nextshift.analytics';
 const DIAGNOSTICS_ID = 'analytics-runtime-adapter';
 
-export async function resolveAnalyticsRuntimeProjection(
-  input: ResolveAnalyticsRuntimeInput,
-  dependencies: AnalyticsRuntimeAdapterDependencies = {},
-): Promise<ResolveAnalyticsRuntimeOutput> {
-  const loadProjection = dependencies.getProjection ?? getAnalyticsProjection;
-  const projection = await loadProjection(input.userId, input.tenantId);
-  const enabled = dependencies.isEnabled?.() ?? isRuntimeAnalyticsEnabled();
-
-  if (!enabled) {
-    return {
-      projection,
-      runtime: {
-        enabled: false,
-        mode: 'legacy',
-        source: input.source,
-        fallback: false,
-        confidence: 'derived',
-      },
-    };
-  }
-
-  try {
+const analyticsRuntimeAdapter = createRuntimeAdapter<
+  ResolveAnalyticsRuntimeInput,
+  AnalyticsProjection,
+  AnalyticsRuntimeSource,
+  AnalyticsRuntimeConfidence,
+  AnalyticsRuntimeWarning,
+  AnalyticsRuntimeMetadata,
+  ResolveAnalyticsRuntimeOutput,
+  AnalyticsRuntimeAdapterDependencies
+>({
+  resolveLegacy: (input, dependencies) =>
+    (dependencies.getProjection ?? getAnalyticsProjection)(input.userId, input.tenantId),
+  isEnabled: (_input, _projection, dependencies) =>
+    dependencies.isEnabled?.() ?? isRuntimeAnalyticsEnabled(),
+  getSource: (input) => input.source,
+  getConfidence: () => 'derived',
+  getFallbackConfidence: () => 'fallback',
+  createRuntimeMetadata: (input, projection, dependencies) => {
     const artifacts = (dependencies.createRuntimeArtifacts ?? createDefaultRuntimeArtifacts)({
       projection,
       source: input.source,
@@ -119,12 +111,8 @@ export async function resolveAnalyticsRuntimeProjection(
       workspaceFocus: input.workspaceFocus,
     });
     const eventType = eventTypeForProjection();
-    const runtime = {
-      enabled: true,
-      mode: 'runtime',
-      source: input.source,
-      fallback: false,
-      confidence: 'derived',
+
+    return {
       contextId: artifacts.context.id,
       correlationId: artifacts.context.correlationId,
       capabilityId: artifacts.capability.identity.capabilityId,
@@ -133,33 +121,33 @@ export async function resolveAnalyticsRuntimeProjection(
       eventType,
       diagnosticsId: artifacts.diagnostics.id,
       diagnosticsStatus: 'healthy',
-    } satisfies AnalyticsRuntimeMetadata;
+    };
+  },
+  composeOutput: (projection, runtime) => ({ projection, runtime }),
+  fallbackWarning: 'runtime-analytics-adapter-fallback',
+  invalidOutputWarning: 'runtime-analytics-adapter-invalid-output',
+  warningLogMessage: '[analytics-runtime-adapter] falling back to legacy projection',
+  getLogger: (dependencies) => dependencies.logger,
+  createWarningPayload: ({ input, warning, errorKind }) => {
+    const payload: Record<string, string | undefined> = {
+      warning,
+      source: input.source,
+      projectionType: input.projectionType,
+      workspaceFocus: input.workspaceFocus,
+      status: 'resolved',
+    };
 
-    if (!isRuntimeMetadataComplete(runtime)) {
-      warnRuntimeFallback(dependencies.logger, input, 'runtime-analytics-adapter-invalid-output');
-      return legacyRuntimeFallback(
-        projection,
-        input.source,
-        'runtime-analytics-adapter-invalid-output',
-      );
-    }
+    if (errorKind) payload.errorKind = errorKind;
 
-    return { projection, runtime };
-  } catch (error) {
-    const errorKind = classifyRuntimeAdapterError(error);
-    warnRuntimeFallback(
-      dependencies.logger,
-      input,
-      'runtime-analytics-adapter-fallback',
-      errorKind,
-    );
-    return legacyRuntimeFallback(
-      projection,
-      input.source,
-      'runtime-analytics-adapter-fallback',
-      errorKind,
-    );
-  }
+    return payload;
+  },
+});
+
+export async function resolveAnalyticsRuntimeProjection(
+  input: ResolveAnalyticsRuntimeInput,
+  dependencies: AnalyticsRuntimeAdapterDependencies = {},
+): Promise<ResolveAnalyticsRuntimeOutput> {
+  return analyticsRuntimeAdapter.resolveAsync(input, dependencies);
 }
 
 function createDefaultRuntimeArtifacts(input: {
@@ -267,68 +255,4 @@ function eventPayload(input: {
 
 function eventTypeForProjection() {
   return 'runtime.analytics.projection.resolved';
-}
-
-function classifyRuntimeAdapterError(error: unknown) {
-  if (error instanceof Error && error.constructor.name.trim()) {
-    return error.constructor.name;
-  }
-
-  return 'unknown';
-}
-
-function isRuntimeMetadataComplete(runtime: AnalyticsRuntimeMetadata) {
-  return Boolean(
-    runtime.contextId &&
-      runtime.correlationId &&
-      runtime.capabilityId &&
-      runtime.capabilityRuntimeId &&
-      runtime.eventId &&
-      runtime.eventType &&
-      runtime.diagnosticsId &&
-      runtime.diagnosticsStatus,
-  );
-}
-
-function legacyRuntimeFallback(
-  projection: AnalyticsProjection,
-  source: AnalyticsRuntimeSource,
-  warning: AnalyticsRuntimeWarning,
-  errorKind?: string,
-): ResolveAnalyticsRuntimeOutput {
-  const runtime: AnalyticsRuntimeMetadata = {
-    enabled: true,
-    mode: 'legacy',
-    source,
-    fallback: true,
-    confidence: 'fallback',
-    diagnosticsStatus: 'degraded',
-    warning,
-  };
-
-  if (errorKind) runtime.errorKind = errorKind;
-
-  return {
-    projection,
-    runtime,
-  };
-}
-
-function warnRuntimeFallback(
-  logger: AnalyticsRuntimeLogger | undefined,
-  input: ResolveAnalyticsRuntimeInput,
-  warning: AnalyticsRuntimeWarning,
-  errorKind?: string,
-) {
-  const payload: Record<string, string | undefined> = {
-    warning,
-    source: input.source,
-    projectionType: input.projectionType,
-    workspaceFocus: input.workspaceFocus,
-    status: 'resolved',
-  };
-
-  if (errorKind) payload.errorKind = errorKind;
-
-  (logger ?? console).warn('[analytics-runtime-adapter] falling back to legacy projection', payload);
 }
