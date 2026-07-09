@@ -1,7 +1,12 @@
-export const RUNTIME_ANALYTICS_FLAG = 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS';
+import {
+  isRuntimeFlagEnabled,
+  RUNTIME_ANALYTICS_FLAG,
+} from '@/lib/runtime-flags';
+
+export { RUNTIME_ANALYTICS_FLAG };
 
 export function isRuntimeAnalyticsEnabled(
   env: NodeJS.ProcessEnv = process.env,
 ) {
-  return env[RUNTIME_ANALYTICS_FLAG] === 'true';
+  return isRuntimeFlagEnabled(RUNTIME_ANALYTICS_FLAG, env);
 }
