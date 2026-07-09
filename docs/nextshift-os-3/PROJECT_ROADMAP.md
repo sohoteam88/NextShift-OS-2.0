@@ -29,7 +29,7 @@ Blueprint status:
 
 Current milestone:
 
-Business Command Center v1.0 release
+Product Intelligence v1.0 release
 
 Current architecture baseline:
 
@@ -44,6 +44,7 @@ Current product implementation baseline:
 - [Creative Studio v1.0](creative-studio-v1/README.md) — Released
 - [Growth & Revenue v1.0](growth-revenue-v1/README.md) — Released
 - [Business Command Center v1.0](business-command-center-v1/README.md) — Released
+- [Product Intelligence v1.0](product-intelligence-v1/RELEASE_SUMMARY.md) — Released
 
 Current workflow baseline:
 
@@ -158,6 +159,7 @@ Deliverables:
 - [Creative Studio v1.0](creative-studio-v1/README.md) — Released
 - [Growth & Revenue v1.0](growth-revenue-v1/README.md) — Released
 - [Business Command Center v1.0](business-command-center-v1/README.md) — Released
+- [Product Intelligence v1.0](product-intelligence-v1/RELEASE_SUMMARY.md) — Released
 
 Primary success metric:
 
