@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-03
+Last Updated: 2026-07-09
 
 ---
 
@@ -21,14 +21,14 @@ This file complements [AI Bootstrap](AI_BOOTSTRAP.md), [Project Context](../PROJ
 | Field | Current State | Canonical Source |
 | --- | --- | --- |
 | Project Name | NextShift OS | [Project Status](../PROJECT_STATUS.md) |
-| Current Version | OS 3.1 RC1 production baseline with OS 3.1 MVP governance planning in progress | [Project Status](../PROJECT_STATUS.md) |
+| Current Version | OS 3.3 Runtime Platform planning baseline with Product Intelligence v1.0 frozen | [Project Status](../PROJECT_STATUS.md) |
 | Current Release Branch | `release/os-3.1-rc1` | [Project Status](../PROJECT_STATUS.md) |
 | Current Release Tag | `v3.1.0-rc1` | [Project Status](../PROJECT_STATUS.md) |
 | Current Production Commit | `045ddea888991b8454fd393a61de2866174c5561` | [Project Status](../PROJECT_STATUS.md) |
-| Current Planning Branch | `planning/os-3.1-mvp-governance` | [Project Status](../PROJECT_STATUS.md) |
-| Current Milestone | OS 3.1 MVP governance expansion | [Project Status](../PROJECT_STATUS.md) |
-| Current Phase | Documentation governance and AI continuity baseline | [Project Status](../PROJECT_STATUS.md) |
-| Current Priority | Keep the planning branch aligned, preserve release discipline, and continue from the next required lifecycle artifact | [Project Status](../PROJECT_STATUS.md) |
+| Current Planning Branch | `planning/os-3.3-runtime-platform` | [Project Status](../PROJECT_STATUS.md) |
+| Current Milestone | OS 3.3 Runtime Platform planning branch alignment | [Project Status](../PROJECT_STATUS.md) |
+| Current Phase | CODEX execution plan Phase 1 status documentation repair | [Project Status](../PROJECT_STATUS.md) |
+| Current Priority | Align current status documents, preserve release discipline, and stop before Phase 1.5 until approved | [Project Status](../PROJECT_STATUS.md) |
 | Engineering Baseline | Engineering Standards v1.0 | [Engineering Standards v1.0](../engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md) |
 | Product Baseline | MVP 1.0 governance planning with Business OS Phase 1 continuing after BOS-001 release | [MVP 1.0 Alignment](../MVP_1_ALIGNMENT.md) |
 

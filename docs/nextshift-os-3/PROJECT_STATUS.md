@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -21,9 +21,9 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | OS 3.2 Developer Platform prepared on OS 3.1 RC1 production baseline |
-| Current Release | `v3.1.0-rc1` production baseline; OS 3.2 Developer Platform release prepared for approval |
-| Current Planning Branch | `planning/os-3.1-mvp-governance` |
+| Current Version | OS 3.3 Runtime Platform planning baseline with Product Intelligence v1.0 frozen |
+| Current Release | `v3.1.0-rc1` production baseline remains the deployed release; OS 3.3 planning artifacts are not production-promoted |
+| Current Planning Branch | `planning/os-3.3-runtime-platform` |
 | Repository Default Branch | `main` |
 | Production Status | Production is aligned to the verified OS 3.1 RC1 release commit and is not changed by planning branch documentation work |
 
@@ -86,8 +86,8 @@ Components:
 | UI Kit | Released | [UI Kit](ui-kit/README.md) |
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
-| Developer Platform | OS 3.2 Developer Platform prepared for production approval | [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md) |
-| Current Capability Focus | CAP-005 S-004 implementation track | [Master Index](MASTER_INDEX.md) |
+| Developer Platform | OS 3.2 Developer Platform artifacts remain available as historical release preparation records | [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md) |
+| Current Capability Focus | OS 3.3 Runtime Platform and Product Intelligence planning branch alignment | [Master Index](MASTER_INDEX.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -97,12 +97,12 @@ Product planning and capability scope remain governed by the canonical capabilit
 
 | Field | Current State |
 | --- | --- |
-| Active Planning Branch | `planning/os-3.1-mvp-governance` |
-| Active Milestone | OS 3.2 Developer Platform release preparation |
-| Current Phase | Release package prepared for production approval |
-| Current Focus | OS 3.2 release notes, manifest, version history, final verification, and tag preparation |
-| Current Blockers | Production approval is pending; release promotion also requires explicit handling of the Prisma migration-chain limitation |
-| Current Priorities | Audit the OS 3.2 release package, confirm target commit and tag, resolve or accept migration-chain limitation, then decide production approval |
+| Active Planning Branch | `planning/os-3.3-runtime-platform` |
+| Active Milestone | OS 3.3 Runtime Platform planning branch alignment |
+| Current Phase | CODEX execution plan Phase 1 status documentation repair |
+| Current Focus | Align current status and context documents to `planning/os-3.3-runtime-platform` |
+| Current Blockers | Phase 1.5 CI and package test coverage repair has not been executed yet |
+| Current Priorities | Complete Phase 1 validation, obtain approval, then proceed to Phase 1.5 only when authorized |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -127,11 +127,10 @@ Planning branch documentation changes are not deployed to production until a ver
 
 ## 6. Next Recommended Actions
 
-1. Audit the [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md).
-2. Confirm the target release commit and proposed tag in [Tag Preparation](releases/OS_3_2_DEVELOPER_PLATFORM/TAG_PREPARATION.md).
-3. Resolve or explicitly approve the Prisma migration-chain limitation documented in [Final Verification](releases/OS_3_2_DEVELOPER_PLATFORM/FINAL_VERIFICATION.md).
-4. Apply STD-004 and STD-005 release alignment gates before tag creation, release branch promotion, or production deployment.
-5. Proceed to production approval only after release package audit passes.
+1. Complete Phase 1 status documentation validation.
+2. Confirm [Project Context](PROJECT_CONTEXT.md), [Repository Status](REPOSITORY_STATUS.md), [Next Action](NEXT_ACTION.md), [AI Handover](AI_HANDOVER.md), and [Context Checksum](CONTEXT_CHECKSUM.md) are aligned to `planning/os-3.3-runtime-platform`.
+3. Do not execute Phase 1.5 until Phase 1 is approved.
+4. Do not create tags, force push, modify Prisma, modify env, or change deployment configuration as part of status documentation repair.
 
 ---
 

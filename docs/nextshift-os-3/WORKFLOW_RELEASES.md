@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-09
 
 ---
 
@@ -12,7 +12,7 @@ Last Updated: 2026-07-06
 
 This document records released NextShift runtime workflows and their repository evidence.
 
-It is the workflow release registry for the `planning/os-3.1-mvp-governance` branch.
+It is the workflow release registry for the `planning/os-3.3-runtime-platform` branch.
 
 ---
 
