@@ -109,6 +109,12 @@ jobs:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
 
+      - name: Run Packages Tests
+        run: pnpm -r --filter './packages/*' test
+        env:
+          DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+          DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+
   e2e:
     name: E2E Tests
     if: github.event_name == 'pull_request'

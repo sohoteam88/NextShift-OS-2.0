@@ -11,9 +11,14 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: [
-      'src/__tests__/{isolation,security,mission-engine,services,api}/**/*.test.ts',
-      'src/lib/observability/__tests__/**/*.test.ts',
-      'src/modules/agent-runtime/telemetry/__tests__/**/*.test.ts',
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx',
+    ],
+    exclude: [
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      '.next/**',
     ],
     testTimeout: 60_000,
     hookTimeout: 60_000,
