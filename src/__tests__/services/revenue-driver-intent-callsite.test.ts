@@ -111,4 +111,26 @@ describe('Revenue driver intent runtime callsite', () => {
     expect(runtimeMetadata[0]).not.toHaveProperty('tenantId');
     expect(runtimeMetadata[0]).not.toHaveProperty('userId');
   });
+
+  it('adds runtime resolution comparison metadata when runtime is enabled', async () => {
+    setRuntimeRevenueFlag('true');
+    const auditLog = createAuditLog();
+
+    await recordRevenueDriverIntentAudit(user, resolvedInput, { auditLog });
+
+    expect(auditLog.create).toHaveBeenCalledWith({
+      data: {
+        tenantId: 'tenant_1',
+        actorId: 'user_1',
+        action: 'intent.resolved',
+        targetType: 'revenue_driver_intent',
+        metadata: expect.objectContaining({
+          route: '/content-engine',
+          intent: 'facebook-post',
+          status: 'resolved',
+          runtimeResolution: 'resolved',
+        }),
+      },
+    });
+  });
 });

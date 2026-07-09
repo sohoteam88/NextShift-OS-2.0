@@ -1,3 +1,4 @@
+export * from "./adapter";
 export * from "./capability";
 export * from "./context";
 export * from "./diagnostics";

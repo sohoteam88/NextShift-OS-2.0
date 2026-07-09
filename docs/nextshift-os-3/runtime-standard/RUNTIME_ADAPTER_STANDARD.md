@@ -97,6 +97,35 @@ If a root app or test environment cannot resolve `@nextshift/runtime`, add the s
 
 ---
 
+## Adapter Factory
+
+New Runtime Capability Adapters must use `createRuntimeAdapter()` from `@nextshift/runtime`.
+
+The factory turns this standard from a documentation convention into a typed adapter contract. It owns the shared adapter lifecycle:
+
+- required feature flag evaluation
+- required legacy resolver execution before runtime routing
+- default OFF behavior with `enabled: false`, `mode: legacy`, and `fallback: false`
+- runtime metadata skeleton with `enabled`, `mode`, `source`, `fallback`, and `confidence`
+- runtime metadata completeness validation
+- runtime construction failure fallback to legacy behavior
+- invalid runtime output fallback to legacy behavior
+- safe fallback warning logging
+- safe `errorKind` classification without stack traces or raw error messages
+- dependency injection for tests
+
+Adapter modules remain responsible for module-specific logic only:
+
+- selecting the legacy resolver or service
+- mapping module input to source and confidence
+- creating module-specific runtime context, capability, event, and diagnostics artifacts
+- composing the public adapter output without changing legacy return structure
+- creating safe warning payload fields that exclude tenantId, userId, headers, cookies, tokens, API keys, credentials, and raw runtime payloads
+
+Handwritten adapters that duplicate the factory-owned lifecycle are no longer compliant for new Runtime Capability Adapter work. Existing adapters must migrate to `createRuntimeAdapter()` before being used as reference implementations for future pilots.
+
+---
+
 ## Required File Shape
 
 Each adapter should use a local runtime folder:

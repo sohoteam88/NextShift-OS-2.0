@@ -41,19 +41,25 @@ export async function recordRevenueDriverIntentAudit(
 
   const action = actionForStatus(input.status);
 
+  const metadata: Record<string, string | null> = {
+    route: input.route,
+    intent: input.intent ?? null,
+    resolvedTool: input.resolvedTool ?? null,
+    status: input.status,
+    timestamp: input.timestamp ?? new Date().toISOString(),
+  };
+
+  if (runtimeOutput.runtime.enabled) {
+    metadata.runtimeResolution = runtimeOutput.resolution.status;
+  }
+
   await (options.auditLog ?? prisma.auditLog).create({
     data: {
       tenantId: user.tenantId,
       actorId: user.id,
       action,
       targetType: 'revenue_driver_intent',
-      metadata: {
-        route: input.route,
-        intent: input.intent ?? null,
-        resolvedTool: input.resolvedTool ?? null,
-        status: input.status,
-        timestamp: input.timestamp ?? new Date().toISOString(),
-      },
+      metadata,
     },
   });
 
