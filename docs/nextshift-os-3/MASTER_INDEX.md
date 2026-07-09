@@ -36,7 +36,8 @@ For first-time contributors:
 12. [Conversation Engine v1.0 - Released](conversation-engine-v1/README.md)
 13. [Creative Studio v1.0 - Released](creative-studio-v1/README.md)
 14. [Growth & Revenue v1.0 - Released](growth-revenue-v1/README.md)
-15. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+15. [Business Command Center v1.0 - Released](business-command-center-v1/README.md)
+16. [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
 7. [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
 8. [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 9. [AI Bootstrap Framework](ai/README.md)
@@ -170,6 +171,17 @@ For first-time contributors:
 137. [GR-001 Release Checklist](growth-revenue-v1/RELEASE_CHECKLIST.md)
 138. [GR-001 Approval Record](growth-revenue-v1/APPROVAL_RECORD.md)
 139. [GR-001 Release Summary](growth-revenue-v1/RELEASE_SUMMARY.md)
+140. [CC-001 Business Command Center v1.0 - Released](business-command-center-v1/README.md)
+141. [CC-001 Project Planning](business-command-center-v1/PROJECT_PLANNING.md)
+142. [CC-001 Implementation Contract](business-command-center-v1/IMPLEMENTATION_CONTRACT.md)
+143. [CC-001 Execution Task](business-command-center-v1/EXECUTION_TASK.md)
+144. [CC-001 Implementation Report](business-command-center-v1/IMPLEMENTATION_REPORT.md)
+145. [CC-001 Requirements Verification](business-command-center-v1/REQUIREMENTS_VERIFICATION.md)
+146. [CC-001 Repository Audit Contract](business-command-center-v1/REPOSITORY_AUDIT_CONTRACT.md)
+147. [CC-001 Release Notes](business-command-center-v1/RELEASE_NOTES.md)
+148. [CC-001 Release Checklist](business-command-center-v1/RELEASE_CHECKLIST.md)
+149. [CC-001 Approval Record](business-command-center-v1/APPROVAL_RECORD.md)
+150. [CC-001 Release Summary](business-command-center-v1/RELEASE_SUMMARY.md)
 25. [Runtime Platform v1.0](runtime-platform/README.md)
 26. [RP-001 Runtime Kernel Foundation](runtime-platform/slices/RP-001-runtime-kernel-foundation/README.md)
 27. [RP-001 Release Notes](runtime-platform/slices/RP-001-runtime-kernel-foundation/RELEASE_NOTES.md)
@@ -310,6 +322,7 @@ After completing the above:
 | Conversation Engine  | CE-001 Released |
 | Creative Studio      | CS-001 Released |
 | Growth & Revenue     | GR-001 Released |
+| Command Center       | CC-001 Released |
 | Business OS Phase 1  | BOS-001 Released · BOS-002 Released · BOS-003 Released · BOS-004 Released · BOS-005 Released · BOS-006 Released · BOS-007 Released · BOS-008 Released · Business OS v1.0 Release Package Audited (Pass) |
 | Design System        | Released        |
 | UI Kit               | Released        |
