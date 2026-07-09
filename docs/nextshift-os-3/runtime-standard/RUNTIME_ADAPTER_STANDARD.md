@@ -113,6 +113,7 @@ The factory turns this standard from a documentation convention into a typed ada
 - safe fallback warning logging
 - safe `errorKind` classification without stack traces or raw error messages
 - dependency injection for tests
+- `createWarningPayload` must explicitly enumerate safe fields. It must not directly spread `input`, request objects, runtime payloads, context metadata, or dependency objects because that can leak tenantId, userId, headers, cookies, tokens, API keys, credentials, or raw runtime payloads into logs.
 
 Adapter modules remain responsible for module-specific logic only:
 
@@ -123,6 +124,19 @@ Adapter modules remain responsible for module-specific logic only:
 - creating safe warning payload fields that exclude tenantId, userId, headers, cookies, tokens, API keys, credentials, and raw runtime payloads
 
 Handwritten adapters that duplicate the factory-owned lifecycle are no longer compliant for new Runtime Capability Adapter work. Existing adapters must migrate to `createRuntimeAdapter()` before being used as reference implementations for future pilots.
+
+---
+
+## Code Review Checklist
+
+Runtime Capability Adapter reviews must verify:
+
+1. `isEnabled` calls the real module feature flag helper or a dependency-injected equivalent used only for tests.
+2. `createWarningPayload` explicitly enumerates safe fields and does not spread `input`, runtime context, request objects, headers, cookies, dependency objects, or raw runtime payloads.
+3. Fallback warnings do not include tenantId, userId, tokens, API keys, credentials, raw error messages, or stack traces.
+4. The adapter public API preserves legacy output shape when the feature flag is OFF.
+5. Runtime construction failures and invalid runtime metadata both fallback to legacy behavior.
+6. Tests cover flag OFF, flag ON, runtime failure fallback, invalid runtime output fallback, and safe UI-facing metadata.
 
 ---
 
