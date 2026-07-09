@@ -7,10 +7,10 @@ import { CheckCircle2, Info, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
   REVENUE_DRIVER_INTENT_FOCUS_ID,
-  resolveRevenueDriverIntent,
   type RevenueDriverIntentResolution,
   type RevenueDriverResolvedIntent,
 } from '../constants/revenue-driver-intents';
+import { resolveRevenueRuntimeIntent } from '../runtime';
 
 type RevenueDriverIntentResolverProps = {
   route?: string;
@@ -44,7 +44,11 @@ export function RevenueDriverIntentResolver({
   const currentRoute = route ?? pathname;
   const intent = searchParams.get('intent');
   const resolution = React.useMemo(
-    () => resolveRevenueDriverIntent({ route: currentRoute, intent }),
+    () => resolveRevenueRuntimeIntent({
+      route: currentRoute,
+      intent,
+      source: 'deep-link',
+    }).resolution,
     [currentRoute, intent],
   );
 
