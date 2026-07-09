@@ -27,6 +27,7 @@ It consolidates release notes, manifest, version history, final repository verif
 - [Release Ceremony Script](RELEASE_CEREMONY_SCRIPT.md)
 - [Release Ceremony Manifest](RELEASE_CEREMONY_MANIFEST.md)
 - [Developer Platform v1.0 Freeze Record](DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md)
+- [Audit Result](AUDIT_RESULT.md)
 
 ---
 
