@@ -3,10 +3,23 @@ import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { AnalyticsCenter, KPIOverview } from './businessTypes';
 import { detectAnomalies } from './analyticsEngines';
 import { applyProjectionToAnalyticsCenter } from './adapters/AnalyticsProjectionAdapter';
-import { resolveAnalyticsRuntimeProjection } from './runtime';
+import {
+  resolveAnalyticsRuntimeProjection,
+  type AnalyticsRuntimeMetadata,
+} from './runtime';
+
+export type AnalyticsCenterRuntimeOptions = {
+  onRuntimeResolved?: (runtime: AnalyticsRuntimeMetadata) => void;
+  resolveRuntimeProjection?: typeof resolveAnalyticsRuntimeProjection;
+};
 
 export const analyticsService = {
-  async getAnalyticsCenter(userId: string, tenantId: string, workspaceContext?: WorkspaceContext): Promise<AnalyticsCenter> {
+  async getAnalyticsCenter(
+    userId: string,
+    tenantId: string,
+    workspaceContext?: WorkspaceContext,
+    runtimeOptions: AnalyticsCenterRuntimeOptions = {},
+  ): Promise<AnalyticsCenter> {
     const analyticsFocus = workspaceContext?.analyticsContext.focus[0] ?? 'sales';
     const contentCount = await prisma.content.count({ where: { ownerId: userId } });
     const videoCount = await prisma.videoProject.count({ where: { userId } });
@@ -38,13 +51,14 @@ export const analyticsService = {
     const contentBreakdown: Record<string,number> = {};
     for (const g of contentPlatforms) { if (g.platform) contentBreakdown[g.platform] = g._count; }
 
-    const { projection } = await resolveAnalyticsRuntimeProjection({
+    const { projection, runtime } = await (runtimeOptions.resolveRuntimeProjection ?? resolveAnalyticsRuntimeProjection)({
       userId,
       tenantId,
       source: 'analytics-center',
       projectionType: 'analytics-center',
       workspaceFocus: analyticsFocus,
     });
+    runtimeOptions.onRuntimeResolved?.(runtime);
 
     return applyProjectionToAnalyticsCenter({
       kpi, anomalies, contentBreakdown,
