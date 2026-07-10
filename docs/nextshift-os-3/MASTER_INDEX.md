@@ -1063,7 +1063,7 @@ Capability Definition:
 - [CAP-002 S-001 Customer Foundation Implementation Report](capabilities/CAP-002_S-001_CUSTOMER_FOUNDATION_IMPLEMENTATION_REPORT.md)
 - [CAP-002 S-001 Customer Foundation Verification Checklist](capabilities/CAP-002_S-001_CUSTOMER_FOUNDATION_VERIFICATION_CHECKLIST.md)
 - [CAP-002 S-001 Customer Foundation Release Notes](capabilities/CAP-002_S-001_CUSTOMER_FOUNDATION_RELEASE_NOTES.md)
-- [CAP-002 S-001 Customer Foundation Audit Report](../../audit/CAP_002_S001_CUSTOMER_FOUNDATION_AUDIT_REPORT.md)
+- [CAP-002 S-001 Customer Foundation Audit Report](../../archive/audit-history/CAP_002_S001_CUSTOMER_FOUNDATION_AUDIT_REPORT.md)
 - [CAP-002 S-002 Lead Management Build Specification](capabilities/CAP-002_S-002_LEAD_MANAGEMENT_BUILD_SPECIFICATION.md)
 - [CAP-002 S-002 Lead Management Implementation Tasks](capabilities/CAP-002_S-002_LEAD_MANAGEMENT_IMPLEMENTATION_TASKS.md)
 - [CAP-002 S-002 Lead Management Implementation](capabilities/CAP-002_S-002_LEAD_MANAGEMENT_IMPLEMENTATION.md)

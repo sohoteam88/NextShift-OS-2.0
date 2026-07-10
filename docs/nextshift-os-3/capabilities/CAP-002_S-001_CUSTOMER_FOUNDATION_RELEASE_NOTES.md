@@ -179,7 +179,7 @@ PASS
 
 Audit Evidence:
 
-- [CAP-002 S-001 Customer Foundation Audit Report](../../../audit/CAP_002_S001_CUSTOMER_FOUNDATION_AUDIT_REPORT.md)
+- [CAP-002 S-001 Customer Foundation Audit Report](../../../archive/audit-history/CAP_002_S001_CUSTOMER_FOUNDATION_AUDIT_REPORT.md)
 
 ---
 

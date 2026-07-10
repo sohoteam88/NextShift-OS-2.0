@@ -60,15 +60,15 @@ The release includes current workflow metadata:
 
 The release includes platform validation evidence:
 
-- [INT-001 Platform Integration Validation Report](../../../../audit/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md)
-- [INT-001 Platform Integration Audit Report](../../../../audit/INT_001_PLATFORM_INTEGRATION_AUDIT_REPORT.md)
+- [INT-001 Platform Integration Validation Report](../../../../archive/audit-history/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md)
+- [INT-001 Platform Integration Audit Report](../../../../archive/audit-history/INT_001_PLATFORM_INTEGRATION_AUDIT_REPORT.md)
 
 ### Deployment Readiness
 
 The release includes deployment readiness evidence:
 
-- [DEP-001 Deployment Readiness Report](../../../../audit/DEP_001_DEPLOYMENT_READINESS_REPORT.md)
-- [DEP-001 Deployment Readiness Audit Report](../../../../audit/DEP_001_DEPLOYMENT_READINESS_AUDIT_REPORT.md)
+- [DEP-001 Deployment Readiness Report](../../../../archive/audit-history/DEP_001_DEPLOYMENT_READINESS_REPORT.md)
+- [DEP-001 Deployment Readiness Audit Report](../../../../archive/audit-history/DEP_001_DEPLOYMENT_READINESS_AUDIT_REPORT.md)
 
 ---
 

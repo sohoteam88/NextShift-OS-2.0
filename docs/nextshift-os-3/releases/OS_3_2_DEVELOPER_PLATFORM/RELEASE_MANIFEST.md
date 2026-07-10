@@ -62,13 +62,13 @@ Last Updated: 2026-07-07
 
 ### Audit And Readiness Evidence
 
-- [Repository Synchronization Audit Report](../../../../audit/RM_001_REPOSITORY_SYNCHRONIZATION_AUDIT_REPORT.md)
-- [PCS-001 Project Context System Audit Report](../../../../audit/PCS_001_PROJECT_CONTEXT_SYSTEM_AUDIT_REPORT.md)
-- [PCS-002 Context Package Generator Audit Report](../../../../audit/PCS_002_CONTEXT_PACKAGE_GENERATOR_AUDIT_REPORT.md)
-- [INT-001 Platform Integration Validation Report](../../../../audit/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md)
-- [INT-001 Platform Integration Audit Report](../../../../audit/INT_001_PLATFORM_INTEGRATION_AUDIT_REPORT.md)
-- [DEP-001 Deployment Readiness Report](../../../../audit/DEP_001_DEPLOYMENT_READINESS_REPORT.md)
-- [DEP-001 Deployment Readiness Audit Report](../../../../audit/DEP_001_DEPLOYMENT_READINESS_AUDIT_REPORT.md)
+- [Repository Synchronization Audit Report](../../../../archive/audit-history/RM_001_REPOSITORY_SYNCHRONIZATION_AUDIT_REPORT.md)
+- [PCS-001 Project Context System Audit Report](../../../../archive/audit-history/PCS_001_PROJECT_CONTEXT_SYSTEM_AUDIT_REPORT.md)
+- [PCS-002 Context Package Generator Audit Report](../../../../archive/audit-history/PCS_002_CONTEXT_PACKAGE_GENERATOR_AUDIT_REPORT.md)
+- [INT-001 Platform Integration Validation Report](../../../../archive/audit-history/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md)
+- [INT-001 Platform Integration Audit Report](../../../../archive/audit-history/INT_001_PLATFORM_INTEGRATION_AUDIT_REPORT.md)
+- [DEP-001 Deployment Readiness Report](../../../../archive/audit-history/DEP_001_DEPLOYMENT_READINESS_REPORT.md)
+- [DEP-001 Deployment Readiness Audit Report](../../../../archive/audit-history/DEP_001_DEPLOYMENT_READINESS_AUDIT_REPORT.md)
 
 ---
 
@@ -79,8 +79,8 @@ Last Updated: 2026-07-07
 | Developer Platform frozen | PASS | [Developer Platform v1.0 Freeze Record](DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md) |
 | Repository synchronized | PASS | [Workflow Status](../../WORKFLOW_STATUS.md), [Workflow Releases](../../WORKFLOW_RELEASES.md) |
 | Context package current | PASS | [Project Context Package Release Manifest](../../context-package/RELEASE_MANIFEST.md) |
-| Platform integration validated | PASS with migration-chain limitation | [INT-001 Validation Report](../../../../audit/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md) |
-| Deployment readiness documented | PASS with approval gates | [DEP-001 Deployment Readiness Report](../../../../audit/DEP_001_DEPLOYMENT_READINESS_REPORT.md) |
+| Platform integration validated | PASS with migration-chain limitation | [INT-001 Validation Report](../../../../archive/audit-history/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md) |
+| Deployment readiness documented | PASS with approval gates | [DEP-001 Deployment Readiness Report](../../../../archive/audit-history/DEP_001_DEPLOYMENT_READINESS_REPORT.md) |
 | Release package audit loop closed | PASS | [Audit Result](AUDIT_RESULT.md) |
 | Release tag prepared | PASS, not created | [Tag Preparation](TAG_PREPARATION.md) |
 | Successor phase identified | PASS | [Developer Platform v1.0 Freeze Record](DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md) |

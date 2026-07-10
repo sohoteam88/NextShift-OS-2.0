@@ -73,11 +73,11 @@ The following validations were run for the Phase 2 audit commit:
 
 | Area | Status | Evidence |
 | --- | --- | --- |
-| Platform integration | PASS with migration-chain limitation | [INT-001 Validation Report](../../../../audit/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md) |
-| Deployment readiness | PASS with approval gates | [DEP-001 Deployment Readiness Report](../../../../audit/DEP_001_DEPLOYMENT_READINESS_REPORT.md) |
-| Context system | PASS | [PCS-001 Audit Report](../../../../audit/PCS_001_PROJECT_CONTEXT_SYSTEM_AUDIT_REPORT.md) |
-| Context package generator | PASS | [PCS-002 Audit Report](../../../../audit/PCS_002_CONTEXT_PACKAGE_GENERATOR_AUDIT_REPORT.md) |
-| Repository synchronization | PASS | [Repository Synchronization Audit Report](../../../../audit/RM_001_REPOSITORY_SYNCHRONIZATION_AUDIT_REPORT.md) |
+| Platform integration | PASS with migration-chain limitation | [INT-001 Validation Report](../../../../archive/audit-history/INT_001_PLATFORM_INTEGRATION_VALIDATION_REPORT.md) |
+| Deployment readiness | PASS with approval gates | [DEP-001 Deployment Readiness Report](../../../../archive/audit-history/DEP_001_DEPLOYMENT_READINESS_REPORT.md) |
+| Context system | PASS | [PCS-001 Audit Report](../../../../archive/audit-history/PCS_001_PROJECT_CONTEXT_SYSTEM_AUDIT_REPORT.md) |
+| Context package generator | PASS | [PCS-002 Audit Report](../../../../archive/audit-history/PCS_002_CONTEXT_PACKAGE_GENERATOR_AUDIT_REPORT.md) |
+| Repository synchronization | PASS | [Repository Synchronization Audit Report](../../../../archive/audit-history/RM_001_REPOSITORY_SYNCHRONIZATION_AUDIT_REPORT.md) |
 
 ---
 
