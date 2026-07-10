@@ -298,4 +298,4 @@ This risk is validated by the callsite tests (`not.toHaveProperty('tenantId')`) 
 
 **Merged — no action required.** PR #16–#19 are already at HEAD `1168dc3` on `planning/os-3.3-runtime-platform`.
 
-All checkpoints from `ARCHITECTURE_REVIEW_2026-07-09.md` (CP1–CP5) pass. Full audit conclusions are recorded in that document's Audit Result section. No blocking findings. The two advisories above are documentation-level items for the Pilot 3 development contract.
+All checkpoints from `docs/nextshift-os-3/reviews/ARCHITECTURE_REVIEW_2026-07-09.md` (CP1–CP5) pass. Full audit conclusions are recorded in that document's Audit Result section. No blocking findings. The two advisories above are documentation-level items for the Pilot 3 development contract.

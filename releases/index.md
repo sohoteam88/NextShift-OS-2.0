@@ -21,10 +21,7 @@ This registry is the canonical release discovery layer for RepoOS migration. It 
 | Artifact | Purpose |
 | --- | --- |
 | [MU-003 Implementation Plan](MU-003_IMPLEMENTATION_PLAN.md) | Defines the release registry implementation package for review |
-| [Release Registry Manifest](RELEASE_REGISTRY_MANIFEST.md) | Maps current release package paths to future canonical paths |
-| [Release Compatibility Map](RELEASE_COMPATIBILITY_MAP.md) | Defines release immutability, identifier preservation, and old-path compatibility |
-| [Release Validation Checklist](RELEASE_VALIDATION_CHECKLIST.md) | Lists validation gates for release registry migration |
-| [Release Rollback Checklist](RELEASE_ROLLBACK_CHECKLIST.md) | Defines rollback readiness for future release registry changes |
+| [Release Migration Record](MIGRATION_RECORD.md) | Consolidates the release registry manifest, compatibility map, validation checklist, and rollback checklist |
 
 ## Target Release Path Standard
 

@@ -142,7 +142,7 @@ Auditor: Claude Code
 HEAD: `1168dc3`
 Verdict: **PASS** — 无阻塞问题
 
-完整报告：[audit/OS33_C1_C2_PR16_PR19_CODE_REVIEW_REPORT.md](audit/OS33_C1_C2_PR16_PR19_CODE_REVIEW_REPORT.md)
+完整报告：[audit/OS33_C1_C2_PR16_PR19_CODE_REVIEW_REPORT.md](../../../audit/OS33_C1_C2_PR16_PR19_CODE_REVIEW_REPORT.md)
 
 检查点结论：CP1 flag-off 基线一致 ✓（逐字段对照 `4e13568` 基线）；CP2 flag-on 链路走通 ✓；CP3 工厂类型签名强制 flag/fallback/DI ✓；CP4 全部验证命令通过 ✓（type-check 0 错、345 tests passed、build clean）；CP5 eslint 基线 0 errors / 4 warnings（既有，与 OS 3.3 无关）；CP6 顺延至 C3。
 
@@ -158,7 +158,7 @@ Auditor: Claude Code
 HEAD: `888b04e`
 Verdict: **PASS** — 无阻塞问题
 
-完整报告：[audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md](audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md)
+完整报告：[audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md](../../../audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md)
 
 检查点结论：CP6 四个 legacy 包 README 与实际导出逐一核对属实，src 零引用 ✓；C4 flag 注册表 `=== 'true'` 语义等价、345 tests 零改动 ✓；C5 图片域名清单经全仓库 grep 验证完整、限流 key 构造正确（invite 按 IP+code 双维度）✓；eslint 基线 192 warn / 0 error 复现、68/68 模块覆盖 ✓；C6 roadmap 落库、docs:links 1011 文件通过 ✓；Round 1 承诺项 C-001 / C-002 均确认关闭 ✓。
 

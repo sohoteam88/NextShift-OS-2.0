@@ -83,7 +83,7 @@ Recommended tag is prepared in the tag preparation document, but no tag has been
 
 ## Audit Evidence
 
-- [Architecture Review with Round 1 and Round 2 Audit Results](../../../../ARCHITECTURE_REVIEW_2026-07-09.md)
+- [Architecture Review with Round 1 and Round 2 Audit Results](../../reviews/ARCHITECTURE_REVIEW_2026-07-09.md)
 - [Round 1 Code Review Report - PR #16-#19](../../../../audit/OS33_C1_C2_PR16_PR19_CODE_REVIEW_REPORT.md)
 - [Round 2 Code Review Report - PR #20-#21](../../../../audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md)
 
