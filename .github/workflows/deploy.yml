@@ -45,6 +45,7 @@ jobs:
             --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE || 'false' }}" \
             --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS || 'false' }}" \
             --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_MISSION="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION || 'false' }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE || 'false' }}" \
             --build-arg SENTRY_AUTH_TOKEN="${{ secrets.PROD_SENTRY_AUTH_TOKEN }}" \
             --build-arg SENTRY_ORG="${{ secrets.PROD_SENTRY_ORG }}" \
             --build-arg SENTRY_PROJECT="${{ secrets.PROD_SENTRY_PROJECT }}" \
