@@ -27,8 +27,17 @@
       "@/*": [
         "./src/*"
       ],
+      "@nextshift/shared": [
+        "./packages/shared/src/index.ts"
+      ],
+      "@nextshift/contracts": [
+        "./packages/contracts/src/index.ts"
+      ],
       "@nextshift/runtime": [
         "./packages/runtime/src/index.ts"
+      ],
+      "@nextshift/decision-brain": [
+        "./packages/decision-brain/src/index.ts"
       ]
     }
   },

@@ -191,6 +191,7 @@ Changes introduced:
   - `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS`
   - `NEXT_PUBLIC_ENABLE_RUNTIME_MISSION`
   - `NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE`
+  - `NEXT_PUBLIC_ENABLE_COMMAND_CENTER`
 - The deploy workflow passes production build values from `PROD_` GitHub secrets and non-secret feature flags from GitHub variables.
 - The deploy workflow preserves the current image as `nextshift-app:previous` before promoting the new image to `nextshift-app:latest`.
 - The deploy workflow copies the Prisma schema and migrations to the VPS with each deployment package so a clean VPS directory can run migrations deterministically.

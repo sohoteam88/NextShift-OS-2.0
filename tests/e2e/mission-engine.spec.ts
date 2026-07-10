@@ -44,6 +44,20 @@ test.describe('Mission Engine', () => {
     expect(body.data).not.toHaveProperty('runtime');
   });
 
+  test('command center recommendation API returns a recommendation structure when enabled', async ({ page }) => {
+    const response = await page.request.get('/api/v1/dashboard/recommendation');
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.data).toBeTruthy();
+    expect(body.data.recommendation.title).toEqual(expect.any(String));
+    expect(body.data.recommendation.summary).toEqual(expect.any(String));
+    expect(body.data.recommendation.rationale).toEqual(expect.any(String));
+    expect(body.data.confidence).toEqual(expect.any(Number));
+    expect(body.data.explain).toEqual(expect.any(String));
+    expect(['engine', 'rule']).toContain(body.data.source);
+  });
+
   test('progress bar is visible', async ({ page }) => {
     await page.goto('/dashboard');
     const progressBar = page.locator('[class*="progress"], [role="progressbar"]').first();

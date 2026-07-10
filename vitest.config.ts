@@ -5,7 +5,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@nextshift/shared': fileURLToPath(new URL('./packages/shared/src/index.ts', import.meta.url)),
+      '@nextshift/contracts': fileURLToPath(new URL('./packages/contracts/src/index.ts', import.meta.url)),
       '@nextshift/runtime': fileURLToPath(new URL('./packages/runtime/src/index.ts', import.meta.url)),
+      '@nextshift/decision-brain': fileURLToPath(new URL('./packages/decision-brain/src/index.ts', import.meta.url)),
     },
   },
   test: {
