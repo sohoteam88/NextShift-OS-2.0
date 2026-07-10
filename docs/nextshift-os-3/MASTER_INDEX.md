@@ -33,6 +33,7 @@ For first-time contributors:
 9. [Business Foundation v1.0 - Released](business-foundation-v1/README.md)
 10. [Business Brain v1.0 - Released](business-brain-v1/README.md)
 11. [Layer Roadmap P0](LAYER_ROADMAP_P0.md)
+11. [OS 3.4 Blueprint — Draft](OS_3_4_BLUEPRINT.md)
 11. [Decision Engine v1.0 - Released](decision-engine-v1/README.md)
 12. [Conversation Engine v1.0 - Released](conversation-engine-v1/README.md)
 13. [Creative Studio v1.0 - Released](creative-studio-v1/README.md)
