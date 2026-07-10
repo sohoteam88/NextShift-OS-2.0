@@ -34,13 +34,13 @@ Workflow release records do not imply that a Git tag exists. Git tags are govern
 
 | ID | Workflow | Release State | Implementation Commit | Audit Commit | Release Evidence |
 | --- | --- | --- | --- | --- | --- |
-| WF-001 | Repository Health Review | Released | `e968fe5` | `c832aae` | [Runtime Sprint-005 code review](../../audit/NEXTSHIFT_RUNTIME_SPRINT_005_CODE_REVIEW_REPORT.md) |
-| WF-002 | CRM Lead Qualification | Released | `5022fe0` | `3f7ea9f` | [WF-002 code review](../../audit/WF_002_CRM_LEAD_QUALIFICATION_CODE_REVIEW_REPORT.md) |
-| WF-003 | Content Planning & Approval | Released | `15d1b37` | `b628f1c` | [WF-003 repository audit](../../audit/WF_003_CONTENT_PLANNING_APPROVAL_REPOSITORY_AUDIT_REPORT.md) |
-| WF-004 | Opportunity Evaluation | Released | `f6aa85c` | `c738b18` | [WF-004 repository audit](../../audit/WF_004_OPPORTUNITY_EVALUATION_REPOSITORY_AUDIT_REPORT.md) |
-| WF-005 | Campaign Execution | Released | `d738a39` | `fefd47b` | [WF-005 repository audit](../../audit/WF_005_CAMPAIGN_EXECUTION_REPOSITORY_AUDIT_REPORT.md) |
-| WF-006 | Revenue Forecast Review | Released | `4fb3c3f` | `f972a21` | [WF-006 repository audit](../../audit/WF_006_REVENUE_FORECAST_REVIEW_REPOSITORY_AUDIT_REPORT.md) |
-| WF-007 | Analytics Insight Review | Released | `c96255c` | `0655d38` | [WF-007 repository audit](../../audit/WF_007_ANALYTICS_INSIGHT_REVIEW_REPOSITORY_AUDIT_REPORT.md) |
+| WF-001 | Repository Health Review | Released | `e968fe5` | `c832aae` | [Runtime Sprint-005 code review](../../archive/audit-history/NEXTSHIFT_RUNTIME_SPRINT_005_CODE_REVIEW_REPORT.md) |
+| WF-002 | CRM Lead Qualification | Released | `5022fe0` | `3f7ea9f` | [WF-002 code review](../../archive/audit-history/WF_002_CRM_LEAD_QUALIFICATION_CODE_REVIEW_REPORT.md) |
+| WF-003 | Content Planning & Approval | Released | `15d1b37` | `b628f1c` | [WF-003 repository audit](../../archive/audit-history/WF_003_CONTENT_PLANNING_APPROVAL_REPOSITORY_AUDIT_REPORT.md) |
+| WF-004 | Opportunity Evaluation | Released | `f6aa85c` | `c738b18` | [WF-004 repository audit](../../archive/audit-history/WF_004_OPPORTUNITY_EVALUATION_REPOSITORY_AUDIT_REPORT.md) |
+| WF-005 | Campaign Execution | Released | `d738a39` | `fefd47b` | [WF-005 repository audit](../../archive/audit-history/WF_005_CAMPAIGN_EXECUTION_REPOSITORY_AUDIT_REPORT.md) |
+| WF-006 | Revenue Forecast Review | Released | `4fb3c3f` | `f972a21` | [WF-006 repository audit](../../archive/audit-history/WF_006_REVENUE_FORECAST_REVIEW_REPOSITORY_AUDIT_REPORT.md) |
+| WF-007 | Analytics Insight Review | Released | `c96255c` | `0655d38` | [WF-007 repository audit](../../archive/audit-history/WF_007_ANALYTICS_INSIGHT_REVIEW_REPOSITORY_AUDIT_REPORT.md) |
 
 ---
 

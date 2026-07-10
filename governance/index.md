@@ -21,10 +21,7 @@ This registry provides the RepoOS governance entry point while preserving curren
 | Artifact | Purpose |
 | --- | --- |
 | [MU-002 Implementation Plan](MU-002_IMPLEMENTATION_PLAN.md) | Defines the executable governance migration package for review |
-| [Governance Migration Manifest](GOVERNANCE_MIGRATION_MANIFEST.md) | Maps source governance assets to future target paths |
-| [Governance Compatibility Map](GOVERNANCE_COMPATIBILITY_MAP.md) | Defines old-path compatibility and future target handling |
-| [Governance Validation Checklist](GOVERNANCE_VALIDATION_CHECKLIST.md) | Lists required validation gates for MU-002 |
-| [Governance Rollback Checklist](GOVERNANCE_ROLLBACK_CHECKLIST.md) | Defines rollback readiness and reversal checks |
+| [Governance Migration Record](MIGRATION_RECORD.md) | Consolidates the migration manifest, compatibility map, validation checklist, and rollback checklist |
 
 ## Target Governance Domains
 

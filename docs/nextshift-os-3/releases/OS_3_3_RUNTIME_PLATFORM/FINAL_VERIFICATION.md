@@ -33,7 +33,7 @@ Last Updated: 2026-07-10
 | --- | --- | --- | --- |
 | Round 1 | PR #16-#19: callsites, CI trigger coverage, E2E guard, adapter factory | PASS - no blocking issues | [Round 1 Code Review Report](../../../../audit/OS33_C1_C2_PR16_PR19_CODE_REVIEW_REPORT.md) |
 | Round 2 | PR #20-#21: legacy package boundaries, flag registry, hardening cleanup | PASS - no blocking issues | [Round 2 Code Review Report](../../../../audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md) |
-| Architecture Review | Packages, runtime adapters, module boundaries, migration path | PASS for C1-C6 after audits | [Architecture Review](../../../../ARCHITECTURE_REVIEW_2026-07-09.md) |
+| Architecture Review | Packages, runtime adapters, module boundaries, migration path | PASS for C1-C6 after audits | [Architecture Review](../../reviews/ARCHITECTURE_REVIEW_2026-07-09.md) |
 
 Round 2 includes one non-blocking deployment advisory:
 

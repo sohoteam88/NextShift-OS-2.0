@@ -63,10 +63,7 @@ Use this registry before loading deep project documentation unless the operator 
 | Artifact | Purpose |
 | --- | --- |
 | [MU-005 Implementation Plan](MU-005_IMPLEMENTATION_PLAN.md) | Defines the platform project migration package for review |
-| [Platform Project Migration Manifest](PLATFORM_PROJECT_MIGRATION_MANIFEST.md) | Maps current project documentation paths to future target paths |
-| [Platform Project Compatibility Map](PLATFORM_PROJECT_COMPATIBILITY_MAP.md) | Defines old-path compatibility and lifecycle artifact preservation |
-| [Platform Project Validation Checklist](PLATFORM_PROJECT_VALIDATION_CHECKLIST.md) | Lists validation gates for platform project migration |
-| [Platform Project Rollback Checklist](PLATFORM_PROJECT_ROLLBACK_CHECKLIST.md) | Defines rollback readiness for future project movement |
+| [Platform Migration Record](MIGRATION_RECORD.md) | Consolidates the project and structure migration manifests, compatibility maps, validation checklists, and rollback checklists |
 
 ## Architecture and Decision Records
 

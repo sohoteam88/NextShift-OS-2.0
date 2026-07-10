@@ -6,12 +6,12 @@ Migration Unit: MU-004 Audit Registry Migration
 
 ## Purpose
 
-This registry is the canonical audit evidence discovery layer for RepoOS migration. It preserves historical audit records at current paths while documenting future audit taxonomy planning and compatibility metadata.
+This registry is the canonical audit evidence discovery layer for RepoOS migration. It preserves active audit records at current paths while documenting archive history, future audit taxonomy planning, and compatibility metadata.
 
 ## Registry-First Boundary
 
-- Existing audit files remain in place.
-- No audit files have been moved or renamed.
+- Current audit files remain in `audit/`.
+- Filename-dated audit files earlier than 2026-06-25 have been moved to `archive/audit-history/`.
 - No audit findings have been rewritten or reinterpreted.
 - No audit evidence has been deleted.
 - No runtime, governance, release, or platform project migration is performed by MU-004.
@@ -32,6 +32,8 @@ This registry is the canonical audit evidence discovery layer for RepoOS migrati
 | Area | Current Path |
 | --- | --- |
 | Audit archive | [audit/](./) |
+| Audit retention rules | [audit/README.md](README.md) |
+| Archived audit history | [archive/audit-history](../archive/audit-history/) |
 | Documentation audit area | [docs/audit](../docs/audit) |
 | Business OS release package audit | [BUSINESS_OS_v1.0_RELEASE_PACKAGE_AUDIT_REPORT.md](BUSINESS_OS_v1.0_RELEASE_PACKAGE_AUDIT_REPORT.md) |
 | Architecture freeze report | [ARCHITECTURE_FREEZE_REPORT_2026-06-26.md](ARCHITECTURE_FREEZE_REPORT_2026-06-26.md) |
@@ -89,7 +91,8 @@ This registry is the canonical audit evidence discovery layer for RepoOS migrati
 
 ## Compatibility Notes
 
-- Current audit paths remain active until a separate approved audit taxonomy migration executes.
+- Current audit paths remain active for non-archived audit evidence until a separate approved audit taxonomy migration executes.
+- Archived audit history is preserved under `archive/audit-history/`.
 - Future taxonomy paths are registry mappings only.
 - Audit reports are preserved as evidence and must not be rewritten as normal project documentation.
 - Audit result reinterpretation, evidence deletion, release migration, governance migration, and runtime migration are outside MU-004 scope.

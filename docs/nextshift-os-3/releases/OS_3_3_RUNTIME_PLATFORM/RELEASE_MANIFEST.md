@@ -95,7 +95,7 @@ Audit record commit:
 
 ### Audit Evidence
 
-- [Architecture Review with Audit Results](../../../../ARCHITECTURE_REVIEW_2026-07-09.md)
+- [Architecture Review with Audit Results](../../reviews/ARCHITECTURE_REVIEW_2026-07-09.md)
 - [Round 1 Code Review Report](../../../../audit/OS33_C1_C2_PR16_PR19_CODE_REVIEW_REPORT.md)
 - [Round 2 Code Review Report](../../../../audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md)
 

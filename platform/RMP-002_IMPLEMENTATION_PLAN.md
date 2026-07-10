@@ -93,7 +93,7 @@ Registry updates for a future execution pass must:
 
 ## Compatibility Plan
 
-Compatibility is defined in [Platform Structure Compatibility Map](PLATFORM_STRUCTURE_COMPATIBILITY_MAP.md).
+Compatibility is defined in the [Platform Migration Record](MIGRATION_RECORD.md).
 
 The central rule is:
 
@@ -103,7 +103,7 @@ current docs/nextshift-os-3 paths remain active until a later approved migration
 
 ## Validation Plan
 
-Validation is defined in [Platform Structure Validation Checklist](PLATFORM_STRUCTURE_VALIDATION_CHECKLIST.md).
+Validation is defined in the [Platform Migration Record](MIGRATION_RECORD.md).
 
 Required commands:
 
@@ -117,7 +117,7 @@ Local markdown link validation is required for all RMP-002 package files.
 
 ## Rollback Plan
 
-Rollback is defined in [Platform Structure Rollback Checklist](PLATFORM_STRUCTURE_ROLLBACK_CHECKLIST.md).
+Rollback is defined in the [Platform Migration Record](MIGRATION_RECORD.md).
 
 Because this Stop A package creates documentation-only implementation package files and performs no file movement, rollback is limited to removing the five RMP-002 package files if explicitly authorized.
 

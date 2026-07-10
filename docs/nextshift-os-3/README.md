@@ -81,6 +81,17 @@ Foundation documents:
 7. When uncertain, choose architectural simplicity over feature complexity.
 8. Every MVP 1.0 feature must map to [MVP Phase 1, Phase 2, or Phase 3](MVP_1_ALIGNMENT.md).
 
+## Active Status Documents
+
+Only the following status documents are active and should be updated for current repository state:
+
+- [Project Status](PROJECT_STATUS.md)
+- [Next Action](NEXT_ACTION.md)
+- [Capability Status](CAPABILITY_STATUS.md)
+- [Platform Status](../../platform/status.md)
+
+Other status-class documents are historical snapshots unless a future approved governance task explicitly reactivates them.
+
 ## Templates
 
 - [RFC Template](rfc/TEMPLATE.md)

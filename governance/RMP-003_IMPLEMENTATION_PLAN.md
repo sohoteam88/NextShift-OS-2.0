@@ -14,8 +14,7 @@ This plan defines the Governance Migration Execution implementation package for 
 This package follows:
 
 - [Governance Index](index.md)
-- [Governance Migration Manifest](GOVERNANCE_MIGRATION_MANIFEST.md)
-- [Governance Compatibility Map](GOVERNANCE_COMPATIBILITY_MAP.md)
+- [Governance Migration Record](MIGRATION_RECORD.md)
 - [Repository Architecture Freeze](repository/REPOSITORY_ARCHITECTURE_FREEZE.md)
 - [Migration Freeze Matrix](repository/MIGRATION_FREEZE_MATRIX.md)
 - [RMP Execution Framework](repository/RMP_EXECUTION_FRAMEWORK.md)
@@ -108,7 +107,7 @@ Future registry updates must:
 
 ## Compatibility Plan
 
-Compatibility is defined in [Governance Structure Compatibility Map](GOVERNANCE_STRUCTURE_COMPATIBILITY_MAP.md).
+Compatibility is defined in the [Governance Migration Record](MIGRATION_RECORD.md).
 
 The central rule is:
 
@@ -118,7 +117,7 @@ current governance and standards paths remain active until target governance pat
 
 ## Validation Plan
 
-Validation is defined in [Governance Structure Validation Checklist](GOVERNANCE_STRUCTURE_VALIDATION_CHECKLIST.md).
+Validation is defined in the [Governance Migration Record](MIGRATION_RECORD.md).
 
 Required commands:
 
@@ -132,7 +131,7 @@ Local markdown link validation is required for all RMP-003 package files.
 
 ## Rollback Plan
 
-Rollback is defined in [Governance Structure Rollback Checklist](GOVERNANCE_STRUCTURE_ROLLBACK_CHECKLIST.md).
+Rollback is defined in the [Governance Migration Record](MIGRATION_RECORD.md).
 
 Because this Stop A package creates documentation-only implementation package files and performs no file movement, rollback is limited to removing the five RMP-003 package files if explicitly authorized.
 
