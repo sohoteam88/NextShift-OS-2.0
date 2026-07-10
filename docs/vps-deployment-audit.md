@@ -167,3 +167,35 @@ These are exposed to the browser and must not contain secrets:
 - Missing AI provider keys causing AI features to fail while the app itself still runs.
 - PM2 starting without loading the intended production env file.
 - `pnpm lint` may fail if `next lint` support differs in the deployed Next.js version.
+
+## DEPLOY-0 Production Pipeline Update
+
+Date: 2026-07-10
+
+The production deploy path now targets the Docker-based Runtime Platform deployment instead of the older PM2-oriented staging notes above.
+
+Changes introduced:
+
+- Docker build arguments now include all public production build-time variables discovered in the repository:
+  - `NEXT_PUBLIC_APP_URL`
+  - `NEXT_PUBLIC_BASE_DOMAIN`
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+  - `NEXT_PUBLIC_SENTRY_DSN`
+  - `NEXT_PUBLIC_POSTHOG_KEY`
+  - `NEXT_PUBLIC_POSTHOG_HOST`
+  - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+  - `NEXT_PUBLIC_ENABLE_EVOLUTION_PROJECTION_V6`
+  - `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE`
+  - `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS`
+  - `NEXT_PUBLIC_ENABLE_RUNTIME_MISSION`
+- The deploy workflow passes production build values from `PROD_` GitHub secrets and non-secret feature flags from GitHub variables.
+- The deploy workflow preserves the current image as `nextshift-app:previous` before promoting the new image to `nextshift-app:latest`.
+- The deploy workflow copies the Prisma schema and migrations to the VPS with each deployment package so a clean VPS directory can run migrations deterministically.
+- The deploy workflow runs `prisma migrate deploy` in a temporary container before `docker compose up`.
+- The old failure-triggered `rollback` notification job is now named `ci-failure-notice`.
+- A real `workflow_dispatch` rollback job now retags `nextshift-app:previous` to `nextshift-app:latest`, recreates the app service, and runs smoke checks.
+- `scripts/deploy-smoke.sh` validates `/api/health`, `/api/v1/version`, and `/login` after deploy or rollback.
+
+Required GitHub secrets and variables are documented in [production-deployment-secrets.md](production-deployment-secrets.md).

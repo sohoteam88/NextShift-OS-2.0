@@ -12,7 +12,7 @@ OFFICIALLY RELEASED
 
 - Blueprint v1.0
 - Core Runtime v1.0
-- Engineering Playbook v1.1
+- Engineering Playbook v1.2
 - Continuous Engineering Mode v2
 - CAP-001 through CAP-008 released platform baseline
 

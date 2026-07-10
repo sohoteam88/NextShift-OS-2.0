@@ -11,7 +11,7 @@ export async function loginAsUser(page: Page) {
   await page.fill('input[name="email"]', TEST_USER_EMAIL);
   await page.fill('input[name="password"]', TEST_USER_PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard**', { timeout: 15000 });
+  await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 15000 });
   await expect(page.locator('h1')).toBeVisible();
 }
 
@@ -20,12 +20,14 @@ export async function loginAsAdmin(page: Page) {
   await page.fill('input[name="email"]', ADMIN_EMAIL);
   await page.fill('input[name="password"]', ADMIN_PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL('**/dashboard**', { timeout: 15000 });
+  await page.waitForURL((url) => url.pathname === '/platform-admin', { timeout: 15000 });
 }
 
 export async function logout(page: Page) {
   await page.goto('/dashboard');
-  // Click logout/settings — adapt to actual UI
-  const logoutBtn = page.locator('text=Logout, text=Sign out, text=退出');
-  if (await logoutBtn.isVisible()) await logoutBtn.click();
+  await page.getByRole('button', { name: 'User menu' }).click();
+  const logoutButton = page.getByRole('button', { name: /退出登录|Logout|Sign out/i });
+  await expect(logoutButton).toBeVisible();
+  await logoutButton.click();
+  await page.waitForURL((url) => url.pathname === '/login', { timeout: 10000 });
 }

@@ -4,6 +4,7 @@ import { apiHandler } from '@/lib/api-handler';
 import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { funnelBuilderService } from '@/modules/ai/services/funnel-builder-service';
+import { resolveRequestWorkspaceContext } from '@/modules/workspace/request-workspace-context';
 
 const Schema = z.object({
   businessType: z.string().min(1).max(100),
@@ -19,13 +20,15 @@ const Schema = z.object({
   closingMethod: z.string().min(1).max(100),
   brandTone: z.string().max(100).optional(),
   strategyContext: z.any().optional(),
+  workspaceId: z.string().optional(),
 });
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
   await sharedAiRateLimitGuard(user, { feature: 'generation' });
   const body = await request.json();
-  const input = Schema.parse(body);
-  const result = await funnelBuilderService.generateWorldClassFunnel(user, input);
+  const { workspaceId: _workspaceId, ...input } = Schema.parse(body);
+  const workspaceContext = await resolveRequestWorkspaceContext({ user, request, body });
+  const result = await funnelBuilderService.generateWorldClassFunnel(user, input, workspaceContext);
   return NextResponse.json({ data: result });
 });

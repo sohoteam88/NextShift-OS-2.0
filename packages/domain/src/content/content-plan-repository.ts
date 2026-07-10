@@ -13,6 +13,10 @@ export interface ContentPlanRepository {
   findByCalendarId(
     calendarId: ContentCalendarId
   ): Promise<readonly ContentPlan[]>;
+  findPendingApprovals(
+    businessId: BusinessId
+  ): Promise<readonly ContentPlan[]>;
+  findApproved(businessId: BusinessId): Promise<readonly ContentPlan[]>;
   listEntries(planId: ContentPlanId): Promise<readonly PlannedContentSnapshot[]>;
   exists(planId: ContentPlanId): Promise<boolean>;
 }

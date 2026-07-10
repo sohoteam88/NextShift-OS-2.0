@@ -18,6 +18,8 @@ This document governs:
 - Engineering decisions
 - Product evolution
 
+Product decision-making during MVP 1.0 is governed by [Product Governance Charter](PRODUCT_GOVERNANCE_CHARTER.md).
+
 If any implementation conflicts with this document, the implementation must be reconsidered.
 
 ## Governance Philosophy
@@ -69,6 +71,8 @@ docs/
 ```
 
 Each directory has a distinct responsibility.
+
+The canonical repository layout and ownership model are defined in [Repository Structure Standard](REPOSITORY_STRUCTURE_STANDARD.md).
 
 ## Source of Truth
 
@@ -130,6 +134,12 @@ Idea
 
 No implementation should bypass this process.
 
+Detailed change classification, assessment, and approvals are governed by [Change Management Standard](CHANGE_MANAGEMENT_STANDARD.md).
+
+Product-level approval decisions are evaluated through [Product Decision Framework](PRODUCT_DECISION_FRAMEWORK.md).
+
+Platform project governance is defined in [Platform Project Standard](PLATFORM_PROJECT_STANDARD.md).
+
 ## Document Status
 
 Every document must declare its status.
@@ -143,6 +153,10 @@ Allowed values:
 - Archived
 
 Only Approved documents should be treated as authoritative.
+
+Document authority and conflict resolution are governed by [Document Hierarchy Standard](DOCUMENT_HIERARCHY_STANDARD.md).
+
+Traceability requirements are governed by [Traceability Standard](TRACEABILITY_STANDARD.md).
 
 ## Versioning
 

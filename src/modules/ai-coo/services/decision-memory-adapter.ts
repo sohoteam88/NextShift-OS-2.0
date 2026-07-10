@@ -1,10 +1,12 @@
 import { businessMemoryEventStore } from '@/modules/business-context-memory/services/business-memory-event-store';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { AICOODecision } from '../contracts/AICOODecision';
 
 export async function recordAICOODecision(input: {
   userId: string;
   tenantId: string;
   decision: AICOODecision;
+  workspaceContext?: WorkspaceContext;
 }) {
   return businessMemoryEventStore.appendOnce({
     type: 'COO_DECISION_MADE',
@@ -20,6 +22,9 @@ export async function recordAICOODecision(input: {
       recommendedMissionId: input.decision.recommendedMission.id,
       primaryRisk: input.decision.primaryRisk?.code,
       primaryOpportunity: input.decision.primaryOpportunity?.code,
+      workspaceId: input.workspaceContext?.workspaceId,
+      workspaceType: input.workspaceContext?.workspaceType,
+      templateNamespace: input.workspaceContext?.templateNamespace,
     },
   });
 }

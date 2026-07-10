@@ -1,12 +1,18 @@
 import type {
   ContentCalendarRepository,
+  ContentApprovalSnapshot,
+  ContentApprovedEvent,
   ContentId,
   ContentPlanArchivedEvent,
   ContentPlanCreatedEvent,
   ContentPlanDomainEvent,
   ContentPlanId,
+  ContentPlanPriority,
   ContentPlanRepository,
   ContentPlanRestoredEvent,
+  ContentRejectedEvent,
+  ContentRevisionRequestedEvent,
+  ContentSubmittedForReviewEvent,
   ContentRepository,
   PlannedContentAddedEvent,
   PlannedContentRemovedEvent,
@@ -46,6 +52,18 @@ export interface CreateContentPlanCommand extends ApplicationCommand {
   readonly causationId?: CausationId;
 }
 
+export interface CreateApprovalContentPlanCommand extends ApplicationCommand {
+  readonly commandType: "CreateApprovalContentPlan";
+  readonly planId?: ContentPlanId;
+  readonly title: string;
+  readonly objective: string;
+  readonly audience: string;
+  readonly channel: string;
+  readonly priority: ContentPlanPriority;
+  readonly recommendedPublishDate: Timestamp;
+  readonly causationId?: CausationId;
+}
+
 export interface AddContentToPlanCommand extends ApplicationCommand {
   readonly commandType: "AddContentToPlan";
   readonly planId: ContentPlanId;
@@ -81,9 +99,47 @@ export interface RestoreContentPlanCommand extends ApplicationCommand {
   readonly causationId?: CausationId;
 }
 
+export interface SubmitContentPlanForReviewCommand extends ApplicationCommand {
+  readonly commandType: "SubmitContentPlanForReview";
+  readonly planId: ContentPlanId;
+  readonly causationId?: CausationId;
+}
+
+export interface ApproveContentCommand extends ApplicationCommand {
+  readonly commandType: "ApproveContent";
+  readonly planId: ContentPlanId;
+  readonly reviewer: string;
+  readonly reason?: string;
+  readonly causationId?: CausationId;
+}
+
+export interface RejectContentCommand extends ApplicationCommand {
+  readonly commandType: "RejectContent";
+  readonly planId: ContentPlanId;
+  readonly reviewer: string;
+  readonly reason?: string;
+  readonly causationId?: CausationId;
+}
+
+export interface RequestContentRevisionCommand extends ApplicationCommand {
+  readonly commandType: "RequestContentRevision";
+  readonly planId: ContentPlanId;
+  readonly reviewer: string;
+  readonly reason?: string;
+  readonly causationId?: CausationId;
+}
+
 export interface GetContentPlanQuery extends ApplicationQuery {
   readonly queryType: "GetContentPlan";
   readonly planId: ContentPlanId;
+}
+
+export interface GetPendingApprovalsQuery extends ApplicationQuery {
+  readonly queryType: "GetPendingApprovals";
+}
+
+export interface GetApprovedContentQuery extends ApplicationQuery {
+  readonly queryType: "GetApprovedContent";
 }
 
 export interface ContentPlanApplicationResult {
@@ -92,6 +148,10 @@ export interface ContentPlanApplicationResult {
 
 export interface ContentPlanQueryResult {
   readonly plan: ContentPlan | null;
+}
+
+export interface ContentPlanListQueryResult {
+  readonly plans: readonly ContentPlan[];
 }
 
 export interface ContentPlanApplicationError {
@@ -149,6 +209,34 @@ export class ContentPlanApplicationService {
     }
   }
 
+  async createApprovalContentPlan(
+    command: CreateApprovalContentPlanCommand
+  ): Promise<Result<ContentPlanApplicationResult, ContentPlanApplicationError>> {
+    try {
+      const createdAt = this.now();
+      const plan = ContentPlan.createApprovalPlan({
+        planId: command.planId ?? this.createPlanId(),
+        businessId: command.context.businessId,
+        title: command.title,
+        objective: command.objective,
+        audience: command.audience,
+        channel: command.channel,
+        priority: command.priority,
+        recommendedPublishDate: command.recommendedPublishDate,
+        createdAt,
+      });
+
+      await this.planRepository.save(plan);
+      await this.publish(
+        this.createApprovalContentPlanCreatedEvent(command, plan, createdAt)
+      );
+
+      return success({ plan });
+    } catch (error) {
+      return failure(mapContentPlanApplicationError(error));
+    }
+  }
+
   async addContentToPlan(
     command: AddContentToPlanCommand
   ): Promise<Result<ContentPlanApplicationResult, ContentPlanApplicationError>> {
@@ -199,8 +287,15 @@ export class ContentPlanApplicationService {
         });
       }
 
-      const calendar = await this.calendarRepository.findById(plan.calendarId);
-      if (!calendar) return failure(calendarNotFound(plan.calendarId));
+      if (!plan.linkedCalendarId) {
+        return failure({
+          code: "ValidationFailed",
+          message: `Content plan ${command.planId} is not linked to a calendar.`,
+        });
+      }
+
+      const calendar = await this.calendarRepository.findById(plan.linkedCalendarId);
+      if (!calendar) return failure(calendarNotFound(plan.linkedCalendarId));
 
       if (calendar.businessId !== command.context.businessId) {
         return failure(calendarBusinessMismatch(plan.calendarId));
@@ -292,10 +387,104 @@ export class ContentPlanApplicationService {
     }
   }
 
+  async submitForReview(
+    command: SubmitContentPlanForReviewCommand
+  ): Promise<Result<ContentPlanApplicationResult, ContentPlanApplicationError>> {
+    try {
+      const planResult = await this.loadPlan(command);
+      if (!planResult.ok) return planResult;
+
+      const submittedAt = this.now();
+      planResult.value.plan.submitForReview(submittedAt);
+
+      await this.planRepository.save(planResult.value.plan);
+      await this.publish(
+        this.createContentSubmittedForReviewEvent(command, submittedAt)
+      );
+
+      return success({ plan: planResult.value.plan });
+    } catch (error) {
+      return failure(mapContentPlanApplicationError(error));
+    }
+  }
+
+  async approveContent(
+    command: ApproveContentCommand
+  ): Promise<Result<ContentPlanApplicationResult, ContentPlanApplicationError>> {
+    return this.recordApprovalDecision(command, "approved");
+  }
+
+  async rejectContent(
+    command: RejectContentCommand
+  ): Promise<Result<ContentPlanApplicationResult, ContentPlanApplicationError>> {
+    return this.recordApprovalDecision(command, "rejected");
+  }
+
+  async requestRevision(
+    command: RequestContentRevisionCommand
+  ): Promise<Result<ContentPlanApplicationResult, ContentPlanApplicationError>> {
+    return this.recordApprovalDecision(command, "needs_revision");
+  }
+
   async getContentPlan(query: GetContentPlanQuery): Promise<ContentPlanQueryResult> {
     return {
       plan: await this.planRepository.findById(query.planId),
     };
+  }
+
+  async getPendingApprovals(
+    query: GetPendingApprovalsQuery
+  ): Promise<ContentPlanListQueryResult> {
+    return {
+      plans: await this.planRepository.findPendingApprovals(
+        query.context.businessId
+      ),
+    };
+  }
+
+  async getApprovedContent(
+    query: GetApprovedContentQuery
+  ): Promise<ContentPlanListQueryResult> {
+    return {
+      plans: await this.planRepository.findApproved(query.context.businessId),
+    };
+  }
+
+  private async recordApprovalDecision(
+    command:
+      | ApproveContentCommand
+      | RejectContentCommand
+      | RequestContentRevisionCommand,
+    decision: ContentApprovalSnapshot["decision"]
+  ): Promise<Result<ContentPlanApplicationResult, ContentPlanApplicationError>> {
+    try {
+      const planResult = await this.loadPlan(command);
+      if (!planResult.ok) return planResult;
+
+      const approvedAt = this.now();
+      const input = {
+        reviewer: command.reviewer,
+        reason: command.reason,
+        approvedAt,
+      };
+
+      if (decision === "approved") {
+        planResult.value.plan.approve(input);
+      } else if (decision === "rejected") {
+        planResult.value.plan.reject(input);
+      } else {
+        planResult.value.plan.requestRevision(input);
+      }
+
+      await this.planRepository.save(planResult.value.plan);
+      await this.publish(
+        this.createApprovalDecisionEvent(command, decision, input)
+      );
+
+      return success({ plan: planResult.value.plan });
+    } catch (error) {
+      return failure(mapContentPlanApplicationError(error));
+    }
   }
 
   private async loadPlan(
@@ -356,6 +545,75 @@ export class ContentPlanApplicationService {
         createdAt,
       },
     };
+  }
+
+  private createApprovalContentPlanCreatedEvent(
+    command: CreateApprovalContentPlanCommand,
+    plan: ContentPlan,
+    createdAt: Timestamp
+  ): ContentPlanCreatedEvent {
+    const snapshot = plan.toSnapshot();
+
+    return {
+      ...this.createBaseEvent(command, "ContentPlanCreated", snapshot.planId, createdAt),
+      payload: {
+        planId: snapshot.planId,
+        businessId: snapshot.businessId,
+        name: snapshot.name,
+        title: snapshot.title,
+        objective: snapshot.objective,
+        audience: snapshot.audience,
+        channel: snapshot.channel,
+        priority: snapshot.priority,
+        recommendedPublishDate: snapshot.recommendedPublishDate,
+        createdAt,
+      },
+    };
+  }
+
+  private createContentSubmittedForReviewEvent(
+    command: SubmitContentPlanForReviewCommand,
+    submittedAt: Timestamp
+  ): ContentSubmittedForReviewEvent {
+    return {
+      ...this.createBaseEvent(
+        command,
+        "ContentSubmittedForReview",
+        command.planId,
+        submittedAt
+      ),
+      payload: {
+        planId: command.planId,
+        submittedAt,
+      },
+    };
+  }
+
+  private createApprovalDecisionEvent(
+    command:
+      | ApproveContentCommand
+      | RejectContentCommand
+      | RequestContentRevisionCommand,
+    decision: ContentApprovalSnapshot["decision"],
+    approval: Omit<ContentApprovalSnapshot, "decision">
+  ): ContentApprovedEvent | ContentRejectedEvent | ContentRevisionRequestedEvent {
+    const eventType =
+      decision === "approved"
+        ? "ContentApproved"
+        : decision === "rejected"
+          ? "ContentRejected"
+          : "ContentRevisionRequested";
+
+    return {
+      ...this.createBaseEvent(command, eventType, command.planId, approval.approvedAt),
+      payload: {
+        planId: command.planId,
+        reviewer: approval.reviewer,
+        decision,
+        reason: approval.reason,
+        approvedAt: approval.approvedAt,
+      },
+    } as ContentApprovedEvent | ContentRejectedEvent | ContentRevisionRequestedEvent;
   }
 
   private createPlannedContentAddedEvent(

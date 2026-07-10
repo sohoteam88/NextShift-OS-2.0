@@ -10,6 +10,8 @@ This document defines the Learning System Architecture of NextShift OS.
 
 The Learning System transforms execution outcomes into improved business intelligence.
 
+Implementation and governance requirements are defined in [Learning System Standard](LEARNING_SYSTEM_STANDARD.md).
+
 It ensures that every action, result, failure, correction, and decision improves the Business Twin over time.
 
 The Learning System answers one question:

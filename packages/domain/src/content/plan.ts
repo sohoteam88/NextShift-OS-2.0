@@ -13,8 +13,24 @@ import type { ContentPlatform } from "./calendar";
 export type ContentPlanId = Brand<string, "ContentPlanId">;
 export type ContentPlanName = Brand<string, "ContentPlanName">;
 
-export type ContentPlanStatus = "active" | "archived";
+export type ContentPlanPriority = "low" | "medium" | "high";
+export type ContentApprovalDecision = "approved" | "rejected" | "needs_revision";
+export type ContentPlanStatus =
+  | "draft"
+  | "pending_review"
+  | "approved"
+  | "rejected"
+  | "needs_revision"
+  | "active"
+  | "archived";
 export type PlannedContentStatus = "planned" | "scheduled" | "removed";
+
+export interface ContentApprovalSnapshot {
+  readonly reviewer: string;
+  readonly decision: ContentApprovalDecision;
+  readonly reason?: string;
+  readonly approvedAt: Timestamp;
+}
 
 export interface PlannedContentSnapshot {
   readonly contentId: ContentId;
@@ -29,12 +45,20 @@ export interface PlannedContentSnapshot {
 export interface ContentPlanSnapshot {
   readonly planId: ContentPlanId;
   readonly businessId: BusinessId;
-  readonly calendarId: ContentCalendarId;
+  readonly calendarId?: ContentCalendarId;
   readonly name: ContentPlanName;
+  readonly title?: string;
+  readonly objective?: string;
+  readonly audience?: string;
+  readonly channel?: string;
+  readonly priority?: ContentPlanPriority;
+  readonly recommendedPublishDate?: Timestamp;
   readonly status: ContentPlanStatus;
   readonly entries: readonly PlannedContentSnapshot[];
+  readonly approvalHistory?: readonly ContentApprovalSnapshot[];
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
+  readonly submittedAt?: Timestamp;
   readonly archivedAt?: Timestamp;
 }
 
@@ -46,11 +70,29 @@ export interface CreateContentPlanInput {
   readonly createdAt: Timestamp;
 }
 
+export interface CreateApprovalContentPlanInput {
+  readonly planId: ContentPlanId;
+  readonly businessId: BusinessId;
+  readonly title: string;
+  readonly objective: string;
+  readonly audience: string;
+  readonly channel: string;
+  readonly priority: ContentPlanPriority;
+  readonly recommendedPublishDate: Timestamp;
+  readonly createdAt: Timestamp;
+}
+
 export interface AddPlannedContentInput {
   readonly contentId: ContentId;
   readonly platforms: readonly string[];
   readonly plannedFor: Timestamp;
   readonly addedAt: Timestamp;
+}
+
+export interface ContentApprovalInput {
+  readonly reviewer: string;
+  readonly reason?: string;
+  readonly approvedAt: Timestamp;
 }
 
 export interface ContentPlanEventMetadata {
@@ -66,6 +108,10 @@ export interface ContentPlanEventMetadata {
 
 export type ContentPlanEventType =
   | "ContentPlanCreated"
+  | "ContentSubmittedForReview"
+  | "ContentApproved"
+  | "ContentRejected"
+  | "ContentRevisionRequested"
   | "PlannedContentAdded"
   | "PlannedContentScheduled"
   | "PlannedContentRemoved"
@@ -77,9 +123,44 @@ export interface ContentPlanCreatedEvent extends ContentPlanEventMetadata {
   readonly payload: {
     readonly planId: ContentPlanId;
     readonly businessId: BusinessId;
-    readonly calendarId: ContentCalendarId;
+    readonly calendarId?: ContentCalendarId;
     readonly name: ContentPlanName;
+    readonly title?: string;
+    readonly objective?: string;
+    readonly audience?: string;
+    readonly channel?: string;
+    readonly priority?: ContentPlanPriority;
+    readonly recommendedPublishDate?: Timestamp;
     readonly createdAt: Timestamp;
+  };
+}
+
+export interface ContentSubmittedForReviewEvent extends ContentPlanEventMetadata {
+  readonly eventType: "ContentSubmittedForReview";
+  readonly payload: {
+    readonly planId: ContentPlanId;
+    readonly submittedAt: Timestamp;
+  };
+}
+
+export interface ContentApprovedEvent extends ContentPlanEventMetadata {
+  readonly eventType: "ContentApproved";
+  readonly payload: ContentApprovalSnapshot & {
+    readonly planId: ContentPlanId;
+  };
+}
+
+export interface ContentRejectedEvent extends ContentPlanEventMetadata {
+  readonly eventType: "ContentRejected";
+  readonly payload: ContentApprovalSnapshot & {
+    readonly planId: ContentPlanId;
+  };
+}
+
+export interface ContentRevisionRequestedEvent extends ContentPlanEventMetadata {
+  readonly eventType: "ContentRevisionRequested";
+  readonly payload: ContentApprovalSnapshot & {
+    readonly planId: ContentPlanId;
   };
 }
 
@@ -125,6 +206,10 @@ export interface ContentPlanRestoredEvent extends ContentPlanEventMetadata {
 
 export type ContentPlanDomainEvent =
   | ContentPlanCreatedEvent
+  | ContentSubmittedForReviewEvent
+  | ContentApprovedEvent
+  | ContentRejectedEvent
+  | ContentRevisionRequestedEvent
   | PlannedContentAddedEvent
   | PlannedContentScheduledEvent
   | PlannedContentRemovedEvent
@@ -149,6 +234,32 @@ export class ContentPlan {
     });
   }
 
+  static createApprovalPlan(input: CreateApprovalContentPlanInput): ContentPlan {
+    const timestamp = createTimestamp(input.createdAt, "createdAt");
+    const recommendedPublishDate = createTimestamp(
+      input.recommendedPublishDate,
+      "recommendedPublishDate"
+    );
+    const title = createRequiredText(input.title, "title");
+
+    return new ContentPlan({
+      planId: input.planId,
+      businessId: input.businessId,
+      name: createContentPlanName(title),
+      title,
+      objective: createRequiredText(input.objective, "objective"),
+      audience: createRequiredText(input.audience, "audience"),
+      channel: createRequiredText(input.channel, "channel"),
+      priority: input.priority,
+      recommendedPublishDate,
+      status: "draft",
+      entries: Object.freeze([]),
+      approvalHistory: Object.freeze([]),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  }
+
   static rehydrate(snapshot: ContentPlanSnapshot): ContentPlan {
     validateSnapshot(snapshot);
     return new ContentPlan(cloneSnapshot(snapshot));
@@ -163,6 +274,14 @@ export class ContentPlan {
   }
 
   get calendarId(): ContentCalendarId {
+    if (!this.snapshot.calendarId) {
+      throw new Error("Content plan is not linked to a calendar.");
+    }
+
+    return this.snapshot.calendarId;
+  }
+
+  get linkedCalendarId(): ContentCalendarId | undefined {
     return this.snapshot.calendarId;
   }
 
@@ -216,6 +335,36 @@ export class ContentPlan {
     });
   }
 
+  submitForReview(submittedAt: Timestamp): void {
+    if (
+      this.snapshot.status !== "draft" &&
+      this.snapshot.status !== "needs_revision"
+    ) {
+      throw new Error("Only draft or revision content plans can be submitted.");
+    }
+
+    const timestamp = createTimestamp(submittedAt, "submittedAt");
+
+    this.replace({
+      ...this.snapshot,
+      status: "pending_review",
+      submittedAt: timestamp,
+      updatedAt: timestamp,
+    });
+  }
+
+  approve(input: ContentApprovalInput): void {
+    this.recordApproval("approved", input);
+  }
+
+  reject(input: ContentApprovalInput): void {
+    this.recordApproval("rejected", input);
+  }
+
+  requestRevision(input: ContentApprovalInput): void {
+    this.recordApproval("needs_revision", input);
+  }
+
   archive(archivedAt: Timestamp): void {
     if (this.snapshot.status === "archived") {
       return;
@@ -258,6 +407,10 @@ export class ContentPlan {
     return cloneEntries(this.snapshot.entries);
   }
 
+  listApprovals(): readonly ContentApprovalSnapshot[] {
+    return cloneApprovals(this.snapshot.approvalHistory ?? []);
+  }
+
   toSnapshot(): ContentPlanSnapshot {
     return cloneSnapshot(this.snapshot);
   }
@@ -266,6 +419,36 @@ export class ContentPlan {
     if (this.snapshot.status === "archived") {
       throw new Error("Archived content plans cannot be modified.");
     }
+  }
+
+  private recordApproval(
+    decision: ContentApprovalDecision,
+    input: ContentApprovalInput
+  ): void {
+    if (this.snapshot.status !== "pending_review") {
+      throw new Error("Only pending review content plans can receive decisions.");
+    }
+
+    const approvedAt = createTimestamp(input.approvedAt, "approvedAt");
+    const approval: ContentApprovalSnapshot = {
+      reviewer: createRequiredText(input.reviewer, "reviewer"),
+      decision,
+      reason:
+        input.reason === undefined
+          ? undefined
+          : createRequiredText(input.reason, "reason"),
+      approvedAt,
+    };
+
+    this.replace({
+      ...this.snapshot,
+      status: decision,
+      approvalHistory: Object.freeze([
+        ...(this.snapshot.approvalHistory ?? []),
+        approval,
+      ]),
+      updatedAt: approvedAt,
+    });
   }
 
   private assertNoActiveEntry(contentId: ContentId): void {
@@ -323,6 +506,16 @@ export function createContentPlanName(name: string): ContentPlanName {
   return normalized as ContentPlanName;
 }
 
+function createRequiredText(value: string, field: string): string {
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    throw new Error(`Content plan ${field} is required.`);
+  }
+
+  return normalized;
+}
+
 function normalizePlatforms(platforms: readonly string[]): readonly ContentPlatform[] {
   const normalized = [
     ...new Set(platforms.map((platform) => createContentPlatform(platform))),
@@ -348,8 +541,31 @@ function validateSnapshot(snapshot: ContentPlanSnapshot): void {
   createTimestamp(snapshot.createdAt, "createdAt");
   createTimestamp(snapshot.updatedAt, "updatedAt");
 
+  if (snapshot.title !== undefined) createRequiredText(snapshot.title, "title");
+  if (snapshot.objective !== undefined) {
+    createRequiredText(snapshot.objective, "objective");
+  }
+  if (snapshot.audience !== undefined) {
+    createRequiredText(snapshot.audience, "audience");
+  }
+  if (snapshot.channel !== undefined) {
+    createRequiredText(snapshot.channel, "channel");
+  }
+  if (snapshot.recommendedPublishDate !== undefined) {
+    createTimestamp(snapshot.recommendedPublishDate, "recommendedPublishDate");
+  }
+  if (snapshot.submittedAt !== undefined) {
+    createTimestamp(snapshot.submittedAt, "submittedAt");
+  }
+
   if (snapshot.status === "archived" && !snapshot.archivedAt) {
     throw new Error("Archived content plans require archivedAt.");
+  }
+
+  for (const approval of snapshot.approvalHistory ?? []) {
+    createRequiredText(approval.reviewer, "reviewer");
+    createTimestamp(approval.approvedAt, "approvedAt");
+    if (approval.reason !== undefined) createRequiredText(approval.reason, "reason");
   }
 
   for (const entry of snapshot.entries) {
@@ -371,7 +587,17 @@ function cloneSnapshot(snapshot: ContentPlanSnapshot): ContentPlanSnapshot {
   return {
     ...snapshot,
     entries: cloneEntries(snapshot.entries),
+    approvalHistory:
+      snapshot.approvalHistory === undefined
+        ? undefined
+        : cloneApprovals(snapshot.approvalHistory),
   };
+}
+
+function cloneApprovals(
+  approvals: readonly ContentApprovalSnapshot[]
+): readonly ContentApprovalSnapshot[] {
+  return Object.freeze(approvals.map((approval) => ({ ...approval })));
 }
 
 function cloneEntries(

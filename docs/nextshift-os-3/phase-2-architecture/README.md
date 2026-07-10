@@ -21,6 +21,7 @@ Architecture specifications for AI, Business Twin, memory, knowledge graph, agen
 - [Decision Brain Architecture](DECISION_BRAIN_ARCHITECTURE.md)
 - [Execution Layer Architecture](EXECUTION_LAYER_ARCHITECTURE.md)
 - [Learning System Architecture](LEARNING_SYSTEM_ARCHITECTURE.md)
+- [Learning System Standard](LEARNING_SYSTEM_STANDARD.md)
 - [Agent Architecture](AGENT_ARCHITECTURE.md)
 - [Domain Architecture](DOMAIN_ARCHITECTURE.md)
 - [Capability Layer Architecture](CAPABILITY_LAYER_ARCHITECTURE.md)

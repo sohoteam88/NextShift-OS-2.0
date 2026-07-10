@@ -7,6 +7,7 @@ import { type CreateFunnelInput, type UpdateFunnelInput, type FunnelQuery } from
 import { type FunnelConfig } from '../types';
 import { quotaService } from '@/modules/tenant/services/quota-service';
 import { measureConfigSize, logOversizedConfig } from './funnel-config-monitor';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 
 function slugify(str: string): string {
   return str
@@ -38,6 +39,23 @@ function validatePublishConfig(config: FunnelConfig): void {
   const hasCTA = sections.some((s) => s.type === 'cta' || s.type === 'form');
   if (!hasHero) throw new AppError('VALIDATION_ERROR', 400, 'Funnel must have a hero section');
   if (!hasCTA) throw new AppError('VALIDATION_ERROR', 400, 'Funnel must have a CTA or form section');
+}
+
+function attachWorkspaceContext(
+  config: Record<string, unknown>,
+  workspaceContext?: WorkspaceContext,
+): Record<string, unknown> {
+  if (!workspaceContext) return config;
+
+  return {
+    ...config,
+    workspace_context: {
+      workspaceId: workspaceContext.workspaceId,
+      workspaceType: workspaceContext.workspaceType,
+      templateNamespace: workspaceContext.templateNamespace,
+      themeKey: workspaceContext.themeKey,
+    },
+  };
 }
 
 export const funnelService = {
@@ -111,13 +129,15 @@ export const funnelService = {
     title: string;
     config: Record<string, unknown>;
     templateId?: string | null;
+    workspaceContext?: WorkspaceContext;
   }) {
     await quotaService.checkFunnelQuota(params.tenantId);
 
     const slug = await generateSlug(params.title);
+    const config = attachWorkspaceContext(params.config, params.workspaceContext);
 
     // Monitor config size
-    const sizeResult = measureConfigSize(params.config);
+    const sizeResult = measureConfigSize(config);
     if (sizeResult.level !== 'ok') {
       void logOversizedConfig(params.tenantId, null, params.title, sizeResult);
     }
@@ -129,14 +149,14 @@ export const funnelService = {
         templateId: params.templateId ?? null,
         title: params.title,
         slug,
-        config: params.config as Prisma.InputJsonValue,
+        config: config as Prisma.InputJsonValue,
         status: 'draft',
       },
       include: { template: { select: { id: true, name: true, type: true } } },
     });
   },
 
-  async create(user: AuthUser, input: CreateFunnelInput) {
+  async create(user: AuthUser, input: CreateFunnelInput, workspaceContext?: WorkspaceContext) {
     let config: Record<string, unknown> = input.config ?? {};
 
     if (input.template_id) {
@@ -153,6 +173,7 @@ export const funnelService = {
       title: input.title,
       config,
       templateId: input.template_id ?? null,
+      workspaceContext,
     });
   },
 

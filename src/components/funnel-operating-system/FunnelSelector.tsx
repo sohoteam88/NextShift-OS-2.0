@@ -1,6 +1,7 @@
 'use client';
 
 import { RefreshCw, ShoppingBag, TrendingUp, Users } from 'lucide-react';
+import { useLocale } from 'next-intl';
 import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
 import { cn } from '@/lib/cn';
 import { useFunnelPreference } from './useFunnelPreference';
@@ -28,11 +29,19 @@ const FUNNELS: Array<{ id: BusinessFunnelType; icon: typeof ShoppingBag; labels:
   },
 ];
 
-export function getFunnelLabel(funnelType: BusinessFunnelType, locale: Locale = 'zh') {
+export function getFunnelLabel(funnelType: BusinessFunnelType, locale: Locale) {
   return FUNNELS.find((item) => item.id === funnelType)?.labels[locale] ?? funnelType;
 }
 
-export function FunnelSelector({ locale = 'zh', compact = false }: { locale?: Locale; compact?: boolean }) {
+function normalizeLocale(locale: string): Locale {
+  if (locale.startsWith('en')) return 'en';
+  if (locale.startsWith('ms')) return 'ms';
+  return 'zh';
+}
+
+export function FunnelSelector({ locale, compact = false }: { locale?: Locale; compact?: boolean }) {
+  const currentLocale = useLocale();
+  const activeLocale = normalizeLocale(locale ?? currentLocale);
   const { funnelType, setFunnelType } = useFunnelPreference();
 
   return (
@@ -57,8 +66,8 @@ export function FunnelSelector({ locale = 'zh', compact = false }: { locale?: Lo
                 <Icon className="h-4 w-4" aria-hidden="true" />
               </span>
               <span className="min-w-0">
-                <span className="block text-sm font-semibold">{item.labels[locale]}</span>
-                {!compact ? <span className="mt-0.5 block text-xs text-[var(--color-text-muted)]">{item.description[locale]}</span> : null}
+                <span className="block text-sm font-semibold">{item.labels[activeLocale]}</span>
+                {!compact ? <span className="mt-0.5 block text-xs text-[var(--color-text-muted)]">{item.description[activeLocale]}</span> : null}
               </span>
               {active ? <TrendingUp className="ml-auto h-4 w-4 shrink-0" aria-hidden="true" /> : null}
             </button>
@@ -68,4 +77,3 @@ export function FunnelSelector({ locale = 'zh', compact = false }: { locale?: Lo
     </div>
   );
 }
-

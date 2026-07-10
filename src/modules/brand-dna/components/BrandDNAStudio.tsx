@@ -14,6 +14,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { cn } from '@/lib/cn';
 import {
   type BrandDNA,
@@ -36,6 +37,12 @@ type Locale = 'zh' | 'en' | 'ms';
 interface BrandDNAStudioProps {
   locale?: Locale;
   className?: string;
+}
+
+function normalizeLocale(locale: string): Locale {
+  if (locale.startsWith('en')) return 'en';
+  if (locale.startsWith('ms')) return 'ms';
+  return 'zh';
 }
 
 // ============================================================
@@ -161,8 +168,10 @@ function FieldRow({ label, value, onChange, placeholder, multiline }: {
 // Main Component
 // ============================================================
 
-export function BrandDNAStudio({ locale = 'zh', className }: BrandDNAStudioProps) {
+export function BrandDNAStudio({ locale, className }: BrandDNAStudioProps) {
   const router = useRouter();
+  const currentLocale = useLocale();
+  const activeLocale = normalizeLocale(locale ?? currentLocale);
   const query = useBrandDNA();
   const saveDNA = useSaveDNA();
   const regenerateDNA = useRegenerateDNA();
@@ -266,7 +275,7 @@ export function BrandDNAStudio({ locale = 'zh', className }: BrandDNAStudioProps
               <h1 className="text-xl font-bold text-[var(--color-text)]">Brand DNA Studio</h1>
             </div>
             <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-              {locale === 'en' ? 'Your brand identity hub' : locale === 'ms' ? 'Hab identiti jenama anda' : '你的品牌身份中心'}
+              {activeLocale === 'en' ? 'Your brand identity hub' : activeLocale === 'ms' ? 'Hab identiti jenama anda' : '你的品牌身份中心'}
             </p>
           </div>
         </div>

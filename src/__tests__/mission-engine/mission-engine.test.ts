@@ -60,17 +60,21 @@ async function cleanupTestUser(ctx: TestContext) {
   await prisma.tenant.delete({ where: { id: ctx.tenantId } });
 }
 
+const describeWithDatabase = process.env.DATABASE_URL ? describe : describe.skip;
+
 // ============================================================
 // Tests
 // ============================================================
 
-describe('Mission Engine', () => {
+describeWithDatabase('Mission Engine database integration (requires DATABASE_URL)', () => {
   beforeAll(async () => {
     ctx = await createTestUser();
   });
 
   afterAll(async () => {
-    await cleanupTestUser(ctx);
+    if (ctx) {
+      await cleanupTestUser(ctx);
+    }
   });
 
   // ----------------------------------------------------------

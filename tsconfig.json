@@ -26,6 +26,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@nextshift/runtime": [
+        "./packages/runtime/src/index.ts"
       ]
     }
   },

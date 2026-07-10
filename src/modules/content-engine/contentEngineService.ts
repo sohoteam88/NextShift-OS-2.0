@@ -5,6 +5,7 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { ContentPillar } from '@/modules/brand-dna/types';
 import type { GeneratedPost, ContentCalendar, ContentCalendarItem, Platform, ContentFormat, FunnelStage, ContentTrack } from './types';
 import { generateContentPillars, generateCalendar, generatePost } from './contentGenerators';
@@ -39,18 +40,19 @@ export const contentEngineService = {
   },
 
   // ---- Calendar ----
-  async generateCalendar(userId: string, days: 30 | 90 | 180, track: ContentTrack = 'retail'): Promise<ContentCalendar> {
+  async generateCalendar(userId: string, days: 30 | 90 | 180, track: ContentTrack = 'retail', workspaceContext?: WorkspaceContext): Promise<ContentCalendar> {
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('Brand DNA not found');
 
     const pillars = await this.getPillars(userId);
     if (pillars.length === 0) throw new Error('Generate content pillars first');
 
-    const items = generateCalendar(ctx, pillars, days, track);
-    const calendar: ContentCalendar = { days, track, items, generatedAt: new Date().toISOString() };
-    await this.saveTrackCalendar(userId, track, calendar);
+    const activeTrack = resolveContentTrack(track, workspaceContext);
+    const items = generateCalendar(ctx, pillars, days, activeTrack);
+    const calendar: ContentCalendar = { days, track: activeTrack, items, generatedAt: new Date().toISOString() };
+    await this.saveTrackCalendar(userId, activeTrack, calendar);
 
-    if (track !== 'retail') {
+    if (activeTrack !== 'retail') {
       return calendar;
     }
 
@@ -134,9 +136,13 @@ export const contentEngineService = {
     format: ContentFormat,
     funnelStage: FunnelStage,
     pillarName?: string,
+    workspaceContext?: WorkspaceContext,
   ): Promise<GeneratedPost> {
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('Brand DNA not found');
+    const workspacePromptUsed = workspaceContext
+      ? `workspace:${workspaceContext.activeWorkspaceType}`
+      : undefined;
 
     const pillars = await this.getPillars(userId);
     if (pillars.length === 0) throw new Error('No content pillars');
@@ -158,6 +164,7 @@ export const contentEngineService = {
         body: post.body,
         language: 'zh',
         generatedByAi: true,
+        promptUsed: workspacePromptUsed,
         status: 'draft',
       },
     });
@@ -183,3 +190,11 @@ export const contentEngineService = {
     });
   },
 };
+
+function resolveContentTrack(track: ContentTrack, workspaceContext?: WorkspaceContext): ContentTrack {
+  const configuredTrack = workspaceContext?.workspaceConfig.contentTrack;
+
+  return CONTENT_TRACKS.includes(configuredTrack as ContentTrack)
+    ? configuredTrack as ContentTrack
+    : track;
+}

@@ -106,6 +106,7 @@ export async function getAICOODecision(
       userId: user.id,
       tenantId: resolvedTenantId,
       decision,
+      workspaceContext: context.workspaceContext,
     });
   } catch (error) {
     console.warn('ai_coo_decision.record_failed', {

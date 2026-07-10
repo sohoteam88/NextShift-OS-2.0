@@ -17,6 +17,11 @@ import { explainabilityEngine, resolveExplainabilityLocale } from './Explainabil
 import { missionCompletionVerifier } from './MissionCompletionVerifier';
 import { missionGeneratorV2 } from './MissionGeneratorV2';
 import { priorityEngine, type PriorityHistoryEntry } from './PriorityEngine';
+import {
+  resolveMissionRuntimeAuthority,
+  type MissionRuntimeMetadata,
+  type MissionRuntimeSource,
+} from '../runtime';
 
 const PRIORITY_HISTORY_WINDOW_DAYS = 7;
 
@@ -318,51 +323,72 @@ export function resolveMissionAuthorityFromJourney(
   };
 }
 
+export type MissionEngineRuntimeOptions = {
+  onRuntimeResolved?: (runtime: MissionRuntimeMetadata) => void;
+  resolveRuntimeAuthority?: typeof resolveMissionRuntimeAuthority;
+  source?: MissionRuntimeSource;
+};
+
+async function resolveCurrentMissionAuthorityLegacy(
+  userId: string,
+  options: { businessState?: BusinessStateResult | null; locale?: string | null; browserLocale?: string | null } = {},
+): Promise<MissionAuthoritySnapshot> {
+  const businessState = Object.hasOwn(options, 'businessState')
+    ? { stateResult: options.businessState }
+    : await businessStateService.getBusinessState(userId);
+  const stateResult = businessState.stateResult ?? undefined;
+  const [journey, bottleneckSignalResult, user] = await Promise.all([
+    journeyEngineService.getJourneyProjection(userId),
+    stateResult ? readBottleneckSignals(userId).then(({ signals }) => signals).catch(() => null) : Promise.resolve(null),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        tenantId: true,
+        languagePreference: true,
+        tenant: { select: { settings: true } },
+      },
+    }),
+  ]);
+  const resolvedBottleneckResult = stateResult && bottleneckSignalResult
+    ? resolveBottleneck({ businessState: stateResult, signals: bottleneckSignalResult })
+    : signalFailureResult();
+  const recentPriorityHistory = await readRecentPriorityHistory({
+    userId,
+    currentBottleneck: resolvedBottleneckResult.bottleneck,
+  }).catch(() => []);
+  const locale = resolveExplainabilityLocale({
+    locale: options.locale,
+    userPreference: user?.languagePreference,
+    workspaceSetting: metadataString(metadataRecord(user?.tenant?.settings), 'default_language'),
+    browserLocale: options.browserLocale,
+  });
+  const missionAuthority = resolveMissionAuthorityFromJourney(journey, stateResult, resolvedBottleneckResult, {
+    recentPriorityHistory,
+    locale,
+    bottleneckSignals: bottleneckSignalResult,
+    completionSourceAvailable: Boolean(bottleneckSignalResult),
+  });
+  await recordPriorityDedupAudit({
+    userId,
+    tenantId: user?.tenantId,
+    priorityResult: missionAuthority.priorityResult,
+  });
+  return missionAuthority;
+}
+
 export const missionEngineAuthorityService = {
   async getCurrentMission(
     userId: string,
     options: { businessState?: BusinessStateResult | null; locale?: string | null; browserLocale?: string | null } = {},
+    runtimeOptions: MissionEngineRuntimeOptions = {},
   ): Promise<MissionAuthoritySnapshot> {
-    const businessState = Object.hasOwn(options, 'businessState')
-      ? { stateResult: options.businessState }
-      : await businessStateService.getBusinessState(userId);
-    const stateResult = businessState.stateResult ?? undefined;
-    const [journey, bottleneckSignalResult, user] = await Promise.all([
-      journeyEngineService.getJourneyProjection(userId),
-      stateResult ? readBottleneckSignals(userId).then(({ signals }) => signals).catch(() => null) : Promise.resolve(null),
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          tenantId: true,
-          languagePreference: true,
-          tenant: { select: { settings: true } },
-        },
-      }),
-    ]);
-    const resolvedBottleneckResult = stateResult && bottleneckSignalResult
-      ? resolveBottleneck({ businessState: stateResult, signals: bottleneckSignalResult })
-      : signalFailureResult();
-    const recentPriorityHistory = await readRecentPriorityHistory({
+    const { authority, runtime } = await (runtimeOptions.resolveRuntimeAuthority ?? resolveMissionRuntimeAuthority)({
       userId,
-      currentBottleneck: resolvedBottleneckResult.bottleneck,
-    }).catch(() => []);
-    const locale = resolveExplainabilityLocale({
-      locale: options.locale,
-      userPreference: user?.languagePreference,
-      workspaceSetting: metadataString(metadataRecord(user?.tenant?.settings), 'default_language'),
-      browserLocale: options.browserLocale,
+      source: runtimeOptions.source ?? 'authority-service',
+    }, {
+      resolveAuthority: () => resolveCurrentMissionAuthorityLegacy(userId, options),
     });
-    const missionAuthority = resolveMissionAuthorityFromJourney(journey, stateResult, resolvedBottleneckResult, {
-      recentPriorityHistory,
-      locale,
-      bottleneckSignals: bottleneckSignalResult,
-      completionSourceAvailable: Boolean(bottleneckSignalResult),
-    });
-    await recordPriorityDedupAudit({
-      userId,
-      tenantId: user?.tenantId,
-      priorityResult: missionAuthority.priorityResult,
-    });
-    return missionAuthority;
+    runtimeOptions.onRuntimeResolved?.(runtime);
+    return authority;
   },
 };

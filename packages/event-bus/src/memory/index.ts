@@ -1,24 +1,86 @@
 import type { BusinessEvent } from "@nextshift/contracts";
-import type { EventBus } from "../bus";
+import type { EventBus, EventEnvelope } from "../bus";
+import type { EventHandler, EventSubscription } from "../types";
 
-type EventHandlerFunction = (event: BusinessEvent) => Promise<void>;
+export interface EventBusHandlerFailure {
+  readonly eventType: string;
+  readonly handlerIndex: number;
+  readonly error: unknown;
+}
 
-export class InMemoryEventBus implements EventBus {
-  private readonly handlers = new Map<string, EventHandlerFunction[]>();
+export class EventBusPublishError extends Error {
+  readonly failures: readonly EventBusHandlerFailure[];
 
-  async publish(event: BusinessEvent): Promise<void> {
-    const handlers = this.handlers.get(event.eventType) ?? [];
+  constructor(eventType: string, failures: readonly EventBusHandlerFailure[]) {
+    super(
+      `Event bus publish failed for ${eventType}: ${failures.length} handler failure(s)`
+    );
+    this.name = "EventBusPublishError";
+    this.failures = failures;
+  }
+}
 
-    await Promise.all(handlers.map((handler) => handler(event)));
+export class InMemoryEventBus<TEvent extends EventEnvelope = BusinessEvent>
+  implements EventBus<TEvent>
+{
+  private readonly handlers = new Map<string, Set<EventHandler<TEvent>>>();
+
+  async publish(event: TEvent): Promise<void> {
+    const handlers = Array.from(this.handlers.get(event.eventType) ?? []);
+
+    const results = await Promise.allSettled(
+      handlers.map((handler) => Promise.resolve().then(() => handler(event)))
+    );
+
+    const failures = results.flatMap((result, index) =>
+      result.status === "rejected"
+        ? [
+            {
+              eventType: event.eventType,
+              handlerIndex: index,
+              error: result.reason,
+            },
+          ]
+        : []
+    );
+
+    if (failures.length > 0) {
+      throw new EventBusPublishError(event.eventType, failures);
+    }
   }
 
-  subscribe(eventType: string, handler: EventHandlerFunction): void {
-    const handlers = this.handlers.get(eventType) ?? [];
+  subscribe(
+    eventType: string,
+    handler: EventHandler<TEvent>
+  ): EventSubscription<TEvent> {
+    const handlers = this.handlers.get(eventType) ?? new Set();
 
-    this.handlers.set(eventType, [...handlers, handler]);
+    handlers.add(handler);
+    this.handlers.set(eventType, handlers);
+
+    return {
+      eventType,
+      handler,
+      unsubscribe: () => this.unsubscribe(eventType, handler),
+    };
   }
 
-  unsubscribe(eventType: string): void {
-    this.handlers.delete(eventType);
+  unsubscribe(eventType: string, handler?: EventHandler<TEvent>): void {
+    if (!handler) {
+      this.handlers.delete(eventType);
+      return;
+    }
+
+    const handlers = this.handlers.get(eventType);
+
+    if (!handlers) {
+      return;
+    }
+
+    handlers.delete(handler);
+
+    if (handlers.size === 0) {
+      this.handlers.delete(eventType);
+    }
   }
 }

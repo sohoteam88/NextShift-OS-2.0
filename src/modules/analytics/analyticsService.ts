@@ -1,10 +1,26 @@
 import prisma from '@/lib/prisma';
+import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { AnalyticsCenter, KPIOverview } from './businessTypes';
 import { detectAnomalies } from './analyticsEngines';
-import { applyProjectionToAnalyticsCenter, getAnalyticsProjection } from './adapters/AnalyticsProjectionAdapter';
+import { applyProjectionToAnalyticsCenter } from './adapters/AnalyticsProjectionAdapter';
+import {
+  resolveAnalyticsRuntimeProjection,
+  type AnalyticsRuntimeMetadata,
+} from './runtime';
+
+export type AnalyticsCenterRuntimeOptions = {
+  onRuntimeResolved?: (runtime: AnalyticsRuntimeMetadata) => void;
+  resolveRuntimeProjection?: typeof resolveAnalyticsRuntimeProjection;
+};
 
 export const analyticsService = {
-  async getAnalyticsCenter(userId: string, tenantId: string): Promise<AnalyticsCenter> {
+  async getAnalyticsCenter(
+    userId: string,
+    tenantId: string,
+    workspaceContext?: WorkspaceContext,
+    runtimeOptions: AnalyticsCenterRuntimeOptions = {},
+  ): Promise<AnalyticsCenter> {
+    const analyticsFocus = workspaceContext?.analyticsContext.focus[0] ?? 'sales';
     const contentCount = await prisma.content.count({ where: { ownerId: userId } });
     const videoCount = await prisma.videoProject.count({ where: { userId } });
     const leadCount = await prisma.lead.count({ where: { tenantId, deletedAt: null } });
@@ -18,7 +34,7 @@ export const analyticsService = {
       totalConversions: customerCount,
       totalRevenue: 0, // Would come from actual sales data
       conversionRate: leadCount > 0 ? Math.round((customerCount / leadCount) * 100) : 0,
-      leadResponseRate: 70, // Placeholder
+      leadResponseRate: analyticsFocus === 'appointments' ? 75 : 70, // Placeholder until workspace-aware analytics repositories land.
     };
 
     // Calculate revenue from opportunities
@@ -35,7 +51,14 @@ export const analyticsService = {
     const contentBreakdown: Record<string,number> = {};
     for (const g of contentPlatforms) { if (g.platform) contentBreakdown[g.platform] = g._count; }
 
-    const projection = await getAnalyticsProjection(userId, tenantId);
+    const { projection, runtime } = await (runtimeOptions.resolveRuntimeProjection ?? resolveAnalyticsRuntimeProjection)({
+      userId,
+      tenantId,
+      source: 'analytics-center',
+      projectionType: 'analytics-center',
+      workspaceFocus: analyticsFocus,
+    });
+    runtimeOptions.onRuntimeResolved?.(runtime);
 
     return applyProjectionToAnalyticsCenter({
       kpi, anomalies, contentBreakdown,

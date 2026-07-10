@@ -6,13 +6,27 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 
 ## Start Here
 
+- [System Authority](system-authority/README.md)
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
+- [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
+- [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
+- [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md)
+- [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
+- [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+- [Business OS](business-os/README.md)
+- [AI Bootstrap Framework](ai/README.md)
+- [NextShift Context](ai/NEXTSHIFT_CONTEXT.md)
+- [AI Session Starter](ai/AI_SESSION_STARTER.md)
+- [Project Status](PROJECT_STATUS.md)
 - [Start Here](START_HERE.md)
 - [System Context](SYSTEM_CONTEXT.md)
 - [Master Index](MASTER_INDEX.md)
 - [Architecture Layer Definitions](ARCHITECTURE_LAYER_DEFINITIONS.md)
 - [Blueprint Status](BLUEPRINT_STATUS.md)
 - [Runtime Status](RUNTIME_STATUS.md)
+- [Runtime Platform v1.0](runtime-platform/README.md)
+- [OS 3.3 Runtime Readiness Report](runtime-review/OS33_RUNTIME_READINESS_REPORT.md)
 - [Capability Status](CAPABILITY_STATUS.md)
 - [Capabilities](capabilities/README.md)
 - [Design System](design-system/README.md)
@@ -21,6 +35,12 @@ The 3.0 documentation is organized by governance phase. Each later phase must al
 - [Sprints](sprints/README.md)
 - [Sprint 000 - Blueprint Cleanup](sprints/SPRINT-000_BLUEPRINT_CLEANUP.md)
 - [Architectural Manifesto](ARCHITECTURAL_MANIFESTO.md)
+
+## AI Engineering
+
+- [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
+- [AI Bootstrap](ai/AI_BOOTSTRAP.md)
+- [Prompt Library](ai/prompts/README.md)
 
 ## Architecture Hierarchy
 
@@ -59,6 +79,18 @@ Foundation documents:
 5. The Business Twin is the center of the operating system. Everything else revolves around it.
 6. NextShift optimizes for long-term business success, not short-term feature quantity.
 7. When uncertain, choose architectural simplicity over feature complexity.
+8. Every MVP 1.0 feature must map to [MVP Phase 1, Phase 2, or Phase 3](MVP_1_ALIGNMENT.md).
+
+## Active Status Documents
+
+Only the following status documents are active and should be updated for current repository state:
+
+- [Project Status](PROJECT_STATUS.md)
+- [Next Action](NEXT_ACTION.md)
+- [Capability Status](CAPABILITY_STATUS.md)
+- [Platform Status](../../platform/status.md)
+
+Other status-class documents are historical snapshots unless a future approved governance task explicitly reactivates them.
 
 ## Templates
 
@@ -66,12 +98,28 @@ Foundation documents:
 
 ## Platform Projects
 
+- [Runtime Platform v1.0](runtime-platform/README.md)
+- [OS 3.3 Runtime Readiness Report](runtime-review/OS33_RUNTIME_READINESS_REPORT.md)
+- [OS 3.3 Integration Priority](runtime-review/INTEGRATION_PRIORITY.md)
+- [OS 3.3 Runtime Integration Roadmap](runtime-review/RUNTIME_INTEGRATION_ROADMAP.md)
 - [NextShift Design System v1.0](design-system/README.md)
 - [NextShift UI Kit v1.0](ui-kit/README.md)
 
 ## Governance
 
+- [System Authority](system-authority/README.md)
 - [NextShift OS 3.0 Blueprint](NEXTSHIFT_OS_3_BLUEPRINT.md)
+- [MVP 1.0 Alignment](MVP_1_ALIGNMENT.md)
+- [MVP 1.0 Implementation Master Plan](MVP_1_IMPLEMENTATION_MASTER_PLAN.md)
+- [MVP 1.0 Phase Tracker](MVP_1_PHASE_TRACKER.md)
+- [Implementation Master Roadmap](IMPLEMENTATION_MASTER_ROADMAP.md)
+- [Business OS Phase 1 Execution Plan](business-os/phase-1/EXECUTION_PLAN.md)
+- [Business OS Phase 1 Planning](business-os/phase-1/PLANNING.md)
+- [Business OS](business-os/README.md)
+- [AI Bootstrap Framework](ai/README.md)
+- [NextShift Context](ai/NEXTSHIFT_CONTEXT.md)
+- [AI Session Starter](ai/AI_SESSION_STARTER.md)
+- [Project Status](PROJECT_STATUS.md)
 - [Start Here](START_HERE.md)
 - [System Context](SYSTEM_CONTEXT.md)
 - [Master Index](MASTER_INDEX.md)
@@ -88,8 +136,17 @@ Foundation documents:
 - [AI Audit Process](governance/AI_AUDIT_PROCESS.md)
 - [AI Contributing](governance/AI_CONTRIBUTING.md)
 - [Architecture Review](governance/ARCHITECTURE_REVIEW.md)
+- [Change Management Standard](governance/CHANGE_MANAGEMENT_STANDARD.md)
+- [Document Hierarchy Standard](governance/DOCUMENT_HIERARCHY_STANDARD.md)
 - [Document Standards](governance/DOCUMENT_STANDARDS.md)
+- [Documentation Recommendation Standard](governance/DOCUMENTATION_RECOMMENDATION_STANDARD.md)
 - [Idea to Implementation Flow](governance/IDEA_TO_IMPLEMENTATION_FLOW.md)
+- [Platform Project Standard](governance/PLATFORM_PROJECT_STANDARD.md)
+- [Product Governance Charter](governance/PRODUCT_GOVERNANCE_CHARTER.md)
+- [Product Decision Framework](governance/PRODUCT_DECISION_FRAMEWORK.md)
+- [Product Backlog Standard](governance/PRODUCT_BACKLOG_STANDARD.md)
+- [Repository Structure Standard](governance/REPOSITORY_STRUCTURE_STANDARD.md)
+- [Traceability Standard](governance/TRACEABILITY_STANDARD.md)
 - [RFC History](rfc/README.md)
 - [RFC Process](rfc/RFC_PROCESS.md)
 - [Current Constitution](constitution/README.md)
@@ -102,6 +159,7 @@ Foundation documents:
 - [Decision Brain Architecture](phase-2-architecture/DECISION_BRAIN_ARCHITECTURE.md)
 - [Execution Layer Architecture](phase-2-architecture/EXECUTION_LAYER_ARCHITECTURE.md)
 - [Learning System Architecture](phase-2-architecture/LEARNING_SYSTEM_ARCHITECTURE.md)
+- [Learning System Standard](phase-2-architecture/LEARNING_SYSTEM_STANDARD.md)
 - [Agent Architecture](phase-2-architecture/AGENT_ARCHITECTURE.md)
 - [Domain Architecture](phase-2-architecture/DOMAIN_ARCHITECTURE.md)
 - [Capability Layer Architecture](phase-2-architecture/CAPABILITY_LAYER_ARCHITECTURE.md)
@@ -120,9 +178,20 @@ Foundation documents:
 - [Sprint 000 - Blueprint Cleanup](sprints/SPRINT-000_BLUEPRINT_CLEANUP.md)
 - [Engineering](engineering/README.md)
 - [Engineering Standards](engineering/ENGINEERING_STANDARDS.md)
+- [NextShift Engineering Execution Playbook v1.0](engineering/NEXTSHIFT_ENGINEERING_EXECUTION_PLAYBOOK_v1.0.md)
+- [STD-005 GitHub Alignment Standard v1.0](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md)
 - [Implementation Cycle](engineering/IMPLEMENTATION_CYCLE.md)
 - [Implementation Cycles](engineering/implementation-cycles/README.md)
 - [Naming Conventions](engineering/NAMING_CONVENTIONS.md)
 - [ADR](adr/README.md)
+- [Architecture Decision Record Standard](adr/ARCHITECTURE_DECISION_RECORD_STANDARD.md)
+- [Capability Lifecycle Standard](capabilities/CAPABILITY_LIFECYCLE_STANDARD.md)
+- [Content Intelligence Standard](capabilities/CONTENT_INTELLIGENCE_STANDARD.md)
+- [Workspace Standard](workspace-experience-framework/WORKSPACE_STANDARD.md)
+- [AI Workspace Standard](workspace-experience-framework/AI_WORKSPACE_STANDARD.md)
+- [Content Workspace Standard](workspace-experience-framework/CONTENT_WORKSPACE_STANDARD.md)
+- [Visual Workspace Standard](workspace-experience-framework/VISUAL_WORKSPACE_STANDARD.md)
+- [Video Workspace Standard](workspace-experience-framework/VIDEO_WORKSPACE_STANDARD.md)
+- [Publishing Workspace Standard](workspace-experience-framework/PUBLISHING_WORKSPACE_STANDARD.md)
 - [Glossary](glossary/README.md)
 - [Diagrams](diagrams/README.md)

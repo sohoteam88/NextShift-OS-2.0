@@ -3,6 +3,7 @@ import { apiHandler } from '@/lib/api-handler';
 import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import prisma from '@/lib/prisma';
+import { resolveRequestWorkspaceContext } from '@/modules/workspace/request-workspace-context';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,7 @@ async function safeMetric<T>(label: string, fallback: T, loader: () => Promise<T
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
   await sharedAiRateLimitGuard(user, { feature: 'ai-coo', userLimit: 120, tenantLimit: 600 });
+  const workspaceContext = await resolveRequestWorkspaceContext({ user, request });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -167,6 +169,12 @@ export const GET = apiHandler(async (request: NextRequest) => {
     data: {
       ...recommendation,
       context,
+      workspaceContext: {
+        workspaceId: workspaceContext.workspaceId,
+        workspaceType: workspaceContext.workspaceType,
+        templateNamespace: workspaceContext.templateNamespace,
+        themeKey: workspaceContext.themeKey,
+      },
     },
   });
 });

@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, 'planning/**', 'release/**']
   push:
-    branches: [main, develop]
+    branches: [main, develop, 'planning/**']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -109,12 +109,67 @@ jobs:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
 
-  e2e:
-    name: E2E Tests
+      - name: Run Packages Tests
+        run: pnpm -r --filter './packages/*' test
+        env:
+          DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+          DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+
+  e2e-secrets:
+    name: E2E Secret Check
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     needs: [quality, test]
+    outputs:
+      has-secrets: ${{ steps.check.outputs.has-secrets }}
+
+    steps:
+      - name: Check E2E secrets
+        id: check
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          E2E_TEST_USER_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
+          E2E_TEST_USER_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: |
+          missing=()
+
+          [[ -n "$NEXT_PUBLIC_SUPABASE_URL" ]] || missing+=("NEXT_PUBLIC_SUPABASE_URL")
+          [[ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]] || missing+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+          [[ -n "$SUPABASE_SERVICE_ROLE_KEY" ]] || missing+=("SUPABASE_SERVICE_ROLE_KEY")
+          [[ -n "$E2E_TEST_USER_EMAIL" ]] || missing+=("E2E_TEST_USER_EMAIL")
+          [[ -n "$E2E_TEST_USER_PASSWORD" ]] || missing+=("E2E_TEST_USER_PASSWORD")
+          [[ -n "$E2E_ADMIN_EMAIL" ]] || missing+=("E2E_ADMIN_EMAIL")
+          [[ -n "$E2E_ADMIN_PASSWORD" ]] || missing+=("E2E_ADMIN_PASSWORD")
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "has-secrets=false" >> "$GITHUB_OUTPUT"
+            echo "E2E skipped: missing secrets" >> "$GITHUB_STEP_SUMMARY"
+            printf 'Missing required E2E secrets:\n' >> "$GITHUB_STEP_SUMMARY"
+            printf -- '- %s\n' "${missing[@]}" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "has-secrets=true" >> "$GITHUB_OUTPUT"
+          echo "E2E secrets present; E2E job will run." >> "$GITHUB_STEP_SUMMARY"
+
+  e2e:
+    name: E2E Tests
+    if: github.event_name == 'pull_request' && needs.e2e-secrets.outputs.has-secrets == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [quality, test, e2e-secrets]
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      E2E_TEST_USER_EMAIL: ${{ secrets.E2E_TEST_USER_EMAIL }}
+      E2E_TEST_USER_PASSWORD: ${{ secrets.E2E_TEST_USER_PASSWORD }}
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
     services:
       postgres:
         image: postgres:17-alpine
@@ -153,6 +208,12 @@ jobs:
 
       - name: Push Database Schema
         run: npx prisma db push --skip-generate
+        env:
+          DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+          DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+
+      - name: Ensure E2E Test Users
+        run: pnpm tsx scripts/ensure-e2e-user.ts
         env:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'

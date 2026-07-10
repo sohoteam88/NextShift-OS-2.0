@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale } from 'next-intl';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { FunnelSelector } from './FunnelSelector';
 import { FunnelOperatingCard } from './FunnelOperatingCard';
@@ -11,6 +12,12 @@ import { useFunnelPreference } from './useFunnelPreference';
 import { useFunnelOperatingData } from './useFunnelOperatingData';
 
 type Locale = 'zh' | 'en' | 'ms';
+
+function normalizeLocale(locale: string): Locale {
+  if (locale.startsWith('en')) return 'en';
+  if (locale.startsWith('ms')) return 'ms';
+  return 'zh';
+}
 
 export function FunnelKpiStrip({ kpi }: { kpi: Array<{ label: string; value: string; target?: string }> }) {
   return (
@@ -26,20 +33,22 @@ export function FunnelKpiStrip({ kpi }: { kpi: Array<{ label: string; value: str
   );
 }
 
-export function FunnelOperatingCenter({ locale = 'zh', showSelector = true }: { locale?: Locale; showSelector?: boolean }) {
+export function FunnelOperatingCenter({ locale, showSelector = true }: { locale?: Locale; showSelector?: boolean }) {
+  const currentLocale = useLocale();
+  const activeLocale = normalizeLocale(locale ?? currentLocale);
   const { funnelType } = useFunnelPreference();
   const query = useFunnelOperatingData(funnelType);
   const data = query.data?.data;
 
   return (
     <div className="space-y-4">
-      {showSelector ? <FunnelSelector locale={locale} /> : null}
+      {showSelector ? <FunnelSelector locale={activeLocale} /> : null}
 
       {query.isLoading ? (
         <Skeleton className="h-64 w-full rounded-[var(--radius-lg)]" />
       ) : data ? (
         <>
-          <FunnelOperatingCard funnelType={funnelType} progress={data.progress} goal={data.goal} nextAction={data.nextAction} locale={locale} />
+          <FunnelOperatingCard funnelType={funnelType} progress={data.progress} goal={data.goal} nextAction={data.nextAction} locale={activeLocale} />
           <FunnelKpiStrip kpi={data.kpi} />
           <div className="grid gap-4 xl:grid-cols-3">
             <FunnelProgressCard progress={data.progress} />
@@ -56,4 +65,3 @@ export function FunnelOperatingCenter({ locale = 'zh', showSelector = true }: { 
     </div>
   );
 }
-

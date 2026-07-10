@@ -1,12 +1,17 @@
 import type { BusinessEvent } from "@nextshift/contracts";
+import type { EventHandler, EventSubscription } from "../types";
 
-export interface EventBus {
-  publish(event: BusinessEvent): Promise<void>;
+export interface EventEnvelope {
+  readonly eventType: string;
+}
+
+export interface EventBus<TEvent extends EventEnvelope = BusinessEvent> {
+  publish(event: TEvent): Promise<void>;
 
   subscribe(
     eventType: string,
-    handler: (event: BusinessEvent) => Promise<void>
-  ): void;
+    handler: EventHandler<TEvent>
+  ): EventSubscription<TEvent>;
 
-  unsubscribe(eventType: string): void;
+  unsubscribe(eventType: string, handler?: EventHandler<TEvent>): void;
 }

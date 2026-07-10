@@ -10,6 +10,7 @@ import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { resolveAuthRedirect } from '@/modules/auth/services/auth-routing';
 import { onboardingService } from '@/modules/member/services/onboarding-service';
 import { getTenantById } from '@/modules/tenant/services/tenant-resolution';
+import { WorkspaceProvider, createWorkspaceId, type Workspace } from '@/modules/workspace';
 
 export default async function AuthenticatedLayout({ children }: { children: ReactNode }) {
   const user = await getAuthUser();
@@ -30,13 +31,33 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
     redirect('/login');
   }
 
+  const workspaces: Workspace[] = [
+    {
+      workspaceId: createWorkspaceId(`${user.tenantId}:retail-business-os`),
+      tenantId: user.tenantId,
+      workspaceType: 'retail',
+      status: 'active',
+      displayName: 'Retail Business OS',
+      isDefault: true,
+    },
+    {
+      workspaceId: createWorkspaceId(`${user.tenantId}:recruitment-business-os`),
+      tenantId: user.tenantId,
+      workspaceType: 'recruitment',
+      status: 'active',
+      displayName: 'Recruitment Business OS',
+    },
+  ];
+
   return (
     <QueryProvider>
-      <AppShell user={user} onboarding={onboarding} tenant={tenant}>
-        <Suspense fallback={<div className="flex justify-center py-20"><Spinner /></div>}>
-          {children}
-        </Suspense>
-      </AppShell>
+      <WorkspaceProvider tenantId={user.tenantId} workspaces={workspaces}>
+        <AppShell user={user} onboarding={onboarding} tenant={tenant}>
+          <Suspense fallback={<div className="flex justify-center py-20"><Spinner /></div>}>
+            {children}
+          </Suspense>
+        </AppShell>
+      </WorkspaceProvider>
       <ToastContainer />
       <FeedbackProvider />
     </QueryProvider>

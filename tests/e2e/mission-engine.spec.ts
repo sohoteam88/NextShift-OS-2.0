@@ -22,6 +22,16 @@ test.describe('Mission Engine', () => {
     expect(content.length).toBeGreaterThan(50);
   });
 
+  test('current mission API returns stable mission projection', async ({ page }) => {
+    const response = await page.request.get('/api/v1/mission/current');
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.data.currentMission).toBeTruthy();
+    expect(body.data.progress).toBeTruthy();
+    expect(body.data.estimatedCompletion).toBeTruthy();
+  });
+
   test('progress bar is visible', async ({ page }) => {
     await page.goto('/dashboard');
     const progressBar = page.locator('[class*="progress"], [role="progressbar"]').first();

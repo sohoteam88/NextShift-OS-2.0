@@ -91,7 +91,7 @@ Approved
 
 Audit Evidence:
 
-- [CAP-002 S-001 Customer Foundation Audit Report](../../../audit/CAP_002_S001_CUSTOMER_FOUNDATION_AUDIT_REPORT.md)
+- [CAP-002 S-001 Customer Foundation Audit Report](../../../archive/audit-history/CAP_002_S001_CUSTOMER_FOUNDATION_AUDIT_REPORT.md)
 
 Current slice:
 
@@ -111,3 +111,5 @@ Implementation
 - Capabilities must not redefine runtime responsibilities.
 - Capabilities should evolve independently.
 - Capabilities should follow the lifecycle defined in [Capability Status](../CAPABILITY_STATUS.md).
+- Capabilities must follow [Capability Lifecycle Standard](CAPABILITY_LIFECYCLE_STANDARD.md).
+- Content Intelligence must follow [Content Intelligence Standard](CONTENT_INTELLIGENCE_STANDARD.md).

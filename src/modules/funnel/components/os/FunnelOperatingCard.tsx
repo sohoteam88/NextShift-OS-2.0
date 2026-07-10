@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useLocale } from 'next-intl';
 import { cn } from '@/lib/cn';
 import type { BusinessFunnelType } from '@/modules/funnel/types/funnel-context';
 import type { FunnelProgress, FunnelHealth, FunnelNextAction, FunnelMilestone } from '../../types/funnel-os';
@@ -15,10 +16,18 @@ const LABELS: Record<BusinessFunnelType, Record<string, string>> = {
   upgrade: { zh: '升级漏斗', en: 'Upgrade Funnel', ms: 'Funnel Naik Taraf' },
 };
 
-export function FunnelOperatingCard({ funnelType, locale = 'zh', className }: Props) {
+function normalizeLocale(locale: string): 'zh' | 'en' | 'ms' {
+  if (locale.startsWith('en')) return 'en';
+  if (locale.startsWith('ms')) return 'ms';
+  return 'zh';
+}
+
+export function FunnelOperatingCard({ funnelType, locale, className }: Props) {
+  const currentLocale = useLocale();
+  const activeLocale = normalizeLocale(locale ?? currentLocale);
   const q = useFunnelOS(funnelType);
   const d = q.data?.data; const p = d?.progress; const h = d?.health; const n = d?.nextAction;
-  const label = LABELS[funnelType]?.[locale] ?? funnelType;
+  const label = LABELS[funnelType]?.[activeLocale] ?? funnelType;
 
   return (
     <section className={cn('rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-sm', className)}>

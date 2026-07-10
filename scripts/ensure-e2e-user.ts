@@ -23,12 +23,38 @@ function readEnv(name: string) {
 
 const supabaseUrl = readEnv('NEXT_PUBLIC_SUPABASE_URL');
 const serviceRoleKey = readEnv('SUPABASE_SERVICE_ROLE_KEY');
-const email = readEnv('E2E_TEST_USER_EMAIL') || 'test-user@example.test';
-const password = readEnv('E2E_TEST_USER_PASSWORD') || 'test-password-123';
 
 function requireEnv(value: string | undefined, name: string) {
   if (!value) throw new Error(`${name} is required`);
   return value;
+}
+
+type E2EAccount = {
+  email: string;
+  password: string;
+  name: string;
+  role: 'member' | 'platform_admin';
+};
+
+function readAccounts(): E2EAccount[] {
+  const member: E2EAccount = {
+    email: requireEnv(readEnv('E2E_TEST_USER_EMAIL'), 'E2E_TEST_USER_EMAIL'),
+    password: requireEnv(readEnv('E2E_TEST_USER_PASSWORD'), 'E2E_TEST_USER_PASSWORD'),
+    name: 'E2E Test Member',
+    role: 'member',
+  };
+  const admin: E2EAccount = {
+    email: requireEnv(readEnv('E2E_ADMIN_EMAIL'), 'E2E_ADMIN_EMAIL'),
+    password: requireEnv(readEnv('E2E_ADMIN_PASSWORD'), 'E2E_ADMIN_PASSWORD'),
+    name: 'E2E Test Admin',
+    role: 'platform_admin',
+  };
+
+  if (member.email.toLowerCase() === admin.email.toLowerCase()) {
+    throw new Error('E2E member and admin accounts must use different email addresses');
+  }
+
+  return [member, admin];
 }
 
 function tenantSettings(): Prisma.InputJsonValue {
@@ -44,7 +70,7 @@ function tenantSettings(): Prisma.InputJsonValue {
   };
 }
 
-async function findAuthUserId(supabase: SupabaseClient) {
+async function findAuthUserId(supabase: SupabaseClient, email: string) {
   for (let page = 1; page <= 10; page += 1) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
     if (error) throw error;
@@ -55,29 +81,25 @@ async function findAuthUserId(supabase: SupabaseClient) {
   return null;
 }
 
-async function ensureAuthUser() {
-  const supabase = createClient(requireEnv(supabaseUrl, 'NEXT_PUBLIC_SUPABASE_URL'), requireEnv(serviceRoleKey, 'SUPABASE_SERVICE_ROLE_KEY'), {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  const existingId = await findAuthUserId(supabase);
+async function ensureAuthUser(supabase: SupabaseClient, account: E2EAccount) {
+  const existingId = await findAuthUserId(supabase, account.email);
   if (existingId) {
     const { data, error } = await supabase.auth.admin.updateUserById(existingId, {
-      password,
+      password: account.password,
       email_confirm: true,
-      user_metadata: { name: 'E2E Test User' },
-      app_metadata: { role: 'operator', source: 'e2e' },
+      user_metadata: { name: account.name },
+      app_metadata: { role: account.role, source: 'e2e' },
     });
     if (error) throw error;
     return data.user.id;
   }
 
   const { data, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
+    email: account.email,
+    password: account.password,
     email_confirm: true,
-    user_metadata: { name: 'E2E Test User' },
-    app_metadata: { role: 'operator', source: 'e2e' },
+    user_metadata: { name: account.name },
+    app_metadata: { role: account.role, source: 'e2e' },
   });
   if (error) throw error;
   if (!data.user) throw new Error('Supabase did not return a created user');
@@ -85,7 +107,12 @@ async function ensureAuthUser() {
 }
 
 async function main() {
-  const userId = await ensureAuthUser();
+  const accounts = readAccounts();
+  const supabase = createClient(
+    requireEnv(supabaseUrl, 'NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv(serviceRoleKey, 'SUPABASE_SERVICE_ROLE_KEY'),
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
 
   const tenant = await prisma.tenant.upsert({
     where: { slug: 'e2e' },
@@ -108,13 +135,13 @@ async function main() {
     },
   });
 
-  await prisma.user.upsert({
-    where: { id: userId },
-    update: {
+  for (const account of accounts) {
+    const userId = await ensureAuthUser(supabase, account);
+    const userData = {
       tenantId: tenant.id,
-      email,
-      name: 'E2E Test User',
-      role: 'operator',
+      email: account.email,
+      name: account.name,
+      role: account.role,
       status: 'active',
       languagePreference: 'zh',
       onboardingCompleted: true,
@@ -127,29 +154,16 @@ async function main() {
           completed_at: new Date().toISOString(),
         },
       } as Prisma.InputJsonValue,
-    },
-    create: {
-      id: userId,
-      tenantId: tenant.id,
-      email,
-      name: 'E2E Test User',
-      role: 'operator',
-      status: 'active',
-      languagePreference: 'zh',
-      onboardingCompleted: true,
-      metadata: {
-        e2e: true,
-        onboarding: {
-          completed: true,
-          current_step: 5,
-          completed_steps: ['profile', 'goals', 'brand', 'first_content', 'first_funnel'],
-          completed_at: new Date().toISOString(),
-        },
-      } as Prisma.InputJsonValue,
-    },
-  });
+    };
 
-  console.log(JSON.stringify({ ok: true, userId, tenantId: tenant.id, email }, null, 2));
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: userData,
+      create: { id: userId, ...userData },
+    });
+  }
+
+  console.log(JSON.stringify({ ok: true, provisionedRoles: accounts.map(({ role }) => role) }));
 }
 
 main()

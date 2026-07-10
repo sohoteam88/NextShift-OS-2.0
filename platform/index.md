@@ -1,0 +1,90 @@
+# Platform Index
+
+Status: Finalized registry
+Project: Repository Architecture Reset v1.0
+Migration Unit: MU-001 Platform Registry Migration
+
+## Purpose
+
+This registry is the canonical platform navigation entry point for repository architecture migration. It provides repository-first navigation for humans and AI agents while preserving current source paths.
+
+## Registry-First Contract
+
+- Current paths remain canonical until a later approved migration phase changes them.
+- This file is a navigation registry only.
+- No project folders have been moved by MU-001.
+- No governance, release, or audit assets have been migrated by MU-001.
+- Runtime code remains under its existing paths.
+- `src/*` to `apps/web/*` is deferred to a separate runtime migration lifecycle.
+
+## Canonical Navigation Flow
+
+```text
+platform/index.md
+  -> platform/status.md
+  -> governance/index.md, releases/index.md, or audit/index.md
+  -> current source-of-truth document
+  -> lifecycle artifact in scope
+```
+
+Use this registry before loading deep project documentation unless the operator provides a specific current lifecycle artifact.
+
+## Current Platform Entry Points
+
+| Area | Current Path |
+| --- | --- |
+| NextShift Runtime Platform v1.0 | [platform/NEXTSHIFT_RUNTIME_PLATFORM_v1.0.md](NEXTSHIFT_RUNTIME_PLATFORM_v1.0.md) |
+| NextShift Runtime MVP v1.0 | [platform/NEXTSHIFT_RUNTIME_MVP_v1.0.md](NEXTSHIFT_RUNTIME_MVP_v1.0.md) |
+| NextShift Runtime Implementation v1.0 | [platform/NEXTSHIFT_RUNTIME_IMPLEMENTATION_v1.0.md](NEXTSHIFT_RUNTIME_IMPLEMENTATION_v1.0.md) |
+| NextShift Runtime MVP Sprint-001 | [platform/NEXTSHIFT_RUNTIME_MVP_SPRINT_001.md](NEXTSHIFT_RUNTIME_MVP_SPRINT_001.md) |
+| NextShift Runtime Sprint-002 | [platform/NEXTSHIFT_RUNTIME_SPRINT_002.md](NEXTSHIFT_RUNTIME_SPRINT_002.md) |
+| NextShift Workflow Catalog v1.0 | [platform/NEXTSHIFT_WORKFLOW_CATALOG_v1.0.md](NEXTSHIFT_WORKFLOW_CATALOG_v1.0.md) |
+| NextShift OS documentation root | [docs/nextshift-os-3/README.md](../docs/nextshift-os-3/README.md) |
+| Master index | [docs/nextshift-os-3/MASTER_INDEX.md](../docs/nextshift-os-3/MASTER_INDEX.md) |
+| Project status | [docs/nextshift-os-3/PROJECT_STATUS.md](../docs/nextshift-os-3/PROJECT_STATUS.md) |
+| Project roadmap | [docs/nextshift-os-3/PROJECT_ROADMAP.md](../docs/nextshift-os-3/PROJECT_ROADMAP.md) |
+| Implementation roadmap | [docs/nextshift-os-3/IMPLEMENTATION_MASTER_ROADMAP.md](../docs/nextshift-os-3/IMPLEMENTATION_MASTER_ROADMAP.md) |
+| Capability status | [docs/nextshift-os-3/CAPABILITY_STATUS.md](../docs/nextshift-os-3/CAPABILITY_STATUS.md) |
+| Runtime status | [docs/nextshift-os-3/RUNTIME_STATUS.md](../docs/nextshift-os-3/RUNTIME_STATUS.md) |
+
+## Platform Project Registry
+
+| Project | Current Path | Current State |
+| --- | --- | --- |
+| Business OS | [docs/nextshift-os-3/business-os/README.md](../docs/nextshift-os-3/business-os/README.md) | Business OS v1.0 released |
+| UI Kit | [docs/nextshift-os-3/ui-kit/README.md](../docs/nextshift-os-3/ui-kit/README.md) | Released |
+| Workspace Experience Framework | [docs/nextshift-os-3/workspace-experience-framework/README.md](../docs/nextshift-os-3/workspace-experience-framework/README.md) | WEF v1.0 released |
+| AI Engineering | [docs/nextshift-os-3/ai/README.md](../docs/nextshift-os-3/ai/README.md) | AI Engineering Foundation released |
+| Design System | [docs/nextshift-os-3/design-system/README.md](../docs/nextshift-os-3/design-system/README.md) | Released |
+| Repository Architecture Reset | [platform/status.md](status.md) | MU-001 platform registry finalized |
+
+## Platform Project Migration Package
+
+| Artifact | Purpose |
+| --- | --- |
+| [MU-005 Implementation Plan](MU-005_IMPLEMENTATION_PLAN.md) | Defines the platform project migration package for review |
+| [Platform Migration Record](MIGRATION_RECORD.md) | Consolidates the project and structure migration manifests, compatibility maps, validation checklists, and rollback checklists |
+
+## Architecture and Decision Records
+
+| Area | Current Path |
+| --- | --- |
+| Architecture docs | [docs/nextshift-os-3/phase-2-architecture/README.md](../docs/nextshift-os-3/phase-2-architecture/README.md) |
+| ADR registry | [docs/nextshift-os-3/adr/README.md](../docs/nextshift-os-3/adr/README.md) |
+| RFC registry | [docs/nextshift-os-3/rfc/README.md](../docs/nextshift-os-3/rfc/README.md) |
+| Governance docs | [docs/nextshift-os-3/governance/README.md](../docs/nextshift-os-3/governance/README.md) |
+
+## Companion Registries
+
+- [Platform status](status.md)
+- [Governance index](../governance/index.md)
+- [Release index](../releases/index.md)
+- [Audit index](../audit/index.md)
+
+## Compatibility Notes
+
+- Existing `docs/nextshift-os-3` links remain active.
+- This registry does not replace `docs/nextshift-os-3/MASTER_INDEX.md`; it provides the migration-era platform entry point.
+- Future target paths must remain labeled as future targets until implemented and validated.
+- Release package discovery remains delegated to [releases/index.md](../releases/index.md).
+- Audit evidence discovery remains delegated to [audit/index.md](../audit/index.md).
