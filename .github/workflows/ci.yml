@@ -212,7 +212,7 @@ jobs:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
 
-      - name: Ensure E2E Test User
+      - name: Ensure E2E Test Users
         run: pnpm tsx scripts/ensure-e2e-user.ts
         env:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'

@@ -21,7 +21,7 @@ pnpm e2e -- tests/e2e/auth.spec.ts
 
 ## Required Environment Variables
 
-Create `.env.e2e` (never commit real credentials):
+Create `.env.local` or `.env.e2e` (never commit real credentials):
 
 ```
 E2E_BASE_URL=http://localhost:3000

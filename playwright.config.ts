@@ -1,4 +1,9 @@
+import { existsSync } from 'node:fs';
 import { defineConfig } from '@playwright/test';
+
+for (const envFile of ['.env.local', '.env.e2e']) {
+  if (existsSync(envFile)) process.loadEnvFile(envFile);
+}
 
 const baseURL = process.env.E2E_BASE_URL || process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 
