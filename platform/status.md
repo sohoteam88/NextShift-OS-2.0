@@ -13,7 +13,7 @@ This status registry provides the current platform state for repository navigati
 | Field | Current Value |
 | --- | --- |
 | Active planning branch | `planning/os-3.3-runtime-platform` |
-| Current release status | OS 3.3 RC prepared, awaiting approval |
+| Current release status | OS 3.3 Runtime Platform `v3.3.0` deployed to VPS and verified via `/api/v1/version` at commit `50282b9` |
 | Last Updated | 2026-07-10 |
 | Current repository architecture project | Repository Architecture Reset v1.0 |
 | Current RAR migration unit | MU-001 Platform Registry Migration |

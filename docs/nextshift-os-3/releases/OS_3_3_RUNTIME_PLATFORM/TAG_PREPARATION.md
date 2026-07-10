@@ -1,8 +1,8 @@
-# OS 3.3 Runtime Platform Tag Preparation
+# OS 3.3 Runtime Platform Tag Record
 
-Version: 3.3 RC1
+Version: 3.3.0
 
-Status: Prepared - Tag Not Created
+Status: Created - Production Release Tag Published
 
 Last Updated: 2026-07-10
 
@@ -10,64 +10,58 @@ Last Updated: 2026-07-10
 
 ## Purpose
 
-Prepare the release candidate tag plan for OS 3.3 Runtime Platform without creating or pushing a tag.
+Record the OS 3.3 Runtime Platform tag decision after the RC package was promoted to the production release.
 
 ---
 
-## Recommended Tag
+## Final Tag
 
 ```text
-v3.3.0-rc1
+v3.3.0
 ```
 
 ---
 
-## Rationale
+## RC1 To 3.3.0 Promotion
 
-`v3.3.0-rc1` is the recommended tag because OS 3.3 has validated the Runtime Adapter Platform pattern but has not completed broad module migration.
+The earlier `v3.3.0-rc1` recommendation was intentionally conservative while deployment hardening, real E2E gates, and production readiness were still being completed.
 
-Architecture Review states that only 2 of 68 modules are runtime-adapter migrated:
+The final `v3.3.0` tag was created after OS 3.3 was promoted from release candidate to production release with:
 
 - Revenue
 - Analytics
-
-The RC label is more accurate than a final release tag because:
-
-- the adapter standard is proven
-- the factory is implemented
-- two real callsites are integrated
-- CI and hardening gates are improved
-- production E2E secrets are not yet configured
-- deployment advisory D-001 remains pending confirmation
-- the Runtime Platform freeze decision has not been issued by Steven
+- Mission Engine
+- `createRuntimeAdapter()` factory
+- real E2E gates
+- hardened Docker deployment pipeline
+- production VPS deployment verification
 
 ---
 
-## Tag Command Prepared
+## Tag Command Executed
 
-Do not run these commands without explicit approval:
+The final release tag was created from `main` at commit `50282b9`:
 
 ```bash
-git tag -a v3.3.0-rc1 -m "NextShift OS 3.3 Runtime Platform RC1"
-git push origin v3.3.0-rc1
+git tag -a v3.3.0 -m "OS 3.3 Runtime Platform: adapter factory, 3 runtime modules, real E2E gates, hardened deploy pipeline, production deployment"
+git push origin v3.3.0
 ```
 
 ---
 
-## Required Approval Before Tag Creation
+## Verification
 
-Before creating the tag, confirm:
+Release evidence:
 
-1. Steven approves the OS 3.3 RC package.
-2. Target commit is confirmed.
-3. GitHub Checks are green, with E2E SKIPPED acceptable only if secrets remain intentionally unconfigured.
-4. No production release is implied by tag creation unless separately approved.
-5. Freeze decision is explicitly approved or deferred.
+1. `v3.3.0` points to `50282b9`.
+2. `main` HEAD is `50282b9`.
+3. Production `/api/v1/version` returned commit `50282b99e853a8239d39f455aa06bcafc60a50ed`.
+4. Deploy workflow run #142 completed successfully.
 
 ---
 
 ## Current Tag State
 
 ```text
-No OS 3.3 RC tag created by this package task.
+v3.3.0 created and pushed.
 ```

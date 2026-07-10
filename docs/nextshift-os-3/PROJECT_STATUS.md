@@ -21,11 +21,11 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | OS 3.3 RC package prepared, awaiting approval |
-| Current Release | `v3.1.0-rc1` production baseline remains the deployed release; OS 3.3 RC package is prepared but not production-promoted |
+| Current Version | `v3.3.0` production |
+| Current Release | OS 3.3 Runtime Platform production release |
 | Current Planning Branch | `planning/os-3.3-runtime-platform` |
 | Repository Default Branch | `main` |
-| Production Status | Production is aligned to the verified OS 3.1 RC1 release commit and is not changed by planning branch documentation work |
+| Production Status | Deployed to VPS and verified via `/api/v1/version` at commit `50282b9` |
 
 Canonical navigation:
 
@@ -89,7 +89,7 @@ Components:
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
 | Developer Platform | OS 3.2 Developer Platform audit PASS; records remain historical release preparation artifacts | [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md) |
-| Current Capability Focus | OS 3.3 Runtime Platform RC approval | [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md) |
+| Current Capability Focus | OS 3.4 Phase 2: B2 business-state adapter + A1 recommendation data path | [OS 3.4 Blueprint](OS_3_4_BLUEPRINT.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -100,11 +100,11 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Field | Current State |
 | --- | --- |
 | Active Planning Branch | `planning/os-3.3-runtime-platform` |
-| Active Milestone | OS 3.3 Runtime Platform RC package |
-| Current Phase | OS 3.3 RC package prepared, awaiting approval |
-| Current Focus | Review and approve the OS 3.3 Runtime Platform release candidate package |
-| Current Blockers | Steven approval required before tag creation, freeze decision, or production release |
-| Current Priorities | Validate RC package, keep production unchanged, and wait for explicit approval |
+| Active Milestone | OS 3.4 Phase 2 |
+| Current Phase | Post-release OS 3.3 complete; OS 3.4 Phase 2 ready |
+| Current Focus | B2 business-state adapter + A1 recommendation data path |
+| Current Blockers | None recorded for the next planning step |
+| Current Priorities | Start OS 3.4 Phase 2 from the Runtime Adapter Standard without reopening OS 3.3 release work |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -124,9 +124,9 @@ Use [STD-007 Repository Canonical Resolution Standard](engineering/STD-007_REPOS
 
 OS 3.2 Developer Platform audit result: PASS.
 
-Production approval issued: No.
+Production approval issued: Yes, for OS 3.3 Runtime Platform v3.3.0.
 
-Release tag created: No.
+Release tag created: `v3.3.0`.
 
 ---
 
@@ -134,27 +134,27 @@ Release tag created: No.
 
 | Field | Current State |
 | --- | --- |
-| Release Branch | `release/os-3.1-rc1` |
-| Release Tag | `v3.1.0-rc1` |
-| Production Commit | `045ddea888991b8454fd393a61de2866174c5561` |
-| Deployment Method | VPS archive/Docker Compose deployment with `.deployed-revision` compatibility |
-| VPS Alignment Status | Aligned to the verified release branch, release tag, deployed revision, and running production revision |
-| Last Verification Summary | Prior alignment verification confirmed release branch, release tag, VPS deployed revision, and running production at `045ddea888991b8454fd393a61de2866174c5561`; production health check was healthy |
+| Release Branch | `main` |
+| Release Tag | `v3.3.0` |
+| Production Commit | `50282b99e853a8239d39f455aa06bcafc60a50ed` |
+| Deployment Method | GitHub Actions Docker image deployment to VPS Docker Compose |
+| VPS Alignment Status | Aligned to `v3.3.0` and verified through production version endpoint |
+| Last Verification Summary | `/api/v1/version` returned production commit `50282b99e853a8239d39f455aa06bcafc60a50ed`, build time `2026-07-10T10:17:27Z`, environment `production` |
 
-Planning branch documentation changes are not deployed to production until a verified release decision is made under [STD-004 Release Governance](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md) and [STD-005 GitHub Alignment Standard](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
+Planning branch documentation remains pre-merge work until it is reviewed and merged under [STD-004 Release Governance](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md) and [STD-005 GitHub Alignment Standard](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
 
-No production approval has been issued by Phase 0, Phase 1, Phase 1.5, Phase 1.6, Phase 2, or Phase 2.1.
+OS 3.3 Runtime Platform production approval has been issued and released as `v3.3.0`.
 
-No release tag has been created by Phase 0, Phase 1, Phase 1.5, Phase 1.6, Phase 2, or Phase 2.1.
+The `v3.3.0` release tag has been created and pushed.
 
 ---
 
 ## 7. Next Recommended Actions
 
-1. Review [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md).
-2. Decide whether to approve `v3.3.0-rc1` tag creation.
-3. Decide whether Runtime Platform freeze should be approved or deferred.
-4. Do not create tags, approve production release, start Pilot 3, begin OS 3.4, modify runtime code, modify CI, modify Prisma, or modify env files without explicit approval.
+1. Continue with OS 3.4 Phase 2.
+2. Implement B2 business-state adapter planning/execution from the Runtime Adapter Standard.
+3. Implement A1 recommendation data path planning/execution without reopening OS 3.3 release work.
+4. Do not modify production deployment, Prisma, env files, or release tags without explicit approval.
 
 ---
 

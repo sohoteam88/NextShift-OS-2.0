@@ -18,18 +18,16 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-OS 3.3 RC package prepared, awaiting approval
+OS 3.4 Phase 2: B2 business-state adapter + A1 recommendation data path
 
-The OS 3.3 Runtime Platform release candidate package is prepared and awaiting Steven approval.
+OS 3.3 Runtime Platform has been released as `v3.3.0`, deployed to the VPS, and verified through `/api/v1/version` at commit `50282b9`.
 
-Required approval checks before any next step:
+Next work should continue OS 3.4 Phase 2 only:
 
-1. Review [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md).
-2. Confirm whether `v3.3.0-rc1` should be created.
-3. Confirm whether Runtime Platform freeze should be approved or deferred.
-4. Confirm no production approval is implied by the RC package.
-5. Confirm no release tag has been created before approval.
-6. Continue only after Steven explicitly authorizes the next release step.
+1. B2 business-state adapter.
+2. A1 recommendation data path.
+3. Preserve the Runtime Adapter Standard and existing production deployment gates.
+4. Do not reopen OS 3.3 release candidate approval work.
 
 ---
 
@@ -45,13 +43,13 @@ Required approval checks before any next step:
 
 OS 3.2 Developer Platform audit result: PASS.
 
-Production approval issued: No.
+Production approval issued: Yes, for OS 3.3 Runtime Platform v3.3.0.
 
-Release tag created: No.
+Release tag created: `v3.3.0`.
 
 OS 3.3 Runtime Platform C1-C6 audit result: PASS.
 
-OS 3.3 RC package state: Prepared, awaiting approval.
+OS 3.3 release state: Released to production as `v3.3.0`.
 
 ---
 
@@ -70,6 +68,7 @@ Do not restart:
 - Phase 1.6 test environment guard
 - Phase 2 OS 3.2 release audit loop
 - OS 3.3 C1-C6 Runtime Platform execution
+- OS 3.3 Runtime Platform release approval, tag creation, and production deployment
 - WF-001 through WF-007 workflow implementation
 
 Those phases are already represented by repository artifacts.
@@ -78,6 +77,6 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-When explicitly approved, continue the OS 3.3 RC release decision from `planning/os-3.3-runtime-platform`.
+Continue OS 3.4 Phase 2 from `planning/os-3.3-runtime-platform`.
 
-Do not create tags, approve production release, modify Prisma, modify env files, change CI, change runtime code, start Pilot 3, or begin OS 3.4 as part of this RC package state.
+Do not create release tags, modify Prisma, modify env files, change deployment configuration, or alter production release state without explicit approval.
