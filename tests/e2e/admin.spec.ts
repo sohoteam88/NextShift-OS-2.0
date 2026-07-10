@@ -12,6 +12,24 @@ test.describe('Admin Protection', () => {
     expect(isRedirected).toBeTruthy();
   });
 
+  test('normal user cannot access admin/feedback', async ({ page }) => {
+    await loginAsUser(page);
+    await page.goto('/admin/feedback');
+    await page.waitForLoadState('networkidle');
+    const url = page.url();
+    const isRedirected = url.includes('unauthorized') || url.includes('login') || !url.includes('admin');
+    expect(isRedirected).toBeTruthy();
+  });
+
+  test('normal user cannot access admin/launch-readiness', async ({ page }) => {
+    await loginAsUser(page);
+    await page.goto('/admin/launch-readiness');
+    await page.waitForLoadState('networkidle');
+    const url = page.url();
+    const isRedirected = url.includes('unauthorized') || url.includes('login') || !url.includes('admin');
+    expect(isRedirected).toBeTruthy();
+  });
+
   test('normal user cannot access admin page', async ({ page }) => {
     await loginAsUser(page);
     await page.goto('/admin');
