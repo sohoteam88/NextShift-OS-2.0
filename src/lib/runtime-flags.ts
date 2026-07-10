@@ -3,11 +3,12 @@ export type RuntimeFlagName =
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_MISSION'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE'
+  | 'NEXT_PUBLIC_ENABLE_RUNTIME_CRM'
   | 'NEXT_PUBLIC_ENABLE_COMMAND_CENTER';
 
 export type RuntimeFlagDefinition = {
   name: RuntimeFlagName;
-  module: 'revenue-drivers' | 'analytics' | 'mission-engine' | 'business-state' | 'dashboard';
+  module: 'revenue-drivers' | 'analytics' | 'mission-engine' | 'business-state' | 'crm' | 'dashboard';
   introducedAt: string;
   removalCondition: string;
 };
@@ -41,6 +42,13 @@ export const RUNTIME_FLAGS = {
     removalCondition:
       'Remove after the Business State Runtime Adapter becomes the default path and legacy fallback is retired.',
   },
+  CRM: {
+    name: 'NEXT_PUBLIC_ENABLE_RUNTIME_CRM',
+    module: 'crm',
+    introducedAt: '2026-07-11',
+    removalCondition:
+      'Remove after the CRM Runtime Adapter becomes the default path and legacy fallback is retired.',
+  },
   COMMAND_CENTER: {
     name: 'NEXT_PUBLIC_ENABLE_COMMAND_CENTER',
     module: 'dashboard',
@@ -54,6 +62,7 @@ export const RUNTIME_REVENUE_FLAG = RUNTIME_FLAGS.REVENUE.name;
 export const RUNTIME_ANALYTICS_FLAG = RUNTIME_FLAGS.ANALYTICS.name;
 export const RUNTIME_MISSION_FLAG = RUNTIME_FLAGS.MISSION.name;
 export const RUNTIME_BUSINESS_STATE_FLAG = RUNTIME_FLAGS.BUSINESS_STATE.name;
+export const RUNTIME_CRM_FLAG = RUNTIME_FLAGS.CRM.name;
 export const COMMAND_CENTER_FLAG = RUNTIME_FLAGS.COMMAND_CENTER.name;
 
 export function isRuntimeFlagEnabled(
