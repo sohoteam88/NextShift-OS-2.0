@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-09
+Last Updated: 2026-07-10
 
 ---
 
@@ -18,18 +18,18 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-Phase 3 — Governance Slimdown
+OS 3.3 RC package prepared, awaiting approval
 
-Phase 3 has not started. It must begin only after explicit approval.
+The OS 3.3 Runtime Platform release candidate package is prepared and awaiting Steven approval.
 
-Required startup checks before Phase 3 begins:
+Required approval checks before any next step:
 
-1. Confirm [Project Context](PROJECT_CONTEXT.md), [Repository Status](REPOSITORY_STATUS.md), [AI Handover](AI_HANDOVER.md), and [Context Checksum](CONTEXT_CHECKSUM.md) are current.
-2. Confirm Phase 0, Phase 1, Phase 1.5, Phase 1.6, and Phase 2 are merged into `planning/os-3.3-runtime-platform`.
-3. Confirm the OS 3.2 Developer Platform audit result is PASS.
-4. Confirm no production approval has been issued.
-5. Confirm no release tag has been created.
-6. Continue with Phase 3 only after Steven explicitly authorizes it.
+1. Review [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md).
+2. Confirm whether `v3.3.0-rc1` should be created.
+3. Confirm whether Runtime Platform freeze should be approved or deferred.
+4. Confirm no production approval is implied by the RC package.
+5. Confirm no release tag has been created before approval.
+6. Continue only after Steven explicitly authorizes the next release step.
 
 ---
 
@@ -49,6 +49,10 @@ Production approval issued: No.
 
 Release tag created: No.
 
+OS 3.3 Runtime Platform C1-C6 audit result: PASS.
+
+OS 3.3 RC package state: Prepared, awaiting approval.
+
 ---
 
 ## Do Not Restart
@@ -65,6 +69,7 @@ Do not restart:
 - Phase 1.5 CI and test coverage repair
 - Phase 1.6 test environment guard
 - Phase 2 OS 3.2 release audit loop
+- OS 3.3 C1-C6 Runtime Platform execution
 - WF-001 through WF-007 workflow implementation
 
 Those phases are already represented by repository artifacts.
@@ -73,6 +78,6 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-When explicitly approved, start Phase 3 - Governance Slimdown from `planning/os-3.3-runtime-platform`.
+When explicitly approved, continue the OS 3.3 RC release decision from `planning/os-3.3-runtime-platform`.
 
-Do not create tags, approve production release, modify Prisma, modify env files, change CI, change runtime code, or start any later phase as part of this cleanup state.
+Do not create tags, approve production release, modify Prisma, modify env files, change CI, change runtime code, start Pilot 3, or begin OS 3.4 as part of this RC package state.

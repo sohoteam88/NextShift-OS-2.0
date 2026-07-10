@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-09
+Last Updated: 2026-07-10
 
 ---
 
@@ -21,8 +21,8 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | OS 3.3 Runtime Platform planning baseline with Product Intelligence v1.0 frozen |
-| Current Release | `v3.1.0-rc1` production baseline remains the deployed release; OS 3.3 planning artifacts are not production-promoted |
+| Current Version | OS 3.3 RC package prepared, awaiting approval |
+| Current Release | `v3.1.0-rc1` production baseline remains the deployed release; OS 3.3 RC package is prepared but not production-promoted |
 | Current Planning Branch | `planning/os-3.3-runtime-platform` |
 | Repository Default Branch | `main` |
 | Production Status | Production is aligned to the verified OS 3.1 RC1 release commit and is not changed by planning branch documentation work |
@@ -38,6 +38,7 @@ Canonical navigation:
 - [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md)
 - [OS 3.2 Release Manifest](releases/OS_3_2_DEVELOPER_PLATFORM/RELEASE_MANIFEST.md)
 - [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md)
+- [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md)
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
 - [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
@@ -88,7 +89,7 @@ Components:
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
 | Developer Platform | OS 3.2 Developer Platform audit PASS; records remain historical release preparation artifacts | [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md) |
-| Current Capability Focus | OS 3.3 Runtime Platform and Product Intelligence planning branch alignment | [Master Index](MASTER_INDEX.md) |
+| Current Capability Focus | OS 3.3 Runtime Platform RC approval | [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -99,11 +100,11 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Field | Current State |
 | --- | --- |
 | Active Planning Branch | `planning/os-3.3-runtime-platform` |
-| Active Milestone | OS 3.3 Runtime Platform planning branch alignment |
-| Current Phase | Phase 2.1 next-action cleanup complete on branch; next lifecycle action is Phase 3 - Governance Slimdown |
-| Current Focus | Prevent future AI sessions from continuing stale Phase 1 or Phase 2 instructions |
-| Current Blockers | None for Phase 2.1 cleanup; Phase 3 requires explicit approval before starting |
-| Current Priorities | Stop after Phase 2.1, report validation, and wait for approval before starting Phase 3 |
+| Active Milestone | OS 3.3 Runtime Platform RC package |
+| Current Phase | OS 3.3 RC package prepared, awaiting approval |
+| Current Focus | Review and approve the OS 3.3 Runtime Platform release candidate package |
+| Current Blockers | Steven approval required before tag creation, freeze decision, or production release |
+| Current Priorities | Validate RC package, keep production unchanged, and wait for explicit approval |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -150,10 +151,10 @@ No release tag has been created by Phase 0, Phase 1, Phase 1.5, Phase 1.6, Phase
 
 ## 7. Next Recommended Actions
 
-1. Start Phase 3 - Governance Slimdown only after explicit approval.
-2. Confirm [Project Context](PROJECT_CONTEXT.md), [Repository Status](REPOSITORY_STATUS.md), [Next Action](NEXT_ACTION.md), [AI Handover](AI_HANDOVER.md), and [Context Checksum](CONTEXT_CHECKSUM.md) are current before Phase 3 begins.
-3. Do not restart Phase 0, Phase 1, Phase 1.5, Phase 1.6, or Phase 2.
-4. Do not create tags, approve production release, modify runtime code, modify CI, modify Prisma, or modify env files as part of Phase 2.1 cleanup.
+1. Review [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md).
+2. Decide whether to approve `v3.3.0-rc1` tag creation.
+3. Decide whether Runtime Platform freeze should be approved or deferred.
+4. Do not create tags, approve production release, start Pilot 3, begin OS 3.4, modify runtime code, modify CI, modify Prisma, or modify env files without explicit approval.
 
 ---
 
