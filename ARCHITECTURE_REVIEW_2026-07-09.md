@@ -151,6 +151,19 @@ Non-blocking advisories（转入后续任务）：
 - **C-001**：工厂类型只能强制 `isEnabled` 存在，不能强制它调用真实 flag。→ 纳入 Pilot 3 起的 code review 检查清单
 - **C-002**：`createWarningPayload` 收到完整 input，未来 adapter 若直接 spread 会把 tenantId/userId 泄进日志。→ 在 RUNTIME_ADAPTER_STANDARD 补充说明（C3 顺手项）
 
-### Round 2 — C3-C6 完成后
+### Round 2 — PR #20-#21（C3 / C4-C6）
 
-（待填写）
+Date: 2026-07-10
+Auditor: Claude Code
+HEAD: `888b04e`
+Verdict: **PASS** — 无阻塞问题
+
+完整报告：[audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md](audit/OS33_C3_C6_PR20_PR21_CODE_REVIEW_REPORT.md)
+
+检查点结论：CP6 四个 legacy 包 README 与实际导出逐一核对属实，src 零引用 ✓；C4 flag 注册表 `=== 'true'` 语义等价、345 tests 零改动 ✓；C5 图片域名清单经全仓库 grep 验证完整、限流 key 构造正确（invite 按 IP+code 双维度）✓；eslint 基线 192 warn / 0 error 复现、68/68 模块覆盖 ✓；C6 roadmap 落库、docs:links 1011 文件通过 ✓；Round 1 承诺项 C-001 / C-002 均确认关闭 ✓。
+
+Non-blocking advisory：
+
+- **D-001**：限流的 IP 取自 `x-forwarded-for` 首位，多级代理/CDN 下可被伪造。→ 部署拓扑确认后处理（Cloudflare 用 `cf-connecting-ip`；自管 nginx 确认 replace 模式）。纳入生产加固清单，不阻塞 v3.3.0。
+
+**OS 3.3 C 系列（C1-C6）全部完成并通过两轮审计。**
