@@ -5,6 +5,7 @@ import { AICommandCard } from './AICommandCard';
 import type { DashboardPriorityLevel } from './AICommandCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
 import { MomentumCard } from './MomentumCard';
+import { TodayRecommendationCard } from './TodayRecommendationCard';
 import { useDashboardMission } from '../hooks/useDashboardMission';
 import { revenueDriverHubRouteForMission } from '@/modules/revenue-drivers/constants/revenue-drivers';
 
@@ -103,6 +104,7 @@ export function DashboardHome() {
         executeRoute={executeRoute}
         primaryActionLabel={data.missionControl.ctaLabel}
       />
+      <TodayRecommendationCard />
       <div className="grid gap-5 lg:grid-cols-2">
         <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />
         <MomentumCard

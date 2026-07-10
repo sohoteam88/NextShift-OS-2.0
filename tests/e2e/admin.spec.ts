@@ -30,6 +30,15 @@ test.describe('Admin Protection', () => {
     expect(isRedirected).toBeTruthy();
   });
 
+  test('normal user cannot access admin/approvals', async ({ page }) => {
+    await loginAsUser(page);
+    await page.goto('/admin/approvals');
+    await page.waitForLoadState('networkidle');
+    const url = page.url();
+    const isRedirected = url.includes('unauthorized') || url.includes('login') || !url.includes('admin');
+    expect(isRedirected).toBeTruthy();
+  });
+
   test('normal user cannot access admin page', async ({ page }) => {
     await loginAsUser(page);
     await page.goto('/admin');
