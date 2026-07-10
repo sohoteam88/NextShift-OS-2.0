@@ -91,7 +91,7 @@ Phase 4:        A3 E2E + flag graduation PR + RC package
 1. `NEXT_PUBLIC_ENABLE_COMMAND_CENTER=on` 时 dashboard 渲染推荐卡片,E2E 有用例证明
 2. 5/68 模块 runtime 化（B 系列全绿）
 3. `RUNTIME_REVENUE` / `RUNTIME_ANALYTICS` 默认 on
-4. E2E ≥ 30 用例实跑全绿；eslint 边界 warn ≤ 192；UI 逃逸基线 ≤ 3,519
+4. E2E ≥ 30 用例实跑全绿；eslint 边界 warn ≤ 413（2026-07-10 修正：next lint 缓存导致旧基线少报，静态验证代码违规无增长）；UI 逃逸基线 ≤ 3,519
 5. 两轮 Claude Code audit PASS,结论落库
 6. Release package 按 OS 3.3 结构,canonical status 文档一次更新到位
 

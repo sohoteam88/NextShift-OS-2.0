@@ -236,6 +236,7 @@ jobs:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           E2E_BASE_URL: 'http://localhost:3000'
+          NEXT_PUBLIC_ENABLE_COMMAND_CENTER: 'true'
 
       - name: Upload Playwright Report
         if: failure()
