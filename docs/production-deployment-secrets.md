@@ -41,6 +41,7 @@ Use GitHub repository variables for non-secret feature flags.
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` | Variable | `false` | Enables Analytics Runtime Adapter in production bundles. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION` | Variable | `false` | Enables Mission Runtime Adapter in production bundles. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE` | Variable | `false` | Enables Business State Runtime Adapter in production bundles. |
+| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_CRM` | Variable | `false` | Enables CRM Runtime Adapter in production bundles. |
 | `PROD_NEXT_PUBLIC_ENABLE_COMMAND_CENTER` | Variable | `false` | Enables Command Center recommendation datapath in production bundles. |
 
 ## VPS Runtime Environment
