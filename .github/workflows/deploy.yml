@@ -5,13 +5,24 @@ on:
     workflows: ['CI']
     types: [completed]
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Deployment maintenance action'
+        required: true
+        default: 'rollback'
+        type: choice
+        options:
+          - rollback
 
 jobs:
   deploy:
     name: Deploy
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
 
     steps:
       - name: Checkout
@@ -19,8 +30,28 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t nextshift-app:${{ github.sha }} --target production .
-          docker save nextshift-app:${{ github.sha }} | gzip > image.tar.gz
+          docker build \
+            --target production \
+            --build-arg NEXT_PUBLIC_APP_URL="${{ secrets.PROD_NEXT_PUBLIC_APP_URL }}" \
+            --build-arg NEXT_PUBLIC_BASE_DOMAIN="${{ secrets.PROD_NEXT_PUBLIC_BASE_DOMAIN }}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ secrets.PROD_NEXT_PUBLIC_SUPABASE_URL }}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.PROD_NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${{ secrets.PROD_NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}" \
+            --build-arg NEXT_PUBLIC_SENTRY_DSN="${{ secrets.PROD_NEXT_PUBLIC_SENTRY_DSN }}" \
+            --build-arg NEXT_PUBLIC_POSTHOG_KEY="${{ secrets.PROD_NEXT_PUBLIC_POSTHOG_KEY }}" \
+            --build-arg NEXT_PUBLIC_POSTHOG_HOST="${{ secrets.PROD_NEXT_PUBLIC_POSTHOG_HOST }}" \
+            --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${{ secrets.PROD_NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_EVOLUTION_PROJECTION_V6="${{ vars.PROD_NEXT_PUBLIC_ENABLE_EVOLUTION_PROJECTION_V6 || 'false' }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE || 'false' }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS || 'false' }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_MISSION="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION || 'false' }}" \
+            --build-arg SENTRY_AUTH_TOKEN="${{ secrets.PROD_SENTRY_AUTH_TOKEN }}" \
+            --build-arg SENTRY_ORG="${{ secrets.PROD_SENTRY_ORG }}" \
+            --build-arg SENTRY_PROJECT="${{ secrets.PROD_SENTRY_PROJECT }}" \
+            --build-arg NEXT_PUBLIC_COMMIT_SHA="$IMAGE_TAG" \
+            --build-arg NEXT_PUBLIC_BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -t nextshift-app:$IMAGE_TAG .
+          docker save nextshift-app:$IMAGE_TAG | gzip > image.tar.gz
 
       - name: Copy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -28,7 +59,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: 'image.tar.gz,docker-compose.prod.yml'
+          source: 'image.tar.gz,docker-compose.prod.yml,prisma,scripts/deploy-smoke.sh'
           target: '/home/deploy/nextshift'
 
       - name: Deploy
@@ -39,18 +70,48 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/deploy/nextshift
+            if docker image inspect nextshift-app:latest >/dev/null 2>&1; then
+              docker tag nextshift-app:latest nextshift-app:previous
+            fi
             docker load < image.tar.gz
-            docker tag nextshift-app:${{ github.sha }} nextshift-app:latest
-            docker compose -f docker-compose.prod.yml up -d app
+            docker tag nextshift-app:${{ env.IMAGE_TAG }} nextshift-app:latest
+            docker run --rm \
+              --env-file .env.production \
+              -v "$PWD/prisma:/app/prisma:ro" \
+              -w /app \
+              node:22-alpine \
+              sh -lc 'npx --yes prisma@6.19.3 migrate deploy --schema /app/prisma/schema.prisma'
+            docker compose --env-file .env.production -f docker-compose.prod.yml up -d app
+            chmod +x scripts/deploy-smoke.sh
+            BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
             docker image prune -f
             rm image.tar.gz
 
   rollback:
-    name: Rollback (manual)
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    name: Rollback to previous image
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'rollback' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Rollback on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/deploy/nextshift
+            docker image inspect nextshift-app:previous >/dev/null 2>&1
+            docker tag nextshift-app:previous nextshift-app:latest
+            docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-build app
+            BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
+
+  ci-failure-notice:
+    name: CI failure notice
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Rollback notification
+      - name: Deployment skipped
         run: |
           echo "CI failed on main. Deployment was NOT triggered."
           echo "Investigate the CI failure: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
