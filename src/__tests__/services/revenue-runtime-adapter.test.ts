@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 describe('RevenueRuntimeAdapter', () => {
-  it('keeps the legacy path when the runtime revenue flag is OFF', () => {
+  it('uses the runtime path when the runtime revenue flag is missing after graduation', () => {
     setRuntimeRevenueFlag(undefined);
 
     const output = resolveRevenueRuntimeIntent({
@@ -36,13 +36,18 @@ describe('RevenueRuntimeAdapter', () => {
       intent: 'facebook-post',
       toolId: 'content.facebook-post',
     });
-    expect(output.runtime).toEqual({
-      enabled: false,
-      mode: 'legacy',
+    expect(output.runtime).toMatchObject({
+      enabled: true,
+      mode: 'runtime',
       source: 'deep-link',
       fallback: false,
       confidence: 1,
+      capabilityId: 'revenue.driver.intent.resolve',
+      eventType: 'runtime.revenue.intent.resolved',
+      diagnosticsStatus: 'healthy',
     });
+    expect(output.runtime.contextId).toEqual(expect.any(String));
+    expect(output.runtime.correlationId).toEqual(expect.any(String));
   });
 
   it.each(['false', 'FALSE', 'True', '1', '0', ''])(

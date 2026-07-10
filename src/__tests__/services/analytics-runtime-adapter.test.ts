@@ -51,7 +51,7 @@ afterEach(() => {
 });
 
 describe('AnalyticsRuntimeAdapter', () => {
-  it('keeps the legacy path when the runtime analytics flag is missing', async () => {
+  it('uses the runtime path when the runtime analytics flag is missing after graduation', async () => {
     setRuntimeAnalyticsFlag(undefined);
     const getProjection = createProjectionLoader();
 
@@ -67,13 +67,18 @@ describe('AnalyticsRuntimeAdapter', () => {
 
     expect(getProjection).toHaveBeenCalledWith('user_1', 'tenant_1');
     expect(output.projection).toBe(sampleProjection);
-    expect(output.runtime).toEqual({
-      enabled: false,
-      mode: 'legacy',
+    expect(output.runtime).toMatchObject({
+      enabled: true,
+      mode: 'runtime',
       source: 'analytics-center',
       fallback: false,
       confidence: 'derived',
+      capabilityId: 'analytics.projection.resolve',
+      eventType: 'runtime.analytics.projection.resolved',
+      diagnosticsStatus: 'healthy',
     });
+    expect(output.runtime.contextId).toEqual(expect.any(String));
+    expect(output.runtime.correlationId).toEqual(expect.any(String));
   });
 
   it.each(['false', 'FALSE', 'True', '1', '0', ''])(

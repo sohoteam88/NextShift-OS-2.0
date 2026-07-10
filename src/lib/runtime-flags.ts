@@ -19,14 +19,14 @@ export const RUNTIME_FLAGS = {
     module: 'revenue-drivers',
     introducedAt: '2026-07-09',
     removalCondition:
-      'Remove after the Revenue Runtime Adapter becomes the default path and legacy fallback is retired.',
+      'Graduated to default-on in OS 3.4 A3; remove after the legacy fallback path is retired.',
   },
   ANALYTICS: {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS',
     module: 'analytics',
     introducedAt: '2026-07-09',
     removalCondition:
-      'Remove after the Analytics Runtime Adapter becomes the default path and legacy fallback is retired.',
+      'Graduated to default-on in OS 3.4 A3; remove after the legacy fallback path is retired.',
   },
   MISSION: {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_MISSION',
@@ -70,4 +70,11 @@ export function isRuntimeFlagEnabled(
   env: NodeJS.ProcessEnv = process.env,
 ) {
   return env[flag] === 'true';
+}
+
+export function isRuntimeFlagEnabledByDefault(
+  flag: RuntimeFlagName,
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  return env[flag] === undefined ? true : env[flag] === 'true';
 }
