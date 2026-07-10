@@ -32,6 +32,18 @@ test.describe('Mission Engine', () => {
     expect(body.data.estimatedCompletion).toBeTruthy();
   });
 
+  test('business-state backed current mission path remains stable', async ({ page }) => {
+    const response = await page.request.get('/api/v1/mission/current');
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.data.currentMission.id).toEqual(expect.any(String));
+    expect(body.data.currentJourney).toBeTruthy();
+    expect(body.data.progress.completionPercentage).toEqual(expect.any(Number));
+    expect(body.data.estimatedCompletion.label).toEqual(expect.any(String));
+    expect(body.data).not.toHaveProperty('runtime');
+  });
+
   test('progress bar is visible', async ({ page }) => {
     await page.goto('/dashboard');
     const progressBar = page.locator('[class*="progress"], [role="progressbar"]').first();

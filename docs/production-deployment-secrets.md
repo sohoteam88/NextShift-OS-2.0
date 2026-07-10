@@ -40,6 +40,7 @@ Use GitHub repository variables for non-secret feature flags.
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` | Variable | `false` | Enables Revenue Runtime Adapter in production bundles. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` | Variable | `false` | Enables Analytics Runtime Adapter in production bundles. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION` | Variable | `false` | Enables Mission Runtime Adapter in production bundles. |
+| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE` | Variable | `false` | Enables Business State Runtime Adapter in production bundles. |
 
 ## VPS Runtime Environment
 
