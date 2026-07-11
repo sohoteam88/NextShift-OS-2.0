@@ -80,7 +80,7 @@ afterEach(() => {
 
 describe('BusinessStateRuntimeAdapter', () => {
   it('keeps the legacy path when the runtime business-state flag is OFF', async () => {
-    setRuntimeBusinessStateFlag(undefined);
+    setRuntimeBusinessStateFlag('false');
     const { state, resolveBusinessState } = createBusinessStateResolver();
 
     const output = await resolveBusinessStateRuntime({
@@ -102,6 +102,31 @@ describe('BusinessStateRuntimeAdapter', () => {
       fallback: false,
       confidence: 'derived',
     });
+  });
+
+  it('defaults to the runtime path when the runtime business-state flag is missing', async () => {
+    setRuntimeBusinessStateFlag(undefined);
+    const { state, resolveBusinessState } = createBusinessStateResolver();
+
+    const output = await resolveBusinessStateRuntime({
+      userId: 'user_1',
+      tenantId: 'tenant_1',
+      source: 'command-center',
+    }, {
+      resolveBusinessState,
+    });
+
+    expect(output.state).toBe(state);
+    expect(output.runtime).toMatchObject({
+      enabled: true,
+      mode: 'runtime',
+      source: 'command-center',
+      fallback: false,
+      confidence: 'derived',
+      capabilityId: 'business-state.resolve',
+    });
+    expect(output.runtime.contextId).toEqual(expect.any(String));
+    expect(output.runtime.correlationId).toEqual(expect.any(String));
   });
 
   it.each(['false', 'FALSE', 'True', '1', '0', ''])(

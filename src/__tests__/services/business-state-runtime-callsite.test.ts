@@ -61,7 +61,7 @@ afterEach(() => {
 
 describe('Business state runtime callsite', () => {
   it('keeps getBusinessState response shape unchanged when the runtime business-state flag is OFF', async () => {
-    setRuntimeBusinessStateFlag(undefined);
+    setRuntimeBusinessStateFlag('false');
     const runtimeMetadata: BusinessStateRuntimeMetadata[] = [];
     const runtimeResolver = createRuntimeResolver();
 

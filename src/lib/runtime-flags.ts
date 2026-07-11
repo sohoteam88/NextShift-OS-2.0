@@ -34,28 +34,28 @@ export const RUNTIME_FLAGS = {
     module: 'mission-engine',
     introducedAt: '2026-07-10',
     removalCondition:
-      'Remove after the Mission Runtime Adapter becomes the default path and legacy fallback is retired.',
+      'Graduated to default-on in OS 3.5 G1; remove after the legacy fallback path is retired.',
   },
   BUSINESS_STATE: {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE',
     module: 'business-state',
     introducedAt: '2026-07-10',
     removalCondition:
-      'Remove after the Business State Runtime Adapter becomes the default path and legacy fallback is retired.',
+      'Graduated to default-on in OS 3.5 G1; remove after the legacy fallback path is retired.',
   },
   CRM: {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_CRM',
     module: 'crm',
     introducedAt: '2026-07-11',
     removalCondition:
-      'Remove after the CRM Runtime Adapter becomes the default path and legacy fallback is retired.',
+      'Graduated to default-on in OS 3.5 G1; remove after the legacy fallback path is retired.',
   },
   COMMAND_CENTER: {
     name: 'NEXT_PUBLIC_ENABLE_COMMAND_CENTER',
     module: 'dashboard',
     introducedAt: '2026-07-10',
     removalCondition:
-      'Remove after the Command Center recommendation datapath becomes the default dashboard recommendation source.',
+      'Graduated to default-on in OS 3.5 G1; remove after the legacy fallback path is retired.',
   },
   AI_DISCUSSION: {
     name: 'NEXT_PUBLIC_ENABLE_AI_DISCUSSION',

@@ -57,7 +57,7 @@ afterEach(() => {
 
 describe('CRM runtime callsite', () => {
   it('keeps getCommandCenter response shape unchanged when the runtime CRM flag is OFF', async () => {
-    setRuntimeCrmFlag(undefined);
+    setRuntimeCrmFlag('false');
     const runtimeMetadata: CrmRuntimeMetadata[] = [];
     const runtimeResolver = createRuntimeResolver();
 

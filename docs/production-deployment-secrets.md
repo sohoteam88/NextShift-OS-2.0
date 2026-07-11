@@ -39,11 +39,13 @@ Use GitHub repository variables for non-secret feature flags.
 | `PROD_NEXT_PUBLIC_ENABLE_EVOLUTION_PROJECTION_V6` | Variable | `false` | Enables Evolution Projection v6 in production bundles. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` | Variable | `true` | Enables Revenue Runtime Adapter in production bundles; set to `false` only for rollback. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` | Variable | `true` | Enables Analytics Runtime Adapter in production bundles; set to `false` only for rollback. |
-| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION` | Variable | `false` | Enables Mission Runtime Adapter in production bundles. |
-| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE` | Variable | `false` | Enables Business State Runtime Adapter in production bundles. |
-| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_CRM` | Variable | `false` | Enables CRM Runtime Adapter in production bundles. |
-| `PROD_NEXT_PUBLIC_ENABLE_COMMAND_CENTER` | Variable | `false` | Enables Command Center recommendation datapath in production bundles. |
+| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION` | Variable | `true` | Enables Mission Runtime Adapter in production bundles; set to `false` only for rollback or staged production reveal. |
+| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE` | Variable | `true` | Enables Business State Runtime Adapter in production bundles; set to `false` only for rollback or staged production reveal. |
+| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_CRM` | Variable | `true` | Enables CRM Runtime Adapter in production bundles; set to `false` only for rollback or staged production reveal. |
+| `PROD_NEXT_PUBLIC_ENABLE_COMMAND_CENTER` | Variable | `true` | Enables Command Center recommendation datapath in production bundles; set to `false` only for rollback. |
 | `PROD_NEXT_PUBLIC_ENABLE_AI_DISCUSSION` | Variable | `false` | Enables the Command Center "Discuss with AI" service-layer API in production bundles. |
+
+Release note for OS 3.5 G1: the Mission, Business State, CRM, and Command Center flags are default-on at the image/build level. The production VPS `.env.production` file currently contains explicit `NEXT_PUBLIC_ENABLE_RUNTIME_MISSION=false`, `NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE=false`, and `NEXT_PUBLIC_ENABLE_RUNTIME_CRM=false` values. Because the env file has higher precedence than image defaults at runtime/deploy time, those three production paths remain OFF after the v3.5.0 deployment until Steven updates the VPS env file. This is the final reveal switch by design, not a defect.
 
 ## VPS Runtime Environment
 
