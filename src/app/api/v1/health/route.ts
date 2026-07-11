@@ -4,6 +4,10 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+};
+
 export const GET = apiHandler(async () => {
   let dbStatus = 'ok';
   try {
@@ -17,5 +21,7 @@ export const GET = apiHandler(async () => {
     timestamp: new Date().toISOString(),
     version: '0.1.0',
     services: { database: dbStatus },
+  }, {
+    headers: NO_STORE_HEADERS,
   });
 });
