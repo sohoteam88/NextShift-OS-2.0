@@ -2,6 +2,8 @@
 
 This document records retired runtime flag history after OS 3.5 G-series migrations.
 
+`src/lib/runtime-flags.ts` is the authoritative source for active flag `lifecycleStatus` values; this document keeps the matching retired-flag history only, because removed flags are physically deleted from the code registry instead of duplicated there.
+
 ## Retired Flags
 
 | Flag | Module | Introduced | Graduated | Removed | Replacement |
