@@ -223,15 +223,36 @@ jobs:
         env:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+          NEXT_PUBLIC_ENABLE_COMMAND_CENTER: 'true'
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
       - name: Start App and Run E2E
         run: |
-          pnpm start &
+          set -euo pipefail
+
+          OFF_APP_PID=""
+          ON_APP_PID=""
+          stop_apps() {
+            for pid in "$OFF_APP_PID" "$ON_APP_PID"; do
+              if [[ -n "$pid" ]]; then
+                kill "$pid" 2>/dev/null || true
+                wait "$pid" 2>/dev/null || true
+              fi
+            done
+          }
+          trap stop_apps EXIT
+
+          NEXT_PUBLIC_ENABLE_COMMAND_CENTER=false ./node_modules/.bin/next start -p 3001 &
+          OFF_APP_PID=$!
+          npx wait-on http://localhost:3001/api/v1/health --timeout 30000
+          NEXT_PUBLIC_ENABLE_COMMAND_CENTER=false E2E_BASE_URL=http://localhost:3001 npx playwright test tests/e2e/command-center.spec.ts --grep "flag off"
+
+          NEXT_PUBLIC_ENABLE_COMMAND_CENTER=true ./node_modules/.bin/next start -p 3000 &
+          ON_APP_PID=$!
           npx wait-on http://localhost:3000/api/v1/health --timeout 30000
-          pnpm e2e
+          NEXT_PUBLIC_ENABLE_COMMAND_CENTER=true pnpm e2e
         env:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'

@@ -32,6 +32,49 @@ test.describe('Mission Engine', () => {
     expect(body.data.estimatedCompletion).toBeTruthy();
   });
 
+  test('business-state backed current mission path remains stable', async ({ page }) => {
+    const response = await page.request.get('/api/v1/mission/current');
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.data.currentMission.id).toEqual(expect.any(String));
+    expect(body.data.currentJourney).toBeTruthy();
+    expect(body.data.progress.completionPercentage).toEqual(expect.any(Number));
+    expect(body.data.estimatedCompletion.label).toEqual(expect.any(String));
+    expect(body.data).not.toHaveProperty('runtime');
+  });
+
+  test('command center recommendation API returns a recommendation structure when enabled', async ({ page }) => {
+    const response = await page.request.get('/api/v1/dashboard/recommendation');
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.data).toBeTruthy();
+    expect(body.data.recommendation.title).toEqual(expect.any(String));
+    expect(body.data.recommendation.summary).toEqual(expect.any(String));
+    expect(body.data.recommendation.rationale).toEqual(expect.any(String));
+    expect(body.data.confidence).toEqual(expect.any(Number));
+    expect(body.data.explain).toEqual(expect.any(String));
+    expect(['engine', 'rule']).toContain(body.data.source);
+  });
+
+  test('dashboard shows today recommendation card and CTA navigates when enabled', async ({ page }) => {
+    const response = await page.request.get('/api/v1/dashboard/recommendation');
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.data).toBeTruthy();
+
+    const route = body.data.recommendation.route ?? '/dashboard';
+    const ctaLabel = body.data.recommendation.ctaLabel ?? 'Open recommendation';
+
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('today-recommendation-card')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("Today's Recommendation")).toBeVisible();
+    await page.getByRole('button', { name: ctaLabel }).click();
+    await expect(page).toHaveURL(new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  });
+
   test('progress bar is visible', async ({ page }) => {
     await page.goto('/dashboard');
     const progressBar = page.locator('[class*="progress"], [role="progressbar"]').first();

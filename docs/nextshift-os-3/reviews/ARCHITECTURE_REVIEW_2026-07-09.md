@@ -167,3 +167,40 @@ Non-blocking advisory：
 - **D-001**：限流的 IP 取自 `x-forwarded-for` 首位，多级代理/CDN 下可被伪造。→ 部署拓扑确认后处理（Cloudflare 用 `cf-connecting-ip`；自管 nginx 确认 replace 模式）。纳入生产加固清单，不阻塞 v3.3.0。
 
 **OS 3.3 C 系列（C1-C6）全部完成并通过两轮审计。**
+
+### Round 3 — PR #23-#31（治理 / Guards / 部署 / B1-B2 / A1）
+
+Date: 2026-07-10
+Auditor: Claude Code
+HEAD: `e56bf40`
+Verdict: **PASS** — 无阻塞问题,4 条 advisory
+
+完整报告：[audit/OS34_R3_PR23_PR31_CODE_REVIEW_REPORT.md](../../../audit/OS34_R3_PR23_PR31_CODE_REVIEW_REPORT.md)
+
+检查点结论：19 个 admin 页全部有角色 guard,3 个新 guard 与 API 角色一致 ✓;deploy 管线无 secret 泄露路径、rollback 正确 ✓;B1/B2 adapter 逐条符合 Standard（含非 'true' 值全判 OFF 的严格语义测试）✓;A1 flag-off 零调用有测试证据,tenant 隔离 DB 强制,冷启动规则优先级正确 ✓;flag 全 off 时 #23-#31 对既有用户流程净变化为零 ✓。
+
+**基线更正**：权威 lint 基线为 **192 warnings / 0 errors**（PR #30 报告的 413 系原始输出按行数重复计数所致;Round 3 于同一 HEAD 实跑确认 192）。
+
+Advisories：
+
+- **E-001**：admin/approvals 用 blocklist（仅挡 member）而非 allowlist → A2 顺手改
+- **E-002**：admin 树无根 layout guard,新增子路由靠自觉 → A2 顺手加根 layout（operator+）
+- **E-003**：legacy 'admin' 角色在页面/ API 两侧不一致（存量问题）→ 需 Steven 决策,OS 3.5
+- **E-004**：Blueprint 中 413 基线为误记 → 本次落库一并改回 192
+
+### Round 4 — PR #32-#34（A2 卡片 / B3 crm / A3 graduation,发布前终审）
+
+Date: 2026-07-11
+Auditor: Claude Code
+HEAD: `9e45d5b`
+Verdict: **PASS WITH CONDITION** — R-1 解决前不得打 v3.4.0 tag
+
+完整报告：[audit/OS34_R4_PR32_PR34_CODE_REVIEW_REPORT.md](../../../audit/OS34_R4_PR32_PR34_CODE_REVIEW_REPORT.md)
+
+检查点结论：A2 UI 铁律零违规、flag-off 零 DOM 有单测+E2E 双证据、admin guard 矩阵闭合（E-001/E-002 关闭）✓;B3 PII 排除为历来最严（fixture 植入真实姓名/邮箱证明不泄露）✓;A3 graduation 语义正确、未转正 4 flag 严格语义完好 ✓;全量验证过（391 单测/lint 192/E2E 31）✓。
+
+**发布条件（R-1,阻塞）**：graduated adapter 的 fallback 仅 console.warn,Sentry 不可见。→ 采纳 Option A:callsite 注入 Sentry-aware logger（task R1-FIX）。
+
+需人工确认：R-2 生产 env 的 revenue/analytics flag 状态;R-3 COMMAND_CENTER 保持 off 直至有意开启;R-4 生产库无 role='admin' 用户（root layout 会挡掉他们）。
+
+Advisories：F-001 getAuthUser 未 memoize（OS 3.5）;F-002 E2E 基线更新为 31;F-003 D-001 遗留;F-004 = R-4。

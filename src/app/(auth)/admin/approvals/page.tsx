@@ -3,6 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { MemberApprovalQueue } from '@/modules/member/components/MemberApprovalQueue';
 
+const APPROVAL_ROLES = ['leader', 'operator', 'platform_admin'];
+
 export default async function ApprovalsPage() {
   const user = await getAuthUser();
 
@@ -10,7 +12,7 @@ export default async function ApprovalsPage() {
     redirect('/login');
   }
 
-  if (user.role === 'member') {
+  if (!APPROVAL_ROLES.includes(user.role)) {
     redirect('/dashboard');
   }
 

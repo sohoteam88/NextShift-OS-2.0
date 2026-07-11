@@ -190,6 +190,8 @@ Changes introduced:
   - `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE`
   - `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS`
   - `NEXT_PUBLIC_ENABLE_RUNTIME_MISSION`
+  - `NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE`
+  - `NEXT_PUBLIC_ENABLE_COMMAND_CENTER`
 - The deploy workflow passes production build values from `PROD_` GitHub secrets and non-secret feature flags from GitHub variables.
 - The deploy workflow preserves the current image as `nextshift-app:previous` before promoting the new image to `nextshift-app:latest`.
 - The deploy workflow copies the Prisma schema and migrations to the VPS with each deployment package so a clean VPS directory can run migrations deterministically.
@@ -199,3 +201,23 @@ Changes introduced:
 - `scripts/deploy-smoke.sh` validates `/api/health`, `/api/v1/version`, and `/login` after deploy or rollback.
 
 Required GitHub secrets and variables are documented in [production-deployment-secrets.md](production-deployment-secrets.md).
+
+## First Automated Production Deployment Record
+
+Date: 2026-07-10
+
+GitHub Actions run:
+
+- Workflow: `Deploy to Production`
+- Run number: #142
+- Run URL: <https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29083827839>
+- Result: Success
+- Branch: `main`
+- Commit: `50282b99e853a8239d39f455aa06bcafc60a50ed`
+
+Operational notes:
+
+- Production deployment now uses the automated Docker image path from `.github/workflows/deploy.yml`.
+- VPS SSH access was switched to key-based authentication for the GitHub Actions deploy workflow.
+- The VPS `deploy` user was created for non-root deployment ownership.
+- Production version verification returned commit `50282b99e853a8239d39f455aa06bcafc60a50ed`, build time `2026-07-10T10:17:27Z`, and environment `production` from `/api/v1/version`.

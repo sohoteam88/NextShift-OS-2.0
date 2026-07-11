@@ -1,8 +1,14 @@
 import prisma from '@/lib/prisma';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { BusinessState } from '../contracts/BusinessState';
 import type { BusinessStateResult } from '../contracts/BusinessStateResult';
 import { assembleBusinessState } from '../adapters/BusinessStateAssembler';
+import {
+  resolveBusinessStateRuntime,
+  type BusinessStateRuntimeMetadata,
+  type BusinessStateRuntimeSource,
+} from '../runtime';
 
 function toAuthUser(user: {
   id: string;
@@ -24,23 +30,44 @@ function toAuthUser(user: {
   };
 }
 
-export const businessStateService = {
-  async getBusinessState(userId: string): Promise<BusinessState> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        tenantId: true,
-        role: true,
-        name: true,
-        languagePreference: true,
-        status: true,
-      },
-    });
+export type BusinessStateRuntimeOptions = {
+  onRuntimeResolved?: (runtime: BusinessStateRuntimeMetadata) => void;
+  resolveRuntimeBusinessState?: typeof resolveBusinessStateRuntime;
+  source?: BusinessStateRuntimeSource;
+};
 
-    if (!user) throw new Error('User not found');
-    return assembleBusinessState(toAuthUser(user));
+async function resolveBusinessStateLegacy(userId: string): Promise<BusinessState> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      tenantId: true,
+      role: true,
+      name: true,
+      languagePreference: true,
+      status: true,
+    },
+  });
+
+  if (!user) throw new Error('User not found');
+  return assembleBusinessState(toAuthUser(user));
+}
+
+export const businessStateService = {
+  async getBusinessState(
+    userId: string,
+    runtimeOptions: BusinessStateRuntimeOptions = {},
+  ): Promise<BusinessState> {
+    const { state, runtime } = await (runtimeOptions.resolveRuntimeBusinessState ?? resolveBusinessStateRuntime)({
+      userId,
+      source: runtimeOptions.source ?? 'business-state-service',
+    }, {
+      resolveBusinessState: () => resolveBusinessStateLegacy(userId),
+      logger: runtimeFallbackLogger,
+    });
+    runtimeOptions.onRuntimeResolved?.(runtime);
+    return state;
   },
 
   async getBusinessStateResult(userId: string): Promise<BusinessStateResult> {
@@ -49,8 +76,11 @@ export const businessStateService = {
   },
 };
 
-export async function getBusinessState(userId: string): Promise<BusinessState> {
-  return businessStateService.getBusinessState(userId);
+export async function getBusinessState(
+  userId: string,
+  runtimeOptions: BusinessStateRuntimeOptions = {},
+): Promise<BusinessState> {
+  return businessStateService.getBusinessState(userId, runtimeOptions);
 }
 
 export async function getBusinessStateResult(userId: string): Promise<BusinessStateResult> {

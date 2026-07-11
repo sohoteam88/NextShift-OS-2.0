@@ -49,8 +49,8 @@ afterEach(() => {
 });
 
 describe('Revenue driver intent runtime callsite', () => {
-  it('keeps the service response and audit payload unchanged when the runtime flag is OFF', async () => {
-    setRuntimeRevenueFlag(undefined);
+  it('keeps the service response and audit payload unchanged when the runtime flag is explicitly OFF', async () => {
+    setRuntimeRevenueFlag('false');
     const auditLog = createAuditLog();
     const runtimeMetadata: RevenueRuntimeMetadata[] = [];
 
@@ -85,7 +85,7 @@ describe('Revenue driver intent runtime callsite', () => {
   });
 
   it('routes through the Revenue Runtime Adapter and produces runtime metadata when the flag is ON', async () => {
-    setRuntimeRevenueFlag('true');
+    setRuntimeRevenueFlag(undefined);
     const auditLog = createAuditLog();
     const runtimeMetadata: RevenueRuntimeMetadata[] = [];
 
@@ -112,8 +112,8 @@ describe('Revenue driver intent runtime callsite', () => {
     expect(runtimeMetadata[0]).not.toHaveProperty('userId');
   });
 
-  it('adds runtime resolution comparison metadata when runtime is enabled', async () => {
-    setRuntimeRevenueFlag('true');
+  it('adds runtime resolution comparison metadata when runtime is enabled by default', async () => {
+    setRuntimeRevenueFlag(undefined);
     const auditLog = createAuditLog();
 
     await recordRevenueDriverIntentAudit(user, resolvedInput, { auditLog });
