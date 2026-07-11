@@ -70,6 +70,26 @@ test.describe('Command Center recommendation', () => {
     expect(body.turnsLimit).toBe(5);
   });
 
+  test('flag on: recommendation discussion panel sends and receives a reply', async ({ page }) => {
+    test.skip(
+      !(commandCenterEnabled && aiDiscussionEnabled),
+      'Command Center and AI Discussion flags must be enabled for this E2E path.',
+    );
+
+    await page.goto('/dashboard');
+    await expect(page.getByTestId('today-recommendation-card')).toBeVisible({ timeout: 15000 });
+
+    await expect(page.getByRole('button', { name: /和 AI 讨论/i })).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: /和 AI 讨论/i }).click();
+    await expect(page.getByTestId('today-recommendation-discussion')).toBeVisible();
+
+    await page.getByPlaceholder('输入你的问题').fill('What is the weather in Tokyo tomorrow?');
+    await page.getByRole('button', { name: '发送' }).click();
+
+    await expect(page.getByText(/today's recommendation/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('第 1/5 轮')).toBeVisible();
+  });
+
   test('flag off: dashboard does not render the recommendation card', async ({ page }) => {
     test.skip(commandCenterEnabled, 'Command Center flag must be disabled for this E2E path.');
 

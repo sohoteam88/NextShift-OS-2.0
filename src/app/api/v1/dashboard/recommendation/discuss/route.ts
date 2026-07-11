@@ -3,7 +3,11 @@ import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { assertRequestBodySize } from '@/lib/request-guards';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
-import { discussCommandCenterRecommendation } from '@/modules/dashboard/services/discussion-service';
+import {
+  DISCUSSION_TURNS_LIMIT,
+  discussCommandCenterRecommendation,
+  isAiDiscussionEnabled,
+} from '@/modules/dashboard/services/discussion-service';
 
 const DiscussionTurnSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -13,6 +17,20 @@ const DiscussionTurnSchema = z.object({
 const DiscussRecommendationSchema = z.object({
   message: z.string().min(1).max(1_500),
   history: z.array(DiscussionTurnSchema).max(10).optional().default([]),
+});
+
+export const GET = apiHandler(async (request: NextRequest) => {
+  await requireAuthApi(request);
+
+  if (!isAiDiscussionEnabled()) {
+    return NextResponse.json({ data: null });
+  }
+
+  return NextResponse.json({
+    data: {
+      turnsLimit: DISCUSSION_TURNS_LIMIT,
+    },
+  });
 });
 
 export const POST = apiHandler(async (request: NextRequest) => {

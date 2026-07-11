@@ -6,13 +6,15 @@ const authMocks = vi.hoisted(() => ({
 }));
 
 const discussionMocks = vi.hoisted(() => ({
+  DISCUSSION_TURNS_LIMIT: 5,
   discussCommandCenterRecommendation: vi.fn(),
+  isAiDiscussionEnabled: vi.fn(),
 }));
 
 vi.mock('@/modules/auth/middleware/require-auth-api', () => authMocks);
 vi.mock('@/modules/dashboard/services/discussion-service', () => discussionMocks);
 
-import { POST } from '@/app/api/v1/dashboard/recommendation/discuss/route';
+import { GET, POST } from '@/app/api/v1/dashboard/recommendation/discuss/route';
 
 describe('dashboard recommendation discussion API', () => {
   beforeEach(() => {
@@ -29,6 +31,26 @@ describe('dashboard recommendation discussion API', () => {
       turnsUsed: 1,
       turnsLimit: 5,
     });
+    discussionMocks.isAiDiscussionEnabled.mockReturnValue(true);
+  });
+
+  it('returns discussion availability when the discussion flag is ON', async () => {
+    const response = await GET(request(undefined, 'GET') as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ data: { turnsLimit: 5 } });
+    expect(authMocks.requireAuthApi).toHaveBeenCalled();
+  });
+
+  it('returns data null from the availability probe when the discussion flag is OFF', async () => {
+    discussionMocks.isAiDiscussionEnabled.mockReturnValue(false);
+
+    const response = await GET(request(undefined, 'GET') as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ data: null });
   });
 
   it('returns the discussion response contract', async () => {
@@ -81,10 +103,10 @@ describe('dashboard recommendation discussion API', () => {
   });
 });
 
-function request(body: Record<string, unknown>) {
+function request(body?: Record<string, unknown>, method = 'POST') {
   return new Request('https://example.com/api/v1/dashboard/recommendation/discuss', {
-    method: 'POST',
-    body: JSON.stringify(body),
+    method,
+    body: body ? JSON.stringify(body) : undefined,
     headers: { 'Content-Type': 'application/json' },
   });
 }
