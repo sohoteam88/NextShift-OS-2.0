@@ -46,6 +46,7 @@ For first-time contributors:
 21. [BOS-001 Business Foundation](business-os/phase-1/BOS-001-business-foundation/README.md)
 22. [AI Bootstrap Framework](ai/README.md)
 23. [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
+24. [AI Router Readiness Audit 2026-07-11](ai/AI_ROUTER_READINESS_2026-07-11.md)
 24. [AI Prompt Library](ai/prompts/README.md)
 25. [NextShift Context](ai/NEXTSHIFT_CONTEXT.md)
 26. [AI Session Starter](ai/AI_SESSION_STARTER.md)
