@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-06
+Last Updated: 2026-07-11
 
 ---
 
@@ -361,6 +361,9 @@ Core documents:
 - [OS 3.2 Developer Platform Release](releases/OS_3_2_DEVELOPER_PLATFORM/README.md)
 - [OS 3.2 Release Manifest](releases/OS_3_2_DEVELOPER_PLATFORM/RELEASE_MANIFEST.md)
 - [Developer Platform v1.0 Freeze Record](releases/OS_3_2_DEVELOPER_PLATFORM/DEVELOPER_PLATFORM_V1_FREEZE_RECORD.md)
+- [OS 3.4 Command Center Release Candidate](releases/OS_3_4_COMMAND_CENTER/README.md)
+- [OS 3.4 Release Manifest](releases/OS_3_4_COMMAND_CENTER/RELEASE_MANIFEST.md)
+- [OS 3.4 Final Verification](releases/OS_3_4_COMMAND_CENTER/FINAL_VERIFICATION.md)
 - [Developer Platform](developer-platform/README.md)
 - [Developer Platform Review](developer-platform/review/DEVELOPER_PLATFORM_REVIEW.md)
 - [Automation Workflow Review](developer-platform/review/AUTOMATION_WORKFLOW_REVIEW.md)
