@@ -29,7 +29,13 @@ Baseline: `v3.4.0` in production（Command Center 卡片已揭幕,engine 推荐�
 
 ## 4. Workstream G — Flag 生命周期闭环（Graduation Gate）
 
-**前置观察闸门**：v3.4.0 部署已使 revenue/analytics runtime 路径承载真实流量。**观察期 7 天**（至 2026-07-18）,Sentry 中 `runtime-adapter-fallback` warning 计数为 0 → 才允许 G2。
+**前置观察闸门（覆盖式,2026-07-11 修订）**：原定 7 天时间闸门基于"有自然流量"假设,当前生产近零流量,时间等待产生的是空洞证据。改为覆盖三要素,满足即开闸：
+
+1. **管道验证**:Sentry 项目确认能收到生产事件（已满足——2026-06 周报显示项目收到过真实 error 事件）
+2. **路径行使**:在生产环境人工真实走一遍 5 个 runtime 模块界面（dashboard 的 mission/business-state/推荐卡、crm-center、analytics、revenue 相关页）,加上 CI E2E 每日 flag-on 全量
+3. **行使后取证**:Sentry `runtime-adapter-fallback` 计数为 0,截图归档
+
+G2 的实际安全网不依赖观察期:行为等价 E2E + 分两个 PR + revert 预案（见 G2 说明与风险表）。
 
 | # | 任务 | 说明 |
 |---|---|---|

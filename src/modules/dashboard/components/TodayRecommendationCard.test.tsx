@@ -72,7 +72,7 @@ describe('TodayRecommendationCardView', () => {
   it('renders engine recommendations with friendly source metadata', () => {
     const html = renderToStaticMarkup(
       createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation(),
+        recommendation: engineRecommendation({ confidence: 0.84 }),
         expanded: false,
         onToggle: vi.fn(),
         onNavigate: vi.fn(),
@@ -82,14 +82,43 @@ describe('TodayRecommendationCardView', () => {
     expect(html).toContain('Today&#x27;s Recommendation');
     expect(html).toContain('Convert the next qualified lead');
     expect(html).toContain('AI 分析');
-    expect(html).toContain('84% confidence');
+    expect(html).toContain('84%');
     expect(html).not.toContain('Mission and revenue signals agree.');
+  });
+
+  it('hides engine confidence numbers for medium confidence recommendations', () => {
+    const html = renderToStaticMarkup(
+      createElement(TodayRecommendationCardView, {
+        recommendation: engineRecommendation({ confidence: 0.62 }),
+        expanded: false,
+        onToggle: vi.fn(),
+        onNavigate: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain('AI 分析');
+    expect(html).not.toContain('62%');
+  });
+
+  it('labels low confidence engine recommendations as exploratory without a number', () => {
+    const html = renderToStaticMarkup(
+      createElement(TodayRecommendationCardView, {
+        recommendation: engineRecommendation({ confidence: 0.47 }),
+        expanded: false,
+        onToggle: vi.fn(),
+        onNavigate: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain('探索性建议');
+    expect(html).not.toContain('47%');
+    expect(html).not.toContain('AI 分析');
   });
 
   it('renders rule recommendations with beginner guidance metadata', () => {
     const html = renderToStaticMarkup(
       createElement(TodayRecommendationCardView, {
-        recommendation: ruleRecommendation(),
+        recommendation: ruleRecommendation({ confidence: 0.9 }),
         expanded: false,
         onToggle: vi.fn(),
         onNavigate: vi.fn(),
@@ -98,7 +127,7 @@ describe('TodayRecommendationCardView', () => {
 
     expect(html).toContain('Complete the AI Interview');
     expect(html).toContain('新手引导');
-    expect(html).toContain('90% confidence');
+    expect(html).not.toContain('90%');
   });
 
   it('renders rationale when expanded', () => {
@@ -264,7 +293,7 @@ describe('AI discussion API helpers', () => {
   });
 });
 
-function engineRecommendation(): TodayRecommendation {
+function engineRecommendation(overrides: Partial<TodayRecommendation> = {}): TodayRecommendation {
   return {
     recommendation: {
       id: 'engine-1',
@@ -277,10 +306,11 @@ function engineRecommendation(): TodayRecommendation {
     confidence: 0.84,
     explain: 'Mission and revenue signals agree.',
     source: 'engine',
+    ...overrides,
   };
 }
 
-function ruleRecommendation(): TodayRecommendation {
+function ruleRecommendation(overrides: Partial<TodayRecommendation> = {}): TodayRecommendation {
   return {
     recommendation: {
       id: 'rule-1',
@@ -293,6 +323,7 @@ function ruleRecommendation(): TodayRecommendation {
     confidence: 0.9,
     explain: 'Business State still lacks the core interview signal.',
     source: 'rule',
+    ...overrides,
   };
 }
 

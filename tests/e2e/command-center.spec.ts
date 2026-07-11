@@ -8,13 +8,15 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function sourceLabel(source: 'engine' | 'rule') {
-  return source === 'engine' ? 'AI 分析' : '新手引导';
+function sourceLabel(source: 'engine' | 'rule', confidence: number) {
+  if (source === 'rule') return '新手引导';
+  return confidence < 0.5 ? '探索性建议' : 'AI 分析';
 }
 
-function confidenceLabel(confidence: number) {
+function confidenceLabel(source: 'engine' | 'rule', confidence: number) {
+  if (source === 'rule' || confidence < 0.7) return null;
   const normalized = Number.isFinite(confidence) ? confidence : 0;
-  return `${Math.max(0, Math.min(100, Math.round(normalized * 100)))}% confidence`;
+  return `${Math.max(0, Math.min(100, Math.round(normalized * 100)))}%`;
 }
 
 test.describe('Command Center recommendation', () => {
@@ -37,10 +39,18 @@ test.describe('Command Center recommendation', () => {
     expect(['engine', 'rule']).toContain(body.data.source);
 
     await page.goto('/dashboard');
-    await expect(page.getByTestId('today-recommendation-card')).toBeVisible({ timeout: 15000 });
+    const recommendationCard = page.getByTestId('today-recommendation-card');
+    await expect(recommendationCard).toBeVisible({ timeout: 15000 });
+    const recommendationIsFirstDashboardCard = await recommendationCard.evaluate(
+      (element) => element.parentElement?.firstElementChild === element,
+    );
+    expect(recommendationIsFirstDashboardCard).toBeTruthy();
     await expect(page.getByText(recommendation.title)).toBeVisible();
-    await expect(page.getByText(confidenceLabel(body.data.confidence))).toBeVisible();
-    await expect(page.getByText(sourceLabel(body.data.source))).toBeVisible();
+    await expect(recommendationCard).toContainText(sourceLabel(body.data.source, body.data.confidence));
+    const confidence = confidenceLabel(body.data.source, body.data.confidence);
+    if (confidence) {
+      await expect(recommendationCard).toContainText(confidence);
+    }
 
     await page.getByRole('button', { name: /Why this recommendation/i }).click();
     await expect(page.locator('#today-recommendation-explain')).toBeVisible();

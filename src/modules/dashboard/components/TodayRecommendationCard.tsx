@@ -68,6 +68,8 @@ type TodayRecommendationCardViewProps = {
 const h = createElement;
 const DISCUSSION_CHARACTER_LIMIT = 1_500;
 const DEFAULT_DISCUSSION_TURNS_LIMIT = 5;
+const HIGH_CONFIDENCE_THRESHOLD = 0.7;
+const MEDIUM_CONFIDENCE_THRESHOLD = 0.5;
 
 class DiscussionRequestError extends Error {
   kind: DiscussionErrorKind;
@@ -119,17 +121,30 @@ export async function sendDiscussionMessage(message: string, history: Discussion
   return json as DiscussionResponse;
 }
 
-function sourceLabel(source: TodayRecommendation['source']) {
-  return source === 'engine' ? 'AI 分析' : '新手引导';
-}
-
-function sourceVariant(source: TodayRecommendation['source']) {
-  return source === 'engine' ? 'info' : 'success';
-}
-
-function confidenceLabel(confidence: number) {
+function boundedConfidence(confidence: number) {
   const normalized = Number.isFinite(confidence) ? confidence : 0;
-  return `${Math.max(0, Math.min(100, Math.round(normalized * 100)))}% confidence`;
+  return Math.max(0, Math.min(1, normalized));
+}
+
+function sourceLabel(recommendation: TodayRecommendation) {
+  if (recommendation.source === 'rule') return '新手引导';
+  return boundedConfidence(recommendation.confidence) < MEDIUM_CONFIDENCE_THRESHOLD
+    ? '探索性建议'
+    : 'AI 分析';
+}
+
+function sourceVariant(recommendation: TodayRecommendation) {
+  if (recommendation.source === 'rule') return 'success';
+  return boundedConfidence(recommendation.confidence) < MEDIUM_CONFIDENCE_THRESHOLD
+    ? 'warning'
+    : 'info';
+}
+
+function confidenceLabel(recommendation: TodayRecommendation) {
+  if (recommendation.source === 'rule') return null;
+  const confidence = boundedConfidence(recommendation.confidence);
+  if (confidence < HIGH_CONFIDENCE_THRESHOLD) return null;
+  return `${Math.round(confidence * 100)}%`;
 }
 
 function discussionErrorMessage(error: DiscussionError | null | undefined) {
@@ -164,6 +179,7 @@ export function TodayRecommendationCardView({
   const explain = recommendation.explain || recommendation.recommendation.rationale;
   const inputTooLong = discussionInput.length > DISCUSSION_CHARACTER_LIMIT;
   const errorMessage = discussionErrorMessage(discussionError);
+  const confidence = confidenceLabel(recommendation);
 
   return h(
     'section',
@@ -187,8 +203,8 @@ export function TodayRecommendationCardView({
             h(Sparkles, { className: 'h-4 w-4', 'aria-hidden': true }),
             'Today\'s Recommendation',
           ),
-          h(Badge, { variant: sourceVariant(recommendation.source) }, sourceLabel(recommendation.source)),
-          h(Badge, { variant: 'default' }, confidenceLabel(recommendation.confidence)),
+          h(Badge, { variant: sourceVariant(recommendation) }, sourceLabel(recommendation)),
+          confidence ? h(Badge, { variant: 'default' }, confidence) : null,
         ),
         h(
           'div',
