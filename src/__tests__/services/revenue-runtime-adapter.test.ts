@@ -3,6 +3,7 @@ import {
   resolveRevenueRuntimeIntent,
   type RevenueRuntimeMetadata,
 } from '@/modules/revenue-drivers/runtime';
+import { resolveRevenueDriverIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 
 const ORIGINAL_FLAG = process.env.NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE;
 
@@ -21,6 +22,26 @@ afterEach(() => {
 });
 
 describe('RevenueRuntimeAdapter', () => {
+  it.each([
+    { route: '/content-engine', intent: 'facebook-post' },
+    { route: '/webinar-center', intent: 'invalid-intent' },
+    { route: '/webinar-center', intent: null },
+  ])(
+    'matches legacy business output for $route / $intent',
+    ({ route, intent }) => {
+      setRuntimeRevenueFlag(undefined);
+
+      const legacyResolution = resolveRevenueDriverIntent({ route, intent });
+      const runtimeOutput = resolveRevenueRuntimeIntent({
+        route,
+        intent,
+        source: 'api',
+      });
+
+      expect(runtimeOutput.resolution).toEqual(legacyResolution);
+    },
+  );
+
   it('uses the runtime path when the runtime revenue flag is missing after graduation', () => {
     setRuntimeRevenueFlag(undefined);
 
