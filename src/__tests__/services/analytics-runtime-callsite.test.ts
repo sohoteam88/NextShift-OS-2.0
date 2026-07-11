@@ -98,8 +98,8 @@ afterEach(() => {
 });
 
 describe('Analytics center runtime callsite', () => {
-  it('keeps the legacy service response shape when the runtime analytics flag is OFF', async () => {
-    setRuntimeAnalyticsFlag(undefined);
+  it('keeps the legacy service response shape when the runtime analytics flag is explicitly OFF', async () => {
+    setRuntimeAnalyticsFlag('false');
     const runtimeMetadata: AnalyticsRuntimeMetadata[] = [];
     const runtimeResolver = createRuntimeResolver();
 
@@ -133,7 +133,7 @@ describe('Analytics center runtime callsite', () => {
   });
 
   it('routes through the Analytics Runtime Adapter and produces runtime metadata when the flag is ON', async () => {
-    setRuntimeAnalyticsFlag('true');
+    setRuntimeAnalyticsFlag(undefined);
     const runtimeMetadata: AnalyticsRuntimeMetadata[] = [];
     const runtimeResolver = createRuntimeResolver();
 

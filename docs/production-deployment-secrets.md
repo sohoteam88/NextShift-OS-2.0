@@ -37,8 +37,8 @@ Use GitHub repository variables for non-secret feature flags.
 | Name | Type | Default | Purpose |
 |---|---|---|---|
 | `PROD_NEXT_PUBLIC_ENABLE_EVOLUTION_PROJECTION_V6` | Variable | `false` | Enables Evolution Projection v6 in production bundles. |
-| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` | Variable | `false` | Enables Revenue Runtime Adapter in production bundles. |
-| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` | Variable | `false` | Enables Analytics Runtime Adapter in production bundles. |
+| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` | Variable | `true` | Enables Revenue Runtime Adapter in production bundles; set to `false` only for rollback. |
+| `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` | Variable | `true` | Enables Analytics Runtime Adapter in production bundles; set to `false` only for rollback. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION` | Variable | `false` | Enables Mission Runtime Adapter in production bundles. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE` | Variable | `false` | Enables Business State Runtime Adapter in production bundles. |
 | `PROD_NEXT_PUBLIC_ENABLE_RUNTIME_CRM` | Variable | `false` | Enables CRM Runtime Adapter in production bundles. |
