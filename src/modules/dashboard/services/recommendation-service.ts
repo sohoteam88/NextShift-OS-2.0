@@ -1,6 +1,6 @@
 import {
   COMMAND_CENTER_FLAG,
-  isRuntimeFlagEnabled,
+  isRuntimeFlagEnabledByDefault,
 } from '@/lib/runtime-flags';
 import {
   DecisionContext,
@@ -52,7 +52,7 @@ export type CommandCenterRecommendationDependencies = {
 };
 
 export function isCommandCenterEnabled(env: NodeJS.ProcessEnv = process.env) {
-  return isRuntimeFlagEnabled(COMMAND_CENTER_FLAG, env);
+  return isRuntimeFlagEnabledByDefault(COMMAND_CENTER_FLAG, env);
 }
 
 export async function getCommandCenterRecommendation(

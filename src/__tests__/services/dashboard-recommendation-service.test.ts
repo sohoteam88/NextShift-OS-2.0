@@ -29,7 +29,7 @@ afterEach(() => {
 
 describe('Command Center recommendation service', () => {
   it('returns null and does not call decision-brain when the flag is OFF', async () => {
-    setCommandCenterFlag(undefined);
+    setCommandCenterFlag('false');
     const recommendationEngine: RecommendationEngine = { generate: vi.fn() };
     const dependencies = createDependencies({ recommendationEngine });
 
@@ -42,6 +42,59 @@ describe('Command Center recommendation service', () => {
     expect(loaders.resolveAnalytics).not.toHaveBeenCalled();
     expect(loaders.resolveRevenue).not.toHaveBeenCalled();
     expect(recommendationEngine.generate).not.toHaveBeenCalled();
+  });
+
+  it.each(['false', 'FALSE', 'True', '1', '0', ''])(
+    'treats %s as flag OFF',
+    async (flagValue) => {
+      setCommandCenterFlag(flagValue);
+      const recommendationEngine: RecommendationEngine = { generate: vi.fn() };
+      const dependencies = createDependencies({ recommendationEngine });
+
+      const result = await getCommandCenterRecommendation(user(), dependencies);
+      const loaders = dependencies.loaders!;
+
+      expect(result).toBeNull();
+      expect(loaders.getCurrentMission).not.toHaveBeenCalled();
+      expect(loaders.getBusinessState).not.toHaveBeenCalled();
+      expect(loaders.resolveAnalytics).not.toHaveBeenCalled();
+      expect(loaders.resolveRevenue).not.toHaveBeenCalled();
+      expect(recommendationEngine.generate).not.toHaveBeenCalled();
+    },
+  );
+
+  it('defaults to enabled when the Command Center flag is missing', async () => {
+    setCommandCenterFlag(undefined);
+    const generate = vi.fn((context: DecisionContext) => [
+      Recommendation.create({
+        recommendationId: 'recommendation-default-on' as RecommendationId,
+        decisionContextId: context.toSnapshot().decisionContextId,
+        recommendationType: 'Growth',
+        title: 'Convert the next qualified lead',
+        summary: 'Focus today on the highest-impact sales action.',
+        rationale: 'Default-on Command Center routes through decision-brain.',
+        confidence: 0.84,
+        impact: 0.86,
+        urgency: 0.74,
+        effort: 0.4,
+        createdAt: '2026-07-10T00:00:00.000Z',
+      }),
+    ]);
+    const dependencies = createDependencies({
+      recommendationEngine: { generate },
+      now: () => new Date('2026-07-10T00:00:00.000Z'),
+    });
+
+    const result = await getCommandCenterRecommendation(user(), dependencies);
+
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      recommendation: {
+        id: 'recommendation-default-on',
+        title: 'Convert the next qualified lead',
+      },
+      source: 'engine',
+    });
   });
 
   it('uses the decision-brain recommendation engine when runtime context is sufficient', async () => {

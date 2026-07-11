@@ -78,7 +78,7 @@ afterEach(() => {
 
 describe('CrmRuntimeAdapter', () => {
   it('keeps the legacy path when the runtime CRM flag is OFF', async () => {
-    setRuntimeCrmFlag(undefined);
+    setRuntimeCrmFlag('false');
     const { commandCenter: crm, resolveCommandCenter } = createCrmResolver();
 
     const output = await resolveCrmRuntimeCommandCenter({
@@ -102,6 +102,31 @@ describe('CrmRuntimeAdapter', () => {
       fallback: false,
       confidence: 76,
     });
+  });
+
+  it('defaults to the runtime path when the runtime CRM flag is missing', async () => {
+    setRuntimeCrmFlag(undefined);
+    const { commandCenter: crm, resolveCommandCenter } = createCrmResolver();
+
+    const output = await resolveCrmRuntimeCommandCenter({
+      userId: 'user_1',
+      tenantId: 'tenant_1',
+      source: 'crm-center',
+    }, {
+      resolveCommandCenter,
+    });
+
+    expect(output.commandCenter).toBe(crm);
+    expect(output.runtime).toMatchObject({
+      enabled: true,
+      mode: 'runtime',
+      source: 'crm-center',
+      fallback: false,
+      confidence: 76,
+      capabilityId: 'crm.command-center.resolve',
+    });
+    expect(output.runtime.contextId).toEqual(expect.any(String));
+    expect(output.runtime.correlationId).toEqual(expect.any(String));
   });
 
   it.each(['false', 'FALSE', 'True', '1', '0', ''])(

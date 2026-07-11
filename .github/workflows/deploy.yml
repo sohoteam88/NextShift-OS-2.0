@@ -44,10 +44,10 @@ jobs:
             --build-arg NEXT_PUBLIC_ENABLE_EVOLUTION_PROJECTION_V6="${{ vars.PROD_NEXT_PUBLIC_ENABLE_EVOLUTION_PROJECTION_V6 || 'false' }}" \
             --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE || 'true' }}" \
             --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS || 'true' }}" \
-            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_MISSION="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION || 'false' }}" \
-            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE || 'false' }}" \
-            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_CRM="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_CRM || 'false' }}" \
-            --build-arg NEXT_PUBLIC_ENABLE_COMMAND_CENTER="${{ vars.PROD_NEXT_PUBLIC_ENABLE_COMMAND_CENTER || 'false' }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_MISSION="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_MISSION || 'true' }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE || 'true' }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_RUNTIME_CRM="${{ vars.PROD_NEXT_PUBLIC_ENABLE_RUNTIME_CRM || 'true' }}" \
+            --build-arg NEXT_PUBLIC_ENABLE_COMMAND_CENTER="${{ vars.PROD_NEXT_PUBLIC_ENABLE_COMMAND_CENTER || 'true' }}" \
             --build-arg NEXT_PUBLIC_ENABLE_AI_DISCUSSION="${{ vars.PROD_NEXT_PUBLIC_ENABLE_AI_DISCUSSION || 'false' }}" \
             --build-arg SENTRY_AUTH_TOKEN="${{ secrets.PROD_SENTRY_AUTH_TOKEN }}" \
             --build-arg SENTRY_ORG="${{ secrets.PROD_SENTRY_ORG }}" \

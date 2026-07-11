@@ -43,6 +43,8 @@ G2 的实际安全网不依赖观察期:行为等价 E2E + 分两个 PR + revert
 | G2 | 删除 revenue/analytics 的 legacy 路径与 flag（OS 3.3 的承诺） | 高风险任务:删除前 E2E 必须有 runtime 路径的行为等价用例;逃生手段从 flag 变为 git revert |
 | G3 | flag 注册表加 lifecycle 字段（introduced → graduated → removed）,形成可审计的 flag 履历 | 文档化闭环 |
 
+**G1 release note**：MISSION / BUSINESS_STATE / CRM / COMMAND_CENTER 在镜像与代码层默认转正。生产 VPS 的 `.env.production` 当前仍显式保留 `NEXT_PUBLIC_ENABLE_RUNTIME_MISSION=false`、`NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE=false`、`NEXT_PUBLIC_ENABLE_RUNTIME_CRM=false`;env-file 优先级高于镜像默认,所以 v3.5.0 部署后这三个模块在生产仍保持 off,直到 Steven 更新该文件。这是最后揭幕开关,不是 bug。AI_DISCUSSION 仍严格默认 off。
+
 ## 5. Workstream T — Conversation 首切片（Layer 3 落地）
 
 | # | 任务 | 说明 |
