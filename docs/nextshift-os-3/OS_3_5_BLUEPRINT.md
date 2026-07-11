@@ -71,7 +71,7 @@ Phase 4:          Round 5/6 audit → RC → planning→main → v3.5.0
 1. flag on 时推荐卡片可展开 AI 讨论,LLM 流量 100% 经 ai router 有用量记录,E2E 有用例
 2. 6 个 flag 全部 graduated;revenue/analytics 的 legacy 路径已删除且行为等价有测试证明
 3. Sentry 观察期报告归档（fallback 计数为证据）
-4. lint 迁移完成:ESLint CLI 确定性计数,边界 warn ≤ 192 且生成器进 CI
+4. lint 迁移完成:ESLint CLI 确定性计数,边界 warn ≤ 409 + hooks warn ≤ 4（ESLint CLI 确定性计数,PR #41 定稿;历史 192 系 `next lint` 覆盖面少报）,且生成器进 CI
 5. 两轮 audit PASS 落库;release package + canonical status 一次到位
 
 ## 9. 风险
