@@ -5,8 +5,6 @@ import {
 } from '@/modules/analytics/runtime';
 import type { AnalyticsProjection } from '@/modules/analytics/adapters/AnalyticsProjectionAdapter';
 
-const ORIGINAL_FLAG = process.env.NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS;
-
 const sampleProjection: AnalyticsProjection = {
   businessStateVersion: 'BusinessStateAssembler:lead_generation:64',
   journeyVersion: 'JourneyStateAssembler:lead_generation:57',
@@ -32,21 +30,11 @@ const sampleProjection: AnalyticsProjection = {
   },
 };
 
-function setRuntimeAnalyticsFlag(value: string | undefined) {
-  if (value === undefined) {
-    delete process.env.NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS;
-    return;
-  }
-
-  process.env.NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS = value;
-}
-
 function createProjectionLoader() {
   return vi.fn().mockResolvedValue(sampleProjection);
 }
 
 afterEach(() => {
-  setRuntimeAnalyticsFlag(ORIGINAL_FLAG);
   vi.restoreAllMocks();
 });
 
@@ -57,7 +45,6 @@ describe('AnalyticsRuntimeAdapter', () => {
   ])(
     'matches legacy business output for $source / $workspaceFocus',
     async ({ source, workspaceFocus }) => {
-      setRuntimeAnalyticsFlag(undefined);
       const getProjection = createProjectionLoader();
 
       const legacyProjection = await getProjection('user_1', 'tenant_1');
@@ -75,8 +62,7 @@ describe('AnalyticsRuntimeAdapter', () => {
     },
   );
 
-  it('uses the runtime path when the runtime analytics flag is missing after graduation', async () => {
-    setRuntimeAnalyticsFlag(undefined);
+  it('creates runtime metadata for analytics projection resolution', async () => {
     const getProjection = createProjectionLoader();
 
     const output = await resolveAnalyticsRuntimeProjection({
@@ -105,61 +91,6 @@ describe('AnalyticsRuntimeAdapter', () => {
     expect(output.runtime.correlationId).toEqual(expect.any(String));
   });
 
-  it.each(['false', 'FALSE', 'True', '1', '0', ''])(
-    'treats %s as flag OFF',
-    async (flagValue) => {
-      setRuntimeAnalyticsFlag(flagValue);
-
-      const output = await resolveAnalyticsRuntimeProjection({
-        userId: 'user_1',
-        tenantId: 'tenant_1',
-        source: 'analytics-center',
-        projectionType: 'analytics-center',
-      }, {
-        getProjection: createProjectionLoader(),
-      });
-
-      expect(output.runtime).toMatchObject({
-        enabled: false,
-        mode: 'legacy',
-        fallback: false,
-      });
-      expect(output.runtime.contextId).toBeUndefined();
-      expect(output.runtime.correlationId).toBeUndefined();
-    },
-  );
-
-  it('creates runtime metadata when the runtime analytics flag is ON', async () => {
-    setRuntimeAnalyticsFlag('true');
-
-    const output = await resolveAnalyticsRuntimeProjection({
-      userId: 'user_1',
-      tenantId: 'tenant_1',
-      source: 'analytics-center',
-      projectionType: 'analytics-center',
-      workspaceFocus: 'sales',
-    }, {
-      getProjection: createProjectionLoader(),
-    });
-
-    expect(output.projection).toBe(sampleProjection);
-    expect(output.runtime).toMatchObject({
-      enabled: true,
-      mode: 'runtime',
-      source: 'analytics-center',
-      fallback: false,
-      confidence: 'derived',
-      capabilityId: 'analytics.projection.resolve',
-      eventType: 'runtime.analytics.projection.resolved',
-      diagnosticsStatus: 'healthy',
-    });
-    expect(output.runtime.contextId).toEqual(expect.any(String));
-    expect(output.runtime.correlationId).toEqual(expect.any(String));
-    expect(output.runtime.capabilityRuntimeId).toEqual(expect.any(String));
-    expect(output.runtime.eventId).toEqual(expect.any(String));
-    expect(output.runtime.diagnosticsId).toEqual(expect.any(String));
-  });
-
   it('falls back to legacy analytics projection when runtime construction throws', async () => {
     const warn = vi.fn();
 
@@ -170,7 +101,6 @@ describe('AnalyticsRuntimeAdapter', () => {
       projectionType: 'analytics-center',
       workspaceFocus: 'sales',
     }, {
-      isEnabled: () => true,
       getProjection: createProjectionLoader(),
       createRuntimeArtifacts: () => {
         throw new Error('runtime unavailable for tenant_1 user_1');
@@ -214,7 +144,6 @@ describe('AnalyticsRuntimeAdapter', () => {
       source: 'api',
       projectionType: 'analytics-center',
     }, {
-      isEnabled: () => true,
       getProjection: createProjectionLoader(),
       createRuntimeArtifacts: () => ({
         context: {
@@ -277,7 +206,6 @@ describe('AnalyticsRuntimeAdapter', () => {
       projectionType: 'analytics-center',
       workspaceFocus: 'sales',
     }, {
-      isEnabled: () => true,
       getProjection: createProjectionLoader(),
     });
     const metadataKeys = Object.keys(output.runtime as AnalyticsRuntimeMetadata);

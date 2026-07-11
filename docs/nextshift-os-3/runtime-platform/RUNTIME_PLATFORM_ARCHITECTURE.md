@@ -100,7 +100,7 @@ Feature flags must:
 The two frozen reference flags are:
 
 - `retiredRevenueRuntimeFlag`
-- `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS`
+- `retiredAnalyticsRuntimeFlag`
 
 ---
 

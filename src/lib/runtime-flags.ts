@@ -1,5 +1,4 @@
 export type RuntimeFlagName =
-  | 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_MISSION'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_CRM'
@@ -8,19 +7,12 @@ export type RuntimeFlagName =
 
 export type RuntimeFlagDefinition = {
   name: RuntimeFlagName;
-  module: 'revenue-drivers' | 'analytics' | 'mission-engine' | 'business-state' | 'crm' | 'dashboard';
+  module: 'revenue-drivers' | 'mission-engine' | 'business-state' | 'crm' | 'dashboard';
   introducedAt: string;
   removalCondition: string;
 };
 
 export const RUNTIME_FLAGS = {
-  ANALYTICS: {
-    name: 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS',
-    module: 'analytics',
-    introducedAt: '2026-07-09',
-    removalCondition:
-      'Graduated to default-on in OS 3.4 A3; remove after the legacy fallback path is retired.',
-  },
   MISSION: {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_MISSION',
     module: 'mission-engine',
@@ -58,7 +50,6 @@ export const RUNTIME_FLAGS = {
   },
 } as const satisfies Record<string, RuntimeFlagDefinition>;
 
-export const RUNTIME_ANALYTICS_FLAG = RUNTIME_FLAGS.ANALYTICS.name;
 export const RUNTIME_MISSION_FLAG = RUNTIME_FLAGS.MISSION.name;
 export const RUNTIME_BUSINESS_STATE_FLAG = RUNTIME_FLAGS.BUSINESS_STATE.name;
 export const RUNTIME_CRM_FLAG = RUNTIME_FLAGS.CRM.name;

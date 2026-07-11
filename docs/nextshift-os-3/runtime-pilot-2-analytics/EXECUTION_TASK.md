@@ -63,7 +63,7 @@ Legacy analytics behavior must remain unchanged when the feature flag is OFF.
 Use:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS
+retiredAnalyticsRuntimeFlag
 ```
 
 Default:
@@ -83,7 +83,7 @@ Implement only the analytics projection runtime adapter path.
 Allowed:
 
 - Add `src/modules/analytics/runtime/AnalyticsRuntimeAdapter.ts`.
-- Add `src/modules/analytics/runtime/runtime-analytics-flag.ts`.
+- Add `src/modules/analytics/runtime/retired-analytics-flag-helper.ts`.
 - Add `src/modules/analytics/runtime/index.ts`.
 - Route the analytics-center projection path through the adapter only when the flag is ON.
 - Preserve legacy projection output.

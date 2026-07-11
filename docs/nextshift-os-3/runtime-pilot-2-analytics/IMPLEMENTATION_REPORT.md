@@ -41,7 +41,7 @@ The analytics-center service keeps the existing analytics output shape. When the
 Runtime adapter:
 
 - `src/modules/analytics/runtime/AnalyticsRuntimeAdapter.ts`
-- `src/modules/analytics/runtime/runtime-analytics-flag.ts`
+- `src/modules/analytics/runtime/retired-analytics-flag-helper.ts`
 - `src/modules/analytics/runtime/index.ts`
 
 Analytics integration:
@@ -63,7 +63,7 @@ Documentation:
 Feature flag:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS
+retiredAnalyticsRuntimeFlag
 ```
 
 Default:

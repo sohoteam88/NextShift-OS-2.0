@@ -56,7 +56,7 @@ Reference docs:
 Implemented source boundaries:
 
 - `src/modules/analytics/runtime/AnalyticsRuntimeAdapter.ts`
-- `src/modules/analytics/runtime/runtime-analytics-flag.ts`
+- `src/modules/analytics/runtime/retired-analytics-flag-helper.ts`
 - `src/modules/analytics/runtime/index.ts`
 - `src/modules/analytics/analyticsService.ts`
 - `src/__tests__/services/analytics-runtime-adapter.test.ts`
@@ -64,7 +64,7 @@ Implemented source boundaries:
 Feature flag:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS
+retiredAnalyticsRuntimeFlag
 ```
 
 Reference behavior:

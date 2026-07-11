@@ -41,7 +41,7 @@ The future implementation is accepted only when all criteria below are met.
 
 ### Feature Flag
 
-- `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` exists as the analytics runtime flag.
+- `retiredAnalyticsRuntimeFlag` exists as the analytics runtime flag.
 - Default is OFF.
 - OFF preserves current analytics behavior.
 - ON activates only the Analytics Runtime Adapter path.
@@ -114,7 +114,7 @@ The future implementation is accepted only when all criteria below are met.
 
 ### Rollback
 
-- Setting `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` to OFF disables runtime behavior.
+- Setting `retiredAnalyticsRuntimeFlag` to OFF disables runtime behavior.
 - No database rollback is required.
 - No deployment topology rollback is required.
 - No CI rollback is required.
