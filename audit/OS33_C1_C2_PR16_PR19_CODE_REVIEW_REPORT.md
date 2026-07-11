@@ -18,7 +18,7 @@ The one advisory raised in the Pilot 2 review is resolved in PR #16:
 
 | Pilot 2 Advisory | Resolution |
 | ---------------- | ---------- |
-| B-001 — `analyticsService.ts` checks `isRuntimeAnalyticsEnabled()` directly, leaking flag knowledge to the service layer | **RESOLVED** — PR #16 replaces direct flag check with `AnalyticsCenterRuntimeOptions.resolveRuntimeProjection` DI; service always delegates to the adapter and never imports the flag helper |
+| B-001 — `analyticsService.ts` checks `retiredAnalyticsFlagHelper()` directly, leaking flag knowledge to the service layer | **RESOLVED** — PR #16 replaces direct flag check with `AnalyticsCenterRuntimeOptions.resolveRuntimeProjection` DI; service always delegates to the adapter and never imports the flag helper |
 
 ---
 
@@ -85,7 +85,7 @@ const { projection, runtime } = await (
 runtimeOptions.onRuntimeResolved?.(runtime);
 ```
 
-`isRuntimeAnalyticsEnabled()` is no longer imported at the service layer. Flag knowledge is fully encapsulated in the adapter. ✓
+`retiredAnalyticsFlagHelper()` is no longer imported at the service layer. Flag knowledge is fully encapsulated in the adapter. ✓
 
 The `onRuntimeResolved` callback is fire-and-forget — it does not affect the returned `AnalyticsCenter` value. ✓
 

@@ -46,7 +46,7 @@ Included runtime capabilities:
 - Runtime Adapter Standard v1.0 updated to require the factory and safe warning payload enumeration
 - Feature flags registered centrally:
   - `retiredRevenueRuntimeFlag`
-  - `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS`
+  - `retiredAnalyticsRuntimeFlag`
 
 Included platform hardening:
 

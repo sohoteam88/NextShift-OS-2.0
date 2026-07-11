@@ -144,7 +144,7 @@ The adapter must add runtime context, capability metadata, diagnostics, and safe
 Flag:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS
+retiredAnalyticsRuntimeFlag
 ```
 
 Default:

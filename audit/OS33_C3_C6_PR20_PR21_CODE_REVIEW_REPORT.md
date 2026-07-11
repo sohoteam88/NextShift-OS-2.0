@@ -29,7 +29,7 @@
 | ---- | ---- |
 | `src/lib/runtime-flags.ts` | New — C4 flag registry |
 | `src/modules/revenue-drivers/runtime/retired-revenue-flag-helper.ts` | Modified — delegates to registry |
-| `src/modules/analytics/runtime/runtime-analytics-flag.ts` | Modified — delegates to registry |
+| `src/modules/analytics/runtime/retired-analytics-flag-helper.ts` | Modified — delegates to registry |
 | `next.config.mjs` | Modified — C5 tightened image remotePatterns |
 | `src/app/api/v1/tenant/check-slug/route.ts` | Modified — C5 rate limiting |
 | `src/app/api/v1/public/member/invite/[code]/route.ts` | Modified — C5 rate limiting |
@@ -160,7 +160,7 @@ export const RUNTIME_FLAGS = {
     removalCondition: 'Remove after the Revenue Runtime Adapter becomes the default path...',
   },
   ANALYTICS: {
-    name: 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS',
+    name: 'retiredAnalyticsRuntimeFlag',
     module: 'analytics',
     introducedAt: '2026-07-09',
     removalCondition: 'Remove after the Analytics Runtime Adapter becomes the default path...',
@@ -303,9 +303,9 @@ isEnabled: (_input, _resolution, dependencies) =>
 **Analytics (`AnalyticsRuntimeAdapter.ts:99-100`):**
 ```ts
 isEnabled: (_input, _projection, dependencies) =>
-  dependencies.isEnabled?.() ?? isRuntimeAnalyticsEnabled(),
+  dependencies.isEnabled?.() ?? retiredAnalyticsFlagHelper(),
 ```
-- Production path: `isRuntimeAnalyticsEnabled()` → `isRuntimeFlagEnabled(RUNTIME_ANALYTICS_FLAG, env)` → `env['NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS'] === 'true'` ✓
+- Production path: `retiredAnalyticsFlagHelper()` → `isRuntimeFlagEnabled(retiredAnalyticsFlagConstant, env)` → `env['retiredAnalyticsRuntimeFlag'] === 'true'` ✓
 - Test injection path: `dependencies.isEnabled()` — no real flag check needed in tests ✓
 
 **C-001 closed. Both adapters call the real registry-backed flag helper in the production path, with clean DI override for testing.**

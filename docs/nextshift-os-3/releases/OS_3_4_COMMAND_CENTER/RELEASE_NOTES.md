@@ -63,7 +63,7 @@ Escape hatch:
 
 ```text
 retiredRevenueRuntimeFlag=false
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS=false
+retiredAnalyticsRuntimeFlag=false
 ```
 
 Any explicit value other than exactly `true` still disables the runtime path when the escape hatch is used.

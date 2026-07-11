@@ -86,7 +86,7 @@ Explicit escape hatch behavior remains:
 
 ```text
 retiredRevenueRuntimeFlag=false
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS=false
+retiredAnalyticsRuntimeFlag=false
 ```
 
 Mission, Business State, CRM, and Command Center remain default OFF until later graduation.

@@ -16,7 +16,6 @@ import {
   getAnalyticsProjection,
   type AnalyticsProjection,
 } from '../adapters/AnalyticsProjectionAdapter';
-import { isRuntimeAnalyticsEnabled } from './runtime-analytics-flag';
 
 export type AnalyticsRuntimeSource =
   | 'analytics-center'
@@ -66,7 +65,6 @@ type RuntimeArtifacts = {
 type AnalyticsRuntimeLogger = Pick<Console, 'warn'>;
 
 type AnalyticsRuntimeAdapterDependencies = {
-  isEnabled?: () => boolean;
   getProjection?: typeof getAnalyticsProjection;
   createRuntimeArtifacts?: (input: {
     projection: AnalyticsProjection;
@@ -96,8 +94,7 @@ const analyticsRuntimeAdapter = createRuntimeAdapter<
 >({
   resolveLegacy: (input, dependencies) =>
     (dependencies.getProjection ?? getAnalyticsProjection)(input.userId, input.tenantId),
-  isEnabled: (_input, _projection, dependencies) =>
-    dependencies.isEnabled?.() ?? isRuntimeAnalyticsEnabled(),
+  isEnabled: () => true,
   getSource: (input) => input.source,
   getConfidence: () => 'derived',
   getFallbackConfidence: () => 'fallback',
