@@ -5,18 +5,30 @@ export type RuntimeFlagName =
   | 'NEXT_PUBLIC_ENABLE_COMMAND_CENTER'
   | 'NEXT_PUBLIC_ENABLE_AI_DISCUSSION';
 
+type RuntimeFlagLifecycle =
+  | {
+      lifecycleStatus: 'introduced';
+      graduatedAt?: never;
+    }
+  | {
+      lifecycleStatus: 'graduated';
+      graduatedAt: string;
+    };
+
 export type RuntimeFlagDefinition = {
   name: RuntimeFlagName;
   module: 'revenue-drivers' | 'mission-engine' | 'business-state' | 'crm' | 'dashboard';
   introducedAt: string;
   removalCondition: string;
-};
+} & RuntimeFlagLifecycle;
 
 export const RUNTIME_FLAGS = {
   MISSION: {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_MISSION',
     module: 'mission-engine',
     introducedAt: '2026-07-10',
+    lifecycleStatus: 'graduated',
+    graduatedAt: '2026-07-11',
     removalCondition:
       'Graduated to default-on in OS 3.5 G1; remove after the legacy fallback path is retired.',
   },
@@ -24,6 +36,8 @@ export const RUNTIME_FLAGS = {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE',
     module: 'business-state',
     introducedAt: '2026-07-10',
+    lifecycleStatus: 'graduated',
+    graduatedAt: '2026-07-11',
     removalCondition:
       'Graduated to default-on in OS 3.5 G1; remove after the legacy fallback path is retired.',
   },
@@ -31,6 +45,8 @@ export const RUNTIME_FLAGS = {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_CRM',
     module: 'crm',
     introducedAt: '2026-07-11',
+    lifecycleStatus: 'graduated',
+    graduatedAt: '2026-07-11',
     removalCondition:
       'Graduated to default-on in OS 3.5 G1; remove after the legacy fallback path is retired.',
   },
@@ -38,6 +54,8 @@ export const RUNTIME_FLAGS = {
     name: 'NEXT_PUBLIC_ENABLE_COMMAND_CENTER',
     module: 'dashboard',
     introducedAt: '2026-07-10',
+    lifecycleStatus: 'graduated',
+    graduatedAt: '2026-07-11',
     removalCondition:
       'Graduated to default-on in OS 3.5 G1; remove after the legacy fallback path is retired.',
   },
@@ -45,6 +63,7 @@ export const RUNTIME_FLAGS = {
     name: 'NEXT_PUBLIC_ENABLE_AI_DISCUSSION',
     module: 'dashboard',
     introducedAt: '2026-07-11',
+    lifecycleStatus: 'introduced',
     removalCondition:
       'Remove after Business Discussion becomes the default Command Center discussion path and legacy non-discussion behavior is retired.',
   },
