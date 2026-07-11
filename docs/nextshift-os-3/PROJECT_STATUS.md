@@ -21,11 +21,11 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | `v3.3.0` production |
-| Current Release | OS 3.4 Command Center RC package prepared, awaiting approval |
+| Current Version | `v3.4.0` production |
+| Current Release | OS 3.5 Business Discussion RC package prepared, awaiting approval |
 | Current Planning Branch | `planning/os-3.3-runtime-platform` |
 | Repository Default Branch | `main` |
-| Production Status | OS 3.3 deployed to VPS and verified via `/api/v1/version` at commit `50282b9`; OS 3.4 RC awaiting approval |
+| Production Status | OS 3.4 deployed to production after tag `v3.4.0`; OS 3.5 RC awaiting approval |
 
 Canonical navigation:
 
@@ -40,6 +40,7 @@ Canonical navigation:
 - [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md)
 - [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md)
 - [OS 3.4 Command Center RC Package](releases/OS_3_4_COMMAND_CENTER/README.md)
+- [OS 3.5 Business Discussion RC Package](releases/OS_3_5_BUSINESS_DISCUSSION/README.md)
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
 - [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
@@ -90,7 +91,7 @@ Components:
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
 | Developer Platform | OS 3.2 Developer Platform audit PASS; records remain historical release preparation artifacts | [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md) |
-| Current Capability Focus | OS 3.4 RC package prepared, awaiting approval | [OS 3.4 Blueprint](OS_3_4_BLUEPRINT.md) |
+| Current Capability Focus | OS 3.5 RC package prepared, awaiting approval | [OS 3.5 Blueprint](OS_3_5_BLUEPRINT.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -101,11 +102,11 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Field | Current State |
 | --- | --- |
 | Active Planning Branch | `planning/os-3.3-runtime-platform` |
-| Active Milestone | OS 3.4 Command Center |
-| Current Phase | OS 3.4 RC package prepared, awaiting approval |
+| Active Milestone | OS 3.5 Business Discussion |
+| Current Phase | OS 3.5 RC package prepared, awaiting approval |
 | Current Focus | Graduation merge from `planning/os-3.3-runtime-platform` to `main` after approval |
 | Current Blockers | None recorded for the next planning step |
-| Current Priorities | Review OS 3.4 RC package, then perform graduation merge to `main` only after approval |
+| Current Priorities | Review OS 3.5 RC package, then perform graduation merge to `main` only after approval |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -136,11 +137,11 @@ Release tag created: `v3.3.0`.
 | Field | Current State |
 | --- | --- |
 | Release Branch | `main` |
-| Release Tag | `v3.3.0` |
-| Production Commit | `50282b99e853a8239d39f455aa06bcafc60a50ed` |
+| Release Tag | `v3.4.0` |
+| Production Commit | `c472345` |
 | Deployment Method | GitHub Actions Docker image deployment to VPS Docker Compose |
-| VPS Alignment Status | Aligned to `v3.3.0` and verified through production version endpoint |
-| Last Verification Summary | `/api/v1/version` returned production commit `50282b99e853a8239d39f455aa06bcafc60a50ed`, build time `2026-07-10T10:17:27Z`, environment `production` |
+| VPS Alignment Status | Aligned to `v3.4.0` production release |
+| Last Verification Summary | OS 3.4 production release verified after tag `v3.4.0`; version endpoint verification requires a cache-buster query parameter because of proxy caching |
 
 Planning branch documentation remains pre-merge work until it is reviewed and merged under [STD-004 Release Governance](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md) and [STD-005 GitHub Alignment Standard](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
 
@@ -148,13 +149,17 @@ OS 3.3 Runtime Platform production approval has been issued and released as `v3.
 
 The `v3.3.0` release tag has been created and pushed.
 
+OS 3.4 Command Center production approval has been issued and released as `v3.4.0`.
+
+The `v3.4.0` release tag has been created and pushed.
+
 ---
 
 ## 7. Next Recommended Actions
 
-1. Review the [OS 3.4 Command Center RC Package](releases/OS_3_4_COMMAND_CENTER/README.md).
+1. Review the [OS 3.5 Business Discussion RC Package](releases/OS_3_5_BUSINESS_DISCUSSION/README.md).
 2. After approval, perform the graduation merge from `planning/os-3.3-runtime-platform` to `main`.
-3. Prepare the `v3.4.0` tag only after explicit approval.
+3. Prepare the `v3.5.0` tag only after explicit approval.
 4. Do not modify production deployment, Prisma, env files, or release tags without explicit approval.
 
 ---
