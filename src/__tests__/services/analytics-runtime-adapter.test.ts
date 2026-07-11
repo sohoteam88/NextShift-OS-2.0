@@ -51,6 +51,30 @@ afterEach(() => {
 });
 
 describe('AnalyticsRuntimeAdapter', () => {
+  it.each([
+    { source: 'analytics-center' as const, workspaceFocus: 'sales' },
+    { source: 'api' as const, workspaceFocus: 'command-center' },
+  ])(
+    'matches legacy business output for $source / $workspaceFocus',
+    async ({ source, workspaceFocus }) => {
+      setRuntimeAnalyticsFlag(undefined);
+      const getProjection = createProjectionLoader();
+
+      const legacyProjection = await getProjection('user_1', 'tenant_1');
+      const runtimeOutput = await resolveAnalyticsRuntimeProjection({
+        userId: 'user_1',
+        tenantId: 'tenant_1',
+        source,
+        projectionType: 'analytics-center',
+        workspaceFocus,
+      }, {
+        getProjection,
+      });
+
+      expect(runtimeOutput.projection).toEqual(legacyProjection);
+    },
+  );
+
   it('uses the runtime path when the runtime analytics flag is missing after graduation', async () => {
     setRuntimeAnalyticsFlag(undefined);
     const getProjection = createProjectionLoader();
