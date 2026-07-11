@@ -1,5 +1,4 @@
 export type RuntimeFlagName =
-  | 'NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_MISSION'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE'
@@ -15,13 +14,6 @@ export type RuntimeFlagDefinition = {
 };
 
 export const RUNTIME_FLAGS = {
-  REVENUE: {
-    name: 'NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE',
-    module: 'revenue-drivers',
-    introducedAt: '2026-07-09',
-    removalCondition:
-      'Graduated to default-on in OS 3.4 A3; remove after the legacy fallback path is retired.',
-  },
   ANALYTICS: {
     name: 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS',
     module: 'analytics',
@@ -66,7 +58,6 @@ export const RUNTIME_FLAGS = {
   },
 } as const satisfies Record<string, RuntimeFlagDefinition>;
 
-export const RUNTIME_REVENUE_FLAG = RUNTIME_FLAGS.REVENUE.name;
 export const RUNTIME_ANALYTICS_FLAG = RUNTIME_FLAGS.ANALYTICS.name;
 export const RUNTIME_MISSION_FLAG = RUNTIME_FLAGS.MISSION.name;
 export const RUNTIME_BUSINESS_STATE_FLAG = RUNTIME_FLAGS.BUSINESS_STATE.name;

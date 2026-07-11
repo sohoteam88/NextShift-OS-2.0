@@ -16,7 +16,6 @@ import {
   resolveRevenueDriverIntent,
   type RevenueDriverIntentResolution,
 } from '../constants/revenue-driver-intents';
-import { isRuntimeRevenueEnabled } from './runtime-revenue-flag';
 
 export type RevenueRuntimeSource = 'hub' | 'dashboard' | 'deep-link' | 'api';
 
@@ -56,7 +55,6 @@ type RuntimeArtifacts = {
 type RevenueRuntimeLogger = Pick<Console, 'warn'>;
 
 type RevenueRuntimeAdapterDependencies = {
-  isEnabled?: () => boolean;
   resolveIntent?: typeof resolveRevenueDriverIntent;
   createRuntimeArtifacts?: (input: {
     resolution: RevenueDriverIntentResolution;
@@ -87,8 +85,7 @@ const revenueRuntimeAdapter = createRuntimeAdapter<
       route: input.route,
       intent: input.intent,
     }),
-  isEnabled: (_input, _resolution, dependencies) =>
-    dependencies.isEnabled?.() ?? isRuntimeRevenueEnabled(),
+  isEnabled: () => true,
   getSource: (input) => input.source,
   getConfidence: (_input, resolution) => confidenceForResolution(resolution),
   createRuntimeMetadata: (input, resolution, dependencies) => {

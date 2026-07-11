@@ -62,7 +62,7 @@ Revenue and Analytics runtime adapters are graduated to default ON.
 Escape hatch:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE=false
+retiredRevenueRuntimeFlag=false
 NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS=false
 ```
 

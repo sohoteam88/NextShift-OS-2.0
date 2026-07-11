@@ -45,7 +45,7 @@ Included runtime capabilities:
 - `@nextshift/runtime` adapter factory as the required adapter lifecycle implementation
 - Runtime Adapter Standard v1.0 updated to require the factory and safe warning payload enumeration
 - Feature flags registered centrally:
-  - `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE`
+  - `retiredRevenueRuntimeFlag`
   - `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS`
 
 Included platform hardening:

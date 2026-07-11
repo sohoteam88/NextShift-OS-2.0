@@ -35,7 +35,7 @@ The Claude Code Review report for Pilot 1 is archived at:
 ## Implemented Files
 
 - `src/modules/revenue-drivers/runtime/RevenueRuntimeAdapter.ts`
-- `src/modules/revenue-drivers/runtime/runtime-revenue-flag.ts`
+- `src/modules/revenue-drivers/runtime/retired-revenue-flag-helper.ts`
 - `src/modules/revenue-drivers/runtime/index.ts`
 - `src/modules/revenue-drivers/components/RevenueDriverIntentResolver.tsx`
 - `src/__tests__/services/revenue-runtime-adapter.test.ts`
@@ -77,7 +77,7 @@ The existing `resolveRevenueDriverIntent` function remains the source of truth f
 Feature flag:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE
+retiredRevenueRuntimeFlag
 ```
 
 Default:

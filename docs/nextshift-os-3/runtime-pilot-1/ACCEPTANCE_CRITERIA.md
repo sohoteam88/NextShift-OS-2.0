@@ -34,7 +34,7 @@ The future implementation is accepted only when all criteria below are met.
 
 ### Feature Flag
 
-- `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` exists as the runtime revenue flag.
+- `retiredRevenueRuntimeFlag` exists as the runtime revenue flag.
 - Default is OFF.
 - OFF preserves current behavior.
 - ON activates the Revenue Runtime Adapter path.
@@ -88,7 +88,7 @@ The future implementation is accepted only when all criteria below are met.
 
 ### Rollback
 
-- Setting `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` to OFF disables runtime behavior.
+- Setting `retiredRevenueRuntimeFlag` to OFF disables runtime behavior.
 - No database rollback is required.
 - No deployment topology rollback is required.
 - Existing legacy resolver remains available.
