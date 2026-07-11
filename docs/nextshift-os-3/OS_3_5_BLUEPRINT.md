@@ -95,4 +95,19 @@ Phase 4:          Round 5/6 audit → RC → planning→main → v3.5.0
 
 ## Audit Result
 
-（Round 5 / Round 6 由 Claude Code 完成,落库由 Claude 执行,完整报告存 audit/ 目录）
+### Round 5 — PR #38-#47（T1-T3 讨论 / H-A/H-B/H-C / G1-G3 graduation）
+
+Date: 2026-07-11
+Auditor: Claude Code
+HEAD: `f86c3fb`
+Verdict: **PASS**
+
+完整报告：[audit/OS35_R5_PR38_PR47_CODE_REVIEW_REPORT.md](../../audit/OS35_R5_PR38_PR47_CODE_REVIEW_REPORT.md)
+
+检查点结论：CP1 讨论服务全部流量经 modules/ai router,无直连 provider ✓;CP2 租户日配额 200 生效,超限抛 429,UTC 窗口正确,6 用例覆盖 ✓;CP3 四 flag 转正后 legacy 分支仍可用显式 false 触达,四 flag 均有测试 ✓;CP4 G2a/G2b 删除后全仓库 grep 零残留,`isEnabled: () => true` 安全网保留,Round 4 遗留的 R-1（fallback 无 Sentry 可见性）已用 `runtimeFallbackLogger` 同时 `console.warn` + `Sentry.captureMessage` 解决 ✓;CP5 G3 的 lifecycleStatus discriminated union 编译期强制 + 运行时测试双重校验,`pnpm type-check` 0 错 ✓;CP8 讨论面板 UI 铁律零逃逸,ARIA 齐全,confidence 四档逻辑验证 ✓。
+
+CP6/CP7（lint 基线 409+4、build、E2E）本地审计沙盒因缺 `pnpm install` 无法直接复现,但 PR #44-#47 各自在 GitHub Actions CI 已跑过同一套命令并全绿（含 E2E 7m38s/7m50s）,以 CI 结果作为权威闭环证据,不作为遗留未知项。
+
+Advisories（均不阻塞）：A-1 新 checkout 需先 `pnpm install` 才能跑 `pnpm lint`（H-A 引入 `@eslint/eslintrc` 依赖，文档化即可）;A-2 `getAuthUser` 的 `React.cache` shim 在降级环境有静默 no-op 路径（行为仍正确,无需改动）。
+
+**Round 5 结论：无阻塞问题，OS 3.5 G 系列全部完成，可进入 RC 准备阶段。**
