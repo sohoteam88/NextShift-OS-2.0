@@ -5,19 +5,7 @@ import {
 } from '@/modules/revenue-drivers/runtime';
 import { resolveRevenueDriverIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 
-const ORIGINAL_FLAG = process.env.NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE;
-
-function setRuntimeRevenueFlag(value: string | undefined) {
-  if (value === undefined) {
-    delete process.env.NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE;
-    return;
-  }
-
-  process.env.NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE = value;
-}
-
 afterEach(() => {
-  setRuntimeRevenueFlag(ORIGINAL_FLAG);
   vi.restoreAllMocks();
 });
 
@@ -29,8 +17,6 @@ describe('RevenueRuntimeAdapter', () => {
   ])(
     'matches legacy business output for $route / $intent',
     ({ route, intent }) => {
-      setRuntimeRevenueFlag(undefined);
-
       const legacyResolution = resolveRevenueDriverIntent({ route, intent });
       const runtimeOutput = resolveRevenueRuntimeIntent({
         route,
@@ -42,59 +28,7 @@ describe('RevenueRuntimeAdapter', () => {
     },
   );
 
-  it('uses the runtime path when the runtime revenue flag is missing after graduation', () => {
-    setRuntimeRevenueFlag(undefined);
-
-    const output = resolveRevenueRuntimeIntent({
-      route: '/content-engine',
-      intent: 'facebook-post',
-      source: 'deep-link',
-    });
-
-    expect(output.resolution).toMatchObject({
-      status: 'resolved',
-      route: '/content-engine',
-      intent: 'facebook-post',
-      toolId: 'content.facebook-post',
-    });
-    expect(output.runtime).toMatchObject({
-      enabled: true,
-      mode: 'runtime',
-      source: 'deep-link',
-      fallback: false,
-      confidence: 1,
-      capabilityId: 'revenue.driver.intent.resolve',
-      eventType: 'runtime.revenue.intent.resolved',
-      diagnosticsStatus: 'healthy',
-    });
-    expect(output.runtime.contextId).toEqual(expect.any(String));
-    expect(output.runtime.correlationId).toEqual(expect.any(String));
-  });
-
-  it.each(['false', 'FALSE', 'True', '1', '0', ''])(
-    'treats %s as flag OFF',
-    (flagValue) => {
-      setRuntimeRevenueFlag(flagValue);
-
-      const output = resolveRevenueRuntimeIntent({
-        route: '/content-engine',
-        intent: 'facebook-post',
-        source: 'deep-link',
-      });
-
-      expect(output.runtime).toMatchObject({
-        enabled: false,
-        mode: 'legacy',
-        fallback: false,
-      });
-      expect(output.runtime.contextId).toBeUndefined();
-      expect(output.runtime.correlationId).toBeUndefined();
-    },
-  );
-
-  it('creates runtime metadata when the runtime revenue flag is ON', () => {
-    setRuntimeRevenueFlag('true');
-
+  it('creates runtime metadata for revenue intent resolution', () => {
     const output = resolveRevenueRuntimeIntent({
       route: '/content-engine',
       intent: 'facebook-post',
@@ -125,8 +59,6 @@ describe('RevenueRuntimeAdapter', () => {
   });
 
   it('maps invalid and fallback resolutions to deterministic runtime events', () => {
-    setRuntimeRevenueFlag('true');
-
     const invalid = resolveRevenueRuntimeIntent({
       route: '/webinar-center',
       intent: 'invalid-intent',
@@ -164,7 +96,6 @@ describe('RevenueRuntimeAdapter', () => {
       tenantId: 'tenant_1',
       userId: 'user_1',
     }, {
-      isEnabled: () => true,
       createRuntimeArtifacts: () => {
         throw new Error('runtime unavailable');
       },
@@ -206,7 +137,6 @@ describe('RevenueRuntimeAdapter', () => {
       intent: 'facebook-post',
       source: 'api',
     }, {
-      isEnabled: () => true,
       createRuntimeArtifacts: () => ({
         context: {
           id: '',
@@ -258,8 +188,6 @@ describe('RevenueRuntimeAdapter', () => {
   });
 
   it('exposes safe runtime metadata without forbidden secret-like keys', () => {
-    setRuntimeRevenueFlag('true');
-
     const output = resolveRevenueRuntimeIntent({
       route: '/traffic-engine',
       intent: 'facebook-ad',

@@ -377,6 +377,7 @@ Core documents:
 - [Developer Platform v1.1 Execution Task](developer-platform-v1.1/EXECUTION_TASK.md)
 - [Developer Platform v1.1 Implementation Report](developer-platform-v1.1/IMPLEMENTATION_REPORT.md)
 - [Runtime Platform v1.0](runtime-platform/README.md)
+- [Runtime Flag Lifecycle](runtime-standard/RUNTIME_FLAG_LIFECYCLE.md)
 - [OS 3.3 Runtime Readiness Report](runtime-review/OS33_RUNTIME_READINESS_REPORT.md)
 - [OS 3.3 Integration Priority](runtime-review/INTEGRATION_PRIORITY.md)
 - [OS 3.3 Runtime Integration Roadmap](runtime-review/RUNTIME_INTEGRATION_ROADMAP.md)

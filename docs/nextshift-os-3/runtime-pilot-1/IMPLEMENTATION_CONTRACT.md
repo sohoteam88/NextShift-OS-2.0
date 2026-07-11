@@ -23,7 +23,7 @@ This document is a contract for a later implementation phase. It does not author
 Name:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE
+retiredRevenueRuntimeFlag
 ```
 
 Default:
@@ -42,7 +42,7 @@ Future helper requirement:
 
 ```ts
 const runtimeRevenueEnabled =
-  process.env.NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE === 'true';
+  process.env.retiredRevenueRuntimeFlag === 'true';
 ```
 
 The implementation may place this helper in a module-local config file, but must not edit env files in the first pass.
@@ -256,7 +256,7 @@ The UI must not depend on these values for display correctness. They exist for d
 
 Rollback must be possible without code removal:
 
-1. Set `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` to OFF or remove it.
+1. Set `retiredRevenueRuntimeFlag` to OFF or remove it.
 2. Redeploy with the flag disabled if needed.
 3. Confirm Revenue Driver UI and intent resolution continue through the legacy path.
 4. Leave adapter code dormant until a fix is approved.

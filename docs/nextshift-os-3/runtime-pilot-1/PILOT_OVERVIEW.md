@@ -116,7 +116,7 @@ The adapter becomes the only new seam between UI and runtime primitives. It must
 Flag:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE
+retiredRevenueRuntimeFlag
 ```
 
 Default:

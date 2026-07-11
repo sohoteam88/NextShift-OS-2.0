@@ -65,7 +65,7 @@ Documentation freeze package
 
 | Adapter | Feature Flag | Status |
 | --- | --- | --- |
-| Revenue Runtime Adapter | `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` | Reference implementation |
+| Revenue Runtime Adapter | `retiredRevenueRuntimeFlag` | Reference implementation |
 | Analytics Runtime Adapter | `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` | Reference implementation |
 
 ---
