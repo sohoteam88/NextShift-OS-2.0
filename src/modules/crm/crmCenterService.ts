@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { CRMCommandCenter } from './types';
@@ -121,6 +122,7 @@ export const crmCenterService = {
       source: runtimeOptions.source ?? 'crm-center-service',
     }, {
       resolveCommandCenter: () => resolveCrmCommandCenterLegacy(userId, tenantId, workspaceContext),
+      logger: runtimeFallbackLogger,
     });
     runtimeOptions.onRuntimeResolved?.(runtime);
     return commandCenter;

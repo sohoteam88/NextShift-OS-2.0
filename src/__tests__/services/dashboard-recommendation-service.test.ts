@@ -82,6 +82,10 @@ describe('Command Center recommendation service', () => {
       source: 'api',
       projectionType: 'analytics-center',
       workspaceFocus: 'command-center',
+    }, {
+      logger: expect.objectContaining({
+        warn: expect.any(Function),
+      }),
     });
     expect(loaders.resolveRevenue).toHaveBeenCalledWith({
       route: '/sales',
@@ -89,6 +93,10 @@ describe('Command Center recommendation service', () => {
       tenantId: 'tenant_1',
       userId: 'user_1',
       source: 'dashboard',
+    }, {
+      logger: expect.objectContaining({
+        warn: expect.any(Function),
+      }),
     });
     expect(result).toEqual({
       recommendation: {
