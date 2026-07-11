@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import {
   resolveRevenueRuntimeIntent,
   type RevenueRuntimeMetadata,
@@ -36,6 +37,8 @@ export async function recordRevenueDriverIntentAudit(
     tenantId: user.tenantId,
     userId: user.id,
     source: 'api',
+  }, {
+    logger: runtimeFallbackLogger,
   });
   options.onRuntimeResolved?.(runtimeOutput.runtime);
 

@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { BusinessState } from '../contracts/BusinessState';
 import type { BusinessStateResult } from '../contracts/BusinessStateResult';
@@ -63,6 +64,7 @@ export const businessStateService = {
       source: runtimeOptions.source ?? 'business-state-service',
     }, {
       resolveBusinessState: () => resolveBusinessStateLegacy(userId),
+      logger: runtimeFallbackLogger,
     });
     runtimeOptions.onRuntimeResolved?.(runtime);
     return state;

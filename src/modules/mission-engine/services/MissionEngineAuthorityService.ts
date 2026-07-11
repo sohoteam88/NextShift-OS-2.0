@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import { journeyEngineService } from '@/modules/journey-engine/journey-engine-service';
 import type { AdaptiveJourneyProjection } from '@/modules/journey-engine/journey-projection';
 import { businessStateService } from '@/modules/business-state/services/BusinessStateService';
@@ -387,6 +388,7 @@ export const missionEngineAuthorityService = {
       source: runtimeOptions.source ?? 'authority-service',
     }, {
       resolveAuthority: () => resolveCurrentMissionAuthorityLegacy(userId, options),
+      logger: runtimeFallbackLogger,
     });
     runtimeOptions.onRuntimeResolved?.(runtime);
     return authority;

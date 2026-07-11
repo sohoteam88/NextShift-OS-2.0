@@ -1,4 +1,5 @@
 import { businessStateService } from '@/modules/business-state/services/BusinessStateService';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import type { BusinessState } from '@/modules/business-state/contracts/BusinessState';
 import { missionEngineAuthorityService } from '@/modules/mission-engine/services/MissionEngineAuthorityService';
 import type { MissionAuthoritySnapshot } from '@/modules/mission-engine/contracts/MissionAuthority';
@@ -49,6 +50,8 @@ export async function loadCommandCenterRecommendationContext(
       source: 'api',
       projectionType: 'analytics-center',
       workspaceFocus: 'command-center',
+    }, {
+      logger: runtimeFallbackLogger,
     }),
     (loaders.resolveRevenue ?? resolveRevenueRuntimeIntent)({
       route: mission.priorityAction?.route ?? mission.currentMission.route,
@@ -56,6 +59,8 @@ export async function loadCommandCenterRecommendationContext(
       tenantId,
       userId: user.id,
       source: 'dashboard',
+    }, {
+      logger: runtimeFallbackLogger,
     }),
   ]);
 

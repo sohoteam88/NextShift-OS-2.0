@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { AnalyticsCenter, KPIOverview } from './businessTypes';
 import { detectAnomalies } from './analyticsEngines';
@@ -57,6 +58,8 @@ export const analyticsService = {
       source: 'analytics-center',
       projectionType: 'analytics-center',
       workspaceFocus: analyticsFocus,
+    }, {
+      logger: runtimeFallbackLogger,
     });
     runtimeOptions.onRuntimeResolved?.(runtime);
 
