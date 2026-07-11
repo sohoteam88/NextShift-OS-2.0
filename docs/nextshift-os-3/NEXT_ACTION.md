@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-10
+Last Updated: 2026-07-11
 
 ---
 
@@ -18,16 +18,22 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-OS 3.4 Phase 2: B2 business-state adapter + A1 recommendation data path
+OS 3.4 RC prepared, awaiting approval
 
 OS 3.3 Runtime Platform has been released as `v3.3.0`, deployed to the VPS, and verified through `/api/v1/version` at commit `50282b9`.
 
-Next work should continue OS 3.4 Phase 2 only:
+OS 3.4 Command Center release candidate package is prepared at:
 
-1. B2 business-state adapter.
-2. A1 recommendation data path.
-3. Preserve the Runtime Adapter Standard and existing production deployment gates.
-4. Do not reopen OS 3.3 release candidate approval work.
+```text
+docs/nextshift-os-3/releases/OS_3_4_COMMAND_CENTER/
+```
+
+Next work should be graduation only:
+
+1. Review and approve the OS 3.4 RC package.
+2. Merge `planning/os-3.3-runtime-platform` into `main` after approval.
+3. Create the prepared `v3.4.0` tag only after explicit approval.
+4. Preserve the Runtime Adapter Standard and existing production deployment gates.
 
 ---
 
@@ -50,6 +56,8 @@ Release tag created: `v3.3.0`.
 OS 3.3 Runtime Platform C1-C6 audit result: PASS.
 
 OS 3.3 release state: Released to production as `v3.3.0`.
+
+OS 3.4 release state: RC package prepared, awaiting approval.
 
 ---
 
@@ -77,6 +85,6 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-Continue OS 3.4 Phase 2 from `planning/os-3.3-runtime-platform`.
+Continue OS 3.4 graduation from `planning/os-3.3-runtime-platform`.
 
 Do not create release tags, modify Prisma, modify env files, change deployment configuration, or alter production release state without explicit approval.
