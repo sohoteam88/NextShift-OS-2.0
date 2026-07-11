@@ -187,3 +187,20 @@ Advisories：
 - **E-002**：admin 树无根 layout guard,新增子路由靠自觉 → A2 顺手加根 layout（operator+）
 - **E-003**：legacy 'admin' 角色在页面/ API 两侧不一致（存量问题）→ 需 Steven 决策,OS 3.5
 - **E-004**：Blueprint 中 413 基线为误记 → 本次落库一并改回 192
+
+### Round 4 — PR #32-#34（A2 卡片 / B3 crm / A3 graduation,发布前终审）
+
+Date: 2026-07-11
+Auditor: Claude Code
+HEAD: `9e45d5b`
+Verdict: **PASS WITH CONDITION** — R-1 解决前不得打 v3.4.0 tag
+
+完整报告：[audit/OS34_R4_PR32_PR34_CODE_REVIEW_REPORT.md](../../../audit/OS34_R4_PR32_PR34_CODE_REVIEW_REPORT.md)
+
+检查点结论：A2 UI 铁律零违规、flag-off 零 DOM 有单测+E2E 双证据、admin guard 矩阵闭合（E-001/E-002 关闭）✓;B3 PII 排除为历来最严（fixture 植入真实姓名/邮箱证明不泄露）✓;A3 graduation 语义正确、未转正 4 flag 严格语义完好 ✓;全量验证过（391 单测/lint 192/E2E 31）✓。
+
+**发布条件（R-1,阻塞）**：graduated adapter 的 fallback 仅 console.warn,Sentry 不可见。→ 采纳 Option A:callsite 注入 Sentry-aware logger（task R1-FIX）。
+
+需人工确认：R-2 生产 env 的 revenue/analytics flag 状态;R-3 COMMAND_CENTER 保持 off 直至有意开启;R-4 生产库无 role='admin' 用户（root layout 会挡掉他们）。
+
+Advisories：F-001 getAuthUser 未 memoize（OS 3.5）;F-002 E2E 基线更新为 31;F-003 D-001 遗留;F-004 = R-4。
