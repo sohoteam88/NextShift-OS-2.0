@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { loginAsUser } from './helpers/auth';
 
 const commandCenterEnabled = process.env.NEXT_PUBLIC_ENABLE_COMMAND_CENTER === 'true';
+const aiDiscussionEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_DISCUSSION === 'true';
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -47,6 +48,26 @@ test.describe('Command Center recommendation', () => {
 
     await page.getByRole('button', { name: ctaLabel }).click();
     await expect(page).toHaveURL(new RegExp(escapeRegExp(route)));
+  });
+
+  test('flag on: recommendation discussion API returns the response contract', async ({ page }) => {
+    test.skip(
+      !(commandCenterEnabled && aiDiscussionEnabled),
+      'Command Center and AI Discussion flags must be enabled for this E2E path.',
+    );
+
+    const response = await page.request.post('/api/v1/dashboard/recommendation/discuss', {
+      data: {
+        message: 'What is the weather in Tokyo tomorrow?',
+        history: [],
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.reply).toContain('today\'s recommendation');
+    expect(body.turnsUsed).toBe(1);
+    expect(body.turnsLimit).toBe(5);
   });
 
   test('flag off: dashboard does not render the recommendation card', async ({ page }) => {

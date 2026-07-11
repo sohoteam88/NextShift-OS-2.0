@@ -4,7 +4,8 @@ export type RuntimeFlagName =
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_MISSION'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE'
   | 'NEXT_PUBLIC_ENABLE_RUNTIME_CRM'
-  | 'NEXT_PUBLIC_ENABLE_COMMAND_CENTER';
+  | 'NEXT_PUBLIC_ENABLE_COMMAND_CENTER'
+  | 'NEXT_PUBLIC_ENABLE_AI_DISCUSSION';
 
 export type RuntimeFlagDefinition = {
   name: RuntimeFlagName;
@@ -56,6 +57,13 @@ export const RUNTIME_FLAGS = {
     removalCondition:
       'Remove after the Command Center recommendation datapath becomes the default dashboard recommendation source.',
   },
+  AI_DISCUSSION: {
+    name: 'NEXT_PUBLIC_ENABLE_AI_DISCUSSION',
+    module: 'dashboard',
+    introducedAt: '2026-07-11',
+    removalCondition:
+      'Remove after Business Discussion becomes the default Command Center discussion path and legacy non-discussion behavior is retired.',
+  },
 } as const satisfies Record<string, RuntimeFlagDefinition>;
 
 export const RUNTIME_REVENUE_FLAG = RUNTIME_FLAGS.REVENUE.name;
@@ -64,6 +72,7 @@ export const RUNTIME_MISSION_FLAG = RUNTIME_FLAGS.MISSION.name;
 export const RUNTIME_BUSINESS_STATE_FLAG = RUNTIME_FLAGS.BUSINESS_STATE.name;
 export const RUNTIME_CRM_FLAG = RUNTIME_FLAGS.CRM.name;
 export const COMMAND_CENTER_FLAG = RUNTIME_FLAGS.COMMAND_CENTER.name;
+export const AI_DISCUSSION_FLAG = RUNTIME_FLAGS.AI_DISCUSSION.name;
 
 export function isRuntimeFlagEnabled(
   flag: RuntimeFlagName,
