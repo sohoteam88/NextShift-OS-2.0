@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { apiHandler } from '@/lib/api-handler';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getRequestIp } from '@/lib/request-ip';
 import { inviteService } from '@/modules/member/services/invite-service';
 
 export const GET = apiHandler(async (request: NextRequest, context) => {
   const params = await context?.params;
   const code = params?.code ?? '';
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+  const ip = getRequestIp(request.headers);
 
   if (!(await checkRateLimit(`member-invite:${ip}:${code}`, 20, 60 * 60 * 1000))) {
     return NextResponse.json(

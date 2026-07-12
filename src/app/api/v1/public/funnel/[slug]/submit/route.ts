@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { type Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getRequestIp } from '@/lib/request-ip';
 import { calculateLeadScore } from '@/modules/crm/services/scoring-service';
 import { logActivity } from '@/modules/crm/services/activity-service';
 
@@ -21,7 +22,7 @@ async function getSlug(context: { params: Promise<Record<string, string>> | Reco
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<Record<string, string>> }) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+  const ip = getRequestIp(request.headers);
 
   // Rate limit: 10 per IP per hour
   if (!(await checkRateLimit(`submit:${ip}`, 10, 60 * 60 * 1000))) {
