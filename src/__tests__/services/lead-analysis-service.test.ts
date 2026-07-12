@@ -19,7 +19,7 @@ vi.mock('@/modules/ai/prompt/validator', () => validatorMocks);
 
 import { leadAnalysisService } from '@/modules/ai/services/lead-analysis-service';
 
-const makeUser = () => ({ id: 'u1', email: 't@t.com', tenantId: 't1', role: 'admin', name: 'T', preferredLanguage: 'zh', status: 'active' as const });
+const makeUser = () => ({ id: 'u1', email: 't@t.com', tenantId: 't1', role: 'operator', name: 'T', preferredLanguage: 'zh', status: 'active' as const });
 
 const analysisJson = JSON.stringify({
   summary: 'High potential lead',

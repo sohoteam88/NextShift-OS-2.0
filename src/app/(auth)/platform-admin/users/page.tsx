@@ -19,7 +19,6 @@ const STATUS_LABEL: Record<string, string> = {
 
 function getRoleTone(role: string) {
   if (role === 'platform_admin') return 'bg-violet-50 text-violet-700 border-violet-200';
-  if (role === 'admin') return 'bg-indigo-50 text-indigo-700 border-indigo-200';
   if (role === 'operator') return 'bg-blue-50 text-blue-700 border-blue-200';
   if (role === 'leader') return 'bg-amber-50 text-amber-700 border-amber-200';
   return 'bg-gray-50 text-gray-600 border-gray-200';

@@ -18,7 +18,7 @@ import { funnelService } from '@/modules/funnel/services/funnel-service';
 
 const makeUser = (overrides = {}) => ({
   id: 'user-1', email: 'test@test.com', tenantId: 'tenant-1',
-  role: 'admin', name: 'Test', preferredLanguage: 'zh', status: 'active' as const,
+  role: 'operator', name: 'Test', preferredLanguage: 'zh', status: 'active' as const,
   ...overrides,
 });
 
@@ -92,9 +92,9 @@ describe('funnelService', () => {
         .rejects.toMatchObject({ code: 'FORBIDDEN' });
     });
 
-    it('admin can access any funnel in tenant', async () => {
+    it('operator can access any funnel in tenant', async () => {
       prismaMocks.funnel.findFirst.mockResolvedValue({ id: 'f-1', tenantId: 'tenant-1', ownerId: 'other-user' });
-      const result = await funnelService.getById(makeUser({ role: 'admin' }), 'f-1');
+      const result = await funnelService.getById(makeUser({ role: 'operator' }), 'f-1');
       expect(result.id).toBe('f-1');
     });
   });

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { relativeTime } from '@/lib/relative-time';
 
-type Role = 'member' | 'leader' | 'operator' | 'platform_admin' | 'admin';
+type Role = 'member' | 'leader' | 'operator' | 'platform_admin';
 
 type InviteItem = {
   code: string;

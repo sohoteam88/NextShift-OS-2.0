@@ -5,7 +5,7 @@ vi.mock('@/lib/prisma', () => ({ default: prismaMocks }));
 
 import { funnelHealthService, FunnelHealthScore } from '@/modules/funnel/services/funnel-health-service';
 
-const makeUser = () => ({ id: 'u1', email: 't@t.com', tenantId: 't1', role: 'admin', name: 'T', preferredLanguage: 'zh', status: 'active' as const });
+const makeUser = () => ({ id: 'u1', email: 't@t.com', tenantId: 't1', role: 'operator', name: 'T', preferredLanguage: 'zh', status: 'active' as const });
 
 describe('funnelHealthService', () => {
   beforeEach(() => vi.clearAllMocks());
