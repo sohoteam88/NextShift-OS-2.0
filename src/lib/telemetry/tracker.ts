@@ -1,5 +1,5 @@
 // Unified Telemetry — Sentry (errors) + PostHog (analytics)
-// Setup: pnpm add posthog-js posthog-node
+// Setup: pnpm add posthog-js
 //        Add NEXT_PUBLIC_POSTHOG_KEY and NEXT_PUBLIC_POSTHOG_HOST to .env.local
 //        Sentry auto-enabled when SENTRY_DSN is set in environment.
 
@@ -59,4 +59,33 @@ export function trackContentPublished(userId: string, properties: { platform: st
 
 export function trackUpgradeClicked(userId: string, properties: { current_plan: string; target_plan: string; source_page: string }) {
   analytics.track('upgrade_clicked', { ...properties, userId });
+}
+
+export function trackRecommendationViewed(userId: string, properties: { recommendationId: string; source: string; confidence: number }) {
+  analytics.track('recommendation_viewed', { ...properties, userId });
+}
+
+export function trackRecommendationClicked(userId: string, properties: { recommendationId: string; ctaTarget: string }) {
+  analytics.track('recommendation_clicked', { ...properties, userId });
+}
+
+export function trackDiscussionTurnSent(userId: string, properties: { recommendationId: string; turnNumber: number }) {
+  analytics.track('discussion_turn_sent', { ...properties, userId });
+}
+
+export function trackWeeklyActive(userId: string, properties: Record<string, never>) {
+  analytics.track('weekly_active', { ...properties, userId });
+}
+
+export async function fetchTelemetryUserId(): Promise<string | null> {
+  try {
+    const response = await fetch('/api/v1/auth/me');
+    if (!response.ok) return null;
+
+    const json = await response.json() as { data?: { user?: { id?: unknown } } };
+    const userId = json.data?.user?.id;
+    return typeof userId === 'string' && userId.length > 0 ? userId : null;
+  } catch {
+    return null;
+  }
 }
