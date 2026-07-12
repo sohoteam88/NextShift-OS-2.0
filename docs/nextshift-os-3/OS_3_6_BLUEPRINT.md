@@ -37,7 +37,15 @@ Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md) — 本版是 **Stag
 | M1 | ~~discussion 事件类型接入~~ **已完成（2026-07-12）**：新增 `DISCUSSION_STARTED` / `DISCUSSION_TURN_COMPLETED` / `DISCUSSION_ABANDONED` 类型；首轮写入 started，每轮成功回复后写入 completed，复用现有 `business-memory-event-store`。`DISCUSSION_ABANDONED` 暂无可靠客户端信号，保留类型但未触发 | 地基先行，不改变任何现有事件类型的语义 |
 | M2 | ~~讨论服务读取 Memory~~ **已完成（2026-07-12）**：生成 prompt 前读取 Memory，注入最近活动、执行模式和 recommendation accepted/ignored 摘要；读取或写入失败会记录 Sentry warning 并继续正常回复 | 这是用户能感知到的核心变化——AI 回复会体现"记性" |
 | M3 | ~~推荐引擎读取讨论记忆~~ **已完成（2026-07-12）**：同一 recommendation 在最近 30 条完成讨论事件中达到 ≥3 轮时，`recommendedFocus` 会显式提示反复讨论信号；Command Center 并行读取 Memory，将 focus 和 ignored IDs 加入 engine evidence 与 rule fallback explain。读取失败会记录 Sentry warning 并以空 Memory 继续 | 闭环:讨论影响推荐,不只是推荐驱动讨论 |
-| M4 | **Memory 事件量增长的性能/存储评估**：讨论轮次比 mission/recommendation 事件频率高得多（每次对话最多 5 轮 × 每次都可能触发），需要评估 `business-memory-event-store` 的查询模式是否需要加索引或做事件压缩/归档策略 | 提前评估,避免生产量上来后才发现问题；不是本次必须实现归档,但必须有评估结论 |
+| M4 | ~~Memory 事件量增长的性能/存储评估~~ **已完成（2026-07-12）**：当前 Stage A（≥10 真实周活）即使按每人每活跃日 2 次、每次 5 轮讨论的偏宽松估算，也只有约 86 条 discussion Memory 行/日；现有索引尚可，暂不加索引或归档。达到明确阈值时再评估，详见下方记录 | 提前评估,避免生产量上来后才发现问题；不是本次必须实现归档,但必须有评估结论 |
+
+### M4 评估详情（2026-07-12）
+
+- **实际查询与现有索引**：`list(userId, tenantId, 100)` 按 `tenantId + actorId + targetType = 'business_memory'` 过滤、按 `createdAt DESC` 取最多 100 条；`appendOnce()` 在同一 scope 额外按 `action` 和 24 小时 `createdAt` 窗口取最多 25 条查重。`audit_logs` 当前只有 `(tenantId, createdAt)` 和 `(actorId)`；前者只能缩小 tenant 并帮助时间排序，后者只能缩小 actor，两者都没有 `targetType`，也不能完整覆盖这两个查询。
+- **量级判断**：按结果闸门的 10 个真实周活用户、每人每周活跃 5 天、每天 2 次讨论、每次首轮 1 个 `DISCUSSION_STARTED` 加最多 5 个 `DISCUSSION_TURN_COMPLETED` 计算：`10 × 5 × 2 × 6 = 600` 条/周，约 86 条/日；其他 Memory 事件只增加少量行。即使早期 Stage B 放大十倍，也约 860 条/日，远低于需要为该 audit-log 子集专门付出额外索引写入成本的量级。
+- **明确的重新评估触发器**：满足任一项即在下一次规划周期检查 `EXPLAIN (ANALYZE, BUFFERS)` 和 Query Performance/Index Advisor：(1) 任一 tenant 的 `targetType = 'business_memory'` 行数达到 **10,000**；(2) 全库该子集达到 **100,000** 行，或连续 7 天每天新增超过 **10,000** 条；(3) `list()` 或 `appendOnce()` 的 p95 超过 **100 ms**，连续 3 个日窗口出现。这样既覆盖单租户热点，也覆盖全局写入与真实延迟。
+- **索引结论**：现在不加 migration。索引会增加 `append()`（每个讨论轮次）的写入与存储开销，而且小表上的顺序扫描可能本来更快。触发后优先建立只覆盖 Memory 子集的 partial B-tree 索引：`CREATE INDEX CONCURRENTLY audit_logs_business_memory_list_idx ON audit_logs (tenant_id, actor_id, created_at DESC) WHERE target_type = 'business_memory';`；它直接服务 `list()`，并让低频的 `appendOnce()` 在同一用户的近时段内过滤 `action`。只有 profiler 证明查重本身仍是瓶颈时，才另加 `(tenant_id, actor_id, action, created_at DESC) WHERE target_type = 'business_memory'`，避免现在预建两个重复索引。
+- **归档/压缩选项（暂不实施）**：(a) 维持现状，直到上述阈值；(b) 在保留期（建议先评估 90 天）后，把同一 tenant/user/recommendation 的讨论轮次聚合为周度摘要，再按审计保留政策删除明细；(c) 把老明细冷存到独立 archive 表或对象存储，只保留可供 `BusinessContextProjection` 使用的摘要。因为 `audit_logs` 也服务其他审计用途，任何删除或移动都必须先确认审计/合规保留期，不能只为 Memory 单独删行。
 
 **M1-M3 安全网**：Memory 读取失败不能阻塞讨论功能——`getBusinessContext()` 调用失败时 discussion-service 必须能降级为"无记忆"模式继续工作（沿用现有 runtime adapter 的 fallback 哲学），并且 fallback 要 Sentry 可见（复用 OS 3.4 的 `runtimeFallbackLogger` 模式）。
 
