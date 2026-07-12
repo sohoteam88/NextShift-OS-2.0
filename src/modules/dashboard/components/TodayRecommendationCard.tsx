@@ -1,6 +1,6 @@
 'use client';
 
-import { createElement, useEffect, useState } from 'react';
+import { createElement, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, MessageCircle, Send, Sparkles } from 'lucide-react';
@@ -9,6 +9,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { cn } from '@/lib/cn';
+import {
+  fetchTelemetryUserId,
+  trackDiscussionTurnSent,
+  trackRecommendationClicked,
+  trackRecommendationViewed,
+} from '@/lib/telemetry/tracker';
 
 export type TodayRecommendation = {
   recommendation: {
@@ -422,12 +428,21 @@ export function TodayRecommendationCard() {
   const [discussionTurnsLimit, setDiscussionTurnsLimit] = useState(DEFAULT_DISCUSSION_TURNS_LIMIT);
   const [discussionSending, setDiscussionSending] = useState(false);
   const [discussionError, setDiscussionError] = useState<DiscussionError | null>(null);
+  const viewedRecommendationIds = useRef<Set<string>>(new Set());
   const recommendation = useQuery({
     queryKey: ['dashboard-recommendation'],
     queryFn: fetchTodayRecommendation,
     staleTime: 60_000,
     retry: false,
   });
+  const telemetryUser = useQuery({
+    queryKey: ['telemetry-user-id'],
+    queryFn: fetchTelemetryUserId,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+
+  const telemetryUserId = telemetryUser.data ?? null;
 
   useEffect(() => {
     let active = true;
@@ -458,6 +473,21 @@ export function TodayRecommendationCard() {
     };
   }, [recommendation.data]);
 
+  useEffect(() => {
+    const data = recommendation.data;
+    if (!data || !telemetryUserId) return;
+
+    const recommendationId = data.recommendation.id;
+    if (viewedRecommendationIds.current.has(recommendationId)) return;
+
+    viewedRecommendationIds.current.add(recommendationId);
+    trackRecommendationViewed(telemetryUserId, {
+      recommendationId,
+      source: data.source,
+      confidence: data.confidence,
+    });
+  }, [recommendation.data, telemetryUserId]);
+
   if (recommendation.isError) return null;
 
   async function handleDiscussionSubmit() {
@@ -473,6 +503,14 @@ export function TodayRecommendationCard() {
         setDiscussionAvailable(false);
         setDiscussionOpen(false);
         return;
+      }
+
+      const recommendationId = recommendation.data?.recommendation.id;
+      if (telemetryUserId && recommendationId) {
+        trackDiscussionTurnSent(telemetryUserId, {
+          recommendationId,
+          turnNumber: result.turnsUsed,
+        });
       }
 
       setDiscussionMessages((messages) => [
@@ -499,7 +537,16 @@ export function TodayRecommendationCard() {
     isLoading: recommendation.isLoading,
     expanded,
     onToggle: () => setExpanded((value) => !value),
-    onNavigate: (route) => router.push(route),
+    onNavigate: (route) => {
+      const data = recommendation.data;
+      if (telemetryUserId && data) {
+        trackRecommendationClicked(telemetryUserId, {
+          recommendationId: data.recommendation.id,
+          ctaTarget: route,
+        });
+      }
+      router.push(route);
+    },
     discussionAvailable,
     discussionOpen,
     discussionMessages,
