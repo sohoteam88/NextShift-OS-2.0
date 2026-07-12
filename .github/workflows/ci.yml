@@ -3,8 +3,18 @@ name: CI
 on:
   pull_request:
     branches: [main, develop, 'planning/**', 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - 'audit/**'
+      - '**/*.md'
+      - 'platform/status.md'
   push:
     branches: [main, develop, 'planning/**']
+    paths-ignore:
+      - 'docs/**'
+      - 'audit/**'
+      - '**/*.md'
+      - 'platform/status.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
