@@ -36,7 +36,7 @@ Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md) — 本版是 **Stag
 | M0 | **PostHog 事件设计与真实接线**：`analytics.init()` 目前在整个代码库里没有任何调用点——`src/lib/telemetry/tracker.ts` 已经写好了 client wrapper 和 5 个事件（signup/funnel_created/ai_content_generated/content_published/upgrade_clicked），但从未初始化，等于全部空转。补：(a) 在根 layout 或 providers 里调用一次 `analytics.init()`；(b) 新增 `recommendation_viewed`/`recommendation_clicked`/`discussion_turn_sent`/`weekly_active` 等事件；(c) 确认现有 5 个事件的调用点仍然有效 | Master Roadmap Stage A 结果闸门（≥10 真实周活用户）依赖这个数据地基，必须先做，否则闸门无法判定 |
 | M1 | ~~discussion 事件类型接入~~ **已完成（2026-07-12）**：新增 `DISCUSSION_STARTED` / `DISCUSSION_TURN_COMPLETED` / `DISCUSSION_ABANDONED` 类型；首轮写入 started，每轮成功回复后写入 completed，复用现有 `business-memory-event-store`。`DISCUSSION_ABANDONED` 暂无可靠客户端信号，保留类型但未触发 | 地基先行，不改变任何现有事件类型的语义 |
 | M2 | ~~讨论服务读取 Memory~~ **已完成（2026-07-12）**：生成 prompt 前读取 Memory，注入最近活动、执行模式和 recommendation accepted/ignored 摘要；读取或写入失败会记录 Sentry warning 并继续正常回复 | 这是用户能感知到的核心变化——AI 回复会体现"记性" |
-| M3 | **推荐引擎读取讨论记忆**：`decision-brain` / `recommendation-service.ts` 生成新推荐时,把 `DISCUSSION_*` 事件也纳入 `recommendedFocus` 的计算(比如用户反复在讨论里问同一类问题,说明这可能才是真正的焦点,即使当前推荐没有指向那里) | 闭环:讨论影响推荐,不只是推荐驱动讨论 |
+| M3 | ~~推荐引擎读取讨论记忆~~ **已完成（2026-07-12）**：同一 recommendation 在最近 30 条完成讨论事件中达到 ≥3 轮时，`recommendedFocus` 会显式提示反复讨论信号；Command Center 并行读取 Memory，将 focus 和 ignored IDs 加入 engine evidence 与 rule fallback explain。读取失败会记录 Sentry warning 并以空 Memory 继续 | 闭环:讨论影响推荐,不只是推荐驱动讨论 |
 | M4 | ~~Memory 事件量增长的性能/存储评估~~ **已完成（2026-07-12）**：当前 Stage A（≥10 真实周活）即使按每人每活跃日 2 次、每次 5 轮讨论的偏宽松估算，也只有约 86 条 discussion Memory 行/日；现有索引尚可，暂不加索引或归档。达到明确阈值时再评估，详见下方记录 | 提前评估,避免生产量上来后才发现问题；不是本次必须实现归档,但必须有评估结论 |
 
 ### M4 评估详情（2026-07-12）
