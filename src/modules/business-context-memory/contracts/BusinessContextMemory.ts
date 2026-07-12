@@ -7,7 +7,10 @@ export type BusinessMemoryEventType =
   | 'RECOMMENDATION_IGNORED'
   | 'READINESS_CHANGED'
   | 'AUTHORITY_CHANGED'
-  | 'COO_DECISION_MADE';
+  | 'COO_DECISION_MADE'
+  | 'DISCUSSION_STARTED'
+  | 'DISCUSSION_TURN_COMPLETED'
+  | 'DISCUSSION_ABANDONED';
 
 export type BusinessMemoryEvent = {
   id: string;

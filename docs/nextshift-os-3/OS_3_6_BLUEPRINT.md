@@ -34,8 +34,8 @@ Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md) — 本版是 **Stag
 | # | 任务 | 说明 |
 |---|---|---|
 | M0 | **PostHog 事件设计与真实接线**：`analytics.init()` 目前在整个代码库里没有任何调用点——`src/lib/telemetry/tracker.ts` 已经写好了 client wrapper 和 5 个事件（signup/funnel_created/ai_content_generated/content_published/upgrade_clicked），但从未初始化，等于全部空转。补：(a) 在根 layout 或 providers 里调用一次 `analytics.init()`；(b) 新增 `recommendation_viewed`/`recommendation_clicked`/`discussion_turn_sent`/`weekly_active` 等事件；(c) 确认现有 5 个事件的调用点仍然有效 | Master Roadmap Stage A 结果闸门（≥10 真实周活用户）依赖这个数据地基，必须先做，否则闸门无法判定 |
-| M1 | **discussion 事件类型接入**：`BusinessMemoryEventType` 新增 `DISCUSSION_STARTED` / `DISCUSSION_TURN_COMPLETED` / `DISCUSSION_ABANDONED`，`discussion-service.ts` 每轮对话结束后写入 `business-memory-event-store`（复用现有 store，不新建） | 地基先行，不改变任何现有事件类型的语义 |
-| M2 | **讨论服务读取 Memory**：`discussion-service.ts` 在生成 system prompt 前调用 `businessContextMemoryService.getBusinessContext()`，把 `recentActivities`、`executionPattern`、`recommendationMemory` 注入 decision context，让 AI 知道"这个用户最近在做什么、执行节奏怎样、之前接受/忽略过哪些建议" | 这是用户能感知到的核心变化——AI 回复会体现"记性" |
+| M1 | ~~discussion 事件类型接入~~ **已完成（2026-07-12）**：新增 `DISCUSSION_STARTED` / `DISCUSSION_TURN_COMPLETED` / `DISCUSSION_ABANDONED` 类型；首轮写入 started，每轮成功回复后写入 completed，复用现有 `business-memory-event-store`。`DISCUSSION_ABANDONED` 暂无可靠客户端信号，保留类型但未触发 | 地基先行，不改变任何现有事件类型的语义 |
+| M2 | ~~讨论服务读取 Memory~~ **已完成（2026-07-12）**：生成 prompt 前读取 Memory，注入最近活动、执行模式和 recommendation accepted/ignored 摘要；读取或写入失败会记录 Sentry warning 并继续正常回复 | 这是用户能感知到的核心变化——AI 回复会体现"记性" |
 | M3 | **推荐引擎读取讨论记忆**：`decision-brain` / `recommendation-service.ts` 生成新推荐时,把 `DISCUSSION_*` 事件也纳入 `recommendedFocus` 的计算(比如用户反复在讨论里问同一类问题,说明这可能才是真正的焦点,即使当前推荐没有指向那里) | 闭环:讨论影响推荐,不只是推荐驱动讨论 |
 | M4 | **Memory 事件量增长的性能/存储评估**：讨论轮次比 mission/recommendation 事件频率高得多（每次对话最多 5 轮 × 每次都可能触发），需要评估 `business-memory-event-store` 的查询模式是否需要加索引或做事件压缩/归档策略 | 提前评估,避免生产量上来后才发现问题；不是本次必须实现归档,但必须有评估结论 |
 
@@ -50,7 +50,7 @@ Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md) — 本版是 **Stag
 | H1 | ~~R-4 生产 admin 角色排查~~ **已完成（2026-07-12）**：`SELECT id, email, role FROM users WHERE role = 'admin'` → **0 rows returned**，生产库无 `admin` 角色用户 | 从 OS 3.4 Round 4 audit 拖到现在，排查结果确认零用户，无需数据迁移 |
 | H2 | ~~E-003 legacy `admin` 角色定义清理~~ **已完成（2026-07-12）**：生产查询返回 0 rows 后，已从活跃 auth routing 和角色白名单中移除 legacy `admin`，仅保留 `operator` 与 `platform_admin` | H1 结果已明确方向，无需等待决策 |
 | H3 | ~~D-001 限流 IP 信任关闭~~ **已完成（2026-07-12）**：生产自管 nginx 已确认 `/etc/nginx/sites-enabled/nextshiftos.com` 使用 `X-Real-IP $remote_addr`；5 个限流 route 统一改用共享 helper 信任 `x-real-ip`。生产缺少该 header 时返回 `unknown`，仅本地/测试环境 fallback 到 `x-forwarded-for` 首位 | 从 OS 3.3 拖到现在,生产已经跑了三个版本,拓扑应该已经确定 |
-| H4 | **UI 逃逸基线重新测量**：OS 3.4 定的 3,519 处 Tailwind 任意值基线三个版本没有更新过，跑一次统计，得到当前真实数字（不管涨了还是没涨，都要有数字而不是继续沿用旧基线） | 純測量任务,不做 UI 改动;为未来是否需要专项清理提供依据 |
+| H4 | ~~UI 逃逸基线重新测量~~ **已完成（2026-07-12）**：`node scripts/measure-ui-escape-baseline.mjs` 统计 `src/`：className 任意值 **4,260**、自造 Button **8**、自造 Card **42**；相较 OS 3.4 的 3,519 / 5 / 24 均为上升（旧口径未存档，按数量级比较）。脚本只统计 className 表达式中的方括号 utility token，以及排除 `src/components/ui` 后、实际渲染 button/card 样式的本地组件声明 | 純測量任务,不做 UI 改动;为未来是否需要专项清理提供依据 |
 
 ---
 

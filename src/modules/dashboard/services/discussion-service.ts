@@ -1,4 +1,5 @@
 import { AppError, Errors } from '@/lib/errors';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import {
   AI_DISCUSSION_FLAG,
   isRuntimeFlagEnabled,
@@ -7,6 +8,9 @@ import { getRouterForTenant } from '@/modules/ai/router';
 import type { TaskCategory } from '@/modules/ai/router/task-classifier';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
+import type { BusinessContextProjection } from '@/modules/business-context-memory/contracts/BusinessContextMemory';
+import { businessMemoryEventStore } from '@/modules/business-context-memory/services/business-memory-event-store';
+import { businessContextMemoryService } from '@/modules/business-context-memory/services/business-context-memory-service';
 import {
   DecisionContext,
   DecisionConversation,
@@ -61,6 +65,9 @@ export type DiscussionServiceDependencies = {
   getRouter?: typeof getRouterForTenant;
   enforceQuota?: typeof enforceQuota;
   logUsage?: typeof logAIUsage;
+  getBusinessContext?: typeof businessContextMemoryService.getBusinessContext;
+  appendMemoryEvent?: typeof businessMemoryEventStore.append;
+  logFallback?: typeof runtimeFallbackLogger.warn;
   now?: () => Date;
   isOffTopic?: (message: string) => boolean;
 };
@@ -116,11 +123,12 @@ export async function discussCommandCenterRecommendation(
     };
   }
 
+  const memory = await loadDiscussionMemory(user.id, tenantId, dependencies);
   await (dependencies.enforceQuota ?? enforceQuota)(tenantId);
   const router = await (dependencies.getRouter ?? getRouterForTenant)(tenantId);
   const routerResult = await router.generate(
     {
-      systemPrompt: buildSystemPrompt(recommendation, conversationSnapshot),
+      systemPrompt: buildSystemPrompt(recommendation, conversationSnapshot, memory),
       userMessage: buildUserPrompt({
         message,
         history,
@@ -139,6 +147,15 @@ export async function discussCommandCenterRecommendation(
     feature: 'ai_discussion',
     result: routerResult,
     routing: routerResult.routing,
+  });
+
+  await recordDiscussionMemoryEvents({
+    userId: user.id,
+    tenantId,
+    recommendation,
+    turnsUsed,
+    append: dependencies.appendMemoryEvent ?? businessMemoryEventStore.append,
+    logFallback: dependencies.logFallback ?? runtimeFallbackLogger.warn,
   });
 
   return {
@@ -251,6 +268,7 @@ function buildDiscussionDecisionContext(
 function buildSystemPrompt(
   recommendation: CommandCenterRecommendationResult,
   conversation?: ReturnType<DecisionConversation['toSnapshot']>,
+  memory?: BusinessContextProjection,
 ) {
   return [
     AI_DISCUSSION_SYSTEM_PROMPT,
@@ -268,7 +286,88 @@ function buildSystemPrompt(
     `- Type: ${conversation?.conversationType ?? 'Advisory'}`,
     `- Title: ${conversation?.title ?? `Discuss: ${recommendation.recommendation.title}`}`,
     `- Summary: ${conversation?.summary ?? recommendation.explain}`,
+    ...(memory ? ['', ...buildMemorySummary(memory)] : []),
   ].join('\n');
+}
+
+async function loadDiscussionMemory(
+  userId: string,
+  tenantId: string,
+  dependencies: DiscussionServiceDependencies,
+) {
+  try {
+    return await (dependencies.getBusinessContext ?? businessContextMemoryService.getBusinessContext)(userId, tenantId);
+  } catch (error) {
+    (dependencies.logFallback ?? runtimeFallbackLogger.warn)(
+      '[discussion-memory] continuing without business memory',
+      { userId, tenantId, error: errorMessage(error) },
+    );
+    return undefined;
+  }
+}
+
+async function recordDiscussionMemoryEvents(input: {
+  userId: string;
+  tenantId: string;
+  recommendation: CommandCenterRecommendationResult;
+  turnsUsed: number;
+  append: typeof businessMemoryEventStore.append;
+  logFallback: typeof runtimeFallbackLogger.warn;
+}) {
+  const metadata = {
+    recommendationId: input.recommendation.recommendation.id,
+    turnNumber: input.turnsUsed,
+    source: input.recommendation.source,
+  };
+  const events = [
+    ...(input.turnsUsed === 1 ? [{
+      type: 'DISCUSSION_STARTED' as const,
+      title: `Discussion started: ${input.recommendation.recommendation.title}`,
+      summary: 'Started a Command Center recommendation discussion.',
+    }] : []),
+    {
+      type: 'DISCUSSION_TURN_COMPLETED' as const,
+      title: `Discussion turn completed: ${input.recommendation.recommendation.title}`,
+      summary: 'Completed a Command Center recommendation discussion turn.',
+    },
+  ];
+
+  for (const event of events) {
+    try {
+      await input.append({
+        ...event,
+        tenantId: input.tenantId,
+        userId: input.userId,
+        referenceId: input.recommendation.recommendation.id,
+        metadata,
+      });
+    } catch (error) {
+      input.logFallback('[discussion-memory] failed to record discussion event', {
+        userId: input.userId,
+        tenantId: input.tenantId,
+        eventType: event.type,
+        error: errorMessage(error),
+      });
+    }
+  }
+}
+
+function buildMemorySummary(memory: BusinessContextProjection) {
+  const recentActivities = memory.recentActivities.slice(0, 5);
+  const recentTitles = recentActivities.slice(0, 3).map((activity) => activity.title).join('; ') || 'none recorded';
+  const accepted = memory.recommendationMemory.acceptedIds.slice(0, 3).join(', ') || 'none';
+  const ignored = memory.recommendationMemory.ignoredIds.slice(0, 3).join(', ') || 'none';
+
+  return [
+    'Relevant business memory (use as supporting context, not as new facts):',
+    `- Activity level: ${memory.executionPattern.activityLevel}; completion velocity: ${memory.executionPattern.completionVelocity}; consistency: ${memory.executionPattern.consistency}.`,
+    `- Recent activity: ${recentTitles}.`,
+    `- Recommendation response pattern: ${memory.executionPattern.recommendationResponse}; accepted IDs: ${accepted}; ignored IDs: ${ignored}.`,
+  ];
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'unknown error';
 }
 
 function buildUserPrompt(input: {
