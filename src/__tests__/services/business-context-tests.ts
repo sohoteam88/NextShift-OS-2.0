@@ -88,4 +88,26 @@ describe('AI-002 business context memory projection', () => {
       consistency: 'medium',
     });
   });
+
+  it('surfaces repeated discussion attention alongside an active blocker', () => {
+    const repeatedDiscussion = Array.from({ length: 3 }, (_, index) => ({
+      id: `discussion_${index}`,
+      type: 'DISCUSSION_TURN_COMPLETED' as const,
+      tenantId: 'tenant_1',
+      userId: 'user_1',
+      occurredAt: `2026-06-20T0${index}:00:00.000Z`,
+      title: 'Discussion turn completed: Convert the next qualified lead',
+      summary: 'User discussed the recommendation.',
+      referenceId: 'command-center-engine-next-action',
+    }));
+
+    const projection = buildBusinessContextProjection({
+      events: [...repeatedDiscussion, ...events],
+      businessBottlenecks: [{ title: 'Build the funnel', domain: 'funnel' }],
+      currentMissionTitle: '创建第一个引流磁铁',
+    });
+
+    expect(projection.recommendedFocus).toContain('先处理：漏斗页面');
+    expect(projection.recommendedFocus).toContain('你最近多次讨论过《Convert the next qualified lead》');
+  });
 });

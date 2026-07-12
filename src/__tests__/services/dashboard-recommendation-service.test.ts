@@ -10,6 +10,7 @@ import {
   getCommandCenterRecommendation,
   type CommandCenterRecommendationDependencies,
 } from '@/modules/dashboard/services/recommendation-service';
+import { buildBusinessContextProjection } from '@/modules/business-context-memory/services/business-memory-projection';
 
 const ORIGINAL_FLAG = process.env.NEXT_PUBLIC_ENABLE_COMMAND_CENTER;
 
@@ -151,6 +152,12 @@ describe('Command Center recommendation service', () => {
         warn: expect.any(Function),
       }),
     });
+    expect(loaders.getBusinessContext).toHaveBeenCalledWith('user_1', 'tenant_1');
+    const recommendationContext = generate.mock.calls[0][0] as DecisionContext;
+    expect(recommendationContext.toSnapshot().evidence).toContainEqual(expect.objectContaining({
+      source: 'command-center-business-memory',
+      summary: expect.stringContaining('Convert the next qualified lead'),
+    }));
     expect(result).toEqual({
       recommendation: {
         id: 'recommendation-1',
@@ -165,6 +172,51 @@ describe('Command Center recommendation service', () => {
       explain: 'Mission, business-state, revenue, and analytics signals agree on conversion.',
       source: 'engine',
     });
+  });
+
+  it('makes three completed discussion turns observable in the next default-engine explanation', async () => {
+    setCommandCenterFlag('true');
+    const result = await getCommandCenterRecommendation(user(), createDependencies({
+      loaders: {
+        getBusinessContext: vi.fn().mockResolvedValue(repeatedDiscussionMemory()),
+      },
+    }));
+
+    expect(result?.source).toBe('engine');
+    expect(result?.explain).toContain('Business memory focus: 你最近多次讨论过《Convert the next qualified lead》，可能才是当前真正的焦点.');
+  });
+
+  it('continues with empty memory when the memory loader fails', async () => {
+    setCommandCenterFlag('true');
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const result = await getCommandCenterRecommendation(user(), createDependencies({
+      loaders: {
+        getBusinessContext: vi.fn().mockRejectedValue(new Error('memory unavailable')),
+      },
+    }));
+
+    expect(result?.source).toBe('engine');
+    expect(warning).toHaveBeenCalledWith(
+      '[command-center] continuing without business memory',
+      expect.objectContaining({ error: 'memory unavailable' }),
+    );
+  });
+
+  it('keeps the rule fallback available while surfacing repeated discussion attention', async () => {
+    setCommandCenterFlag('true');
+    const generate = vi.fn();
+    const dependencies = createDependencies({
+      recommendationEngine: { generate },
+      loaders: {
+        getCurrentMission: vi.fn().mockResolvedValue(mission({ aiInterview: true })),
+        getBusinessState: vi.fn().mockResolvedValue(businessState({ missingInterview: true })),
+      },
+    });
+
+    const result = await getCommandCenterRecommendation(user(), dependencies);
+
+    expect(generate).not.toHaveBeenCalled();
+    expect(result?.explain).toContain('你最近多次讨论过《Convert the next qualified lead》');
   });
 
   it('falls back to a rule-based recommendation for cold-start AI Interview context', async () => {
@@ -208,6 +260,7 @@ function createDependencies(
     getBusinessState: vi.fn().mockResolvedValue(businessState()),
     resolveAnalytics: vi.fn().mockResolvedValue(analyticsOutput()),
     resolveRevenue: vi.fn().mockReturnValue(revenueOutput()),
+    getBusinessContext: vi.fn().mockResolvedValue(memory()),
     ...overrides.loaders,
   };
 
@@ -215,6 +268,43 @@ function createDependencies(
     ...overrides,
     loaders,
   };
+}
+
+function memory() {
+  return {
+    recentActivities: [],
+    currentFocus: 'Convert the next qualified lead',
+    blockedAreas: [],
+    completedMilestones: [],
+    executionPattern: {
+      activityLevel: 'active',
+      completionVelocity: 'steady',
+      recommendationResponse: 'mixed',
+      consistency: 'medium',
+    },
+    recommendedFocus: '你最近多次讨论过《Convert the next qualified lead》，可能才是当前真正的焦点',
+    recommendationMemory: {
+      recentlyIssuedIds: [],
+      acceptedIds: [],
+      ignoredIds: ['ignored-recommendation'],
+    },
+  } as const;
+}
+
+function repeatedDiscussionMemory() {
+  return buildBusinessContextProjection({
+    events: Array.from({ length: 3 }, (_, index) => ({
+      id: `discussion_${index}`,
+      type: 'DISCUSSION_TURN_COMPLETED' as const,
+      tenantId: 'tenant_1',
+      userId: 'user_1',
+      occurredAt: `2026-07-1${index}T00:00:00.000Z`,
+      title: 'Discussion turn completed: Convert the next qualified lead',
+      summary: 'User discussed the recommendation.',
+      referenceId: 'command-center-engine-next-action',
+    })),
+    currentMissionTitle: 'Schedule today\'s content program',
+  });
 }
 
 function mission(input: { aiInterview?: boolean } = {}) {
