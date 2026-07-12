@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getRequestIp } from '@/lib/request-ip';
 
 const TrackSchema = z.object({
   event: z.enum(['view', 'whatsapp_click', 'form_start']),
@@ -12,7 +13,7 @@ async function getSlug(context: { params: Promise<Record<string, string>> | Reco
 }
 
 export async function POST(request: NextRequest, context: { params: Promise<Record<string, string>> }) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+  const ip = getRequestIp(request.headers);
   const slug = await getSlug(context);
 
   let body: unknown;

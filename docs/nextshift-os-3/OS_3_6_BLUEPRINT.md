@@ -49,7 +49,7 @@ Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md) — 本版是 **Stag
 |---|---|---|
 | H1 | ~~R-4 生产 admin 角色排查~~ **已完成（2026-07-12）**：`SELECT id, email, role FROM users WHERE role = 'admin'` → **0 rows returned**，生产库无 `admin` 角色用户 | 从 OS 3.4 Round 4 audit 拖到现在，排查结果确认零用户，无需数据迁移 |
 | H2 | ~~E-003 legacy `admin` 角色定义清理~~ **已完成（2026-07-12）**：生产查询返回 0 rows 后，已从活跃 auth routing 和角色白名单中移除 legacy `admin`，仅保留 `operator` 与 `platform_admin` | H1 结果已明确方向，无需等待决策 |
-| H3 | **D-001 限流 IP 信任关闭**：确认生产拓扑（Cloudflare 还是自管 nginx），把 rate-limit 的 IP 提取从 `x-forwarded-for` 首位改成对应的可信 header（Cloudflare 用 `cf-connecting-ip`；自管 nginx 确认 `proxy_set_header` 的 replace 模式） | 从 OS 3.3 拖到现在,生产已经跑了三个版本,拓扑应该已经确定 |
+| H3 | ~~D-001 限流 IP 信任关闭~~ **已完成（2026-07-12）**：生产自管 nginx 已确认 `/etc/nginx/sites-enabled/nextshiftos.com` 使用 `X-Real-IP $remote_addr`；5 个限流 route 统一改用共享 helper 信任 `x-real-ip`。生产缺少该 header 时返回 `unknown`，仅本地/测试环境 fallback 到 `x-forwarded-for` 首位 | 从 OS 3.3 拖到现在,生产已经跑了三个版本,拓扑应该已经确定 |
 | H4 | **UI 逃逸基线重新测量**：OS 3.4 定的 3,519 处 Tailwind 任意值基线三个版本没有更新过，跑一次统计，得到当前真实数字（不管涨了还是没涨，都要有数字而不是继续沿用旧基线） | 純測量任务,不做 UI 改动;为未来是否需要专项清理提供依据 |
 
 ---
