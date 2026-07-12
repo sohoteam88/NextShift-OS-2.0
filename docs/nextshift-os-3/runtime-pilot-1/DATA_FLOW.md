@@ -94,7 +94,7 @@ The user-visible resolution must remain equivalent in both branches.
 ## Runtime-Enabled Sequence
 
 1. UI passes `route`, `intent`, and `source` to the adapter.
-2. Adapter checks `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE`.
+2. Adapter checks `retiredRevenueRuntimeFlag`.
 3. Adapter creates a capability-scoped runtime context.
 4. Adapter creates a revenue capability identity.
 5. Adapter calls the existing `resolveRevenueDriverIntent` function.

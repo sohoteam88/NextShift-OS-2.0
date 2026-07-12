@@ -28,8 +28,8 @@
 | File | Type |
 | ---- | ---- |
 | `src/lib/runtime-flags.ts` | New — C4 flag registry |
-| `src/modules/revenue-drivers/runtime/runtime-revenue-flag.ts` | Modified — delegates to registry |
-| `src/modules/analytics/runtime/runtime-analytics-flag.ts` | Modified — delegates to registry |
+| `src/modules/revenue-drivers/runtime/retired-revenue-flag-helper.ts` | Modified — delegates to registry |
+| `src/modules/analytics/runtime/retired-analytics-flag-helper.ts` | Modified — delegates to registry |
 | `next.config.mjs` | Modified — C5 tightened image remotePatterns |
 | `src/app/api/v1/tenant/check-slug/route.ts` | Modified — C5 rate limiting |
 | `src/app/api/v1/public/member/invite/[code]/route.ts` | Modified — C5 rate limiting |
@@ -124,15 +124,15 @@ Before PR #21, both flag helpers defined the comparison inline:
 
 ```ts
 // Before (Pilot 1 / Pilot 2 pattern)
-return env[RUNTIME_REVENUE_FLAG] === 'true';
+return env[retiredRevenueFlagConstant] === 'true';
 ```
 
 After PR #21, both helpers delegate to the registry:
 
 ```ts
-// runtime-revenue-flag.ts
-export function isRuntimeRevenueEnabled(env: NodeJS.ProcessEnv = process.env) {
-  return isRuntimeFlagEnabled(RUNTIME_REVENUE_FLAG, env);
+// retired-revenue-flag-helper.ts
+export function retiredRevenueFlagHelper(env: NodeJS.ProcessEnv = process.env) {
+  return isRuntimeFlagEnabled(retiredRevenueFlagConstant, env);
 }
 
 // src/lib/runtime-flags.ts
@@ -154,13 +154,13 @@ Round 1 test files (`analytics-runtime-adapter.test.ts`, `analytics-runtime-call
 ```ts
 export const RUNTIME_FLAGS = {
   REVENUE: {
-    name: 'NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE',
+    name: 'retiredRevenueRuntimeFlag',
     module: 'revenue-drivers',
     introducedAt: '2026-07-09',
     removalCondition: 'Remove after the Revenue Runtime Adapter becomes the default path...',
   },
   ANALYTICS: {
-    name: 'NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS',
+    name: 'retiredAnalyticsRuntimeFlag',
     module: 'analytics',
     introducedAt: '2026-07-09',
     removalCondition: 'Remove after the Analytics Runtime Adapter becomes the default path...',
@@ -295,17 +295,17 @@ Both pilot adapters' `isEnabled` implementations route through the real flag hel
 **Revenue (`RevenueRuntimeAdapter.ts:90-91`):**
 ```ts
 isEnabled: (_input, _resolution, dependencies) =>
-  dependencies.isEnabled?.() ?? isRuntimeRevenueEnabled(),
+  dependencies.isEnabled?.() ?? retiredRevenueFlagHelper(),
 ```
-- Production path: `isRuntimeRevenueEnabled()` → `isRuntimeFlagEnabled(RUNTIME_REVENUE_FLAG, env)` → `env['NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE'] === 'true'` ✓
+- Production path: `retiredRevenueFlagHelper()` → `isRuntimeFlagEnabled(retiredRevenueFlagConstant, env)` → `env['retiredRevenueRuntimeFlag'] === 'true'` ✓
 - Test injection path: `dependencies.isEnabled()` — allows overriding without touching env ✓
 
 **Analytics (`AnalyticsRuntimeAdapter.ts:99-100`):**
 ```ts
 isEnabled: (_input, _projection, dependencies) =>
-  dependencies.isEnabled?.() ?? isRuntimeAnalyticsEnabled(),
+  dependencies.isEnabled?.() ?? retiredAnalyticsFlagHelper(),
 ```
-- Production path: `isRuntimeAnalyticsEnabled()` → `isRuntimeFlagEnabled(RUNTIME_ANALYTICS_FLAG, env)` → `env['NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS'] === 'true'` ✓
+- Production path: `retiredAnalyticsFlagHelper()` → `isRuntimeFlagEnabled(retiredAnalyticsFlagConstant, env)` → `env['retiredAnalyticsRuntimeFlag'] === 'true'` ✓
 - Test injection path: `dependencies.isEnabled()` — no real flag check needed in tests ✓
 
 **C-001 closed. Both adapters call the real registry-backed flag helper in the production path, with clean DI override for testing.**

@@ -25,8 +25,6 @@ const prismaMocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/prisma', () => ({ default: prismaMocks }));
 
-const ORIGINAL_FLAG = process.env.NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS;
-
 const sampleProjection: AnalyticsProjection = {
   businessStateVersion: 'BusinessStateAssembler:lead_generation:64',
   journeyVersion: 'JourneyStateAssembler:lead_generation:57',
@@ -51,15 +49,6 @@ const sampleProjection: AnalyticsProjection = {
     recommendationCount: 1,
   },
 };
-
-function setRuntimeAnalyticsFlag(value: string | undefined) {
-  if (value === undefined) {
-    delete process.env.NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS;
-    return;
-  }
-
-  process.env.NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS = value;
-}
 
 function arrangeAnalyticsData() {
   prismaMocks.content.count.mockResolvedValue(2);
@@ -93,47 +82,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  setRuntimeAnalyticsFlag(ORIGINAL_FLAG);
   vi.restoreAllMocks();
 });
 
 describe('Analytics center runtime callsite', () => {
-  it('keeps the legacy service response shape when the runtime analytics flag is explicitly OFF', async () => {
-    setRuntimeAnalyticsFlag('false');
-    const runtimeMetadata: AnalyticsRuntimeMetadata[] = [];
-    const runtimeResolver = createRuntimeResolver();
-
-    const center = await analyticsService.getAnalyticsCenter('user_1', 'tenant_1', undefined, {
-      resolveRuntimeProjection: runtimeResolver.resolveRuntimeProjection,
-      onRuntimeResolved: (runtime) => runtimeMetadata.push(runtime),
-    });
-
-    expect(runtimeResolver.getProjection).toHaveBeenCalledWith('user_1', 'tenant_1');
-    expect(center.kpi).toMatchObject({
-      totalPosts: 2,
-      totalVideos: 1,
-      totalLeads: 10,
-      totalConversions: 2,
-      totalRevenue: 1500,
-      conversionRate: 20,
-    });
-    expect(center.health.overallScore).toBe(64);
-    expect(center.actions[0]).toMatchObject({
-      action: 'Launch traffic',
-      impact: 'Advance Journey State progress',
-    });
-    expect(center).not.toHaveProperty('runtime');
-    expect(runtimeMetadata).toEqual([{
-      enabled: false,
-      mode: 'legacy',
-      source: 'analytics-center',
-      fallback: false,
-      confidence: 'derived',
-    }]);
-  });
-
-  it('routes through the Analytics Runtime Adapter and produces runtime metadata when the flag is ON', async () => {
-    setRuntimeAnalyticsFlag(undefined);
+  it('routes through the Analytics Runtime Adapter and preserves the service response shape', async () => {
     const runtimeMetadata: AnalyticsRuntimeMetadata[] = [];
     const runtimeResolver = createRuntimeResolver();
 

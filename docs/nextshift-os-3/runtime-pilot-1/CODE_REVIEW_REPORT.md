@@ -20,7 +20,7 @@
 
 | File | Type | Lines |
 | ---- | ---- | ------ |
-| `src/modules/revenue-drivers/runtime/runtime-revenue-flag.ts` | New — flag isolation | 7 |
+| `src/modules/revenue-drivers/runtime/retired-revenue-flag-helper.ts` | New — flag isolation | 7 |
 | `src/modules/revenue-drivers/runtime/RevenueRuntimeAdapter.ts` | New — adapter | 291 |
 | `src/modules/revenue-drivers/runtime/index.ts` | New — barrel export | 2 |
 | `src/modules/revenue-drivers/components/RevenueDriverIntentResolver.tsx` | Modified — component integration | +5 / -2 |
@@ -39,13 +39,13 @@
 
 **PASS**
 
-`runtime-revenue-flag.ts`:
+`retired-revenue-flag-helper.ts`:
 
 ```ts
-export const RUNTIME_REVENUE_FLAG = 'NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE';
+export const retiredRevenueFlagConstant = 'retiredRevenueRuntimeFlag';
 
-export function isRuntimeRevenueEnabled(env: NodeJS.ProcessEnv = process.env) {
-  return env[RUNTIME_REVENUE_FLAG] === 'true';
+export function retiredRevenueFlagHelper(env: NodeJS.ProcessEnv = process.env) {
+  return env[retiredRevenueFlagConstant] === 'true';
 }
 ```
 
@@ -66,7 +66,7 @@ The adapter resolves legacy intent as its very first step, before inspecting the
 ```ts
 const resolution = resolveIntent({ route: input.route, intent: input.intent });
 const confidence = confidenceForResolution(resolution);
-const enabled = dependencies.isEnabled?.() ?? isRuntimeRevenueEnabled();
+const enabled = dependencies.isEnabled?.() ?? retiredRevenueFlagHelper();
 
 if (!enabled) {
   return {
@@ -141,7 +141,7 @@ No partial or `undefined` fields. ✓
 Imports in `RevenueRuntimeAdapter.ts` are scoped to:
 - `packages/runtime` — runtime primitives only
 - `../constants/revenue-driver-intents` — existing revenue driver constants
-- `./runtime-revenue-flag` — local flag helper
+- `./retired-revenue-flag-helper` — local flag helper
 
 No Business Brain, Decision Brain, Dashboard Projection, Prisma, env file, CI, or deployment integration introduced. ✓
 
@@ -274,7 +274,7 @@ See A-004 for advisory on `tenantId`/`userId` in internal runtime context metada
 Three-file layout is clean and replicable:
 
 ```
-runtime-revenue-flag.ts       flag isolation (1 exported function, injected env)
+retired-revenue-flag-helper.ts       flag isolation (1 exported function, injected env)
 RevenueRuntimeAdapter.ts      adapter logic (DI via AdapterDependencies, pure helpers)
 index.ts                      barrel export
 ```

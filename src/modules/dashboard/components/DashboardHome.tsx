@@ -16,10 +16,10 @@ function routeOrFallback(route?: string) {
 function DashboardHomeSkeleton() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
-      <div className="h-[360px] animate-pulse rounded-[var(--radius-lg)] border border-blue-100 bg-blue-50" />
+      <div className="h-96 animate-pulse rounded-lg border border-border bg-surface" />
       <div className="grid gap-5 lg:grid-cols-2">
-        <div className="h-80 animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white" />
-        <div className="h-80 animate-pulse rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white" />
+        <div className="h-80 animate-pulse rounded-lg border border-border bg-white" />
+        <div className="h-80 animate-pulse rounded-lg border border-border bg-white" />
       </div>
     </div>
   );
@@ -28,15 +28,15 @@ function DashboardHomeSkeleton() {
 function MissionEngineFailure({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="mx-auto max-w-5xl pb-8">
-      <section className="rounded-[var(--radius-lg)] border border-red-200 bg-white p-6 shadow-sm">
+      <section className="rounded-lg border border-border bg-white p-6 shadow-sm">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold text-red-700">
+          <p className="text-xs font-semibold text-foreground">
             Next step unavailable
           </p>
-          <h1 className="mt-2 text-2xl font-bold text-[var(--color-text)]">
+          <h1 className="mt-2 text-2xl font-bold text-foreground">
             暂时无法生成你的下一步。
           </h1>
-          <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-muted)]">
+          <p className="mt-3 text-sm leading-relaxed text-muted">
             我们无法判断你的下一步最佳行动。你可以先进入 Journey
             页面继续手动完成任务。
           </p>
@@ -44,14 +44,14 @@ function MissionEngineFailure({ onRetry }: { onRetry: () => void }) {
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Link
             href="/journey"
-            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-5 text-sm font-semibold text-white hover:bg-primary/90"
           >
             打开 Journey
           </Link>
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+            className="inline-flex h-11 items-center justify-center rounded-md border border-border bg-white px-5 text-sm font-semibold text-foreground hover:bg-surface"
           >
             重试
           </button>
@@ -80,6 +80,7 @@ export function DashboardHome() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
+      <TodayRecommendationCard />
       <AICommandCard
         completedItems={data.missionControl.completedItems}
         currentGap={data.missionControl.currentGap}
@@ -104,7 +105,6 @@ export function DashboardHome() {
         executeRoute={executeRoute}
         primaryActionLabel={data.missionControl.ctaLabel}
       />
-      <TodayRecommendationCard />
       <div className="grid gap-5 lg:grid-cols-2">
         <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />
         <MomentumCard

@@ -116,7 +116,7 @@ afterEach(() => {
 
 describe('Mission engine runtime callsite', () => {
   it('keeps getCurrentMission response shape unchanged when the runtime mission flag is OFF', async () => {
-    setRuntimeMissionFlag(undefined);
+    setRuntimeMissionFlag('false');
     const runtimeMetadata: MissionRuntimeMetadata[] = [];
     const runtimeResolver = createRuntimeResolver();
 

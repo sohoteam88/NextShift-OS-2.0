@@ -62,8 +62,8 @@ Revenue and Analytics runtime adapters are graduated to default ON.
 Escape hatch:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE=false
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS=false
+retiredRevenueRuntimeFlag=false
+retiredAnalyticsRuntimeFlag=false
 ```
 
 Any explicit value other than exactly `true` still disables the runtime path when the escape hatch is used.

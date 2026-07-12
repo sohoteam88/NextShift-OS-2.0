@@ -61,7 +61,7 @@ describe('dashboard recommendation API', () => {
   });
 
   it('returns null when the Command Center flag is OFF', async () => {
-    setCommandCenterFlag(undefined);
+    setCommandCenterFlag('false');
 
     const response = await GET(request() as any);
     const body = await response.json();

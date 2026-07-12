@@ -204,7 +204,7 @@ scope: capability
 Flag:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS
+retiredAnalyticsRuntimeFlag
 ```
 
 Default:
@@ -344,7 +344,7 @@ src/__tests__/services/analytics-projection-adapter.test.ts
 Primary rollback:
 
 ```text
-Set NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS to OFF.
+Set retiredAnalyticsRuntimeFlag to OFF.
 ```
 
 Secondary rollback:

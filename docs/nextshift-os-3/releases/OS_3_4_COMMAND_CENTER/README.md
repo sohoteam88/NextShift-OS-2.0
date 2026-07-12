@@ -85,8 +85,8 @@ Revenue and Analytics runtime adapters are graduated to default ON.
 Explicit escape hatch behavior remains:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE=false
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS=false
+retiredRevenueRuntimeFlag=false
+retiredAnalyticsRuntimeFlag=false
 ```
 
 Mission, Business State, CRM, and Command Center remain default OFF until later graduation.

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import prisma from '@/lib/prisma';
 import { withPrismaRetry } from '@/lib/prisma-retry';
@@ -12,7 +13,11 @@ export type AuthUser = {
   status: 'active' | 'pending' | 'suspended';
 };
 
-export async function getAuthUser(): Promise<AuthUser | null> {
+const cacheAuthResolver = (React as typeof React & {
+  cache?: <T extends (...args: never[]) => unknown>(fn: T) => T;
+}).cache ?? (<T extends (...args: never[]) => unknown>(fn: T) => fn);
+
+export const getAuthUser = cacheAuthResolver(async function getAuthUser(): Promise<AuthUser | null> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -46,7 +51,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     preferredLanguage: dbUser.languagePreference,
     status: dbUser.status as AuthUser['status'],
   };
-}
+});
 
 export function requireRole(userRole: string, allowedRoles: string[]): void {
   if (!allowedRoles.includes(userRole)) {

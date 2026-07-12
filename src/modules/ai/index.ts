@@ -32,7 +32,13 @@ export { agentMemoryService } from './services/agent-memory';
 export { orchestrateForGoal } from './services/workforce-orchestrator';
 
 // ── Usage & quota ────────────────────────────────────────────────────────────
-export { checkQuota, enforceQuota } from './usage/quota';
+export {
+  DEFAULT_DAILY_TENANT_CALL_LIMIT,
+  checkDailyTenantQuota,
+  checkQuota,
+  enforceDailyTenantQuota,
+  enforceQuota,
+} from './usage/quota';
 export { logAIUsage, getUsageStats } from './usage/tracker';
 
 // ── Policies ─────────────────────────────────────────────────────────────────

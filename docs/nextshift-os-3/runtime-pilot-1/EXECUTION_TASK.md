@@ -41,7 +41,7 @@ Implement the Revenue Drivers Runtime Capability Adapter behind a default-OFF fe
 Feature flag:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE
+retiredRevenueRuntimeFlag
 ```
 
 Default:
@@ -60,7 +60,7 @@ The future implementation should be limited to:
 
 - `src/modules/revenue-drivers/runtime/RevenueRuntimeAdapter.ts`
 - `src/modules/revenue-drivers/runtime/index.ts`
-- `src/modules/revenue-drivers/runtime/runtime-revenue-flag.ts`
+- `src/modules/revenue-drivers/runtime/retired-revenue-flag-helper.ts`
 - `src/modules/revenue-drivers/components/RevenueDriverIntentResolver.tsx`
 - `src/__tests__/services/revenue-runtime-adapter.test.ts`
 - `src/__tests__/services/revenue-drivers.test.ts` only if regression expectations must be expanded

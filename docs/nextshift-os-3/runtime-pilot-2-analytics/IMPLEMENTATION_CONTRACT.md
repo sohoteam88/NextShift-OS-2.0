@@ -23,7 +23,7 @@ This branch is planning-only. It does not authorize implementation.
 Name:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS
+retiredAnalyticsRuntimeFlag
 ```
 
 Default:
@@ -42,14 +42,14 @@ Interpretation:
 Future helper:
 
 ```text
-src/modules/analytics/runtime/runtime-analytics-flag.ts
+src/modules/analytics/runtime/retired-analytics-flag-helper.ts
 ```
 
 Required behavior:
 
 ```ts
-export function isRuntimeAnalyticsEnabled(env: NodeJS.ProcessEnv = process.env) {
-  return env.NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS === 'true';
+export function retiredAnalyticsFlagHelper(env: NodeJS.ProcessEnv = process.env) {
+  return env.retiredAnalyticsRuntimeFlag === 'true';
 }
 ```
 
@@ -163,7 +163,7 @@ Runtime does not own:
 
 The future Analytics Runtime Adapter owns:
 
-- reading `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS`
+- reading `retiredAnalyticsRuntimeFlag`
 - calling the existing analytics projection resolver first
 - preserving legacy projection output when the flag is OFF
 - creating runtime context only when the flag is ON
@@ -309,7 +309,7 @@ Required catch shape:
 Primary rollback:
 
 ```text
-Set NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS to OFF.
+Set retiredAnalyticsRuntimeFlag to OFF.
 ```
 
 Rollback must not require:

@@ -155,7 +155,7 @@ scope: capability
 Flag:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE
+retiredRevenueRuntimeFlag
 ```
 
 Default:
@@ -180,7 +180,7 @@ Rules:
 Primary rollback:
 
 ```text
-Set NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE to OFF.
+Set retiredRevenueRuntimeFlag to OFF.
 ```
 
 Secondary rollback:

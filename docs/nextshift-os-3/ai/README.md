@@ -19,6 +19,7 @@ This framework complements the Engineering Standards and references their canoni
 ## Documents
 
 - [AI Engineering Foundation](AI_ENGINEERING_FOUNDATION.md)
+- [AI Router Readiness Audit 2026-07-11](AI_ROUTER_READINESS_2026-07-11.md)
 - [NextShift Context](NEXTSHIFT_CONTEXT.md)
 - [AI Session Starter](AI_SESSION_STARTER.md)
 - [NextShift Session Kit v1.0](session-kit/01_NEXTSHIFT_NEW_CHAT_STARTER.md)

@@ -70,14 +70,14 @@ Current flags:
 
 | Flag | Module | Default |
 | --- | --- | --- |
-| `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` | `revenue-drivers` | OFF unless exactly `"true"` |
-| `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` | `analytics` | OFF unless exactly `"true"` |
+| `retiredRevenueRuntimeFlag` | `revenue-drivers` | OFF unless exactly `"true"` |
+| `retiredAnalyticsRuntimeFlag` | `analytics` | OFF unless exactly `"true"` |
 
 Flag usage:
 
 ```text
-NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE=true
-NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS=true
+retiredRevenueRuntimeFlag=true
+retiredAnalyticsRuntimeFlag=true
 ```
 
 Any value other than exactly `true` keeps the runtime path OFF.

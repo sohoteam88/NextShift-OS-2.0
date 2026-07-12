@@ -115,7 +115,7 @@ afterEach(() => {
 
 describe('MissionRuntimeAdapter', () => {
   it('keeps the legacy path when the runtime mission flag is OFF', async () => {
-    setRuntimeMissionFlag(undefined);
+    setRuntimeMissionFlag('false');
     const { authority, resolveAuthority } = createAuthorityResolver();
 
     const output = await resolveMissionRuntimeAuthority({
@@ -137,6 +137,31 @@ describe('MissionRuntimeAdapter', () => {
       fallback: false,
       confidence: 'derived',
     });
+  });
+
+  it('defaults to the runtime path when the runtime mission flag is missing', async () => {
+    setRuntimeMissionFlag(undefined);
+    const { authority, resolveAuthority } = createAuthorityResolver();
+
+    const output = await resolveMissionRuntimeAuthority({
+      userId: 'user_1',
+      tenantId: 'tenant_1',
+      source: 'dashboard',
+    }, {
+      resolveAuthority,
+    });
+
+    expect(output.authority).toBe(authority);
+    expect(output.runtime).toMatchObject({
+      enabled: true,
+      mode: 'runtime',
+      source: 'dashboard',
+      fallback: false,
+      confidence: 'derived',
+      capabilityId: 'mission.authority.resolve',
+    });
+    expect(output.runtime.contextId).toEqual(expect.any(String));
+    expect(output.runtime.correlationId).toEqual(expect.any(String));
   });
 
   it.each(['false', 'FALSE', 'True', '1', '0', ''])(

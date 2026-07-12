@@ -181,8 +181,8 @@ export function isRuntimeFlagEnabledByDefault(
 
 | Flag | Function | Default after PR #34 |
 | --- | --- | --- |
-| `RUNTIME_REVENUE_FLAG` | `isRuntimeFlagEnabledByDefault` | **ON** (graduated) |
-| `RUNTIME_ANALYTICS_FLAG` | `isRuntimeFlagEnabledByDefault` | **ON** (graduated) |
+| `retiredRevenueFlagConstant` | `isRuntimeFlagEnabledByDefault` | **ON** (graduated) |
+| `retiredAnalyticsFlagConstant` | `isRuntimeFlagEnabledByDefault` | **ON** (graduated) |
 | `RUNTIME_MISSION_FLAG` | `isRuntimeFlagEnabled` | OFF (strict) |
 | `RUNTIME_BUSINESS_STATE_FLAG` | `isRuntimeFlagEnabled` | OFF (strict) |
 | `RUNTIME_CRM_FLAG` | `isRuntimeFlagEnabled` | OFF (strict) |
@@ -295,7 +295,7 @@ PR #34 added one extra test vs. the audit spec projection. All 31 pass.
 | # | Item | Status |
 | --- | --- | --- |
 | R-1 | **[MUST RESOLVE]** Revenue/analytics adapter fallback path must produce a Sentry-observable signal. Confirm Sentry captures fallback warnings (Option A/B) OR confirm `.env.production` is audited + deploy smoke test catches a broken runtime path (Option C). | ⛔ Open |
-| R-2 | **[MUST CONFIRM]** `.env.production` key audit: verify `NEXT_PUBLIC_ENABLE_RUNTIME_REVENUE` and `NEXT_PUBLIC_ENABLE_RUNTIME_ANALYTICS` status. Absent → runtime path active (graduation intended). `'false'` → explicit legacy override. Either is valid — must be documented. | ⚠ Confirm |
+| R-2 | **[MUST CONFIRM]** `.env.production` key audit: verify `retiredRevenueRuntimeFlag` and `retiredAnalyticsRuntimeFlag` status. Absent → runtime path active (graduation intended). `'false'` → explicit legacy override. Either is valid — must be documented. | ⚠ Confirm |
 | R-3 | **[MUST CONFIRM]** `NEXT_PUBLIC_ENABLE_COMMAND_CENTER` in `.env.production` must be absent or `'false'` unless Command Center is intentionally live for users. Flag is still strict OFF-by-default. | ⚠ Confirm |
 | R-4 | **[MUST CONFIRM]** No active users with `role = 'admin'` in production. A Supabase query (`SELECT id FROM users WHERE role = 'admin'`) is sufficient. | ⚠ Confirm |
 | R-5 | **[OK]** E2E count 31 (spec said 30). All pass. Not blocking. | ✅ |
