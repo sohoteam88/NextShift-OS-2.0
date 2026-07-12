@@ -18,7 +18,15 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-OS 3.5 RC prepared, awaiting approval
+OS 3.6 Blueprint drafted, awaiting approval
+
+`v3.5.0` is released to production and verified (commit `413de70`; six runtime flags including `AI_DISCUSSION` are live).
+
+A [Master Roadmap](MASTER_ROADMAP_2026-07.md) has been drafted, framing OS 3.6 onward as Stage A ("Brain starts remembering") of a longer staged plan toward the full 15-layer vision, with a result-gate principle (real active users, not just green tests) governing when each Stage opens.
+
+[OS 3.6 Blueprint](OS_3_6_BLUEPRINT.md) is drafted covering Stage A part 1: PostHog analytics wiring, Business Memory writing/reading from the discussion service, plus three overdue hygiene items (production `admin` role audit, rate-limit IP trust, UI escape baseline remeasurement). Awaiting Steven's approval before task breakdown begins.
+
+Previously, OS 3.4 Command Center was released as `v3.4.0`, and OS 3.3 Runtime Platform was released as `v3.3.0` (deployed to the VPS, verified through `/api/v1/version` at commit `50282b9`).
 
 OS 3.3 Runtime Platform was released as `v3.3.0`, deployed to the VPS, and verified through `/api/v1/version` at commit `50282b9`.
 
