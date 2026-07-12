@@ -1,6 +1,6 @@
 import type { AuthUser } from './auth-service';
 
-const ADMIN_ROLES = new Set(['operator', 'platform_admin', 'admin']);
+const ADMIN_ROLES = new Set(['operator', 'platform_admin']);
 
 export function isAdminRole(role: string) {
   return ADMIN_ROLES.has(role);

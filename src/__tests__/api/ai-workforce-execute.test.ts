@@ -36,7 +36,7 @@ const authUser = {
   id: 'user_1',
   email: 'user@example.com',
   tenantId: 'tenant_1',
-  role: 'admin',
+  role: 'operator',
   name: 'User',
   preferredLanguage: 'zh',
   status: 'active' as const,

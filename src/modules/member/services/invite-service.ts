@@ -4,7 +4,7 @@ import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 
 const INVITE_EXPIRY_DAYS = 7;
-const INVITE_ROLES = new Set(['leader', 'operator', 'platform_admin', 'admin']);
+const INVITE_ROLES = new Set(['leader', 'operator', 'platform_admin']);
 
 function getBaseUrl(baseUrl?: string) {
   return (

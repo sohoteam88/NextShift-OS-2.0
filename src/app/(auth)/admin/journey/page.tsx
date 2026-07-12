@@ -7,7 +7,7 @@ export default async function AdminJourneyPage() {
   const user = await getAuthUser();
 
   if (!user) redirect('/login');
-  if (!['operator', 'platform_admin', 'admin'].includes(user.role)) redirect('/dashboard');
+  if (!['operator', 'platform_admin'].includes(user.role)) redirect('/dashboard');
 
   const data = await workspaceHealthService.getCommandData(user.tenantId);
 

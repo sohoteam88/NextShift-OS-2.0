@@ -6,7 +6,7 @@ vi.mock('@/modules/auth/services/auth-service', () => authMocks);
 import { GET as getLeads } from '@/app/api/v1/crm/leads/route';
 import { GET as getCustomers } from '@/app/api/v1/crm/customers/route';
 
-const authUser = { id: 'u1', email: 't@t.com', tenantId: 't1', role: 'admin', name: 'T', preferredLanguage: 'zh', status: 'active' as const };
+const authUser = { id: 'u1', email: 't@t.com', tenantId: 't1', role: 'operator', name: 'T', preferredLanguage: 'zh', status: 'active' as const };
 const makeReq = (path: string) => new Request(`https://example.com${path}`);
 
 describe('CRM API Smoke', () => {

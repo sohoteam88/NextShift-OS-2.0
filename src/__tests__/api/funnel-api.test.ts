@@ -14,7 +14,7 @@ import { GET as getFunnels, POST as postFunnel } from '@/app/api/v1/funnel/funne
 import { GET as getFunnel, PATCH as patchFunnel, DELETE as deleteFunnel } from '@/app/api/v1/funnel/funnels/[id]/route';
 import { GET as getHealth } from '@/app/api/v1/funnel/funnels/[id]/health/route';
 
-const authUser = { id: 'u1', email: 't@t.com', tenantId: 't1', role: 'admin', name: 'T', preferredLanguage: 'zh', status: 'active' as const };
+const authUser = { id: 'u1', email: 't@t.com', tenantId: 't1', role: 'operator', name: 'T', preferredLanguage: 'zh', status: 'active' as const };
 const makeReq = (path: string, method = 'GET', body?: any) => {
   const init: any = { method };
   if (body) { init.body = JSON.stringify(body); init.headers = { 'Content-Type': 'application/json' }; }

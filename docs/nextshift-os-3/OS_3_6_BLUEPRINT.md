@@ -47,8 +47,8 @@ Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md) — 本版是 **Stag
 
 | # | 任务 | 说明 |
 |---|---|---|
-| H1 | **R-4 生产 admin 角色排查**：跑 `SELECT id, role FROM users WHERE role = 'admin'`（Supabase 生产库），确认是否有活跃用户。有则决策——迁移到 `operator` 还是把 `admin` 加回 `ADMIN_BASE_ROLES` | 从 OS 3.4 Round 4 audit 拖到现在,**优先级最高,不必等到 OS 3.6 排期,现在就能查** |
-| H2 | **E-003 legacy `admin` 角色定义统一**：`auth-routing.ts` 的 `ADMIN_ROLES` 和 `require-auth-api.ts` 的角色层级对齐，取决于 H1 的排查结果 | 跟 H1 是同一批用户,一起处理 |
+| H1 | ~~R-4 生产 admin 角色排查~~ **已完成（2026-07-12）**：`SELECT id, email, role FROM users WHERE role = 'admin'` → **0 rows returned**，生产库无 `admin` 角色用户 | 从 OS 3.4 Round 4 audit 拖到现在，排查结果确认零用户，无需数据迁移 |
+| H2 | ~~E-003 legacy `admin` 角色定义清理~~ **已完成（2026-07-12）**：生产查询返回 0 rows 后，已从活跃 auth routing 和角色白名单中移除 legacy `admin`，仅保留 `operator` 与 `platform_admin` | H1 结果已明确方向，无需等待决策 |
 | H3 | **D-001 限流 IP 信任关闭**：确认生产拓扑（Cloudflare 还是自管 nginx），把 rate-limit 的 IP 提取从 `x-forwarded-for` 首位改成对应的可信 header（Cloudflare 用 `cf-connecting-ip`；自管 nginx 确认 `proxy_set_header` 的 replace 模式） | 从 OS 3.3 拖到现在,生产已经跑了三个版本,拓扑应该已经确定 |
 | H4 | **UI 逃逸基线重新测量**：OS 3.4 定的 3,519 处 Tailwind 任意值基线三个版本没有更新过，跑一次统计，得到当前真实数字（不管涨了还是没涨，都要有数字而不是继续沿用旧基线） | 純測量任务,不做 UI 改动;为未来是否需要专项清理提供依据 |
 
