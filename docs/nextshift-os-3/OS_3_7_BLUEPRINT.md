@@ -34,7 +34,7 @@ OS 3.6 让 Business Memory 从骨架变活体：讨论会记住上次聊过什�
 
 | # | 任务 | 说明 |
 |---|---|---|
-| C0 | Business Score 卡片接线 | `packages/domain/src/business-command-center-v1/business-command-center-v1.ts` 里的 `createBusinessScore()` 已经能算出 0-100 分（`strong`/`ready`/`needs_attention`），合并了 decision readiness 和 growth forecast confidence，但从未被 `DashboardHome.tsx` 消费。接一个只读的 Business Score 卡片到 dashboard 顶部，作为"两个声音"合并后的统一入口锚点 |
+| C0 | ~~Business Score 卡片接线~~ **已完成（2026-07-13）**：PR #63（app 层镜像公式）被架构复审驳回，PR #64 落库纠正方案（`C0_CANONICAL_SCORE_INTEGRATION_BRIEF.md`），PR #65 按方案实现：`packages/domain` 导出纯函数 `calculateBusinessScore`，`createBusinessScore()` 内部改为调用它；`src/modules/dashboard/services/business-score-service.ts` 从 `@nextshift/domain` 导入该函数（不镜像公式），CRM `confidenceScore`（0-100）显式转换为 0-1 unit 值再传入；`DashboardHome.tsx` 渲染 `<BusinessScoreCard />`；缺 tenant/CRM 加载失败/confidence 非法均走 `runtimeFallbackLogger` 降级为 `null`，不是报错 |
 | C1 | Today's Mission 与推荐卡合并信息层级 | 本版最大改动，也是唯一需要先出**产品设计判断**再动代码的任务——不是直接把两个组件拼在一起。要求：先产出一份一页纸的信息架构决定（哪些信息合并展示、mission 和 recommendation 谁是主线索、次要信息如何折叠），经 Steven 过目后再实现。实现层面：`TodayRecommendationCard` 和 `AICommandCard` 改为共享同一个顶层数据请求（避免两次独立 fetch 造成的状态不一致），UI 上合并成一个信息层级而不是两张并排卡片 |
 | C2 | Weekly Review 雏形（借壳先行） | 全新功能，Layer 9 的最小切片。复用现有 Business Memory 的 `recentActivities`/`completedMilestones`/`executionPattern` 字段（`business-memory-projection.ts` 已经在算这些），做一个只读的"过去 7 天做了什么、AI 建议采纳了多少"摘要卡片，不新增独立存储、不做趋势图表——纯粹是现有 Memory 数据的周聚合视图 |
 
