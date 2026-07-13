@@ -54,13 +54,19 @@ CODEX_CMD="${CODEX_CMD:-codex exec --dangerously-bypass-approvals-and-sandbox}"
 AUDIT_EVERY_N_PRS="${AUDIT_EVERY_N_PRS:-3}"
 
 # --- Hard safety guards (do not weaken these without deliberately deciding to) -
-# Paths that must NEVER appear in a Codex-produced diff. Matches the packages/ freeze
-# (RUNTIME_STATUS.md) and the project's standing "no env/secret changes without approval" rule.
+# Paths that must NEVER appear in a Codex-produced diff, aside from the narrowly-scoped C0
+# domain-policy exception checked explicitly in Step 3 below.
 FORBIDDEN_PATH_PATTERNS=(
-  '^packages/'
   '\.env'
   '^\.github/workflows/deploy\.yml$'
   'prisma/migrations/'   # migrations are reviewed manually until this pipeline has a track record
+)
+
+# C0 is the sole approved exception to the packages/ freeze. Keep this list exact: a C0 diff
+# that touches any other package file still aborts, as does any packages/ edit in another task.
+C0_ALLOWED_PACKAGE_FILES=(
+  'packages/domain/src/business-command-center-v1/business-command-center-v1.ts'
+  'packages/domain/test/business-command-center-v1.test.ts'
 )
 
 # --- VPS deploy + flag reveal (Step 8) -----------------------------------------
@@ -157,8 +163,8 @@ if ! $CODEX_CMD "$(cat "$TASK_BRIEF")
 Additionally, mechanically required for this pipeline run (not optional):
 - Work on a new branch named exactly: $WORK_BRANCH
 - Push the branch and open a PR against $BASE_BRANCH using the GitHub CLI (gh pr create)
-- The PR must be ready for review, not a Draft: do not pass `--draft`; if GitHub creates it as a
-  Draft anyway, run `gh pr ready <PR_URL>` before reporting the URL.
+- The PR must be ready for review, not a Draft: do not pass --draft; if GitHub creates it as a
+  Draft anyway, run gh pr ready PR_URL before reporting the URL.
 - End your output with a single line: PR_URL=<the pull request URL>" \
   > "$CODEX_OUTPUT" 2>&1; then
   abort "Codex execution failed — see $CODEX_OUTPUT"
@@ -177,6 +183,20 @@ log "Step 3: local verification"
 
 git fetch origin "$WORK_BRANCH"
 DIFF_FILES="$(git diff --name-only "origin/$BASE_BRANCH...origin/$WORK_BRANCH")"
+
+PACKAGE_FILES="$(grep '^packages/' <<< "$DIFF_FILES" || true)"
+if [[ -n "$PACKAGE_FILES" ]]; then
+  grep -q 'Item: \*\*C0' "$TASK_BRIEF" \
+    || abort "diff touches packages/ outside the explicitly authorized C0 task — refusing to auto-merge: $PR_URL"
+
+  while IFS= read -r file; do
+    allowed=false
+    for allowed_file in "${C0_ALLOWED_PACKAGE_FILES[@]}"; do
+      [[ "$file" == "$allowed_file" ]] && allowed=true && break
+    done
+    "$allowed" || abort "C0 diff touches unauthorized package file '$file' — refusing to auto-merge: $PR_URL"
+  done <<< "$PACKAGE_FILES"
+fi
 
 for pattern in "${FORBIDDEN_PATH_PATTERNS[@]}"; do
   if echo "$DIFF_FILES" | grep -qE "$pattern"; then
