@@ -139,17 +139,24 @@ log "Task brief written to $TASK_BRIEF"
 log "Step 2: dispatching to Codex"
 
 WORK_BRANCH="chore/pipeline-$RUN_ID"
-$CODEX_CMD "$(cat "$TASK_BRIEF")
+CODEX_OUTPUT="$LOG_DIR/$RUN_ID-codex-output.log"
+
+# Codex can emit a large amount of tool and verification output. Keep both stdout and
+# stderr in the run artifact rather than streaming them through this script's terminal
+# tee; a full terminal pipe can otherwise make the CLI panic before it reports PR_URL.
+if ! $CODEX_CMD "$(cat "$TASK_BRIEF")
 
 Additionally, mechanically required for this pipeline run (not optional):
 - Work on a new branch named exactly: $WORK_BRANCH
 - Push the branch and open a PR against $BASE_BRANCH using the GitHub CLI (gh pr create)
 - Do not mark the PR ready-for-review yourself if your CLI defaults to draft; leave it as-is
 - End your output with a single line: PR_URL=<the pull request URL>" \
-  | tee "$LOG_DIR/$RUN_ID-codex-output.log"
+  > "$CODEX_OUTPUT" 2>&1; then
+  abort "Codex execution failed — see $CODEX_OUTPUT"
+fi
 
-PR_URL="$(grep -o 'PR_URL=.*' "$LOG_DIR/$RUN_ID-codex-output.log" | tail -1 | cut -d= -f2-)"
-[[ -n "$PR_URL" ]] || abort "Codex did not report a PR_URL — cannot proceed automatically, check $LOG_DIR/$RUN_ID-codex-output.log by hand"
+PR_URL="$(grep -o 'PR_URL=.*' "$CODEX_OUTPUT" | tail -1 | cut -d= -f2-)"
+[[ -n "$PR_URL" ]] || abort "Codex did not report a PR_URL — cannot proceed automatically, check $CODEX_OUTPUT by hand"
 
 log "Codex opened: $PR_URL"
 
