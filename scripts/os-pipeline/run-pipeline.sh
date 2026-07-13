@@ -37,7 +37,7 @@ MAIN_BRANCH="${MAIN_BRANCH:-main}"
 
 # The active blueprint this run should draw tasks from. Update this pointer when you start a
 # new OS version; the script does not guess which blueprint is "current".
-BLUEPRINT_PATH="${BLUEPRINT_PATH:-docs/nextshift-os-3/OS_3_6_BLUEPRINT.md}"
+BLUEPRINT_PATH="${BLUEPRINT_PATH:-docs/nextshift-os-3/OS_3_7_BLUEPRINT.md}"
 
 # --- CLIs ---------------------------------------------------------------------
 # Fill in the actual invocation for your setup. Both must:
@@ -45,11 +45,10 @@ BLUEPRINT_PATH="${BLUEPRINT_PATH:-docs/nextshift-os-3/OS_3_6_BLUEPRINT.md}"
 #   - run non-interactively (no TTY prompts)
 #   - exit non-zero on failure
 #
-# Examples (adjust to what you actually have installed):
-#   CLAUDE_CMD="claude -p --output-format text"
-#   CODEX_CMD="codex exec --full-auto"
-CLAUDE_CMD="${CLAUDE_CMD:-claude -p}"
-CODEX_CMD="${CODEX_CMD:-codex exec}"
+# Installed locally and verified on 2026-07-13. Both commands are deliberately
+# non-interactive: this pipeline has its own mechanical safety guards below.
+CLAUDE_CMD="${CLAUDE_CMD:-claude -p --output-format text --permission-mode bypassPermissions}"
+CODEX_CMD="${CODEX_CMD:-codex exec --dangerously-bypass-approvals-and-sandbox}"
 
 # --- Cadence ------------------------------------------------------------------
 AUDIT_EVERY_N_PRS="${AUDIT_EVERY_N_PRS:-3}"
