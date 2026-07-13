@@ -230,17 +230,11 @@ REVIEW_VERDICT="$LOG_DIR/$RUN_ID-review.log"
 git diff "origin/$BASE_BRANCH...origin/$WORK_BRANCH" > "$LOG_DIR/$RUN_ID.diff"
 
 $CLAUDE_CMD "You are acting as the Architecture Review / orchestration role reviewing a PR \
-produced by an execution agent for the NextShift OS project, against this task brief:
-
-$(cat "$TASK_BRIEF")
-
-Here is the actual diff produced:
-
-$(cat "$LOG_DIR/$RUN_ID.diff")
-
-Check: does the diff actually satisfy the task brief's requirements? Is anything out of scope \
-touched? Are there correctness issues visible from the diff alone? \
-Output your reasoning, then end with exactly one final line: VERDICT=PASS or VERDICT=FAIL." \
+produced by an execution agent for the NextShift OS project. Read the complete task brief from \
+$TASK_BRIEF and the complete produced diff from $LOG_DIR/$RUN_ID.diff yourself; do not rely on a \
+summary. Check whether the diff satisfies the brief, touches anything out of scope, or contains \
+correctness issues visible from the diff. Output your reasoning, then end with exactly one final \
+line: VERDICT=PASS or VERDICT=FAIL." \
   > "$REVIEW_VERDICT"
 
 if ! grep -q '^VERDICT=PASS$' "$REVIEW_VERDICT"; then
