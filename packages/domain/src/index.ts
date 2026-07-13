@@ -34,3 +34,28 @@ export * from "./business-brain-v1";
 export * from "./business-foundation";
 export * from "./opportunity-evaluation";
 export * as CampaignExecutionWorkflow from "./campaign-execution";
+
+// Resolve distinct concepts that previously collided through star exports. The established
+// root names remain stable; newer bounded-context equivalents use explicit scoped names.
+export { type FollowUpStatus } from "./follow-up";
+export {
+  type FollowUpStatus as GrowthRevenueFollowUpStatus,
+  type RevenueForecast as GrowthRevenueForecast,
+} from "./growth-revenue-v1";
+export { RevenueForecast } from "./revenue-forecast";
+export { type BusinessHealthSnapshot } from "./business-brain";
+export {
+  type BusinessHealthSnapshot as CommandCenterBusinessHealthSnapshot,
+} from "./business-command-center-v1";
+export {
+  type KnowledgeNodeId,
+  type KnowledgeNodeType,
+  createKnowledgeNode,
+  createKnowledgeRelationship,
+} from "./business-brain";
+export {
+  type KnowledgeNodeId as FoundationKnowledgeNodeId,
+  type KnowledgeNodeType as FoundationKnowledgeNodeType,
+  createKnowledgeNode as createFoundationKnowledgeNode,
+  createKnowledgeRelationship as createFoundationKnowledgeRelationship,
+} from "./business-foundation";
