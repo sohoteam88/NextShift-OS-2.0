@@ -33,7 +33,7 @@ Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md) — 本版是 **Stag
 
 | # | 任务 | 说明 |
 |---|---|---|
-| M0 | **PostHog 事件设计与真实接线**：`analytics.init()` 目前在整个代码库里没有任何调用点——`src/lib/telemetry/tracker.ts` 已经写好了 client wrapper 和 5 个事件（signup/funnel_created/ai_content_generated/content_published/upgrade_clicked），但从未初始化，等于全部空转。补：(a) 在根 layout 或 providers 里调用一次 `analytics.init()`；(b) 新增 `recommendation_viewed`/`recommendation_clicked`/`discussion_turn_sent`/`weekly_active` 等事件；(c) 确认现有 5 个事件的调用点仍然有效 | Master Roadmap Stage A 结果闸门（≥10 真实周活用户）依赖这个数据地基，必须先做，否则闸门无法判定 |
+| M0 | ~~PostHog 事件设计与真实接线~~ **已完成（2026-07-12）**：`analytics.init()` 经 `AnalyticsInit` client component 挂在根 `layout.tsx`，真实调用一次；新增 `recommendation_viewed`/`recommendation_clicked`/`discussion_turn_sent`/`weekly_active` 四个事件，均有守卫（dedup/null 检查）。既有 5 个事件里实际只有 3 个有真实调用点（`user_signed_up`/`funnel_created`/`ai_content_generated`）；`content_published`/`upgrade_clicked` 至今无调用点，因为对应功能尚未建成——这在 baseline 就是如此，不是本次回归（Round 6 audit F-2） | Master Roadmap Stage A 结果闸门（≥10 真实周活用户）依赖这个数据地基，必须先做，否则闸门无法判定 |
 | M1 | ~~discussion 事件类型接入~~ **已完成（2026-07-12）**：新增 `DISCUSSION_STARTED` / `DISCUSSION_TURN_COMPLETED` / `DISCUSSION_ABANDONED` 类型；首轮写入 started，每轮成功回复后写入 completed，复用现有 `business-memory-event-store`。`DISCUSSION_ABANDONED` 暂无可靠客户端信号，保留类型但未触发 | 地基先行，不改变任何现有事件类型的语义 |
 | M2 | ~~讨论服务读取 Memory~~ **已完成（2026-07-12）**：生成 prompt 前读取 Memory，注入最近活动、执行模式和 recommendation accepted/ignored 摘要；读取或写入失败会记录 Sentry warning 并继续正常回复 | 这是用户能感知到的核心变化——AI 回复会体现"记性" |
 | M3 | ~~推荐引擎读取讨论记忆~~ **已完成（2026-07-12）**：同一 recommendation 在最近 30 条完成讨论事件中达到 ≥3 轮时，`recommendedFocus` 会显式提示反复讨论信号；Command Center 并行读取 Memory，将 focus 和 ignored IDs 加入 engine evidence 与 rule fallback explain。读取失败会记录 Sentry warning 并以空 Memory 继续 | 闭环:讨论影响推荐,不只是推荐驱动讨论 |
@@ -103,4 +103,25 @@ Phase 4：Round 6/7 audit → RC → planning→main → v3.6.0
 
 ## Audit Result
 
-（Round 6 / Round 7 由 Claude Code 完成，落库由 Claude 执行，完整报告存 audit/ 目录）
+### Round 6 — PR #50-#60（M0 PostHog / M1-M4 Business Memory / H1-H4 遗留清理 / CI docs-skip）
+
+Date: 2026-07-12
+Auditor: Claude Code
+HEAD: `db70620`（PR #60 merge commit）
+Verdict: **PASS WITH CONDITION**
+
+完整报告：[audit/OS36_R6_PR50_PR60_CODE_REVIEW_REPORT.md](../../audit/OS36_R6_PR50_PR60_CODE_REVIEW_REPORT.md)
+
+检查点结论：CP1 M0 `analytics.init()` 经 `AnalyticsInit` 在根 layout 真实调用一次，缺 `NEXT_PUBLIC_POSTHOG_KEY` 时优雅降级不报错，4 个新事件调用点齐全且有 dedup/null 守卫 ✓；CP2 M1/M2 首轮写 `DISCUSSION_STARTED`、每轮成功回复后写 `DISCUSSION_TURN_COMPLETED`，Memory 读/写失败均不阻塞讨论且经 `runtimeFallbackLogger`（console.warn + Sentry.captureMessage）可见，system prompt 注入的是有界摘要而非原始 JSON，9 用例覆盖 ✓；CP3 M3 `discussionAttentionFor()`（最近 30 条、门槛 3 轮）逻辑正确，`packages/decision-brain` 零改动，`dashboard-recommendation-service.test.ts` 有可运行的场景测试证明讨论信号改变了推荐 explain ✓；CP4 M4 查询模式、现有索引（`(tenant_id,created_at)`+`(actor_id)`）、量级估算（≈86 行/日）、三个重评估触发器与 partial index 建议均经源码/schema 核对，结论可信、暂不加索引成立 ✓；CP5 H1/H2 `admin` 角色已从 `ADMIN_ROLES`/`INVITE_ROLES`/`Role` 联合/8 个路由守卫/测试夹具全部移除，残留 `'admin'` 仅为 feature key、保留 slug、i18n、H1 文档 SQL 文本 ✓；CP6 H3 5 个限流 route 统一 `getRequestIp()`，生产仅信任 `x-real-ip`、缺失返回 `unknown`，`deploy/nginx/nextshift-os.conf` 设置 `X-Real-IP $remote_addr`，伪造 `x-forwarded-for` 测试通过 ✓；CP7 H4 脚本两次独立重跑复现同样的 4,260 / 8 / 42 ✓；CP8 `paths-ignore` 语义正确（docs-only-proof 分支无 CI run、mixed-proof 分支跑全套 14m19s 绿），planning 与 main 均 "Branch not protected"，跳过不会卡合并 ✓。
+
+CP9 本地 `type-check`（0 错）、`lint`（0 error / 416 warning 基线）、`lint:boundaries:check`（config in sync）、34 个 OS-3.6 目标测试全绿；`build`/`test` 全量/`E2E` 以 PR #59 GitHub Actions CI 全绿佐证（HEAD 相较最后一次绿灯 commit `4fb0e6d` 仅差一份 blueprint 文档，代码字节一致，PR #60 docs-only 跳过 CI 正确无损）。
+
+Conditions（均为文档 / CI 接线问题，非代码缺陷，建议进 RC 前清除）：
+- **F-1（CP10）**：M0 是唯一未标 `已完成` 的条目，且描述过时（仍写 "`analytics.init()` 目前…没有任何调用点…补：(a)(b)(c)"，实为已在 PR #51 交付）。需补 `已完成（2026-07-12）` 标记并更新描述；顺带修正 "现有 5 个事件调用点仍有效" —— 实际仅 3 个接线，`content_published`/`upgrade_clicked` 无调用点（功能未建，非回归，F-2）。
+- **F-3（CP9/CP3）**：`business-context-tests.ts`、`journey-engine-tests.ts`（共 5 用例）因 `-tests.ts` 后缀不匹配 vitest `*.test.ts` include，从未在 CI 运行（强制运行时全绿）；PR #59 新增的讨论注意力用例落在这个被排除的文件里成了死测试。建议重命名为 `*.test.ts` 或放宽 include。CP3 已由可运行的 recommendation-service 场景测试独立覆盖。
+
+Advisories（不阻塞）：A-1 off-topic 讨论分支返回结果（客户端会打 `discussion_turn_sent`）但不写 Memory 事件，客户端遥测与服务端记忆存在微小不一致；A-2 blueprint H3 引用生产路径 `/etc/nginx/sites-enabled/nextshiftos.com`，仓库内配置为 `deploy/nginx/nextshift-os.conf`，两者都设 `X-Real-IP`，保持引用一致即可。
+
+**Round 6 结论：无代码缺陷，M0-M4 / H1-H4 功能全部正确实现并验证通过；两项文档 / CI 接线 condition 待清除后可进入 RC 准备。**
+
+**Conditions cleared（2026-07-13）**：F-1 已由 Claude 补齐 M0 的完成标记与实际接线说明；F-3 由本 PR 将 `business-context-tests.ts` / `journey-engine-tests.ts` 重命名为 `business-context.test.ts` / `journey-engine.test.ts`，使原有 **5 个用例** 纳入 Vitest/CI 收集并通过。Round 6 conditions 已清除，可进入 RC 准备。
