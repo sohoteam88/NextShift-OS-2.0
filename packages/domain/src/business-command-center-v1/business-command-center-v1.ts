@@ -55,6 +55,17 @@ export type CommandCenterLifecycleStatus =
 
 export type CommandCenterReadinessStatus = "ready" | "blocked" | "waiting";
 export type CommandCenterHealthStatus = "healthy" | "watch" | "at_risk";
+export type BusinessScoreBand = "strong" | "ready" | "needs_attention";
+
+export interface CalculateBusinessScoreInput {
+  readonly readinessScore: number;
+  readonly forecastConfidence: number;
+}
+
+export interface CalculatedBusinessScore {
+  readonly scoreValue: number;
+  readonly scoreBand: BusinessScoreBand;
+}
 
 export interface BusinessCommandCenterSourceContext {
   readonly foundationId: BusinessFoundationId;
@@ -83,7 +94,7 @@ export interface TodaysMission {
 export interface BusinessScore {
   readonly scoreId: BusinessScoreId;
   readonly scoreValue: number;
-  readonly scoreBand: string;
+  readonly scoreBand: BusinessScoreBand;
   readonly factors: readonly string[];
   readonly confidence: number;
   readonly explanation: string;
@@ -450,21 +461,14 @@ function createBusinessScore(
   decisionEngine: DecisionEngineV1Snapshot,
   growthRevenue: GrowthRevenueV1Snapshot
 ): BusinessScore {
-  const readinessScore = normalizeReadinessScore(
-    decisionEngine.healthEvaluation.readinessScore
-  );
-  const scoreValue = Math.round(
-    ((readinessScore +
-      growthRevenue.revenueForecast.confidence * 100) /
-      2) *
-      1
-  );
+  const score = calculateBusinessScore({
+    readinessScore: decisionEngine.healthEvaluation.readinessScore,
+    forecastConfidence: growthRevenue.revenueForecast.confidence,
+  });
 
   return {
     scoreId,
-    scoreValue,
-    scoreBand:
-      scoreValue >= 80 ? "strong" : scoreValue >= 60 ? "ready" : "needs_attention",
+    ...score,
     factors: [
       decisionEngine.healthEvaluation.summary,
       `Forecast confidence ${growthRevenue.revenueForecast.confidence}`,
@@ -635,8 +639,27 @@ function createBusinessHealthSnapshot(
   };
 }
 
-function normalizeReadinessScore(score: number): number {
+export function normalizeReadinessScore(score: number): number {
   return score > 1 ? score : score * 100;
+}
+
+export function calculateBusinessScore(
+  input: CalculateBusinessScoreInput
+): CalculatedBusinessScore {
+  const readinessScore = normalizeReadinessScore(input.readinessScore);
+  const scoreValue = Math.round(
+    (readinessScore + input.forecastConfidence * 100) / 2
+  );
+
+  return {
+    scoreValue,
+    scoreBand:
+      scoreValue >= 80
+        ? "strong"
+        : scoreValue >= 60
+          ? "ready"
+          : "needs_attention",
+  };
 }
 
 function collectEvidenceSummaries(

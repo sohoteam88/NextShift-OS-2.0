@@ -7,6 +7,8 @@ import {
 import {
   BusinessCommandCenterV1,
   InMemoryBusinessCommandCenterV1Repository,
+  calculateBusinessScore,
+  normalizeReadinessScore,
   type BusinessCommandCenterV1Id,
 } from "../src/business-command-center-v1";
 import {
@@ -147,6 +149,32 @@ function createUpstream() {
   };
 }
 
+describe("Business Score policy", () => {
+  it("normalizes unit and percentage readiness inputs consistently", () => {
+    expect(normalizeReadinessScore(0.6)).toBe(60);
+    expect(normalizeReadinessScore(60)).toBe(60);
+    expect(
+      calculateBusinessScore({ readinessScore: 0.6, forecastConfidence: 0.8 })
+    ).toEqual(
+      calculateBusinessScore({ readinessScore: 60, forecastConfidence: 0.8 })
+    );
+  });
+
+  it.each([
+    [59, "needs_attention"],
+    [60, "ready"],
+    [79, "ready"],
+    [80, "strong"],
+  ] as const)("assigns %s to the %s band", (scoreValue, scoreBand) => {
+    expect(
+      calculateBusinessScore({
+        readinessScore: scoreValue,
+        forecastConfidence: scoreValue / 100,
+      })
+    ).toEqual({ scoreValue, scoreBand });
+  });
+});
+
 describe("BusinessCommandCenterV1 aggregate", () => {
   it("creates mission, score, recommendation feed, forecasts, opportunity, readiness, health, lifecycle, and integration outputs", () => {
     const {
@@ -175,6 +203,10 @@ describe("BusinessCommandCenterV1 aggregate", () => {
       createdAt,
     });
     const snapshot = commandCenter.toSnapshot();
+    const expectedScore = calculateBusinessScore({
+      readinessScore: decisionBefore.healthEvaluation.readinessScore,
+      forecastConfidence: growthBefore.revenueForecast.confidence,
+    });
 
     expect(snapshot).toMatchObject({
       commandCenterId,
@@ -191,7 +223,19 @@ describe("BusinessCommandCenterV1 aggregate", () => {
       },
     });
     expect(snapshot.todaysMission.primaryObjective).toBeTruthy();
-    expect(snapshot.businessScore.scoreValue).toBeGreaterThan(0);
+    expect(snapshot.businessScore).toEqual({
+      scoreId: `${commandCenterId}:score:business`,
+      ...expectedScore,
+      factors: [
+        decisionBefore.healthEvaluation.summary,
+        `Forecast confidence ${growthBefore.revenueForecast.confidence}`,
+        `Lead fit ${growthBefore.leadIntelligence.fit}`,
+      ],
+      confidence: growthBefore.revenueForecast.confidence,
+      explanation: "Score combines decision readiness with current growth forecast confidence.",
+      healthReference: decisionBefore.healthEvaluation.summary,
+      growthReference: growthRevenueId,
+    });
     expect(snapshot.aiRecommendationFeed.length).toBeGreaterThan(0);
     expect(snapshot.revenueForecastView.forecastAmount).toBeGreaterThan(0);
     expect(snapshot.leadForecastView.nextRecommendedAction).toBeTruthy();
