@@ -7,7 +7,6 @@ test-results/
 coverage/
 playwright-report/
 artifacts/
-scripts/os-pipeline/logs/
 packages/*/dist/
 *.tsbuildinfo
 .env
