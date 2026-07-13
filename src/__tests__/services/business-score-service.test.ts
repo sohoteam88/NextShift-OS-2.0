@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { calculateBusinessScore } from '@nextshift/domain';
+import { calculateBusinessScore } from '@nextshift/business-command-center-v1';
 import {
   getBusinessScore,
   type BusinessScoreDependencies,
