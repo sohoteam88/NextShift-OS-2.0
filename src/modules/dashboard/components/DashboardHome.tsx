@@ -7,6 +7,7 @@ import { AICommandCard } from './AICommandCard';
 import type { DashboardPriorityLevel } from './AICommandCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
 import { MomentumCard } from './MomentumCard';
+import { BusinessScoreCard } from './BusinessScoreCard';
 import { TodayRecommendationCard } from './TodayRecommendationCard';
 import { useDashboardMission } from '../hooks/useDashboardMission';
 import { revenueDriverHubRouteForMission } from '@/modules/revenue-drivers/constants/revenue-drivers';
@@ -110,6 +111,7 @@ export function DashboardHome() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
+      <BusinessScoreCard />
       <TodayRecommendationCard />
       <AICommandCard
         completedItems={data.missionControl.completedItems}
