@@ -157,7 +157,8 @@ if ! $CODEX_CMD "$(cat "$TASK_BRIEF")
 Additionally, mechanically required for this pipeline run (not optional):
 - Work on a new branch named exactly: $WORK_BRANCH
 - Push the branch and open a PR against $BASE_BRANCH using the GitHub CLI (gh pr create)
-- Do not mark the PR ready-for-review yourself if your CLI defaults to draft; leave it as-is
+- The PR must be ready for review, not a Draft: do not pass `--draft`; if GitHub creates it as a
+  Draft anyway, run `gh pr ready <PR_URL>` before reporting the URL.
 - End your output with a single line: PR_URL=<the pull request URL>" \
   > "$CODEX_OUTPUT" 2>&1; then
   abort "Codex execution failed — see $CODEX_OUTPUT"
@@ -232,6 +233,13 @@ log "Architecture review PASS."
 # ============================================================================
 
 log "Step 5: merging $PR_URL into $BASE_BRANCH"
+
+PR_IS_DRAFT="$(gh pr view "$PR_URL" --json isDraft --jq '.isDraft')" \
+  || abort "could not determine whether PR is a draft: $PR_URL"
+if [[ "$PR_IS_DRAFT" == "true" ]]; then
+  log "PR is Draft — marking it ready for review before merge"
+  gh pr ready "$PR_URL" || abort "could not mark PR ready for review: $PR_URL"
+fi
 
 gh pr merge "$PR_URL" --merge --delete-branch || abort "gh pr merge failed"
 
