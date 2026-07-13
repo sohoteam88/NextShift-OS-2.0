@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { AICommandCard } from './AICommandCard';
 import type { DashboardPriorityLevel } from './AICommandCard';
+import { BusinessScoreCard } from './BusinessScoreCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
 import { MomentumCard } from './MomentumCard';
 import { TodayRecommendationCard } from './TodayRecommendationCard';
@@ -110,6 +111,7 @@ export function DashboardHome() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
+      <BusinessScoreCard />
       <TodayRecommendationCard />
       <AICommandCard
         completedItems={data.missionControl.completedItems}
