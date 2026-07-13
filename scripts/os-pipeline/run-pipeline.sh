@@ -121,6 +121,11 @@ structure: Base branch, Work branch (propose a name), Step 0 sync checklist, bac
 in actual current code (grep/read the relevant files yourself, do not guess file paths), concrete \
 requirements, an explicit list of forbidden actions including never touching packages/ or any \
 .env file, and acceptance criteria (pnpm type-check/test/build/lint must pass). \
+The Base branch field MUST be exactly '$BASE_BRANCH' — this is not a guess, it is the fixed base \
+branch for this entire project's release cycle (every prior OS 3.x cycle worked this way: all \
+work lands on $BASE_BRANCH, only the RC/tag stage merges it to $MAIN_BRANCH). Do not propose \
+$MAIN_BRANCH or any other branch as the base, and do not ask the reader to confirm — state it as \
+a fact in the brief. \
 Output ONLY the task brief markdown, nothing else — no preamble, no explanation." \
   > "$TASK_BRIEF"
 
