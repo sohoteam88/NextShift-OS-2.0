@@ -9,7 +9,7 @@ export default async function WorkspacePathPage({
   const user = await getAuthUser();
 
   if (!user) redirect('/login');
-  if (!['operator', 'platform_admin', 'admin'].includes(user.role)) redirect('/dashboard');
+  if (!['operator', 'platform_admin'].includes(user.role)) redirect('/dashboard');
 
   const { path } = await params;
   redirect(`/admin/${path.join('/')}`);

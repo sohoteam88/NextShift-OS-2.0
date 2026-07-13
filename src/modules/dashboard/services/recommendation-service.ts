@@ -95,6 +95,7 @@ class CommandCenterRecommendationEngine implements RecommendationEngine {
   generate(context: DecisionContext): readonly Recommendation[] {
     const snapshot = context.toSnapshot();
     const evidence = snapshot.evidence[0];
+    const memoryEvidence = snapshot.evidence.find((item) => item.source === 'command-center-business-memory');
     const metadata = metadataRecord(evidence?.metadata);
     const missionTitle = metadataString(metadata, 'missionTitle') || 'Continue today\'s mission';
     const readiness = metadataNumber(metadata, 'readiness');
@@ -108,7 +109,10 @@ class CommandCenterRecommendationEngine implements RecommendationEngine {
       recommendationType: recommendationTypeFor(metadataString(metadata, 'missionType')),
       title: missionTitle,
       summary: `Focus on ${missionTitle} from the Command Center context.`,
-      rationale: evidence?.summary ?? snapshot.objective ?? 'Runtime context indicates this is the next best action.',
+        rationale: [
+          evidence?.summary ?? snapshot.objective ?? 'Runtime context indicates this is the next best action.',
+          memoryEvidence?.summary,
+        ].filter(Boolean).join(' '),
       confidence,
       impact: confidence >= 0.7 ? 0.8 : 0.65,
       urgency: metadataString(metadata, 'priority') === 'Critical' ? 0.9 : 0.7,
@@ -175,6 +179,17 @@ function buildDecisionContext(context: CommandCenterRecommendationContext) {
           revenueStatus: context.revenue.resolution.status,
         },
       }),
+      createDecisionEvidence({
+        evidenceId: 'command-center-business-memory' as never,
+        source: 'command-center-business-memory',
+        summary: memorySummary(context.memory),
+        confidence: 0.65,
+        observedAt: context.observedAt as Timestamp,
+        metadata: {
+          recommendedFocus: context.memory.recommendedFocus,
+          ignoredRecommendationIds: context.memory.recommendationMemory.ignoredIds.slice(0, 3),
+        },
+      }),
     ],
     constraints: [],
     createdAt: context.observedAt as Timestamp,
@@ -232,7 +247,7 @@ function resolveColdStartRule(
 }
 
 function fallbackRule(
-  _context: CommandCenterRecommendationContext,
+  context: CommandCenterRecommendationContext,
   input: {
     id: string;
     title: string;
@@ -254,9 +269,17 @@ function fallbackRule(
       ctaLabel: input.ctaLabel,
     },
     confidence: input.confidence,
-    explain: input.rationale,
+    explain: `${input.rationale} ${memorySummary(context.memory)}`.trim(),
     source: 'rule',
   };
+}
+
+function memorySummary(memory: CommandCenterRecommendationContext['memory']) {
+  const ignoredIds = memory.recommendationMemory.ignoredIds.slice(0, 3);
+  return [
+    `Business memory focus: ${memory.recommendedFocus}.`,
+    ignoredIds.length > 0 ? `Recently ignored recommendation IDs: ${ignoredIds.join(', ')}.` : '',
+  ].filter(Boolean).join(' ');
 }
 
 function fromEngineRecommendation(

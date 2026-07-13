@@ -51,7 +51,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   const pathname = usePathname();
   const isOnboardingPath = pathname.startsWith('/onboarding');
   const isWizardPath = pathname.startsWith('/brand-builder/step');
-  const isAdminRole = ['operator', 'platform_admin', 'admin'].includes(user.role);
+  const isAdminRole = ['operator', 'platform_admin'].includes(user.role);
   const isAdminExperience = isAdminRole || pathname.startsWith('/admin') || pathname.startsWith('/workspace');
   const showMemberRoadmap = user.role === 'member' && onboarding.completed && !isAdminExperience;
   const adminHomeHref = user.role === 'platform_admin' ? '/platform-admin' : '/admin';

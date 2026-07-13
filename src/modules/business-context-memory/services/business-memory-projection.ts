@@ -17,6 +17,15 @@ type BuildProjectionInput = {
   now?: Date;
 };
 
+const DISCUSSION_ATTENTION_THRESHOLD = 3;
+const RECENT_DISCUSSION_EVENTS_LIMIT = 30;
+
+export type DiscussionAttention = {
+  recommendationId: string;
+  title: string;
+  turnCount: number;
+};
+
 function eventToActivity(event: BusinessMemoryEvent): BusinessMemoryActivity {
   return {
     type: event.type,
@@ -55,8 +64,40 @@ function blockedAreasFor(input: BuildProjectionInput) {
   return Array.from(blocked).slice(0, 5);
 }
 
-function recommendedFocusFor(input: BuildProjectionInput, blockedAreas: string[]) {
-  if (blockedAreas.length > 0) return `先处理：${blockedAreas[0]}`;
+export function discussionAttentionFor(events: BusinessMemoryEvent[]): DiscussionAttention | null {
+  const discussions = events
+    .filter((event) => event.type === 'DISCUSSION_TURN_COMPLETED' && event.referenceId)
+    .slice(0, RECENT_DISCUSSION_EVENTS_LIMIT);
+  const attention = new Map<string, { title: string; turnCount: number }>();
+
+  for (const event of discussions) {
+    const recommendationId = event.referenceId!;
+    const current = attention.get(recommendationId) ?? {
+      title: event.title.replace(/^Discussion turn completed:\s*/i, '').trim() || recommendationId,
+      turnCount: 0,
+    };
+    current.turnCount += 1;
+    attention.set(recommendationId, current);
+  }
+
+  const [recommendationId, result] = [...attention.entries()]
+    .filter(([, value]) => value.turnCount >= DISCUSSION_ATTENTION_THRESHOLD)
+    .sort(([, left], [, right]) => right.turnCount - left.turnCount)[0] ?? [];
+
+  return recommendationId && result
+    ? { recommendationId, title: result.title, turnCount: result.turnCount }
+    : null;
+}
+
+function recommendedFocusFor(input: BuildProjectionInput, blockedAreas: string[], attention: DiscussionAttention | null) {
+  const discussionFocus = attention
+    ? `你最近多次讨论过《${attention.title}》，可能才是当前真正的焦点`
+    : null;
+
+  if (blockedAreas.length > 0) {
+    return discussionFocus ? `先处理：${blockedAreas[0]}；${discussionFocus}` : `先处理：${blockedAreas[0]}`;
+  }
+  if (discussionFocus && attention?.title !== input.currentMissionTitle) return discussionFocus;
   if (input.currentMissionTitle) return input.currentMissionTitle;
   return '继续推进当前最高优先级任务';
 }
@@ -64,12 +105,13 @@ function recommendedFocusFor(input: BuildProjectionInput, blockedAreas: string[]
 export function buildBusinessContextProjection(input: BuildProjectionInput): BusinessContextProjection {
   const events = [...input.events].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
   const blockedAreas = blockedAreasFor({ ...input, events });
+  const discussionAttention = discussionAttentionFor(events);
   const completedMilestones = deriveCompletedMilestones({
     completedChecks: input.completedChecks,
     achievementTitles: input.achievementTitles,
     events,
   });
-  const currentFocus = input.currentMissionTitle ?? recommendedFocusFor(input, blockedAreas);
+  const currentFocus = input.currentMissionTitle ?? recommendedFocusFor(input, blockedAreas, discussionAttention);
 
   return {
     recentActivities: events.slice(0, 8).map(eventToActivity),
@@ -77,7 +119,7 @@ export function buildBusinessContextProjection(input: BuildProjectionInput): Bus
     blockedAreas,
     completedMilestones,
     executionPattern: deriveExecutionPattern(events, input.now),
-    recommendedFocus: recommendedFocusFor(input, blockedAreas),
+    recommendedFocus: recommendedFocusFor(input, blockedAreas, discussionAttention),
     recommendationMemory: buildRecommendationMemory(events),
   };
 }

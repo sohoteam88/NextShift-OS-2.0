@@ -7,7 +7,7 @@ import { GET as getSettings } from '@/app/api/v1/admin/settings/route';
 import { GET as getUsers } from '@/app/api/v1/admin/users/route';
 import { GET as getDashboard } from '@/app/api/v1/team/dashboard/route';
 
-const authUser = { id: 'u1', email: 't@t.com', tenantId: 't1', role: 'admin', name: 'T', preferredLanguage: 'zh', status: 'active' as const };
+const authUser = { id: 'u1', email: 't@t.com', tenantId: 't1', role: 'operator', name: 'T', preferredLanguage: 'zh', status: 'active' as const };
 const makeReq = (path: string) => new Request(`https://example.com${path}`);
 
 describe('Admin API Smoke', () => {

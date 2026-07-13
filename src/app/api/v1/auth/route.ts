@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getRequestIp } from '@/lib/request-ip';
 import { assertRequestBodySize } from '@/lib/request-guards';
 
 export async function GET() {
@@ -10,7 +11,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  const ip = getRequestIp(request.headers);
 
   if (!(await checkRateLimit(`auth-login:${ip}`, 10, 15 * 60 * 1000))) {
     return NextResponse.json(

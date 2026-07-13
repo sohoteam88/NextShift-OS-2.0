@@ -7,6 +7,8 @@ import { resolveRevenueRuntimeIntent } from '@/modules/revenue-drivers/runtime';
 import type { ResolveRevenueRuntimeOutput } from '@/modules/revenue-drivers/runtime';
 import { resolveAnalyticsRuntimeProjection } from '@/modules/analytics/runtime';
 import type { ResolveAnalyticsRuntimeOutput } from '@/modules/analytics/runtime';
+import { businessContextMemoryService } from '@/modules/business-context-memory/services/business-context-memory-service';
+import type { BusinessContextProjection } from '@/modules/business-context-memory/contracts/BusinessContextMemory';
 
 export type CommandCenterRecommendationContextUser = {
   id: string;
@@ -19,6 +21,7 @@ export type CommandCenterRecommendationContext = {
   businessState: BusinessState;
   analytics: ResolveAnalyticsRuntimeOutput;
   revenue: ResolveRevenueRuntimeOutput;
+  memory: BusinessContextProjection;
   observedAt: string;
 };
 
@@ -27,6 +30,7 @@ export type CommandCenterRecommendationContextLoaders = {
   getBusinessState?: typeof businessStateService.getBusinessState;
   resolveAnalytics?: typeof resolveAnalyticsRuntimeProjection;
   resolveRevenue?: typeof resolveRevenueRuntimeIntent;
+  getBusinessContext?: typeof businessContextMemoryService.getBusinessContext;
 };
 
 export async function loadCommandCenterRecommendationContext(
@@ -43,7 +47,7 @@ export async function loadCommandCenterRecommendationContext(
       source: 'command-center',
     }),
   ]);
-  const [analytics, revenue] = await Promise.all([
+  const [analytics, revenue, memory] = await Promise.all([
     (loaders.resolveAnalytics ?? resolveAnalyticsRuntimeProjection)({
       userId: user.id,
       tenantId,
@@ -62,6 +66,7 @@ export async function loadCommandCenterRecommendationContext(
     }, {
       logger: runtimeFallbackLogger,
     }),
+    loadBusinessContext(user.id, tenantId, loaders),
   ]);
 
   return {
@@ -70,6 +75,41 @@ export async function loadCommandCenterRecommendationContext(
     businessState,
     analytics,
     revenue,
+    memory,
     observedAt,
   };
+}
+
+async function loadBusinessContext(
+  userId: string,
+  tenantId: string | undefined,
+  loaders: CommandCenterRecommendationContextLoaders,
+): Promise<BusinessContextProjection> {
+  try {
+    return await (loaders.getBusinessContext ?? businessContextMemoryService.getBusinessContext)(userId, tenantId);
+  } catch (error) {
+    runtimeFallbackLogger.warn('[command-center] continuing without business memory', {
+      userId,
+      tenantId,
+      error: error instanceof Error ? error.message : 'unknown error',
+    });
+    return {
+      recentActivities: [],
+      currentFocus: '继续推进当前最高优先级任务',
+      blockedAreas: [],
+      completedMilestones: [],
+      executionPattern: {
+        activityLevel: 'quiet',
+        completionVelocity: 'none',
+        recommendationResponse: 'unknown',
+        consistency: 'low',
+      },
+      recommendedFocus: '继续推进当前最高优先级任务',
+      recommendationMemory: {
+        recentlyIssuedIds: [],
+        acceptedIds: [],
+        ignoredIds: [],
+      },
+    };
+  }
 }

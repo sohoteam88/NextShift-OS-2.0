@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import localFont from 'next/font/local';
+import { AnalyticsInit } from '@/components/AnalyticsInit';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -54,7 +55,10 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={`${inter.variable} ${notoSansSC.variable}`}>
       <body className="antialiased">
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          <AnalyticsInit />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

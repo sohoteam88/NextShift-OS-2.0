@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { AICommandCard } from './AICommandCard';
 import type { DashboardPriorityLevel } from './AICommandCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
@@ -8,6 +10,7 @@ import { MomentumCard } from './MomentumCard';
 import { TodayRecommendationCard } from './TodayRecommendationCard';
 import { useDashboardMission } from '../hooks/useDashboardMission';
 import { revenueDriverHubRouteForMission } from '@/modules/revenue-drivers/constants/revenue-drivers';
+import { fetchTelemetryUserId, trackWeeklyActive } from '@/lib/telemetry/tracker';
 
 function routeOrFallback(route?: string) {
   return route && route.length > 0 ? route : '/journey';
@@ -61,9 +64,36 @@ function MissionEngineFailure({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+function weeklyActiveStorageKey(userId: string, now = new Date()) {
+  const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const day = weekStart.getUTCDay() || 7;
+  weekStart.setUTCDate(weekStart.getUTCDate() - day + 1);
+  return `nextshift:weekly-active:${userId}:${weekStart.toISOString().slice(0, 10)}`;
+}
+
 export function DashboardHome() {
   const projection = useDashboardMission();
+  const telemetryUser = useQuery({
+    queryKey: ['telemetry-user-id'],
+    queryFn: fetchTelemetryUserId,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
   const data = projection.data;
+
+  useEffect(() => {
+    const userId = telemetryUser.data;
+    if (!userId) return;
+
+    try {
+      const key = weeklyActiveStorageKey(userId);
+      if (window.localStorage.getItem(key)) return;
+      trackWeeklyActive(userId, {});
+      window.localStorage.setItem(key, 'true');
+    } catch {
+      // Telemetry should never block dashboard rendering.
+    }
+  }, [telemetryUser.data]);
 
   if (projection.isLoading) {
     return <DashboardHomeSkeleton />;

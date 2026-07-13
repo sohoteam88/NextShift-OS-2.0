@@ -1,10 +1,10 @@
 # Next Action
 
-Version: 1.0
+Version: 1.1
 
 Status: Current
 
-Last Updated: 2026-07-11
+Last Updated: 2026-07-13
 
 ---
 
@@ -18,26 +18,27 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-OS 3.5 RC prepared, awaiting approval
+OS 3.6 RC ready, awaiting Steven's manual merge to `main` and `v3.6.0` tag
+
+`v3.5.0` is released to production and verified (commit `413de70`; six runtime flags including `AI_DISCUSSION` are live).
+
+A [Master Roadmap](MASTER_ROADMAP_2026-07.md) frames OS 3.6 onward as Stage A ("Brain starts remembering") of a longer staged plan toward the full 15-layer vision, with a result-gate principle (real active users, not just green tests) governing when each Stage opens.
+
+[OS 3.6 Blueprint](OS_3_6_BLUEPRINT.md) Stage A part 1 is complete: PostHog analytics wiring, Business Memory writing/reading in the discussion service, recommendation use of discussion memory, storage evaluation, and the overdue hygiene work (production `admin` role audit, rate-limit IP trust, UI escape baseline remeasurement). Round 6's F-1/F-3 conditions are cleared. The [OS 3.6 RC package](RC_3.6.md) is ready for Steven's release decision.
+
+Previously, OS 3.4 Command Center was released as `v3.4.0`, and OS 3.3 Runtime Platform was released as `v3.3.0` (deployed to the VPS, verified through `/api/v1/version` at commit `50282b9`).
 
 OS 3.3 Runtime Platform was released as `v3.3.0`, deployed to the VPS, and verified through `/api/v1/version` at commit `50282b9`.
 
 OS 3.4 Command Center was subsequently released as `v3.4.0` (tag → commit `c472345`) and verified in production (note: the version endpoint sits behind a proxy cache and needs a cache-buster query parameter to verify).
 
-OS 3.5 Business Discussion release candidate package is prepared at:
+Next work is OS 3.6 graduation only:
 
-```text
-docs/nextshift-os-3/releases/OS_3_5_BUSINESS_DISCUSSION/
-```
-
-Next work should be graduation only:
-
-1. Review and approve the OS 3.5 RC package.
-2. Merge `planning/os-3.3-runtime-platform` into `main` after approval.
-3. Create the prepared `v3.5.0` tag only after explicit approval.
-4. Deploy to production and verify.
-5. Update VPS `.env.production`: flip `NEXT_PUBLIC_ENABLE_RUNTIME_MISSION` / `NEXT_PUBLIC_ENABLE_RUNTIME_BUSINESS_STATE` / `NEXT_PUBLIC_ENABLE_RUNTIME_CRM` off the explicit `false` override, and decide when to enable `NEXT_PUBLIC_ENABLE_AI_DISCUSSION`.
-6. Preserve the Runtime Adapter Standard and existing production deployment gates.
+1. Steven reviews and approves the [OS 3.6 RC package](RC_3.6.md).
+2. Steven manually merges `planning/os-3.3-runtime-platform` into `main` after approval.
+3. Steven creates `v3.6.0` with the prepared message `v3.6.0 — Business Brain Remembers`.
+4. Production deployment and verification occur only after explicit authorization.
+5. Preserve the Runtime Adapter Standard and existing production deployment gates.
 
 ---
 
@@ -66,6 +67,10 @@ OS 3.4 release state: Released to production as `v3.4.0`.
 OS 3.5 Round 5 audit result (PR #38-#47): PASS.
 
 OS 3.5 release state: RC package prepared, awaiting approval.
+
+OS 3.6 Round 6 audit result: PASS WITH CONDITION; F-1/F-3 conditions cleared in PR #61.
+
+OS 3.6 release state: RC ready, awaiting Steven's manual merge to `main` and `v3.6.0` tag.
 
 ---
 
@@ -96,6 +101,6 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-Continue OS 3.5 graduation from `planning/os-3.3-runtime-platform`.
+Continue OS 3.6 graduation from `planning/os-3.3-runtime-platform` only after Steven's review.
 
 Do not create release tags, modify Prisma, modify env files, change deployment configuration, or alter production release state without explicit approval.

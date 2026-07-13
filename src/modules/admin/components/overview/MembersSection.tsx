@@ -280,7 +280,7 @@ export function AdminMembersCenter({
           </div>
         </section>
         <MemberInvitePanel
-          role={role as 'member' | 'leader' | 'operator' | 'platform_admin' | 'admin'}
+          role={role as 'member' | 'leader' | 'operator' | 'platform_admin'}
         />
       </section>
 

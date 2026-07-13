@@ -19,7 +19,7 @@ vi.mock('@/modules/ai/prompt/validator', () => validatorMocks);
 
 import { contentService } from '@/modules/ai/services/content-service';
 
-const makeUser = () => ({ id: 'u1', email: 't@t.com', tenantId: 't1', role: 'admin', name: 'T', preferredLanguage: 'zh', status: 'active' as const });
+const makeUser = () => ({ id: 'u1', email: 't@t.com', tenantId: 't1', role: 'operator', name: 'T', preferredLanguage: 'zh', status: 'active' as const });
 
 describe('contentService', () => {
   beforeEach(() => {

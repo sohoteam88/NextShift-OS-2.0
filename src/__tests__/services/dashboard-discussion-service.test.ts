@@ -74,6 +74,75 @@ describe('Command Center discussion service', () => {
       userId: 'user_1',
       feature: 'ai_discussion',
     }));
+    expect(dependencies.getBusinessContext).toHaveBeenCalledWith('user_1', 'tenant_1');
+    expect(dependencies.appendMemoryEvent).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'DISCUSSION_STARTED',
+      metadata: expect.objectContaining({
+        recommendationId: 'command-center-engine-next-action',
+        turnNumber: 1,
+        source: 'engine',
+      }),
+    }));
+    expect(dependencies.appendMemoryEvent).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'DISCUSSION_TURN_COMPLETED',
+    }));
+  });
+
+  it('uses a concise business-memory summary in the prompt when the memory read succeeds', async () => {
+    const generate = vi.fn().mockResolvedValue(routerResult());
+    const dependencies = createDependencies({ getRouter: vi.fn().mockResolvedValue({ generate }) });
+
+    await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    const systemPrompt = generate.mock.calls[0][0].systemPrompt;
+    expect(systemPrompt).toContain('Relevant business memory');
+    expect(systemPrompt).toContain('Activity level: active');
+    expect(systemPrompt).toContain('Recent activity: Completed outreach');
+    expect(systemPrompt).toContain('accepted IDs: recommendation-accepted');
+  });
+
+  it('continues without business memory when the memory read fails and still records the completed turn', async () => {
+    const generate = vi.fn().mockResolvedValue(routerResult('Still available.'));
+    const dependencies = createDependencies({
+      getRouter: vi.fn().mockResolvedValue({ generate }),
+      getBusinessContext: vi.fn().mockRejectedValue(new Error('memory unavailable')),
+    });
+
+    const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    expect(result?.reply).toBe('Still available.');
+    expect(generate.mock.calls[0][0].systemPrompt).not.toContain('Relevant business memory');
+    expect(dependencies.logFallback).toHaveBeenCalledWith(
+      '[discussion-memory] continuing without business memory',
+      expect.objectContaining({ error: 'memory unavailable' }),
+    );
+    expect(dependencies.appendMemoryEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'DISCUSSION_TURN_COMPLETED' }));
+  });
+
+  it('returns the reply when memory event writes fail after a successful read', async () => {
+    const dependencies = createDependencies({
+      appendMemoryEvent: vi.fn().mockRejectedValue(new Error('audit unavailable')),
+    });
+
+    const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    expect(result?.reply).toBe('Discussion reply');
+    expect(dependencies.logFallback).toHaveBeenCalledWith(
+      '[discussion-memory] failed to record discussion event',
+      expect.objectContaining({ error: 'audit unavailable' }),
+    );
+  });
+
+  it('returns the reply when both memory reads and writes fail', async () => {
+    const dependencies = createDependencies({
+      getBusinessContext: vi.fn().mockRejectedValue(new Error('memory unavailable')),
+      appendMemoryEvent: vi.fn().mockRejectedValue(new Error('audit unavailable')),
+    });
+
+    const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    expect(result?.reply).toBe('Discussion reply');
+    expect(dependencies.logFallback).toHaveBeenCalledTimes(3);
   });
 
   it('injects the off-topic refusal and no-invention rules into the system prompt', async () => {
@@ -165,9 +234,40 @@ function createDependencies(
     getRouter: vi.fn().mockResolvedValue({ generate: vi.fn().mockResolvedValue(routerResult()) }),
     enforceQuota: vi.fn().mockResolvedValue(undefined),
     logUsage: vi.fn().mockResolvedValue(undefined),
+    getBusinessContext: vi.fn().mockResolvedValue(memory()),
+    appendMemoryEvent: vi.fn().mockResolvedValue({}),
+    logFallback: vi.fn(),
     now: () => new Date('2026-07-11T00:00:00.000Z'),
     ...overrides,
   };
+}
+
+function memory() {
+  return {
+    recentActivities: [
+      {
+        type: 'MISSION_COMPLETED',
+        title: 'Completed outreach',
+        summary: 'Contacted qualified leads.',
+        occurredAt: '2026-07-10T00:00:00.000Z',
+      },
+    ],
+    currentFocus: 'Follow up with qualified leads',
+    blockedAreas: [],
+    completedMilestones: [],
+    executionPattern: {
+      activityLevel: 'active',
+      completionVelocity: 'steady',
+      recommendationResponse: 'accepting',
+      consistency: 'high',
+    },
+    recommendedFocus: 'Follow up with qualified leads',
+    recommendationMemory: {
+      recentlyIssuedIds: ['recommendation-issued'],
+      acceptedIds: ['recommendation-accepted'],
+      ignoredIds: [],
+    },
+  } as const;
 }
 
 function recommendation() {

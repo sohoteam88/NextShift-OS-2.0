@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getRequestIp } from '@/lib/request-ip';
 import { normalizeSlug, RESERVED_SLUGS, suggestSlug } from '@/modules/tenant/utils/slug';
 
 async function getSuggestion(slug: string) {
@@ -20,7 +21,7 @@ async function getSuggestion(slug: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+    const ip = getRequestIp(request.headers);
 
     if (!(await checkRateLimit(`tenant-check-slug:${ip}`, 30, 60 * 60 * 1000))) {
       return NextResponse.json(
