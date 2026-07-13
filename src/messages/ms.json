@@ -1310,8 +1310,21 @@
       "expectedOutcome": "Hasil dijangka",
       "nextMilestone": "Pencapaian seterusnya",
       "nextMilestoneHelp": "Selesaikan langkah ini dahulu, kemudian teruskan hasil bisnes seterusnya.",
-      "startMission": "Mula misi"
-    }
+  "startMission": "Mula misi",
+  "alternativeSuggestion": "AI mempunyai cadangan lain",
+  "viewAlternativeSuggestion": "Lihat cadangan",
+  "hideAlternativeSuggestion": "Sembunyikan cadangan",
+  "discussWithAi": "Bincang dengan AI",
+  "discussionTurns": "Pusingan {used}/{limit}",
+  "discussionEmpty": "Belum ada perbincangan.",
+  "discussionReplying": "AI sedang membalas",
+  "discussionInputPlaceholder": "Masukkan soalan anda",
+  "discussionCharacterCount": "{count}/{limit}",
+  "sendDiscussion": "Hantar",
+  "discussionQuotaExceeded": "Kuota AI hari ini telah digunakan.",
+  "discussionTurnsExhausted": "Perbincangan ini telah mencapai hadnya. Cuba lakukan tindakan yang dicadangkan.",
+  "discussionConnectionFailed": "Tidak dapat menyambung ke perbincangan AI sekarang."
+}
   },
   "errors": {
     "somethingWentWrong": "Sesuatu telah berlaku",

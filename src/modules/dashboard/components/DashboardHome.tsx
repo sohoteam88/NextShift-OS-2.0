@@ -1,17 +1,31 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { AICommandCard } from './AICommandCard';
 import type { DashboardPriorityLevel } from './AICommandCard';
 import { BusinessScoreCard } from './BusinessScoreCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
 import { MomentumCard } from './MomentumCard';
-import { TodayRecommendationCard } from './TodayRecommendationCard';
+import { RecommendationDiscussion } from './RecommendationDiscussion';
 import { useDashboardMission } from '../hooks/useDashboardMission';
+import {
+  useDashboardRecommendation,
+} from '../hooks/useDashboardRecommendation';
+import { useRecommendationDiscussion } from '../hooks/useRecommendationDiscussion';
+import {
+  isDivergentRecommendation,
+  mergeMissionReason,
+} from '../lib/mission-recommendation';
 import { revenueDriverHubRouteForMission } from '@/modules/revenue-drivers/constants/revenue-drivers';
-import { fetchTelemetryUserId, trackWeeklyActive } from '@/lib/telemetry/tracker';
+import {
+  fetchTelemetryUserId,
+  trackRecommendationClicked,
+  trackRecommendationViewed,
+  trackWeeklyActive,
+} from '@/lib/telemetry/tracker';
 
 function routeOrFallback(route?: string) {
   return route && route.length > 0 ? route : '/journey';
@@ -73,7 +87,9 @@ function weeklyActiveStorageKey(userId: string, now = new Date()) {
 }
 
 export function DashboardHome() {
+  const router = useRouter();
   const projection = useDashboardMission();
+  const recommendation = useDashboardRecommendation();
   const telemetryUser = useQuery({
     queryKey: ['telemetry-user-id'],
     queryFn: fetchTelemetryUserId,
@@ -81,6 +97,14 @@ export function DashboardHome() {
     retry: false,
   });
   const data = projection.data;
+  const recommendationData = recommendation.isError ? null : recommendation.data ?? null;
+  const telemetryUserId = telemetryUser.data ?? null;
+  const discussion = useRecommendationDiscussion({
+    recommendation: recommendationData,
+    telemetryUserId,
+  });
+  const viewedRecommendationIds = useRef<Set<string>>(new Set());
+  const [alternativeOpen, setAlternativeOpen] = useState(false);
 
   useEffect(() => {
     const userId = telemetryUser.data;
@@ -94,9 +118,27 @@ export function DashboardHome() {
     } catch {
       // Telemetry should never block dashboard rendering.
     }
-  }, [telemetryUser.data]);
+  }, [telemetryUserId]);
 
-  if (projection.isLoading) {
+  useEffect(() => {
+    if (!recommendationData || !telemetryUserId) return;
+
+    const recommendationId = recommendationData.recommendation.id;
+    if (viewedRecommendationIds.current.has(recommendationId)) return;
+
+    viewedRecommendationIds.current.add(recommendationId);
+    trackRecommendationViewed(telemetryUserId, {
+      recommendationId,
+      source: recommendationData.source,
+      confidence: recommendationData.confidence,
+    });
+  }, [recommendationData, telemetryUserId]);
+
+  useEffect(() => {
+    setAlternativeOpen(false);
+  }, [recommendationData?.recommendation.id]);
+
+  if (projection.isLoading || recommendation.isLoading) {
     return <DashboardHomeSkeleton />;
   }
 
@@ -108,11 +150,17 @@ export function DashboardHome() {
     route: data.missionControl.route,
     missionType: data.missionControl.missionType,
   }) ?? routeOrFallback(data.missionControl.route);
+  const divergent = isDivergentRecommendation(recommendationData, data.missionControl.title);
+  const recommendationRationale = recommendationData
+    ? recommendationData.explain || recommendationData.recommendation.rationale
+    : '';
+  const missionReason = divergent
+    ? data.missionControl.whyThis
+    : mergeMissionReason(data.missionControl.whyThis, recommendationRationale);
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
       <BusinessScoreCard />
-      <TodayRecommendationCard />
       <AICommandCard
         completedItems={data.missionControl.completedItems}
         currentGap={data.missionControl.currentGap}
@@ -125,7 +173,7 @@ export function DashboardHome() {
         remainingChecks={data.missionControl.remainingChecks}
         nextRequiredCheck={data.missionControl.nextRequiredCheck}
         verificationStatus={data.missionControl.verificationStatus}
-        missionReason={data.missionControl.whyThis}
+        missionReason={missionReason}
         whyNow={data.missionControl.whyNow}
         decisionReason={data.missionControl.whyNotOthers}
         nextMilestone={data.missionControl.nextMilestone}
@@ -136,6 +184,36 @@ export function DashboardHome() {
         userSuccess={data.userSuccess}
         executeRoute={executeRoute}
         primaryActionLabel={data.missionControl.ctaLabel}
+        alternativeSuggestion={divergent && recommendationData ? {
+          title: recommendationData.recommendation.title,
+          rationale: recommendationRationale,
+          open: alternativeOpen,
+          onToggle: () => setAlternativeOpen((value) => !value),
+        } : undefined}
+        discussion={recommendationData && discussion.available ? (
+          <RecommendationDiscussion
+            recommendation={recommendationData}
+            open={discussion.open}
+            messages={discussion.messages}
+            input={discussion.input}
+            turnsUsed={discussion.turnsUsed}
+            turnsLimit={discussion.turnsLimit}
+            sending={discussion.sending}
+            error={discussion.error}
+            onToggle={discussion.toggle}
+            onInputChange={discussion.setInput}
+            onSubmit={discussion.submit}
+            onNavigate={(route) => {
+              if (telemetryUserId) {
+                trackRecommendationClicked(telemetryUserId, {
+                  recommendationId: recommendationData.recommendation.id,
+                  ctaTarget: route,
+                });
+              }
+              router.push(route);
+            }}
+          />
+        ) : undefined}
       />
       <div className="grid gap-5 lg:grid-cols-2">
         <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />

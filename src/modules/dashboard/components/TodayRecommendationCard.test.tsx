@@ -16,239 +16,94 @@ vi.mock('@/components/ui/Spinner', () => ({
 }));
 
 vi.mock('lucide-react', () => ({
-  ChevronDown: () => createElement('svg'),
   MessageCircle: () => createElement('svg'),
   Send: () => createElement('svg'),
-  Sparkles: () => createElement('svg'),
 }));
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, values?: Record<string, number>) => {
+    if (key === 'discussionTurns') return `第 ${values?.used}/${values?.limit} 轮`;
+    if (key === 'discussionCharacterCount') return `${values?.count}/${values?.limit}`;
+    return {
+      discussWithAi: '和 AI 讨论',
+      discussionEmpty: '当前还没有讨论内容。',
+      discussionReplying: 'AI 正在回复',
+      discussionInputPlaceholder: '输入你的问题',
+      sendDiscussion: '发送',
+      discussionQuotaExceeded: '今日 AI 额度已用完。',
+      discussionTurnsExhausted: '本次讨论已达上限，试试执行推荐吧。',
+      discussionConnectionFailed: '暂时无法连接 AI 讨论。',
+      startMission: '开始任务',
+    }[key] ?? key;
+  },
 }));
 
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: () => ({ data: null, isLoading: false, isError: false }),
-}));
-
+import { RecommendationDiscussion } from './RecommendationDiscussion';
+import type { TodayRecommendation } from '../hooks/useDashboardRecommendation';
 import {
-  TodayRecommendationCardView,
   fetchDiscussionAvailability,
   sendDiscussionMessage,
-  type TodayRecommendation,
-} from './TodayRecommendationCard';
+} from '../hooks/useRecommendationDiscussion';
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('TodayRecommendationCardView', () => {
-  it('renders no markup while loading', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation(),
-        isLoading: true,
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-      }),
-    );
-
-    expect(html).toBe('');
-  });
-
-  it('renders no markup when recommendation is null', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: null,
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-      }),
-    );
-
-    expect(html).toBe('');
-  });
-
-  it('renders engine recommendations with friendly source metadata', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation({ confidence: 0.84 }),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-      }),
-    );
-
-    expect(html).toContain('Today&#x27;s Recommendation');
-    expect(html).toContain('Convert the next qualified lead');
-    expect(html).toContain('AI 分析');
-    expect(html).toContain('84%');
-    expect(html).not.toContain('Mission and revenue signals agree.');
-  });
-
-  it('hides engine confidence numbers for medium confidence recommendations', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation({ confidence: 0.62 }),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-      }),
-    );
-
-    expect(html).toContain('AI 分析');
-    expect(html).not.toContain('62%');
-  });
-
-  it('labels low confidence engine recommendations as exploratory without a number', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation({ confidence: 0.47 }),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-      }),
-    );
-
-    expect(html).toContain('探索性建议');
-    expect(html).not.toContain('47%');
-    expect(html).not.toContain('AI 分析');
-  });
-
-  it('renders rule recommendations with beginner guidance metadata', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: ruleRecommendation({ confidence: 0.9 }),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-      }),
-    );
-
-    expect(html).toContain('Complete the AI Interview');
-    expect(html).toContain('新手引导');
-    expect(html).not.toContain('90%');
-  });
-
-  it('renders rationale when expanded', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation(),
-        expanded: true,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-      }),
-    );
-
-    expect(html).toContain('aria-expanded="true"');
-    expect(html).toContain('Mission and revenue signals agree.');
-  });
-
-  it('hides the AI discussion entry until availability is confirmed', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation(),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-        discussionAvailable: false,
-      }),
-    );
-
-    expect(html).not.toContain('和 AI 讨论');
-    expect(html).not.toContain('today-recommendation-discussion');
-  });
-
-  it('renders the AI discussion entry and round counter when available', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation(),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-        discussionAvailable: true,
-        discussionOpen: true,
-        discussionTurnsUsed: 2,
-        discussionTurnsLimit: 5,
-        discussionMessages: [
-          { role: 'user', content: 'Why now?' },
-          { role: 'assistant', content: 'Because the lead signal is strongest today.' },
-        ],
-        onDiscussionToggle: vi.fn(),
-        onDiscussionInputChange: vi.fn(),
-        onDiscussionSubmit: vi.fn(),
-      }),
-    );
+describe('RecommendationDiscussion', () => {
+  it('keeps the discussion panel closed until the entry is selected', () => {
+    const html = renderToStaticMarkup(createElement(RecommendationDiscussion, {
+      recommendation: engineRecommendation(),
+      open: false,
+      messages: [],
+      input: '',
+      turnsUsed: 0,
+      turnsLimit: 5,
+      sending: false,
+      error: null,
+      onToggle: vi.fn(),
+      onInputChange: vi.fn(),
+      onSubmit: vi.fn(),
+      onNavigate: vi.fn(),
+    }));
 
     expect(html).toContain('和 AI 讨论');
+    expect(html).not.toContain('data-testid="today-recommendation-discussion"');
+  });
+
+  it('renders messages, turn count, loading, validation, and errors when open', () => {
+    const html = renderToStaticMarkup(createElement(RecommendationDiscussion, {
+      recommendation: engineRecommendation(),
+      open: true,
+      messages: [
+        { role: 'user', content: 'Why now?' },
+        { role: 'assistant', content: 'Because the lead signal is strongest today.' },
+      ],
+      input: 'x'.repeat(1501),
+      turnsUsed: 2,
+      turnsLimit: 5,
+      sending: true,
+      error: { kind: 'turns' },
+      onToggle: vi.fn(),
+      onInputChange: vi.fn(),
+      onSubmit: vi.fn(),
+      onNavigate: vi.fn(),
+    }));
+
+    expect(html).toContain('data-testid="today-recommendation-discussion"');
     expect(html).toContain('第 2/5 轮');
     expect(html).toContain('Why now?');
     expect(html).toContain('Because the lead signal is strongest today.');
-  });
-
-  it('renders discussion loading and character validation states', () => {
-    const html = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation(),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-        discussionAvailable: true,
-        discussionOpen: true,
-        discussionInput: 'x'.repeat(1501),
-        discussionSending: true,
-        onDiscussionToggle: vi.fn(),
-        onDiscussionInputChange: vi.fn(),
-        onDiscussionSubmit: vi.fn(),
-      }),
-    );
-
     expect(html).toContain('AI 正在回复');
     expect(html).toContain('1501/1500');
     expect(html).toContain('aria-invalid="true"');
-  });
-
-  it('renders quota and turn-limit discussion errors', () => {
-    const quotaHtml = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation(),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-        discussionAvailable: true,
-        discussionOpen: true,
-        discussionError: { kind: 'quota', message: 'quota' },
-        onDiscussionToggle: vi.fn(),
-        onDiscussionInputChange: vi.fn(),
-        onDiscussionSubmit: vi.fn(),
-      }),
-    );
-    const turnsHtml = renderToStaticMarkup(
-      createElement(TodayRecommendationCardView, {
-        recommendation: engineRecommendation(),
-        expanded: false,
-        onToggle: vi.fn(),
-        onNavigate: vi.fn(),
-        discussionAvailable: true,
-        discussionOpen: true,
-        discussionError: { kind: 'turns', message: 'turns' },
-        onDiscussionToggle: vi.fn(),
-        onDiscussionInputChange: vi.fn(),
-        onDiscussionSubmit: vi.fn(),
-      }),
-    );
-
-    expect(quotaHtml).toContain('今日 AI 额度已用完');
-    expect(turnsHtml).toContain('本次讨论已达上限,试试执行推荐吧');
-    expect(turnsHtml).toContain('Open Sales');
+    expect(html).toContain('本次讨论已达上限，试试执行推荐吧。');
+    expect(html).toContain('Open Sales');
   });
 });
 
 describe('AI discussion API helpers', () => {
   it('returns availability data from the probe endpoint', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(response({
-      data: { turnsLimit: 5 },
-    }));
+    const fetchMock = vi.fn().mockResolvedValue(response({ data: { turnsLimit: 5 } }));
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(fetchDiscussionAvailability()).resolves.toEqual({ turnsLimit: 5 });
@@ -283,17 +138,17 @@ describe('AI discussion API helpers', () => {
     );
   });
 
-  it('maps quota and turn-limit responses to friendly errors', async () => {
+  it('preserves quota and turn-limit error kinds', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(response({ error: { code: 'QUOTA_EXCEEDED' } }, false, 429))
       .mockResolvedValueOnce(response({ error: { code: 'TURNS_EXHAUSTED' } }, false, 429)));
 
-    await expect(sendDiscussionMessage('Again?', [])).rejects.toThrow('今日 AI 额度已用完');
-    await expect(sendDiscussionMessage('Again?', [])).rejects.toThrow('本次讨论已达上限');
+    await expect(sendDiscussionMessage('Again?', [])).rejects.toMatchObject({ kind: 'quota' });
+    await expect(sendDiscussionMessage('Again?', [])).rejects.toMatchObject({ kind: 'turns' });
   });
 });
 
-function engineRecommendation(overrides: Partial<TodayRecommendation> = {}): TodayRecommendation {
+function engineRecommendation(): TodayRecommendation {
   return {
     recommendation: {
       id: 'engine-1',
@@ -306,24 +161,6 @@ function engineRecommendation(overrides: Partial<TodayRecommendation> = {}): Tod
     confidence: 0.84,
     explain: 'Mission and revenue signals agree.',
     source: 'engine',
-    ...overrides,
-  };
-}
-
-function ruleRecommendation(overrides: Partial<TodayRecommendation> = {}): TodayRecommendation {
-  return {
-    recommendation: {
-      id: 'rule-1',
-      title: 'Complete the AI Interview',
-      summary: 'Finish the AI Interview before deeper recommendations.',
-      rationale: 'Business State still lacks the core interview signal.',
-      route: '/brand-builder/step/interview',
-      ctaLabel: 'Start AI Interview',
-    },
-    confidence: 0.9,
-    explain: 'Business State still lacks the core interview signal.',
-    source: 'rule',
-    ...overrides,
   };
 }
 

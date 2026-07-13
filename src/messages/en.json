@@ -1310,8 +1310,21 @@
       "expectedOutcome": "Expected outcome",
       "nextMilestone": "Next milestone",
       "nextMilestoneHelp": "Finish this step first, then move the next business result forward.",
-      "startMission": "Start mission"
-    }
+  "startMission": "Start mission",
+  "alternativeSuggestion": "AI has another suggestion",
+  "viewAlternativeSuggestion": "View suggestion",
+  "hideAlternativeSuggestion": "Hide suggestion",
+  "discussWithAi": "Discuss with AI",
+  "discussionTurns": "Turn {used}/{limit}",
+  "discussionEmpty": "There is no discussion yet.",
+  "discussionReplying": "AI is replying",
+  "discussionInputPlaceholder": "Enter your question",
+  "discussionCharacterCount": "{count}/{limit}",
+  "sendDiscussion": "Send",
+  "discussionQuotaExceeded": "Today's AI quota has been used.",
+  "discussionTurnsExhausted": "This discussion has reached its limit. Try the recommended action.",
+  "discussionConnectionFailed": "Unable to connect to the AI discussion right now."
+}
   },
   "errors": {
     "somethingWentWrong": "Something went wrong",

@@ -4,19 +4,8 @@ import { loginAsUser } from './helpers/auth';
 const commandCenterEnabled = process.env.NEXT_PUBLIC_ENABLE_COMMAND_CENTER === 'true';
 const aiDiscussionEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_DISCUSSION === 'true';
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function sourceLabel(source: 'engine' | 'rule', confidence: number) {
-  if (source === 'rule') return '新手引导';
-  return confidence < 0.5 ? '探索性建议' : 'AI 分析';
-}
-
-function confidenceLabel(source: 'engine' | 'rule', confidence: number) {
-  if (source === 'rule' || confidence < 0.7) return null;
-  const normalized = Number.isFinite(confidence) ? confidence : 0;
-  return `${Math.max(0, Math.min(100, Math.round(normalized * 100)))}%`;
+function normalize(value: string) {
+  return value.trim().toLowerCase();
 }
 
 test.describe('Command Center recommendation', () => {
@@ -24,36 +13,44 @@ test.describe('Command Center recommendation', () => {
     await loginAsUser(page);
   });
 
-  test('flag on: dashboard recommendation card expands and CTA navigates', async ({ page }) => {
+  test('flag on: dashboard renders one unified mission card', async ({ page }) => {
     test.skip(!commandCenterEnabled, 'Command Center flag must be enabled for this E2E path.');
 
-    const response = await page.request.get('/api/v1/dashboard/recommendation');
-    expect(response.ok()).toBeTruthy();
+    const [recommendationResponse, projectionResponse] = await Promise.all([
+      page.request.get('/api/v1/dashboard/recommendation'),
+      page.request.get('/api/v1/dashboard/projection'),
+    ]);
+    expect(recommendationResponse.ok()).toBeTruthy();
+    expect(projectionResponse.ok()).toBeTruthy();
 
-    const body = await response.json();
-    expect(body.data).toBeTruthy();
+    const recommendationBody = await recommendationResponse.json();
+    const projectionBody = await projectionResponse.json();
+    expect(recommendationBody.data).toBeTruthy();
+    expect(projectionBody.data?.missionControl).toBeTruthy();
 
-    const recommendation = body.data.recommendation;
-    const route = recommendation.route ?? '/dashboard';
-    const ctaLabel = recommendation.ctaLabel ?? 'Open recommendation';
-    expect(['engine', 'rule']).toContain(body.data.source);
+    const recommendation = recommendationBody.data;
+    const mission = projectionBody.data.missionControl;
+    const divergent = recommendation.source === 'engine'
+      && normalize(recommendation.recommendation.title) !== normalize(mission.title);
 
     await page.goto('/dashboard');
-    const recommendationCard = page.getByTestId('today-recommendation-card');
-    await expect(recommendationCard).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText(recommendation.title)).toBeVisible();
-    await expect(recommendationCard).toContainText(sourceLabel(body.data.source, body.data.confidence));
-    const confidence = confidenceLabel(body.data.source, body.data.confidence);
-    if (confidence) {
-      await expect(recommendationCard).toContainText(confidence);
+    const missionCard = page.getByTestId('today-mission-card');
+    await expect(missionCard).toBeVisible({ timeout: 15000 });
+    await expect(missionCard).toContainText(mission.title);
+    await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
+
+    const alternativeSuggestion = page.getByTestId('mission-alternative-suggestion');
+    if (divergent) {
+      await expect(alternativeSuggestion).toBeVisible();
+      await alternativeSuggestion.getByRole('button').click();
+      await expect(alternativeSuggestion).toContainText(recommendation.recommendation.title);
+      await expect(alternativeSuggestion).toContainText(
+        recommendation.explain || recommendation.recommendation.rationale,
+      );
+    } else {
+      await expect(alternativeSuggestion).toHaveCount(0);
+      await expect(missionCard).toContainText(mission.whyThis);
     }
-
-    await page.getByRole('button', { name: /Why this recommendation/i }).click();
-    await expect(page.locator('#today-recommendation-explain')).toBeVisible();
-    await expect(page.locator('#today-recommendation-explain')).toContainText(body.data.explain);
-
-    await page.getByRole('button', { name: ctaLabel }).click();
-    await expect(page).toHaveURL(new RegExp(escapeRegExp(route)));
   });
 
   test('flag on: recommendation discussion API returns the response contract', async ({ page }) => {
@@ -76,14 +73,15 @@ test.describe('Command Center recommendation', () => {
     expect(body.turnsLimit).toBe(5);
   });
 
-  test('flag on: recommendation discussion panel sends and receives a reply', async ({ page }) => {
+  test('flag on: unified mission discussion panel sends and receives a reply', async ({ page }) => {
     test.skip(
       !(commandCenterEnabled && aiDiscussionEnabled),
       'Command Center and AI Discussion flags must be enabled for this E2E path.',
     );
 
     await page.goto('/dashboard');
-    await expect(page.getByTestId('today-recommendation-card')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('today-mission-card')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
 
     await expect(page.getByRole('button', { name: /和 AI 讨论/i })).toBeVisible({ timeout: 15000 });
     await page.getByRole('button', { name: /和 AI 讨论/i }).click();
@@ -96,7 +94,7 @@ test.describe('Command Center recommendation', () => {
     await expect(page.getByText('第 1/5 轮')).toBeVisible();
   });
 
-  test('flag off: dashboard does not render the recommendation card', async ({ page }) => {
+  test('flag off: mission remains available without a discussion entry', async ({ page }) => {
     test.skip(commandCenterEnabled, 'Command Center flag must be disabled for this E2E path.');
 
     const response = await page.request.get('/api/v1/dashboard/recommendation');
@@ -105,7 +103,8 @@ test.describe('Command Center recommendation', () => {
     expect(body).toMatchObject({ data: null });
 
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByTestId('today-mission-card')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /和 AI 讨论/i })).toHaveCount(0);
   });
 });
