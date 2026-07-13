@@ -194,7 +194,8 @@ if [[ -n "$PACKAGE_FILES" ]]; then
     for allowed_file in "${C0_ALLOWED_PACKAGE_FILES[@]}"; do
       [[ "$file" == "$allowed_file" ]] && allowed=true && break
     done
-    "$allowed" || abort "C0 diff touches unauthorized package file '$file' — refusing to auto-merge: $PR_URL"
+    [[ "$allowed" == true ]] \
+      || abort "C0 diff touches unauthorized package file '$file' — refusing to auto-merge: $PR_URL"
   done <<< "$PACKAGE_FILES"
 fi
 
