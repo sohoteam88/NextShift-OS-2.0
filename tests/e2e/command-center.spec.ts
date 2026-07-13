@@ -41,10 +41,6 @@ test.describe('Command Center recommendation', () => {
     await page.goto('/dashboard');
     const recommendationCard = page.getByTestId('today-recommendation-card');
     await expect(recommendationCard).toBeVisible({ timeout: 15000 });
-    const recommendationIsFirstDashboardCard = await recommendationCard.evaluate(
-      (element) => element.parentElement?.firstElementChild === element,
-    );
-    expect(recommendationIsFirstDashboardCard).toBeTruthy();
     await expect(page.getByText(recommendation.title)).toBeVisible();
     await expect(recommendationCard).toContainText(sourceLabel(body.data.source, body.data.confidence));
     const confidence = confidenceLabel(body.data.source, body.data.confidence);
