@@ -38,6 +38,8 @@ OS 3.6 让 Business Memory 从骨架变活体：讨论会记住上次聊过什�
 | C1 | Today's Mission 与推荐卡合并信息层级 | 本版最大改动，也是唯一需要先出**产品设计判断**再动代码的任务——不是直接把两个组件拼在一起。要求：先产出一份一页纸的信息架构决定（哪些信息合并展示、mission 和 recommendation 谁是主线索、次要信息如何折叠），经 Steven 过目后再实现。实现层面：`TodayRecommendationCard` 和 `AICommandCard` 改为共享同一个顶层数据请求（避免两次独立 fetch 造成的状态不一致），UI 上合并成一个信息层级而不是两张并排卡片 |
 | C2 | Weekly Review 雏形（借壳先行） | 全新功能，Layer 9 的最小切片。复用现有 Business Memory 的 `recentActivities`/`completedMilestones`/`executionPattern` 字段（`business-memory-projection.ts` 已经在算这些），做一个只读的"过去 7 天做了什么、AI 建议采纳了多少"摘要卡片，不新增独立存储、不做趋势图表——纯粹是现有 Memory 数据的周聚合视图 |
 
+C0 implementation direction: [Canonical Business Score Integration Brief](business-command-center-v1/C0_CANONICAL_SCORE_INTEGRATION_BRIEF.md). The domain score policy is the single formula owner; C0 is not complete until the dashboard consumes that policy.
+
 ### C1 设计判断的建议起点
 
 不是从零设计。`business-command-center-v1.ts` 已经把 decision readiness 和 growth forecast 合并成一个分数，说明"合并"的先例已经在 domain 层存在，只是没有被 UI 消费。C1 的实现者应该先读这个文件，判断能否复用同一套合并逻辑作为信息层级的基础，而不是在 UI 层重新发明一套优先级规则。
@@ -82,7 +84,7 @@ Phase 5：Round 7/8 audit → RC → planning→main → v3.7.0
 
 ## 8. 发布标准（v3.7.0）
 
-1. Business Score 卡片在 dashboard 真实渲染，数据来自 `createBusinessScore()`，不是硬编码
+1. Business Score 卡片在 dashboard 真实渲染，评分计算来自 `createBusinessScore()` 所使用的导出 domain score policy，不在 app 层硬编码或镜像公式/分段
 2. Today's Mission 和推荐卡不再是两个独立 fetch、两个并排卡片——有一份 Steven 过目认可的信息架构决定，且实现与该决定一致
 3. Weekly Review 雏形可见，纯读取现有 Memory 数据，无新增存储
 4. `discussion-service.ts` 的 Twin snapshot 不再是硬编码 stub，`identity`/`brand` 字段在用户做过 Interview/Brand DNA 时反映真实数据，没做过时有明确空值降级
