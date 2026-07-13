@@ -39,8 +39,8 @@
       "@nextshift/decision-brain": [
         "./packages/decision-brain/src/index.ts"
       ],
-      "@nextshift/business-command-center-v1": [
-        "./packages/domain/src/business-command-center-v1/business-command-center-v1.ts"
+      "@nextshift/domain": [
+        "./packages/domain/src/index.ts"
       ]
     }
   },

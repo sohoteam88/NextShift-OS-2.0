@@ -1,7 +1,7 @@
 import {
   calculateBusinessScore,
   type CalculatedBusinessScore,
-} from '@nextshift/business-command-center-v1';
+} from '@nextshift/domain';
 import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import {
   loadCommandCenterRecommendationContext,
