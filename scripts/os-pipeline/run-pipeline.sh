@@ -121,6 +121,9 @@ structure: Base branch, Work branch (propose a name), Step 0 sync checklist, bac
 in actual current code (grep/read the relevant files yourself, do not guess file paths), concrete \
 requirements, an explicit list of forbidden actions including never touching packages/ or any \
 .env file, and acceptance criteria (pnpm type-check/test/build/lint must pass). \
+Because this repository uses Prisma, the task brief's setup and verification steps MUST run \
+`pnpm db:generate` immediately after `pnpm install --frozen-lockfile` and before type-checking \
+or testing; Prisma Client generation is a local build prerequisite, not a schema or database change. \
 The Base branch field MUST be exactly '$BASE_BRANCH' — this is not a guess, it is the fixed base \
 branch for this entire project's release cycle (every prior OS 3.x cycle worked this way: all \
 work lands on $BASE_BRANCH, only the RC/tag stage merges it to $MAIN_BRANCH). Do not propose \
@@ -184,6 +187,7 @@ git worktree add "/tmp/pipeline-verify-$RUN_ID" "origin/$WORK_BRANCH" 2>&1
 pushd "/tmp/pipeline-verify-$RUN_ID" >/dev/null
 
 pnpm install --frozen-lockfile
+pnpm db:generate
 pnpm type-check
 pnpm test
 pnpm build
