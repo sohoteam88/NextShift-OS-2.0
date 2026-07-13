@@ -1,11 +1,12 @@
 # NextShift OS 3.6 Blueprint — Business Brain Remembers
 
 Version: 1.1
-Status: Draft — awaiting Steven approval
+Status: RC ready — awaiting Steven's manual merge to `main` and `v3.6.0` tag
 Date: 2026-07-12
 Author: Claude (Architecture / Orchestration)
 Baseline: `v3.5.0` in production（Business Discussion 已上线，六个 runtime flag 全部揭幕）
 Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md) — 本版是 **Stage A（"Brain 开始记住"）的前半段**，对应 Master Roadmap 的 A1；A2（Command Center 长全）和 A3（Business Twin v1）连同结果闸门 A 的检查点排入 OS 3.7
+RC package: [OS 3.6 Release Candidate](RC_3.6.md)
 
 ---
 
