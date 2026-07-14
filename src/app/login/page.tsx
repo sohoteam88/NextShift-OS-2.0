@@ -44,12 +44,18 @@ export default function LoginPage() {
       : null;
     const user = me?.data?.user;
 
-    if (user?.status === 'pending') {
+    if (meResponse?.status === 401) {
+      router.push('/setup-workspace');
+    } else if (!user) {
+      setError(t('accountLoadFailed'));
+      setLoading(false);
+      return;
+    } else if (user.status === 'pending') {
       router.push('/pending');
-    } else if (user?.status === 'suspended') {
+    } else if (user.status === 'suspended') {
       router.push('/login');
     } else {
-      router.push(homeRouteForRole(user?.role ?? 'member'));
+      router.push(homeRouteForRole(user.role ?? 'member'));
     }
     router.refresh();
   }

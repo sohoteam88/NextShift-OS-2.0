@@ -7,7 +7,17 @@ type UpdateSessionOptions = {
 
 export async function updateSession(request: NextRequest, options: UpdateSessionOptions = {}) {
   const requestHeaders = options.requestHeaders ?? new Headers(request.headers);
-  const publicPaths = ['/login', '/register', '/signup', '/join', '/pending', '/api/v1/health', '/api/v1/tenant/check-slug'];
+  const publicPaths = [
+    '/login',
+    '/register',
+    '/signup',
+    '/auth/callback',
+    '/setup-workspace',
+    '/join',
+    '/pending',
+    '/api/v1/health',
+    '/api/v1/tenant/check-slug',
+  ];
   const isPublicPath = publicPaths.some((path) => request.nextUrl.pathname.startsWith(path));
   const isTenantFunnel = request.nextUrl.pathname.match(/^\/[^/]+\/funnel\//);
   const isApiPath = request.nextUrl.pathname.startsWith('/api/');

@@ -81,7 +81,16 @@
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "teamName": "Team Name",
-    "pendingApproval": "Your account is pending approval. Please wait for an admin to approve it."
+    "pendingApproval": "Your account is pending approval. Please wait for an admin to approve it.",
+    "emailVerificationRequired": "Check your inbox and verify your email address. We will finish setting up your workspace after verification.",
+    "accountLoadFailed": "We could not load your account. Please try again shortly.",
+    "workspaceSetupTitle": "Finish setting up your workspace",
+    "workspaceSetupDescription": "Your email is verified. Confirm these details and we will create your team workspace.",
+    "workspaceUrl": "Team URL",
+    "workspacePlan": "Plan",
+    "finishWorkspaceSetup": "Finish setup",
+    "workspaceSettingUp": "Setting up your workspace...",
+    "workspaceSetupFailed": "We could not finish setting up your workspace. Please try again shortly."
   },
   "nav": {
     "dashboard": "Home",

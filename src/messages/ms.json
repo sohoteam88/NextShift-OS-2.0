@@ -81,7 +81,16 @@
     "noAccount": "Belum ada akaun?",
     "hasAccount": "Sudah ada akaun?",
     "teamName": "Nama Pasukan",
-    "pendingApproval": "Akaun anda sedang menunggu kelulusan. Sila tunggu pentadbir meluluskan."
+    "pendingApproval": "Akaun anda sedang menunggu kelulusan. Sila tunggu pentadbir meluluskan.",
+    "emailVerificationRequired": "Semak peti masuk anda dan sahkan alamat e-mel anda. Kami akan melengkapkan persediaan ruang kerja selepas pengesahan.",
+    "accountLoadFailed": "Kami tidak dapat memuatkan akaun anda. Sila cuba lagi sebentar lagi.",
+    "workspaceSetupTitle": "Lengkapkan persediaan ruang kerja anda",
+    "workspaceSetupDescription": "E-mel anda telah disahkan. Sahkan butiran ini dan kami akan mencipta ruang kerja pasukan anda.",
+    "workspaceUrl": "URL pasukan",
+    "workspacePlan": "Pelan",
+    "finishWorkspaceSetup": "Lengkapkan persediaan",
+    "workspaceSettingUp": "Menyediakan ruang kerja anda...",
+    "workspaceSetupFailed": "Kami tidak dapat melengkapkan persediaan ruang kerja anda. Sila cuba lagi sebentar lagi."
   },
   "nav": {
     "dashboard": "Laman Utama",

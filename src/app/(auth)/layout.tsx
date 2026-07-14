@@ -8,6 +8,7 @@ import { FeedbackProvider } from '@/components/ui/FeedbackProvider';
 import { Spinner } from '@/components/ui/Spinner';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { resolveAuthRedirect } from '@/modules/auth/services/auth-routing';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { onboardingService } from '@/modules/member/services/onboarding-service';
 import { getTenantById } from '@/modules/tenant/services/tenant-resolution';
 import { WorkspaceProvider, createWorkspaceId, type Workspace } from '@/modules/workspace';
@@ -16,6 +17,15 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   const user = await getAuthUser();
 
   if (!user) {
+    const supabase = await createServerSupabaseClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (authUser) {
+      redirect('/setup-workspace');
+    }
+
     redirect('/login');
   }
 
