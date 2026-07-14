@@ -4,10 +4,21 @@ This is a personal orchestration script, not a NextShift product feature. It aut
 triangle workflow (Architecture Review → Codex execution → verification → review → merge →
 periodic audit → RC/tag) end-to-end, unattended.
 
-Run it with `./run-pipeline.sh`. Each invocation does **one cycle**: picks the next open item
-from the active blueprint, gets it built, verified, reviewed, and merged — and, every
-`AUDIT_EVERY_N_PRS` merges, runs a code-level audit. Run it in a loop (cron, or a `while true`
-wrapper with a sleep) if you want it to keep going until the blueprint is empty.
+`./run-pipeline.sh` runs **one supervised cycle**: it picks the next open item from the active
+blueprint, gets it built, verified, reviewed, checked by GitHub Actions, merged, and periodically
+audited. `./run-loop.sh` is the bounded unattended wrapper: it starts these single cycles with a
+lock, stop switch, daily ceiling, and failure backoff.
+
+## Graduation path for autonomy
+
+Move through these stages deliberately:
+
+1. **Supervised single cycle** — run `./run-pipeline.sh` and inspect its artifacts.
+2. **Unattended single cycle ×3–5** — allow several clean single cycles, reviewing every abort
+   and merge result.
+3. **Bounded loop** — run `./run-loop.sh` with the default limit of three cycles per day.
+4. **Wider automation** — only raise `MAX_CYCLES_PER_DAY` after the bounded loop has a stable,
+   reviewed record. Do not weaken the abort, PR-check, or audit gates to make it faster.
 
 ## Before first run
 
@@ -85,6 +96,43 @@ Step 5 (merge), before trusting it to run unattended in a loop through Steps 6-8
 
 Read `logs/<run-id>.log` after each run rather than watching it live once you trust it — that's
 the whole point of unattended execution.
+
+## Bounded loop mode
+
+Run the loop from this directory:
+
+```bash
+./run-loop.sh
+```
+
+It uses `flock` on `.loop.lock`, so a second loop cannot run concurrently. Each cycle still uses
+the detached `tmux` runner from `run-pipeline.sh`; the wrapper waits for that cycle's durable
+`logs/<run-id>-exit-code` file before deciding whether it was `OK` or `ABORT`.
+
+Configuration is environment-based:
+
+```bash
+MAX_CYCLES_PER_DAY=3 SLEEP_SECONDS=600 ./run-loop.sh
+```
+
+- `MAX_CYCLES_PER_DAY` defaults to `3`, counted from base cycle logs for the current day.
+- `SLEEP_SECONDS` defaults to `600` (10 minutes); `ABORT_BACKOFF_SECONDS` defaults to the same
+  value.
+- After two consecutive aborts, the loop writes `NEEDS_HUMAN` and exits rather than retrying.
+- Create `logs/STOP` to stop cleanly before the next cycle: `touch logs/STOP`. Remove it only
+  after reviewing the prior run and intentionally resuming.
+- `logs/.blocked-items` is append-only evidence of items that failed Step 3 verification or a
+  Step 4 architecture review. Future task briefs are told to skip these items. If an item appears
+  twice, the pipeline writes `NEEDS_HUMAN` and stops.
+
+`NOTIFY_WEBHOOK` is optional. If configured, the loop sends one plain-text `OK` or `ABORT` line
+per cycle. A zero-configuration ntfy.sh example (choose a private topic name) is:
+
+```bash
+NOTIFY_WEBHOOK='https://ntfy.sh/your-private-nextshift-pipeline-topic' ./run-loop.sh
+```
+
+The notification is advisory: a webhook failure is logged but never changes the pipeline result.
 
 ## Logs
 
