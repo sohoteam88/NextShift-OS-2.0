@@ -150,6 +150,7 @@ export default function SetupWorkspacePage() {
             label={t('name')}
             value={ownerName}
             onChange={(event) => setOwnerName(event.target.value)}
+            disabled={!ready || loading}
             required
           />
           <Input
@@ -159,6 +160,7 @@ export default function SetupWorkspacePage() {
             label={t('teamName')}
             value={teamName}
             onChange={(event) => setTeamName(event.target.value)}
+            disabled={!ready || loading}
             required
           />
           <div className="space-y-1.5">
@@ -175,6 +177,7 @@ export default function SetupWorkspacePage() {
                   setSlugTouched(true);
                   setSlug(generateSlug(event.target.value));
                 }}
+                disabled={!ready || loading}
                 className="h-10 flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)] shadow-sm outline-none transition-colors focus:border-[var(--color-primary)] focus:ring-2 focus:ring-blue-100"
                 required
                 minLength={3}
@@ -192,6 +195,7 @@ export default function SetupWorkspacePage() {
               name="plan"
               value={plan}
               onChange={(event) => setPlan(event.target.value as PlanTier)}
+              disabled={!ready || loading}
               className="h-10 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)]"
             >
               {PLAN_OPTIONS.map((option) => (
@@ -202,7 +206,7 @@ export default function SetupWorkspacePage() {
 
           {error && <p role="alert" className="text-sm text-[var(--color-danger)]">{error}</p>}
 
-          <Button type="submit" className="w-full" loading={loading} disabled={!ready}>
+          <Button type="submit" className="w-full" loading={loading} disabled={!ready || loading}>
             {loading ? t('workspaceSettingUp') : t('finishWorkspaceSetup')}
           </Button>
         </form>
