@@ -99,6 +99,7 @@ PIPELINE_SESSION_FILE="$LOG_DIR/$RUN_ID-tmux-session"
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
 mkdir -p "$LOG_DIR"
+BLOCKED_ITEMS_FILE="$LOG_DIR/.blocked-items"
 
 # The caller may be a desktop-app tool process whose lifetime is shorter than a full pipeline
 # cycle. Re-exec once in a detached tmux session so closing that caller cannot terminate
@@ -124,6 +125,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$1"; }
 abort() { log "ABORT: $1"; exit 1; }
+needs_human() { log "NEEDS_HUMAN: $1"; abort "$1"; }
 first_open_blueprint_item() {
   awk -F'|' '
     /^\|[[:space:]]*[A-Za-z]+[0-9]+[[:space:]]*\|/ {
@@ -166,6 +168,20 @@ wait_for_pr_checks() {
   wait "$checks_pid"
 }
 
+block_current_item() {
+  local stage="$1"
+  local reason="$2"
+  local occurrences
+
+  printf '%s\t%s\t%s\t%s\n' "$CURRENT_ITEM" "$stage" "$RUN_ID" "$reason" >> "$BLOCKED_ITEMS_FILE"
+  occurrences="$(awk -F'\t' -v item="$CURRENT_ITEM" '$1 == item { count++ } END { print count + 0 }' "$BLOCKED_ITEMS_FILE")"
+  log "Blocked $CURRENT_ITEM after $stage ($occurrences occurrence(s)): $reason"
+
+  if (( occurrences >= 2 )); then
+    needs_human "$CURRENT_ITEM has failed twice; see $BLOCKED_ITEMS_FILE and resolve manually before another cycle"
+  fi
+}
+
 record_exit_code() {
   local status=$?
   printf '%s\n' "$status" > "$PIPELINE_EXIT_FILE"
@@ -188,6 +204,20 @@ fi
 
 git pull --ff-only || abort "git pull --ff-only failed (diverged history or lock contention) — do not force, resolve by hand"
 
+# A PR left open by a prior abort is a human-review boundary. Do not create another pipeline PR
+# until it is resolved. The --head call is kept for visibility; the JSON filter supplies reliable
+# prefix matching because GitHub's head filter itself is exact rather than glob-aware.
+OPEN_PIPELINE_PRS="$(gh pr list --head 'chore/pipeline-*' --state open --json url --jq '.[].url' || true)"
+OPEN_PIPELINE_PRS="$OPEN_PIPELINE_PRS$(gh pr list --state open --limit 100 --json headRefName,url --jq '.[] | select(.headRefName | startswith("chore/pipeline-")) | .url')"
+if [[ -n "$OPEN_PIPELINE_PRS" ]]; then
+  abort "previous cycle left an open pipeline PR for manual handling: $(printf '%s' "$OPEN_PIPELINE_PRS" | tr '\n' ' ')"
+fi
+
+BLOCKED_ITEM_IDS=""
+if [[ -s "$BLOCKED_ITEMS_FILE" ]]; then
+  BLOCKED_ITEM_IDS="$(awk -F'\t' 'NF { print $1 }' "$BLOCKED_ITEMS_FILE" | sort -u | paste -sd ',')"
+fi
+
 # ============================================================================
 # Step 1 — Architecture Review: pick next task, write brief
 # ============================================================================
@@ -198,7 +228,9 @@ TASK_BRIEF="$LOG_DIR/$RUN_ID-task.md"
 
 $CLAUDE_CMD "You are acting as the Architecture Review / orchestration role for the NextShift OS project. \
 Read $BLUEPRINT_PATH in the current repo. Find the first workstream item (in any table, any \
-section) that is NOT marked 已完成/completed. If every item is marked complete, output exactly \
+section) that is NOT marked 已完成/completed and is not in the blocked-item list below. Do not \
+select, retry, or propose a blocked item. Blocked item IDs: ${BLOCKED_ITEM_IDS:-none}. If every \
+non-blocked workstream item is marked complete, output exactly \
 the single line NO_OPEN_ITEMS and nothing else. \
 Otherwise, write a complete, self-contained task brief for that single item, in the same style as \
 the existing entries under scripts/os-pipeline/task-template.md if it exists, otherwise use this \
@@ -228,6 +260,10 @@ log "Task brief written to $TASK_BRIEF"
 CURRENT_ITEM="$(task_brief_item)"
 [[ -n "$CURRENT_ITEM" ]] \
   || abort "could not identify the selected blueprint item from $TASK_BRIEF"
+if [[ -s "$BLOCKED_ITEMS_FILE" ]] && awk -F'\t' -v item="$CURRENT_ITEM" '$1 == item { found = 1 } END { exit !found }' "$BLOCKED_ITEMS_FILE"; then
+  block_current_item "Step 1 selection" "architecture review selected a previously blocked item"
+  abort "architecture review selected blocked item $CURRENT_ITEM; refusing to retry it"
+fi
 log "Selected blueprint item: $CURRENT_ITEM"
 
 # ============================================================================
@@ -272,7 +308,7 @@ DIFF_FILES="$(git diff --name-only "origin/$BASE_BRANCH...origin/$WORK_BRANCH")"
 PACKAGE_FILES="$(grep '^packages/' <<< "$DIFF_FILES" || true)"
 if [[ -n "$PACKAGE_FILES" ]]; then
   grep -q 'Item: \*\*C0' "$TASK_BRIEF" \
-    || abort "diff touches packages/ outside the explicitly authorized C0 task — refusing to auto-merge: $PR_URL"
+    || { block_current_item "Step 3 local verification" "diff touches packages/ outside the explicitly authorized C0 task"; abort "diff touches packages/ outside the explicitly authorized C0 task — refusing to auto-merge: $PR_URL"; }
 
   while IFS= read -r file; do
     allowed=false
@@ -280,27 +316,31 @@ if [[ -n "$PACKAGE_FILES" ]]; then
       [[ "$file" == "$allowed_file" ]] && allowed=true && break
     done
     [[ "$allowed" == true ]] \
-      || abort "C0 diff touches unauthorized package file '$file' — refusing to auto-merge: $PR_URL"
+      || { block_current_item "Step 3 local verification" "C0 diff touches unauthorized package file '$file'"; abort "C0 diff touches unauthorized package file '$file' — refusing to auto-merge: $PR_URL"; }
   done <<< "$PACKAGE_FILES"
 fi
 
 for pattern in "${FORBIDDEN_PATH_PATTERNS[@]}"; do
   if echo "$DIFF_FILES" | grep -qE "$pattern"; then
+    block_current_item "Step 3 local verification" "diff touches forbidden path matching '$pattern'"
     abort "diff touches a forbidden path matching '$pattern' — refusing to auto-merge, review by hand: $PR_URL"
   fi
 done
 
 git worktree add "/tmp/pipeline-verify-$RUN_ID" "origin/$WORK_BRANCH" 2>&1
-pushd "/tmp/pipeline-verify-$RUN_ID" >/dev/null
-
-pnpm install --frozen-lockfile
-pnpm db:generate
-pnpm type-check
-pnpm test
-pnpm build
-pnpm lint
-
-popd >/dev/null
+if ! (
+  cd "/tmp/pipeline-verify-$RUN_ID"
+  pnpm install --frozen-lockfile
+  pnpm db:generate
+  pnpm type-check
+  pnpm test
+  pnpm build
+  pnpm lint
+); then
+  git worktree remove "/tmp/pipeline-verify-$RUN_ID" --force || true
+  block_current_item "Step 3 local verification" "pnpm verification command failed"
+  abort "local verification failed; PR left open for manual handling: $PR_URL"
+fi
 git worktree remove "/tmp/pipeline-verify-$RUN_ID" --force
 
 log "Local verification passed."
@@ -355,6 +395,7 @@ done
   || abort "architecture review returned no valid structured verdict after 3 attempts — see $REVIEW_JSON and $REVIEW_STDERR; PR left open: $PR_URL"
 
 if ! grep -q '^VERDICT=PASS$' "$REVIEW_VERDICT"; then
+  block_current_item "Step 4 architecture review" "review verdict was FAIL"
   abort "architecture review did not PASS — see $REVIEW_VERDICT, PR left open for manual handling: $PR_URL"
 fi
 
