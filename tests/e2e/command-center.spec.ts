@@ -108,4 +108,19 @@ test.describe('Command Center recommendation', () => {
     await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
     await expect(page.getByTestId('recommendation-discussion-toggle')).toHaveCount(0);
   });
+
+  test('weekly review API preserves its nullable data contract without breaking the dashboard', async ({ page }) => {
+    const response = await page.request.get('/api/v1/dashboard/weekly-review');
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body).toHaveProperty('data');
+
+    await page.goto('/dashboard');
+    const weeklyReview = page.getByTestId('weekly-review-card');
+    if (body.data) {
+      await expect(weeklyReview).toBeVisible({ timeout: 15000 });
+    } else {
+      await expect(weeklyReview).toHaveCount(0);
+    }
+  });
 });

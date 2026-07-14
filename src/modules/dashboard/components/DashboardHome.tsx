@@ -10,6 +10,7 @@ import { BusinessScoreCard } from './BusinessScoreCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
 import { MomentumCard } from './MomentumCard';
 import { RecommendationDiscussion } from './RecommendationDiscussion';
+import { WeeklyReviewCard } from './WeeklyReviewCard';
 import { useDashboardMission } from '../hooks/useDashboardMission';
 import {
   useDashboardRecommendation,
@@ -226,6 +227,7 @@ export function DashboardHome() {
           setupHref={executeRoute}
         />
       </div>
+      <WeeklyReviewCard />
     </div>
   );
 }
