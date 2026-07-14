@@ -87,14 +87,38 @@ SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
 SSH_OPTS=(-i "$SSH_KEY" -o BatchMode=yes -o ConnectTimeout=10)
 
 LOG_DIR="${LOG_DIR:-$REPO_DIR/scripts/os-pipeline/logs}"
-RUN_ID="$(date +%Y%m%d-%H%M%S)"
+RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
 LOG_FILE="$LOG_DIR/$RUN_ID.log"
+PIPELINE_PID_FILE="$LOG_DIR/$RUN_ID-pid"
+PIPELINE_EXIT_FILE="$LOG_DIR/$RUN_ID-exit-code"
+PIPELINE_RUNNER_LOG="$LOG_DIR/$RUN_ID-runner.log"
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
 mkdir -p "$LOG_DIR"
+
+# The caller may be a desktop-app tool process whose lifetime is shorter than a full pipeline
+# cycle. Re-exec once under nohup so closing that caller cannot terminate Claude/Codex midway.
+# The detached child keeps the same RUN_ID and writes its PID, runner output, and final exit code
+# as durable artifacts in LOG_DIR.
+if [[ "${PIPELINE_DETACHED:-0}" != "1" ]]; then
+  export PIPELINE_DETACHED=1 RUN_ID REPO_DIR BASE_BRANCH MAIN_BRANCH BLUEPRINT_PATH
+  export CLAUDE_CMD CLAUDE_REVIEW_CMD CODEX_CMD AUDIT_EVERY_N_PRS LOG_DIR
+  nohup "$SCRIPT_PATH" </dev/null > "$PIPELINE_RUNNER_LOG" 2>&1 &
+  PIPELINE_PID=$!
+  printf '%s\n' "$PIPELINE_PID" > "$PIPELINE_PID_FILE"
+  printf 'Pipeline started in background (pid=%s).\nLogs: %s\n' "$PIPELINE_PID" "$LOG_FILE"
+  exit 0
+fi
+
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$1"; }
 abort() { log "ABORT: $1"; exit 1; }
+record_exit_code() {
+  local status=$?
+  printf '%s\n' "$status" > "$PIPELINE_EXIT_FILE"
+}
+trap record_exit_code EXIT
 
 # ============================================================================
 # Step 0 — sync check
@@ -157,11 +181,12 @@ log "Step 2: dispatching to Codex"
 
 WORK_BRANCH="chore/pipeline-$RUN_ID"
 CODEX_OUTPUT="$LOG_DIR/$RUN_ID-codex-output.log"
+CODEX_FINAL="$LOG_DIR/$RUN_ID-codex-final.md"
 
 # Codex can emit a large amount of tool and verification output. Keep both stdout and
 # stderr in the run artifact rather than streaming them through this script's terminal
 # tee; a full terminal pipe can otherwise make the CLI panic before it reports PR_URL.
-if ! $CODEX_CMD "$(cat "$TASK_BRIEF")
+if ! $CODEX_CMD --output-last-message "$CODEX_FINAL" "$(cat "$TASK_BRIEF")
 
 Additionally, mechanically required for this pipeline run (not optional):
 - Work on a new branch named exactly: $WORK_BRANCH
@@ -173,7 +198,7 @@ Additionally, mechanically required for this pipeline run (not optional):
   abort "Codex execution failed — see $CODEX_OUTPUT"
 fi
 
-PR_URL="$(grep -o 'PR_URL=.*' "$CODEX_OUTPUT" | tail -1 | cut -d= -f2-)"
+PR_URL="$(grep -h -o 'PR_URL=.*' "$CODEX_FINAL" "$CODEX_OUTPUT" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
 [[ -n "$PR_URL" ]] || abort "Codex did not report a PR_URL — cannot proceed automatically, check $CODEX_OUTPUT by hand"
 
 log "Codex opened: $PR_URL"
