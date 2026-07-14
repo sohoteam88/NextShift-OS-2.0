@@ -58,6 +58,7 @@ CODEX_CMD="${CODEX_CMD:-codex exec --dangerously-bypass-approvals-and-sandbox}"
 
 # --- Cadence ------------------------------------------------------------------
 AUDIT_EVERY_N_PRS="${AUDIT_EVERY_N_PRS:-3}"
+PR_CHECKS_TIMEOUT_SECONDS="${PR_CHECKS_TIMEOUT_SECONDS:-1800}"
 
 # --- Hard safety guards (do not weaken these without deliberately deciding to) -
 # Paths that must NEVER appear in a Codex-produced diff, aside from the narrowly-scoped C0
@@ -144,6 +145,27 @@ task_brief_item() {
     }
   ' "$TASK_BRIEF"
 }
+
+wait_for_pr_checks() {
+  local pr_url="$1"
+  local checks_pid
+  local deadline=$((SECONDS + PR_CHECKS_TIMEOUT_SECONDS))
+
+  gh pr checks "$pr_url" --watch --fail-fast &
+  checks_pid=$!
+
+  while kill -0 "$checks_pid" 2>/dev/null; do
+    if (( SECONDS >= deadline )); then
+      kill "$checks_pid" 2>/dev/null || true
+      wait "$checks_pid" 2>/dev/null || true
+      return 124
+    fi
+    sleep 5
+  done
+
+  wait "$checks_pid"
+}
+
 record_exit_code() {
   local status=$?
   printf '%s\n' "$status" > "$PIPELINE_EXIT_FILE"
@@ -343,6 +365,17 @@ log "Architecture review PASS."
 # ============================================================================
 
 log "Step 5: merging $PR_URL into $BASE_BRANCH"
+
+log "Waiting up to $PR_CHECKS_TIMEOUT_SECONDS seconds for GitHub checks to pass."
+if wait_for_pr_checks "$PR_URL"; then
+  log "GitHub checks passed."
+else
+  CHECKS_STATUS=$?
+  if [[ "$CHECKS_STATUS" -eq 124 ]]; then
+    abort "GitHub checks timed out after $PR_CHECKS_TIMEOUT_SECONDS seconds; PR left open: $PR_URL"
+  fi
+  abort "GitHub checks failed; PR left open: $PR_URL"
+fi
 
 PR_IS_DRAFT="$(gh pr view "$PR_URL" --json isDraft --jq '.isDraft')" \
   || abort "could not determine whether PR is a draft: $PR_URL"
