@@ -91,22 +91,28 @@ RUN_ID="${RUN_ID:-$(date +%Y%m%d-%H%M%S)}"
 LOG_FILE="$LOG_DIR/$RUN_ID.log"
 PIPELINE_PID_FILE="$LOG_DIR/$RUN_ID-pid"
 PIPELINE_EXIT_FILE="$LOG_DIR/$RUN_ID-exit-code"
-PIPELINE_RUNNER_LOG="$LOG_DIR/$RUN_ID-runner.log"
+PIPELINE_SESSION_FILE="$LOG_DIR/$RUN_ID-tmux-session"
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
 mkdir -p "$LOG_DIR"
 
 # The caller may be a desktop-app tool process whose lifetime is shorter than a full pipeline
-# cycle. Re-exec once under nohup so closing that caller cannot terminate Claude/Codex midway.
-# The detached child keeps the same RUN_ID and writes its PID, runner output, and final exit code
-# as durable artifacts in LOG_DIR.
+# cycle. Re-exec once in a detached tmux session so closing that caller cannot terminate
+# Claude/Codex midway. nohup alone is insufficient when the caller kills its whole process group.
+# The detached child keeps the same RUN_ID and writes its pane PID and final exit code as durable
+# artifacts in LOG_DIR.
 if [[ "${PIPELINE_DETACHED:-0}" != "1" ]]; then
+  command -v tmux >/dev/null 2>&1 \
+    || { printf 'ABORT: tmux is required for detached pipeline execution. Install it with: brew install tmux\n' >&2; exit 1; }
+
+  PIPELINE_SESSION="os-pipeline-$RUN_ID"
   export PIPELINE_DETACHED=1 RUN_ID REPO_DIR BASE_BRANCH MAIN_BRANCH BLUEPRINT_PATH
-  export CLAUDE_CMD CLAUDE_REVIEW_CMD CODEX_CMD AUDIT_EVERY_N_PRS LOG_DIR
-  nohup "$SCRIPT_PATH" </dev/null > "$PIPELINE_RUNNER_LOG" 2>&1 &
-  PIPELINE_PID=$!
+  export CLAUDE_CMD CLAUDE_REVIEW_CMD CODEX_CMD AUDIT_EVERY_N_PRS LOG_DIR PIPELINE_SESSION
+  tmux new-session -d -s "$PIPELINE_SESSION" "$SCRIPT_PATH"
+  PIPELINE_PID="$(tmux display-message -p -t "$PIPELINE_SESSION" '#{pane_pid}')"
   printf '%s\n' "$PIPELINE_PID" > "$PIPELINE_PID_FILE"
-  printf 'Pipeline started in background (pid=%s).\nLogs: %s\n' "$PIPELINE_PID" "$LOG_FILE"
+  printf '%s\n' "$PIPELINE_SESSION" > "$PIPELINE_SESSION_FILE"
+  printf 'Pipeline started in tmux session %s (pid=%s).\nLogs: %s\n' "$PIPELINE_SESSION" "$PIPELINE_PID" "$LOG_FILE"
   exit 0
 fi
 
