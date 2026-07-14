@@ -74,6 +74,7 @@ describe('Command Center discussion service', () => {
       userId: 'user_1',
       feature: 'ai_discussion',
     }));
+    expect(dependencies.getBusinessTwin).toHaveBeenCalledWith('user_1', 'tenant_1');
     expect(dependencies.getBusinessContext).toHaveBeenCalledWith('user_1', 'tenant_1');
     expect(dependencies.appendMemoryEvent).toHaveBeenCalledWith(expect.objectContaining({
       type: 'DISCUSSION_STARTED',
@@ -117,6 +118,91 @@ describe('Command Center discussion service', () => {
       expect.objectContaining({ error: 'memory unavailable' }),
     );
     expect(dependencies.appendMemoryEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'DISCUSSION_TURN_COMPLETED' }));
+  });
+
+  it('passes loaded Twin identity and Brand DNA into the decision context', async () => {
+    let decisionContext: DecisionContext | undefined;
+    const dependencies = createDependencies({
+      getBusinessTwin: vi.fn().mockResolvedValue({
+        businessId: 'business-tenant_1',
+        tenant: { tenantId: 'tenant_1' },
+        version: 1,
+        capturedAt: '2026-07-11T00:00:00.000Z',
+        identity: {
+          businessName: 'North Star Wellness',
+          industry: 'Wellness',
+          mission: 'Make everyday wellness practical.',
+        },
+        brand: {
+          brandName: 'North Star Wellness',
+          brandStory: 'Practical wellness coaching for busy professionals.',
+          voice: 'Warm and evidence-led',
+        },
+      }),
+      conversationEngine: {
+        continueConversation: vi.fn((context: DecisionContext) => {
+          decisionContext = context;
+          return [];
+        }),
+      },
+    });
+
+    const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+    const businessContext = decisionContext?.toSnapshot().businessContext;
+
+    expect(result?.reply).toBe('Discussion reply');
+    expect(businessContext).toMatchObject({
+      identity: {
+        businessName: 'North Star Wellness',
+        industry: 'Wellness',
+        mission: 'Make everyday wellness practical.',
+      },
+      brand: {
+        brandName: 'North Star Wellness',
+        brandStory: 'Practical wellness coaching for busy professionals.',
+        voice: 'Warm and evidence-led',
+      },
+    });
+    expect(JSON.stringify(businessContext)).not.toContain('NextShift Command Center');
+  });
+
+  it('continues with no identity or brand when the Twin loader returns no data', async () => {
+    let decisionContext: DecisionContext | undefined;
+    const dependencies = createDependencies({
+      getBusinessTwin: vi.fn().mockResolvedValue(null),
+      conversationEngine: {
+        continueConversation: vi.fn((context: DecisionContext) => {
+          decisionContext = context;
+          return [];
+        }),
+      },
+    });
+
+    const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+    const businessContext = decisionContext?.toSnapshot().businessContext;
+
+    expect(result?.reply).toBe('Discussion reply');
+    expect(businessContext).not.toHaveProperty('identity');
+    expect(businessContext).not.toHaveProperty('brand');
+  });
+
+  it('continues without Twin data when the loader throws', async () => {
+    const dependencies = createDependencies({
+      getBusinessTwin: vi.fn().mockRejectedValue(new Error('Twin unavailable')),
+    });
+
+    const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    expect(result?.reply).toBe('Discussion reply');
+    expect(dependencies.logFallback).toHaveBeenCalledTimes(1);
+    expect(dependencies.logFallback).toHaveBeenCalledWith(
+      '[business-twin] continuing without twin data',
+      expect.objectContaining({
+        userId: 'user_1',
+        tenantId: 'tenant_1',
+        error: 'Twin unavailable',
+      }),
+    );
   });
 
   it('returns the reply when memory event writes fail after a successful read', async () => {
@@ -235,6 +321,7 @@ function createDependencies(
     enforceQuota: vi.fn().mockResolvedValue(undefined),
     logUsage: vi.fn().mockResolvedValue(undefined),
     getBusinessContext: vi.fn().mockResolvedValue(memory()),
+    getBusinessTwin: vi.fn().mockResolvedValue(null),
     appendMemoryEvent: vi.fn().mockResolvedValue({}),
     logFallback: vi.fn(),
     now: () => new Date('2026-07-11T00:00:00.000Z'),

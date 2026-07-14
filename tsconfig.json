@@ -36,6 +36,9 @@
       "@nextshift/runtime": [
         "./packages/runtime/src/index.ts"
       ],
+      "@nextshift/business-brain": [
+        "./packages/business-brain/src/business-twin/index.ts"
+      ],
       "@nextshift/decision-brain": [
         "./packages/decision-brain/src/index.ts"
       ],
