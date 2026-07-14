@@ -57,7 +57,7 @@ C0 implementation direction: [Canonical Business Score Integration Brief](busine
 
 | # | 任务 | 说明 |
 |---|---|---|
-| G1 | onboarding 摩擦点诊断 | Master Roadmap 点名"现在的 Journey 偏长，种子用户会流失在路上"。测量当前从注册到看到第一个 AI 推荐的实际步骤数和预估耗时，产出诊断结论（哪几步最容易流失），**不要求本版改完所有摩擦点**，但要有可执行的下一步清单 |
+| G1 | onboarding 摩擦点诊断 | Master Roadmap 点名"现在的 Journey 偏长，种子用户会流失在路上"。测量当前从注册到看到第一个 AI 推荐的实际步骤数和预估耗时，产出诊断结论（哪几步最容易流失），**不要求本版改完所有摩擦点**，但要有可执行的下一步清单。诊断见 [G1 Onboarding Friction Diagnosis](G1_ONBOARDING_FRICTION_DIAGNOSIS.md)。 |
 | G2 | 结果闸门 A 度量核对 | 从生产 PostHog 后台拉取真实数据，确认 OS 3.6 M0 接的四个事件（`recommendation_viewed`/`recommendation_clicked`/`discussion_turn_sent`/`weekly_active`）以及既有的 `user_signed_up` 确实有真实数据在流入（不是"代码写了"，是"面板里能查到"），写入 blueprint。闸门本身（≥10 真实周活）达成与否不是本项验收标准，由 Steven 的获客轨决定 |
 | G3 | 遗留 hygiene：`generateWithFallback` 收编进 router | Master Roadmap 记录为"2 处遗留"，实测（2026-07-13 grep）实际是 **4 处**：`src/modules/member/services/onboarding-service.ts`（326、381 行）和 `src/modules/voice/services/voice-service.ts`（303、316 行）直接调用 `providers/factory.ts` 的 `generateWithFallback`，绕过了 `src/modules/ai/router/ai-router.ts`。收编进 router，统一走 T1（OS 3.5）已经建立的路由+配额+日志路径 |
 
