@@ -1,9 +1,9 @@
-# C1 — Command Center 信息架构决定（一页纸，待 Steven 确认）
+# C1 — Command Center 信息架构决定（一页纸，已完成）
 
-Version: 1.0（草案）
+Version: 1.1
 Date: 2026-07-13
 Author: Claude（Architecture / Orchestration）
-状态: **待 Steven 确认** —— 确认后才能让 Codex 进入实现阶段（OS 3.7 blueprint C1 的硬性要求）
+状态: **已完成（2026-07-14）** —— Steven 已确认信息架构，PR #67 已按本决定实现并合并到 `planning/os-3.3-runtime-platform`；架构复审与全部 GitHub CI 检查通过。
 
 ---
 
@@ -51,9 +51,9 @@ JourneyProgressCard + MomentumCard（不变）
 - 不删除 recommendation-service.ts 或它的 API 路由——讨论入口仍然调用同一套 API，只是挂载位置从独立卡片改为 Mission 卡片内的一个区块
 - 不处理"AI 另有建议"分叉情况以外的边界情况优化（比如两者都失败、都为空等），这些走各自现有的 fallback（`MissionEngineFailure`、recommendation 现有的错误态）
 
-## 6. 需要 Steven 确认的两个具体判断
+## 6. Steven 已确认的两个具体判断
 
 1. **主线索选 Mission 而不是 Recommendation**——认可吗？（理由见第 2 节：Mission 有完整执行细节，Recommendation 多数时候只是转述）
 2. **分叉时的处理方式**——decision-brain 引擎给出跟 mission 不同的建议时，展示成"主卡片内的次要提示条"而不是恢复成第二张卡片——认可吗？
 
-如果这两点确认无误，Codex 执行时会拿到这份文档作为实现依据，不再自由发挥信息架构。
+这两点已确认；Codex 已以本文件为实现依据完成 C1，不再自由发挥信息架构。
