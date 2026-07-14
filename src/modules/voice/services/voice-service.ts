@@ -5,8 +5,9 @@ import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
-import { generateWithFallback } from '@/modules/ai/providers/factory';
-import type { AIProviderName } from '@/modules/ai/providers/types';
+import { getRouterForTenant, type RoutingDecision } from '@/modules/ai/router';
+import type { AIGenerateResult } from '@/modules/ai/providers/types';
+import { enforceQuota } from '@/modules/ai/usage/quota';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 import type {
   VoiceExtractionData,
@@ -294,13 +295,15 @@ async function transcribeAudio(file: File, language: VoiceLanguage, fileName: st
 }
 
 async function extractProfile(params: {
+  user: AuthUser;
   transcript: string;
   language: VoiceLanguage;
   durationSecs: number;
   fileName: string;
 }) {
   const prompt = buildPrompt(params);
-  const result = await generateWithFallback(
+  const router = await getRouterForTenant(params.user.tenantId);
+  const result = await router.generate(
     {
       systemPrompt:
         'You are a voice profile extraction assistant. Return raw JSON only and do not wrap it in markdown.',
@@ -308,12 +311,12 @@ async function extractProfile(params: {
       temperature: 0.2,
       maxTokens: 1400,
     },
-    'anthropic',
+    'brand_extraction',
   );
 
   let parsed = parseExtraction(result.text);
   if (!parsed) {
-    const retry = await generateWithFallback(
+    const retry = await router.generate(
       {
         systemPrompt:
           'You are a voice profile extraction assistant. Return only valid JSON with the requested keys.',
@@ -321,13 +324,16 @@ async function extractProfile(params: {
         temperature: 0.1,
         maxTokens: 1400,
       },
-      'anthropic',
+      'brand_extraction',
     );
     parsed = parseExtraction(retry.text);
     result.text = retry.text;
     result.tokensIn += retry.tokensIn;
     result.tokensOut += retry.tokensOut;
     result.durationMs += retry.durationMs;
+    result.model = retry.model;
+    result.provider = retry.provider;
+    result.routing = retry.routing;
   }
 
   if (!parsed) {
@@ -340,14 +346,7 @@ async function extractProfile(params: {
 async function logVoiceUsage(params: {
   user: AuthUser;
   templateId?: string;
-  result: {
-    text: string;
-    tokensIn: number;
-    tokensOut: number;
-    model: string;
-    provider: AIProviderName;
-    durationMs: number;
-  };
+  result: AIGenerateResult & { routing?: RoutingDecision };
 }) {
   await logAIUsage({
     tenantId: params.user.tenantId,
@@ -355,6 +354,7 @@ async function logVoiceUsage(params: {
     templateId: params.templateId,
     feature: 'voice_capture',
     result: params.result,
+    routing: params.result.routing,
   });
 }
 
@@ -495,7 +495,9 @@ export const voiceService = {
         },
       });
 
+      await enforceQuota(user.tenantId);
       const extraction = await extractProfile({
+        user,
         transcript: transcript.text,
         language,
         durationSecs: input.durationSecs ?? transcript.durationSecs,
@@ -649,7 +651,9 @@ export const voiceService = {
         },
       });
 
+      await enforceQuota(user.tenantId);
       const extraction = await extractProfile({
+        user,
         transcript: transcript.text,
         language,
         durationSecs: durationSecs || transcript.durationSecs,
