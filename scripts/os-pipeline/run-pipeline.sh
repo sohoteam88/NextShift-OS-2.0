@@ -160,6 +160,22 @@ wait_for_pr_checks() {
   local pr_url="$1"
   local checks_pid
   local deadline=$((SECONDS + PR_CHECKS_TIMEOUT_SECONDS))
+  local check_count
+
+  # A newly opened PR can take several seconds before Actions registers any check runs. Treat an
+  # empty rollup as pending until the configured deadline, not as a failed check suite.
+  while true; do
+    check_count="$(gh pr view "$pr_url" --json statusCheckRollup --jq '.statusCheckRollup | length')" \
+      || return 1
+    if (( check_count > 0 )); then
+      break
+    fi
+    if (( SECONDS >= deadline )); then
+      return 124
+    fi
+    log "No GitHub checks reported yet; waiting for Actions to register them."
+    sleep 15
+  done
 
   gh pr checks "$pr_url" --watch --fail-fast &
   checks_pid=$!
