@@ -23,7 +23,7 @@ export { classifyTask } from './router/task-classifier';
 export type { TaskCategory, TaskClassification, AITaskType } from './router/task-classifier';
 
 // ── Provider factory ─────────────────────────────────────────────────────────
-export { getProvider, generateWithFallback } from './providers/factory';
+export { getProvider } from './providers/factory';
 export type { AIProvider, AIGenerateParams, AIGenerateResult, AIProviderName } from './providers/types';
 
 // ── Agent management ─────────────────────────────────────────────────────────
