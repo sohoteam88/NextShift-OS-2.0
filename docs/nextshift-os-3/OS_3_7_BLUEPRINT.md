@@ -46,7 +46,7 @@ C0 implementation direction: [Canonical Business Score Integration Brief](busine
 
 | # | 任务 | 说明 |
 |---|---|---|
-| T1 | Interview + Brand DNA 数据接入 `BusinessTwinRepository` | 把 `discussion-service.ts` 第 214 行现在的 stub 替换成真实实现：`identity` 字段从 `interview-authority`（`InterviewProfileSnapshot.ts`）或 `brand-builder`（`brand-interview-service.ts`）的既有数据读取；`brand` 字段（`BrandDNAContext`）从 `brand-dna` 模块读取。用户没做过 Interview/Brand DNA 时必须有明确的空值降级（不是报错，也不是硬编码假数据） |
+| T1 | ~~Interview + Brand DNA 数据接入 `BusinessTwinRepository`~~ **已完成（2026-07-14）**：PR #69 实现（stub 移除、identity/brand 接真实数据、空值降级为省略字段而非伪造——审计 PIPELINE_AUDIT_20260714-160343 逐条确认）。注：#69 经旧管线在 CI 红灯下被合并（boundaries 未再生成）,`201fca6` 补齐配置后 CI run #230 全绿（478 tests）,T1 自此获得完整 CI 背书 | 原要求：把 `discussion-service.ts` 第 214 行现在的 stub 替换成真实实现：`identity` 字段从 `interview-authority`（`InterviewProfileSnapshot.ts`）或 `brand-builder`（`brand-interview-service.ts`）的既有数据读取；`brand` 字段（`BrandDNAContext`）从 `brand-dna` 模块读取。用户没做过 Interview/Brand DNA 时必须有明确的空值降级（不是报错，也不是硬编码假数据） |
 | T2 | Twin 摘要注入讨论 system prompt | 在 `buildSystemPrompt()`（`discussion-service.ts` 268-291 行）里，紧跟现有的 `buildMemorySummary(memory)` 之后（289 行），新增一段有界的 Twin 摘要注入，做法与 OS 3.6 M2 的 Memory 摘要完全对称：只注入摘要不注入原始 JSON，读取失败走 `runtimeFallbackLogger` 降级为无 Twin 数据继续回复 |
 
 **T1/T2 安全网**：延续 OS 3.6 M1-M3 定的规则——Twin 数据读取失败不能阻塞讨论功能，必须能降级为"无 Twin 摘要"模式继续工作，降级要 Sentry 可见。
