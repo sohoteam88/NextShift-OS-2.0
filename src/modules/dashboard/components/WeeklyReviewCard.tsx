@@ -2,6 +2,7 @@
 
 import { createElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { Spinner } from '@/components/ui/Spinner';
 import type { WeeklyReviewResult } from '../services/weekly-review-service';
 
@@ -16,6 +17,7 @@ async function fetchWeeklyReview() {
 }
 
 export function WeeklyReviewCard() {
+  const t = useTranslations('dashboard.weeklyReview');
   const review = useQuery({
     queryKey: ['dashboard-weekly-review'],
     queryFn: fetchWeeklyReview,
@@ -27,7 +29,7 @@ export function WeeklyReviewCard() {
     return h(
       'section',
       {
-        'aria-label': 'Weekly Review · 每周复盘',
+        'aria-label': t('title'),
         className: 'flex min-h-24 items-center justify-center rounded-lg border border-border bg-white p-5 shadow-sm',
       },
       h(Spinner, { size: 'sm', className: 'text-muted' }),
@@ -46,7 +48,7 @@ export function WeeklyReviewCard() {
         h(
           'div',
           { className: 'flex items-baseline justify-between gap-3' },
-          h('dt', { className: 'text-sm text-muted' }, 'Completed missions · 已完成任务'),
+          h('dt', { className: 'text-sm text-muted' }, t('completedMissions')),
           h(
             'dd',
             { className: 'text-sm font-semibold tabular-nums text-foreground' },
@@ -56,7 +58,7 @@ export function WeeklyReviewCard() {
         h(
           'div',
           { className: 'flex items-baseline justify-between gap-3' },
-          h('dt', { className: 'text-sm text-muted' }, 'Recommendations · 建议'),
+          h('dt', { className: 'text-sm text-muted' }, t('recommendations')),
           h(
             'dd',
             { className: 'text-sm font-semibold tabular-nums text-foreground' },
@@ -64,10 +66,10 @@ export function WeeklyReviewCard() {
           ),
         ),
       ),
-      h('p', { className: 'mt-2 text-xs text-muted' }, 'Issued / accepted / ignored · 发出 / 采纳 / 忽略'),
+      h('p', { className: 'mt-2 text-xs text-muted' }, t('recommendationBreakdown')),
       h(
         'ul',
-        { className: 'mt-4 space-y-3', 'aria-label': 'Weekly activities' },
+        { className: 'mt-4 space-y-3', 'aria-label': t('activities') },
         review.data.activities.map((activity, index) => h(
           'li',
           {
@@ -90,23 +92,23 @@ export function WeeklyReviewCard() {
         )),
       ),
     )
-    : h('p', { className: 'mt-4 text-sm text-muted' }, '过去 7 天没有记录到活动');
+    : h('p', { className: 'mt-4 text-sm text-muted' }, t('emptyState', { days: review.data.windowDays }));
 
   return h(
     'section',
     {
-      'aria-label': 'Weekly Review · 每周复盘',
+      'aria-label': t('title'),
       className: 'rounded-lg border border-border bg-white p-5 shadow-sm',
       'data-testid': 'weekly-review-card',
     },
     h(
       'div',
       null,
-      h('p', { className: 'text-xs font-semibold uppercase tracking-wide text-primary' }, 'Weekly Review · 每周复盘'),
+      h('p', { className: 'text-xs font-semibold uppercase tracking-wide text-primary' }, t('title')),
       h(
         'p',
         { className: 'mt-1 text-sm leading-relaxed text-muted' },
-        `A read-only summary of your activity from the past ${review.data.windowDays} days.`,
+        t('description', { days: review.data.windowDays }),
       ),
     ),
     summary,

@@ -1279,6 +1279,28 @@
     "conversionsSeries": "转化",
     "contentSeries": "内容",
     "showingMembers": "显示 {count} / {total}",
+    "businessScore": {
+      "title": "业务评分",
+      "description": "只读查看当前准备度与营收预测信心。",
+      "band": {
+        "strong": "强劲",
+        "ready": "就绪",
+        "needs_attention": "需要关注"
+      },
+      "factor": {
+        "readiness": "准备度",
+        "forecastConfidence": "预测信心"
+      }
+    },
+    "weeklyReview": {
+      "title": "每周复盘",
+      "description": "只读汇总过去 {days} 天的活动。",
+      "completedMissions": "已完成任务",
+      "recommendations": "建议",
+      "recommendationBreakdown": "发出 / 采纳 / 忽略",
+      "activities": "每周活动",
+      "emptyState": "过去 {days} 天没有记录到活动。"
+    },
     "aiCommand": {
       "nextStepBadge": "下一步行动",
       "todayFocus": "今天先做这一件事。",

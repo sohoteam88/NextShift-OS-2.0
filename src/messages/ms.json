@@ -1279,6 +1279,28 @@
     "conversionsSeries": "Penukaran",
     "contentSeries": "Kandungan",
     "showingMembers": "Menunjukkan {count} daripada {total}",
+    "businessScore": {
+      "title": "Skor Perniagaan",
+      "description": "Ringkasan baca sahaja tentang kesediaan dan keyakinan unjuran hasil semasa.",
+      "band": {
+        "strong": "Kukuh",
+        "ready": "Sedia",
+        "needs_attention": "Perlu perhatian"
+      },
+      "factor": {
+        "readiness": "Kesediaan",
+        "forecastConfidence": "Keyakinan unjuran"
+      }
+    },
+    "weeklyReview": {
+      "title": "Semakan Mingguan",
+      "description": "Ringkasan baca sahaja tentang aktiviti anda dalam {days} hari lalu.",
+      "completedMissions": "Misi yang diselesaikan",
+      "recommendations": "Cadangan",
+      "recommendationBreakdown": "Dikeluarkan / diterima / diabaikan",
+      "activities": "Aktiviti mingguan",
+      "emptyState": "Tiada aktiviti direkodkan dalam {days} hari lalu."
+    },
     "aiCommand": {
       "nextStepBadge": "Tindakan seterusnya",
       "todayFocus": "Buat satu perkara ini hari ini.",

@@ -8,6 +8,11 @@ const queryMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tanstack/react-query', () => queryMocks);
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, values?: Record<string, number>) => (
+    key === 'emptyState' ? `emptyState:${values?.days}` : key
+  ),
+}));
 vi.mock('@/components/ui/Spinner', () => ({
   Spinner: ({ children }: { children?: ReactNode }) => createElement('span', null, children ?? 'Loading'),
 }));
@@ -42,7 +47,7 @@ describe('WeeklyReviewCard', () => {
 
     expect(html).toContain('weekly-review-card');
     expect(html).toContain('Finish brand profile');
-    expect(html).toContain('Completed missions');
+    expect(html).toContain('completedMissions');
     expect(html).toContain('3 / 2 / 1');
   });
 
@@ -58,7 +63,7 @@ describe('WeeklyReviewCard', () => {
       data: weeklyReview({ hasActivity: false }),
     });
 
-    expect(renderToStaticMarkup(createElement(WeeklyReviewCard))).toContain('过去 7 天没有记录到活动');
+    expect(renderToStaticMarkup(createElement(WeeklyReviewCard))).toContain('emptyState:7');
   });
 });
 

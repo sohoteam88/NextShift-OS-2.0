@@ -1279,6 +1279,28 @@
     "conversionsSeries": "Conversions",
     "contentSeries": "Content",
     "showingMembers": "Showing {count} of {total}",
+    "businessScore": {
+      "title": "Business Score",
+      "description": "A read-only snapshot of readiness and current revenue forecast confidence.",
+      "band": {
+        "strong": "Strong",
+        "ready": "Ready",
+        "needs_attention": "Needs attention"
+      },
+      "factor": {
+        "readiness": "Readiness",
+        "forecastConfidence": "Forecast confidence"
+      }
+    },
+    "weeklyReview": {
+      "title": "Weekly Review",
+      "description": "A read-only summary of your activity from the past {days} days.",
+      "completedMissions": "Completed missions",
+      "recommendations": "Recommendations",
+      "recommendationBreakdown": "Issued / accepted / ignored",
+      "activities": "Weekly activities",
+      "emptyState": "No activity was recorded in the past {days} days."
+    },
     "aiCommand": {
       "nextStepBadge": "Next action",
       "todayFocus": "Do this one thing today.",

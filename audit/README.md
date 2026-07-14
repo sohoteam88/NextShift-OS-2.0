@@ -2,7 +2,7 @@
 
 Status: Active audit entrypoint
 
-Last Updated: 2026-07-11
+Last Updated: 2026-07-14
 
 ## Purpose
 
@@ -22,6 +22,8 @@ Only these files remain active in `audit/`:
 - [OS34 R3 PR23-PR31 Code Review Report](OS34_R3_PR23_PR31_CODE_REVIEW_REPORT.md)
 - [OS34 R4 PR32-PR34 Code Review Report](OS34_R4_PR32_PR34_CODE_REVIEW_REPORT.md)
 - [OS35 R5 PR38-PR47 Code Review Report](OS35_R5_PR38_PR47_CODE_REVIEW_REPORT.md)
+- [OS36 R6 PR50-PR60 Code Review Report](OS36_R6_PR50_PR60_CODE_REVIEW_REPORT.md)
+- [OS 3.7 Pipeline Audit 20260714-143721](PIPELINE_AUDIT_20260714-143721.md)
 
 All other pre-OS 3.3 per-feature audit files are archived under `archive/audit-history/` by `git mv`.
 

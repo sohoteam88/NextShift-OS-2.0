@@ -2,6 +2,7 @@
 
 import { createElement } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/Badge';
 import { Spinner } from '@/components/ui/Spinner';
 import type { BusinessScoreResult } from '../services/business-score-service';
@@ -16,17 +17,6 @@ async function fetchBusinessScore() {
   return json.data;
 }
 
-function bandLabel(scoreBand: BusinessScoreResult['scoreBand']) {
-  switch (scoreBand) {
-    case 'strong':
-      return 'Strong · 强劲';
-    case 'ready':
-      return 'Ready · 就绪';
-    case 'needs_attention':
-      return 'Needs attention · 需要关注';
-  }
-}
-
 function bandVariant(scoreBand: BusinessScoreResult['scoreBand']) {
   switch (scoreBand) {
     case 'strong':
@@ -38,13 +28,8 @@ function bandVariant(scoreBand: BusinessScoreResult['scoreBand']) {
   }
 }
 
-function factorLabel(source: BusinessScoreResult['factors'][number]['source']) {
-  return source === 'analytics.projection.readiness.value'
-    ? 'Readiness · 准备度'
-    : 'Forecast confidence · 预测信心';
-}
-
 export function BusinessScoreCard() {
+  const t = useTranslations('dashboard.businessScore');
   const score = useQuery({
     queryKey: ['dashboard-business-score'],
     queryFn: fetchBusinessScore,
@@ -56,7 +41,7 @@ export function BusinessScoreCard() {
     return h(
       'section',
       {
-        'aria-label': 'Business Score',
+        'aria-label': t('title'),
         className: 'flex min-h-24 items-center justify-center rounded-lg border border-border bg-white p-5 shadow-sm',
       },
       h(Spinner, { size: 'sm', className: 'text-muted' }),
@@ -68,7 +53,7 @@ export function BusinessScoreCard() {
   return h(
     'section',
     {
-      'aria-label': 'Business Score',
+      'aria-label': t('title'),
       className: 'rounded-lg border border-border bg-white p-5 shadow-sm',
       'data-testid': 'business-score-card',
     },
@@ -81,12 +66,12 @@ export function BusinessScoreCard() {
         h(
           'p',
           { className: 'text-xs font-semibold uppercase tracking-wide text-primary' },
-          'Business Score · 业务评分',
+          t('title'),
         ),
         h(
           'p',
           { className: 'mt-1 text-sm leading-relaxed text-muted' },
-          'A read-only snapshot of readiness and current revenue forecast confidence.',
+          t('description'),
         ),
       ),
       h(
@@ -97,7 +82,7 @@ export function BusinessScoreCard() {
           { className: 'text-4xl font-bold tabular-nums text-foreground' },
           score.data.scoreValue,
         ),
-        h(Badge, { variant: bandVariant(score.data.scoreBand) }, bandLabel(score.data.scoreBand)),
+        h(Badge, { variant: bandVariant(score.data.scoreBand) }, t(`band.${score.data.scoreBand}`)),
       ),
     ),
     h(
@@ -109,7 +94,13 @@ export function BusinessScoreCard() {
           key: factor.source,
           className: 'flex items-baseline justify-between gap-3',
         },
-        h('dt', { className: 'text-sm text-muted' }, factorLabel(factor.source)),
+        h(
+          'dt',
+          { className: 'text-sm text-muted' },
+          factor.source === 'analytics.projection.readiness.value'
+            ? t('factor.readiness')
+            : t('factor.forecastConfidence'),
+        ),
         h(
           'dd',
           { className: 'text-sm font-semibold tabular-nums text-foreground' },

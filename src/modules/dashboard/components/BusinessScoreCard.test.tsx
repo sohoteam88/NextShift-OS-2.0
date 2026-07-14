@@ -8,6 +8,9 @@ const queryMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tanstack/react-query', () => queryMocks);
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => key,
+}));
 vi.mock('@/components/ui/Badge', () => ({
   Badge: ({ children }: { children: ReactNode }) => createElement('span', null, children),
 }));
@@ -43,10 +46,10 @@ describe('BusinessScoreCard', () => {
 
     const html = renderToStaticMarkup(createElement(BusinessScoreCard));
 
-    expect(html).toContain('Business Score');
-    expect(html).toContain('Strong · 强劲');
-    expect(html).toContain('Readiness · 准备度');
-    expect(html).toContain('Forecast confidence · 预测信心');
+    expect(html).toContain('title');
+    expect(html).toContain('band.strong');
+    expect(html).toContain('factor.readiness');
+    expect(html).toContain('factor.forecastConfidence');
     expect(html).not.toContain('<button');
   });
 });
