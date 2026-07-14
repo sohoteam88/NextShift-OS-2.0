@@ -123,6 +123,27 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$1"; }
 abort() { log "ABORT: $1"; exit 1; }
+first_open_blueprint_item() {
+  awk -F'|' '
+    /^\|[[:space:]]*[A-Za-z]+[0-9]+[[:space:]]*\|/ {
+      item = $2
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", item)
+      if ($0 !~ /已完成|[Cc]ompleted/) {
+        print item
+        exit
+      }
+    }
+  ' "$BLUEPRINT_PATH"
+}
+
+task_brief_item() {
+  awk '
+    /^# / && match($0, /[A-Za-z]+[0-9]+:/) {
+      print substr($0, RSTART, RLENGTH - 1)
+      exit
+    }
+  ' "$TASK_BRIEF"
+}
 record_exit_code() {
   local status=$?
   printf '%s\n' "$status" > "$PIPELINE_EXIT_FILE"
@@ -181,6 +202,11 @@ if grep -q '^NO_OPEN_ITEMS$' "$TASK_BRIEF"; then
 fi
 
 log "Task brief written to $TASK_BRIEF"
+
+CURRENT_ITEM="$(task_brief_item)"
+[[ -n "$CURRENT_ITEM" ]] \
+  || abort "could not identify the selected blueprint item from $TASK_BRIEF"
+log "Selected blueprint item: $CURRENT_ITEM"
 
 # ============================================================================
 # Step 2 — Codex execution
@@ -328,6 +354,35 @@ fi
 gh pr merge "$PR_URL" --merge --delete-branch || abort "gh pr merge failed"
 
 git pull --ff-only
+
+# ============================================================================
+# Step 5.5 — mark the merged blueprint item complete
+# ============================================================================
+
+log "Step 5.5: marking $CURRENT_ITEM complete in the blueprint"
+
+BLUEPRINT_MARK_OUTPUT="$LOG_DIR/$RUN_ID-blueprint-mark.log"
+$CLAUDE_CMD "Read the task brief at $TASK_BRIEF and the active blueprint at $BLUEPRINT_PATH. \
+The just-merged workstream item is exactly $CURRENT_ITEM. Directly edit ONLY the row/list entry \
+for $CURRENT_ITEM in $BLUEPRINT_PATH to mark it 已完成/completed, preserving the blueprint's \
+existing table/list format and recording the shipped outcome. Do not edit any other file, do not \
+mark any other item, and do not change release criteria. Output exactly BLUEPRINT_UPDATED=$CURRENT_ITEM." \
+  > "$BLUEPRINT_MARK_OUTPUT"
+
+BLUEPRINT_CHANGED_FILES="$(git diff --name-only)"
+[[ "$BLUEPRINT_CHANGED_FILES" == "$BLUEPRINT_PATH" ]] \
+  || abort "Blueprint marker changed an unexpected file or no file; refusing to commit: $BLUEPRINT_CHANGED_FILES"
+
+git add "$BLUEPRINT_PATH"
+git commit -m "docs(blueprint): mark $CURRENT_ITEM completed [pipeline]"
+
+FIRST_OPEN_AFTER_MARK="$(first_open_blueprint_item)"
+if [[ "$FIRST_OPEN_AFTER_MARK" == "$CURRENT_ITEM" ]] || ! grep -q "已完成\|[Cc]ompleted" <(git show "HEAD:$BLUEPRINT_PATH" | awk -v item="$CURRENT_ITEM" -F'|' '$2 ~ item { print }'); then
+  abort "Blueprint completion guard failed for $CURRENT_ITEM: it is still the first open item or was not marked completed"
+fi
+
+git push origin "$BASE_BRANCH"
+log "Blueprint marks $CURRENT_ITEM complete; next open item is ${FIRST_OPEN_AFTER_MARK:-none}."
 
 # ============================================================================
 # Step 6 — periodic code-level audit
