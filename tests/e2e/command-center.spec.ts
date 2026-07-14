@@ -83,15 +83,16 @@ test.describe('Command Center recommendation', () => {
     await expect(page.getByTestId('today-mission-card')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
 
-    await expect(page.getByRole('button', { name: /和 AI 讨论/i })).toBeVisible({ timeout: 15000 });
-    await page.getByRole('button', { name: /和 AI 讨论/i }).click();
+    const discussionToggle = page.getByTestId('recommendation-discussion-toggle');
+    await expect(discussionToggle).toBeVisible({ timeout: 15000 });
+    await discussionToggle.click();
     await expect(page.getByTestId('today-recommendation-discussion')).toBeVisible();
 
-    await page.getByPlaceholder('输入你的问题').fill('What is the weather in Tokyo tomorrow?');
-    await page.getByRole('button', { name: '发送' }).click();
+    await page.getByPlaceholder('Enter your question').fill('What is the weather in Tokyo tomorrow?');
+    await page.getByRole('button', { name: 'Send' }).click();
 
     await expect(page.getByText(/today's recommendation/i)).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('第 1/5 轮')).toBeVisible();
+    await expect(page.getByText('Turn 1/5')).toBeVisible();
   });
 
   test('flag off: mission remains available without a discussion entry', async ({ page }) => {
@@ -105,6 +106,6 @@ test.describe('Command Center recommendation', () => {
     await page.goto('/dashboard');
     await expect(page.getByTestId('today-mission-card')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /和 AI 讨论/i })).toHaveCount(0);
+    await expect(page.getByTestId('recommendation-discussion-toggle')).toHaveCount(0);
   });
 });

@@ -67,6 +67,7 @@ export function RecommendationDiscussion({
         onClick: onToggle,
         'aria-expanded': open,
         'aria-controls': 'today-recommendation-discussion',
+        'data-testid': 'recommendation-discussion-toggle',
       },
       h(MessageCircle, { className: 'h-4 w-4', 'aria-hidden': true }),
       t('discussWithAi'),
