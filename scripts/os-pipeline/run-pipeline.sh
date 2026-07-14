@@ -287,7 +287,7 @@ for attempt in 1 2 3; do
       (.structured_output.verdict == "PASS" or .structured_output.verdict == "FAIL") and
       (.structured_output.reason | type == "string" and length > 0)
     ' "$REVIEW_JSON" >/dev/null; then
-      jq -r '[.structured_output.reason, "VERDICT=" + .structured_output.verdict] | join("\\n")' \
+      jq -r '[.structured_output.reason, "VERDICT=" + .structured_output.verdict] | join("\n")' \
         "$REVIEW_JSON" > "$REVIEW_VERDICT"
       REVIEW_RECEIVED=true
       break
