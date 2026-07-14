@@ -120,8 +120,9 @@ describe('Command Center discussion service', () => {
     expect(dependencies.appendMemoryEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'DISCUSSION_TURN_COMPLETED' }));
   });
 
-  it('passes loaded Twin identity and Brand DNA into the decision context', async () => {
+  it('injects a bounded Twin summary after business memory and passes it into the decision context', async () => {
     let decisionContext: DecisionContext | undefined;
+    const generate = vi.fn().mockResolvedValue(routerResult());
     const dependencies = createDependencies({
       getBusinessTwin: vi.fn().mockResolvedValue({
         businessId: 'business-tenant_1',
@@ -131,14 +132,18 @@ describe('Command Center discussion service', () => {
         identity: {
           businessName: 'North Star Wellness',
           industry: 'Wellness',
+          businessStage: 'Growing',
           mission: 'Make everyday wellness practical.',
+          positioning: 'Simple wellness habits for busy professionals.',
         },
         brand: {
           brandName: 'North Star Wellness',
           brandStory: 'Practical wellness coaching for busy professionals.',
           voice: 'Warm and evidence-led',
+          positioning: 'Practical and sustainable wellness.',
         },
       }),
+      getRouter: vi.fn().mockResolvedValue({ generate }),
       conversationEngine: {
         continueConversation: vi.fn((context: DecisionContext) => {
           decisionContext = context;
@@ -149,8 +154,19 @@ describe('Command Center discussion service', () => {
 
     const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
     const businessContext = decisionContext?.toSnapshot().businessContext;
+    const systemPrompt = generate.mock.calls[0][0].systemPrompt;
 
     expect(result?.reply).toBe('Discussion reply');
+    expect(systemPrompt).toContain('Relevant business memory');
+    expect(systemPrompt).toContain('Business Twin profile (verified user-provided business facts; do not infer beyond them):');
+    expect(systemPrompt).toContain('Business name: North Star Wellness');
+    expect(systemPrompt).toContain('Industry: Wellness');
+    expect(systemPrompt).toContain('Business stage: Growing');
+    expect(systemPrompt).toContain('Mission: Make everyday wellness practical.');
+    expect(systemPrompt).toContain('Brand story: Practical wellness coaching for busy professionals.');
+    expect(systemPrompt.indexOf('Relevant business memory')).toBeLessThan(systemPrompt.indexOf('Business Twin profile'));
+    expect(systemPrompt).not.toContain('"businessId"');
+    expect(systemPrompt).not.toContain('"identity"');
     expect(businessContext).toMatchObject({
       identity: {
         businessName: 'North Star Wellness',
@@ -166,10 +182,12 @@ describe('Command Center discussion service', () => {
     expect(JSON.stringify(businessContext)).not.toContain('NextShift Command Center');
   });
 
-  it('continues with no identity or brand when the Twin loader returns no data', async () => {
+  it('skips the Twin block with no placeholders when the Twin loader returns no data', async () => {
     let decisionContext: DecisionContext | undefined;
+    const generate = vi.fn().mockResolvedValue(routerResult());
     const dependencies = createDependencies({
       getBusinessTwin: vi.fn().mockResolvedValue(null),
+      getRouter: vi.fn().mockResolvedValue({ generate }),
       conversationEngine: {
         continueConversation: vi.fn((context: DecisionContext) => {
           decisionContext = context;
@@ -180,20 +198,103 @@ describe('Command Center discussion service', () => {
 
     const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
     const businessContext = decisionContext?.toSnapshot().businessContext;
+    const systemPrompt = generate.mock.calls[0][0].systemPrompt;
 
     expect(result?.reply).toBe('Discussion reply');
+    expect(systemPrompt).not.toContain('Business Twin profile');
+    expect(systemPrompt).not.toMatch(/\bunknown\b|not provided/i);
     expect(businessContext).not.toHaveProperty('identity');
     expect(businessContext).not.toHaveProperty('brand');
   });
 
+  it('skips the Twin block when a snapshot has no usable fields', async () => {
+    const generate = vi.fn().mockResolvedValue(routerResult());
+    const dependencies = createDependencies({
+      getBusinessTwin: vi.fn().mockResolvedValue({
+        businessId: 'business-tenant_1',
+        tenant: { tenantId: 'tenant_1' },
+        version: 1,
+        capturedAt: '2026-07-11T00:00:00.000Z',
+        identity: {},
+        brand: {},
+      }),
+      getRouter: vi.fn().mockResolvedValue({ generate }),
+    });
+
+    await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    expect(generate.mock.calls[0][0].systemPrompt).not.toContain('Business Twin profile');
+  });
+
+  it('bounds Twin free-text fields before adding them to the prompt', async () => {
+    const generate = vi.fn().mockResolvedValue(routerResult());
+    const mission = 'm'.repeat(240);
+    const businessPositioning = 'p'.repeat(240);
+    const brandStory = 's'.repeat(240);
+    const brandPositioning = 'b'.repeat(240);
+    const dependencies = createDependencies({
+      getBusinessTwin: vi.fn().mockResolvedValue({
+        businessId: 'business-tenant_1',
+        tenant: { tenantId: 'tenant_1' },
+        version: 1,
+        capturedAt: '2026-07-11T00:00:00.000Z',
+        identity: { mission, positioning: businessPositioning },
+        brand: { brandStory, positioning: brandPositioning },
+      }),
+      getRouter: vi.fn().mockResolvedValue({ generate }),
+    });
+
+    await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    const systemPrompt = generate.mock.calls[0][0].systemPrompt;
+    expect(systemPrompt).toContain(`Mission: ${'m'.repeat(199)}…`);
+    expect(systemPrompt).toContain(`Business positioning: ${'p'.repeat(199)}…`);
+    expect(systemPrompt).toContain(`Brand story: ${'s'.repeat(199)}…`);
+    expect(systemPrompt).toContain(`Brand positioning: ${'b'.repeat(199)}…`);
+    expect(systemPrompt).not.toContain(mission);
+    expect(systemPrompt).not.toContain(businessPositioning);
+    expect(systemPrompt).not.toContain(brandStory);
+    expect(systemPrompt).not.toContain(brandPositioning);
+  });
+
+  it('includes only populated Twin fields', async () => {
+    const generate = vi.fn().mockResolvedValue(routerResult());
+    const dependencies = createDependencies({
+      getBusinessTwin: vi.fn().mockResolvedValue({
+        businessId: 'business-tenant_1',
+        tenant: { tenantId: 'tenant_1' },
+        version: 1,
+        capturedAt: '2026-07-11T00:00:00.000Z',
+        identity: { businessName: 'Solo Wellness' },
+      }),
+      getRouter: vi.fn().mockResolvedValue({ generate }),
+    });
+
+    await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    const systemPrompt = generate.mock.calls[0][0].systemPrompt;
+    expect(systemPrompt).toContain('Business name: Solo Wellness');
+    expect(systemPrompt).not.toContain('Industry:');
+    expect(systemPrompt).not.toContain('Business stage:');
+    expect(systemPrompt).not.toContain('Mission:');
+    expect(systemPrompt).not.toContain('Business positioning:');
+    expect(systemPrompt).not.toContain('Brand name:');
+    expect(systemPrompt).not.toContain('Brand story:');
+    expect(systemPrompt).not.toContain('Brand voice:');
+    expect(systemPrompt).not.toContain('Brand positioning:');
+  });
+
   it('continues without Twin data when the loader throws', async () => {
+    const generate = vi.fn().mockResolvedValue(routerResult());
     const dependencies = createDependencies({
       getBusinessTwin: vi.fn().mockRejectedValue(new Error('Twin unavailable')),
+      getRouter: vi.fn().mockResolvedValue({ generate }),
     });
 
     const result = await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
 
     expect(result?.reply).toBe('Discussion reply');
+    expect(generate.mock.calls[0][0].systemPrompt).not.toContain('Business Twin profile');
     expect(dependencies.logFallback).toHaveBeenCalledTimes(1);
     expect(dependencies.logFallback).toHaveBeenCalledWith(
       '[business-twin] continuing without twin data',
@@ -203,6 +304,9 @@ describe('Command Center discussion service', () => {
         error: 'Twin unavailable',
       }),
     );
+    expect(dependencies.appendMemoryEvent).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'DISCUSSION_TURN_COMPLETED',
+    }));
   });
 
   it('returns the reply when memory event writes fail after a successful read', async () => {

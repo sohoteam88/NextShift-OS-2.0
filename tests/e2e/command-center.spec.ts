@@ -73,6 +73,26 @@ test.describe('Command Center recommendation', () => {
     expect(body.turnsLimit).toBe(5);
   });
 
+  test('flag on: discussion API still returns its response contract with no Twin data', async ({ page }) => {
+    test.skip(
+      !(commandCenterEnabled && aiDiscussionEnabled),
+      'Command Center and AI Discussion flags must be enabled for this E2E path.',
+    );
+
+    const response = await page.request.post('/api/v1/dashboard/recommendation/discuss', {
+      data: {
+        message: 'What is the weather in Tokyo tomorrow?',
+        history: [],
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.reply).toContain('today\'s recommendation');
+    expect(body.turnsUsed).toBe(1);
+    expect(body.turnsLimit).toBe(5);
+  });
+
   test('flag on: unified mission discussion panel sends and receives a reply', async ({ page }) => {
     test.skip(
       !(commandCenterEnabled && aiDiscussionEnabled),

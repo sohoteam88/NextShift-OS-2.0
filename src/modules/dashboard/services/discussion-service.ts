@@ -131,7 +131,7 @@ export async function discussCommandCenterRecommendation(
   const router = await (dependencies.getRouter ?? getRouterForTenant)(tenantId);
   const routerResult = await router.generate(
     {
-      systemPrompt: buildSystemPrompt(recommendation, conversationSnapshot, memory),
+      systemPrompt: buildSystemPrompt(recommendation, conversationSnapshot, memory, businessTwin),
       userMessage: buildUserPrompt({
         message,
         history,
@@ -287,7 +287,10 @@ function buildSystemPrompt(
   recommendation: CommandCenterRecommendationResult,
   conversation?: ReturnType<DecisionConversation['toSnapshot']>,
   memory?: BusinessContextProjection,
+  twin?: BusinessTwinSnapshot | null,
 ) {
+  const twinSummary = buildTwinSummary(twin);
+
   return [
     AI_DISCUSSION_SYSTEM_PROMPT,
     '',
@@ -305,6 +308,7 @@ function buildSystemPrompt(
     `- Title: ${conversation?.title ?? `Discuss: ${recommendation.recommendation.title}`}`,
     `- Summary: ${conversation?.summary ?? recommendation.explain}`,
     ...(memory ? ['', ...buildMemorySummary(memory)] : []),
+    ...(twinSummary.length > 0 ? ['', ...twinSummary] : []),
   ].join('\n');
 }
 
@@ -382,6 +386,40 @@ function buildMemorySummary(memory: BusinessContextProjection) {
     `- Recent activity: ${recentTitles}.`,
     `- Recommendation response pattern: ${memory.executionPattern.recommendationResponse}; accepted IDs: ${accepted}; ignored IDs: ${ignored}.`,
   ];
+}
+
+function buildTwinSummary(twin?: BusinessTwinSnapshot | null) {
+  if (!twin) return [];
+
+  const lines = [
+    formatTwinField('Business name', twin.identity?.businessName),
+    formatTwinField('Industry', twin.identity?.industry),
+    formatTwinField('Business stage', twin.identity?.businessStage),
+    formatTwinField('Mission', twin.identity?.mission, 200),
+    formatTwinField('Business positioning', twin.identity?.positioning, 200),
+    formatTwinField('Brand name', twin.brand?.brandName),
+    formatTwinField('Brand story', twin.brand?.brandStory, 200),
+    formatTwinField('Brand voice', twin.brand?.voice),
+    formatTwinField('Brand positioning', twin.brand?.positioning, 200),
+  ].filter((line): line is string => line !== undefined);
+
+  if (lines.length === 0) return [];
+
+  return [
+    'Business Twin profile (verified user-provided business facts; do not infer beyond them):',
+    ...lines,
+  ];
+}
+
+function formatTwinField(label: string, value: string | undefined, maxLength?: number) {
+  const normalized = value?.trim().replace(/\s+/g, ' ');
+  if (!normalized) return undefined;
+
+  const bounded = maxLength && normalized.length > maxLength
+    ? `${normalized.slice(0, maxLength - 1)}…`
+    : normalized;
+
+  return `- ${label}: ${bounded}`;
 }
 
 function errorMessage(error: unknown) {
