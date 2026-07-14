@@ -48,6 +48,9 @@ BLUEPRINT_PATH="${BLUEPRINT_PATH:-docs/nextshift-os-3/OS_3_7_BLUEPRINT.md}"
 # Installed locally and verified on 2026-07-13. Both commands are deliberately
 # non-interactive: this pipeline has its own mechanical safety guards below.
 CLAUDE_CMD="${CLAUDE_CMD:-claude -p --output-format text --permission-mode bypassPermissions}"
+# Step 4 needs a machine-checkable review contract. Keep this separate from CLAUDE_CMD because
+# the other Claude calls intentionally produce prose or one-line text artifacts.
+CLAUDE_REVIEW_CMD="${CLAUDE_REVIEW_CMD:-claude -p --output-format json --safe-mode --no-session-persistence --permission-mode bypassPermissions}"
 CODEX_CMD="${CODEX_CMD:-codex exec --dangerously-bypass-approvals-and-sandbox}"
 
 # --- Cadence ------------------------------------------------------------------
@@ -229,13 +232,45 @@ log "Step 4: architecture review of the diff"
 REVIEW_VERDICT="$LOG_DIR/$RUN_ID-review.log"
 git diff "origin/$BASE_BRANCH...origin/$WORK_BRANCH" > "$LOG_DIR/$RUN_ID.diff"
 
-$CLAUDE_CMD "You are acting as the Architecture Review / orchestration role reviewing a PR \
+# A non-empty exit status is not enough: Claude can occasionally return exit 0 with no text for
+# a long review. Ask for schema-validated JSON, keep stdout/stderr artifacts, and retry only
+# transport/format failures. A real FAIL is recorded once and is never retried into a PASS.
+REVIEW_JSON="$LOG_DIR/$RUN_ID-review.json"
+REVIEW_STDERR="$LOG_DIR/$RUN_ID-review.stderr.log"
+REVIEW_SCHEMA='{"type":"object","properties":{"verdict":{"type":"string","enum":["PASS","FAIL"]},"reason":{"type":"string","minLength":1}},"required":["verdict","reason"],"additionalProperties":false}'
+REVIEW_PROMPT="You are acting as the Architecture Review / orchestration role reviewing a PR \
 produced by an execution agent for the NextShift OS project. Read the complete task brief from \
 $TASK_BRIEF and the complete produced diff from $LOG_DIR/$RUN_ID.diff yourself; do not rely on a \
 summary. Check whether the diff satisfies the brief, touches anything out of scope, or contains \
-correctness issues visible from the diff. Output your reasoning, then end with exactly one final \
-line: VERDICT=PASS or VERDICT=FAIL." \
-  > "$REVIEW_VERDICT"
+correctness issues visible from the diff. Return JSON matching the supplied schema. verdict must \
+be PASS only when the diff is acceptable; otherwise use FAIL. reason must state the key evidence \
+or blocking issue."
+REVIEW_RECEIVED=false
+
+for attempt in 1 2 3; do
+  if $CLAUDE_REVIEW_CMD --json-schema "$REVIEW_SCHEMA" "$REVIEW_PROMPT" \
+    > "$REVIEW_JSON" 2> "$REVIEW_STDERR"; then
+    if jq -e '
+      .type == "result" and
+      .subtype == "success" and
+      (.structured_output.verdict == "PASS" or .structured_output.verdict == "FAIL") and
+      (.structured_output.reason | type == "string" and length > 0)
+    ' "$REVIEW_JSON" >/dev/null; then
+      jq -r '[.structured_output.reason, "VERDICT=" + .structured_output.verdict] | join("\\n")' \
+        "$REVIEW_JSON" > "$REVIEW_VERDICT"
+      REVIEW_RECEIVED=true
+      break
+    fi
+  fi
+
+  if (( attempt < 3 )); then
+    log "Architecture review attempt $attempt returned no valid structured verdict; retrying."
+    sleep 2
+  fi
+done
+
+[[ "$REVIEW_RECEIVED" == true ]] \
+  || abort "architecture review returned no valid structured verdict after 3 attempts — see $REVIEW_JSON and $REVIEW_STDERR; PR left open: $PR_URL"
 
 if ! grep -q '^VERDICT=PASS$' "$REVIEW_VERDICT"; then
   abort "architecture review did not PASS — see $REVIEW_VERDICT, PR left open for manual handling: $PR_URL"
