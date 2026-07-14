@@ -81,7 +81,16 @@
     "noAccount": "还没有账号？",
     "hasAccount": "已有账号？",
     "teamName": "团队名称",
-    "pendingApproval": "你的账号正在等待审核，请联系管理员批准。"
+    "pendingApproval": "你的账号正在等待审核，请联系管理员批准。",
+    "emailVerificationRequired": "请查看收件箱并验证你的电子邮件地址，然后我们会为你完成工作区设置。",
+    "accountLoadFailed": "暂时无法读取你的账号，请稍后重试。",
+    "workspaceSetupTitle": "完成你的工作区设置",
+    "workspaceSetupDescription": "验证成功。请确认以下信息，我们会立即创建你的团队工作区。",
+    "workspaceUrl": "团队 URL",
+    "workspacePlan": "计划",
+    "finishWorkspaceSetup": "完成设置",
+    "workspaceSettingUp": "正在设置工作区...",
+    "workspaceSetupFailed": "暂时无法完成工作区设置，请稍后重试。"
   },
   "nav": {
     "dashboard": "首页",

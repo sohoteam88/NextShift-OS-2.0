@@ -34,6 +34,8 @@ type E2EAccount = {
   password: string;
   name: string;
   role: 'member' | 'platform_admin';
+  provisionToTenant: boolean;
+  userMetadata: Record<string, string>;
 };
 
 function readAccounts(): E2EAccount[] {
@@ -42,19 +44,31 @@ function readAccounts(): E2EAccount[] {
     password: requireEnv(readEnv('E2E_TEST_USER_PASSWORD'), 'E2E_TEST_USER_PASSWORD'),
     name: 'E2E Test Member',
     role: 'member',
+    provisionToTenant: true,
+    userMetadata: { name: 'E2E Test Member' },
   };
   const admin: E2EAccount = {
     email: requireEnv(readEnv('E2E_ADMIN_EMAIL'), 'E2E_ADMIN_EMAIL'),
     password: requireEnv(readEnv('E2E_ADMIN_PASSWORD'), 'E2E_ADMIN_PASSWORD'),
     name: 'E2E Test Admin',
     role: 'platform_admin',
+    provisionToTenant: true,
+    userMetadata: { name: 'E2E Test Admin' },
+  };
+  const dangling: E2EAccount = {
+    email: process.env.E2E_DANGLING_USER_EMAIL || 'e2e-dangling@example.test',
+    password: process.env.E2E_DANGLING_USER_PASSWORD || 'e2e-dangling-password-123',
+    name: 'E2E Dangling User',
+    role: 'member',
+    provisionToTenant: false,
+    userMetadata: {},
   };
 
   if (member.email.toLowerCase() === admin.email.toLowerCase()) {
     throw new Error('E2E member and admin accounts must use different email addresses');
   }
 
-  return [member, admin];
+  return [member, admin, dangling];
 }
 
 function tenantSettings(): Prisma.InputJsonValue {
@@ -87,7 +101,7 @@ async function ensureAuthUser(supabase: SupabaseClient, account: E2EAccount) {
     const { data, error } = await supabase.auth.admin.updateUserById(existingId, {
       password: account.password,
       email_confirm: true,
-      user_metadata: { name: account.name },
+      user_metadata: account.userMetadata,
       app_metadata: { role: account.role, source: 'e2e' },
     });
     if (error) throw error;
@@ -98,7 +112,7 @@ async function ensureAuthUser(supabase: SupabaseClient, account: E2EAccount) {
     email: account.email,
     password: account.password,
     email_confirm: true,
-    user_metadata: { name: account.name },
+    user_metadata: account.userMetadata,
     app_metadata: { role: account.role, source: 'e2e' },
   });
   if (error) throw error;
@@ -137,6 +151,12 @@ async function main() {
 
   for (const account of accounts) {
     const userId = await ensureAuthUser(supabase, account);
+
+    if (!account.provisionToTenant) {
+      await prisma.user.deleteMany({ where: { id: userId } });
+      continue;
+    }
+
     const userData = {
       tenantId: tenant.id,
       email: account.email,
@@ -163,7 +183,11 @@ async function main() {
     });
   }
 
-  console.log(JSON.stringify({ ok: true, provisionedRoles: accounts.map(({ role }) => role) }));
+  console.log(JSON.stringify({
+    ok: true,
+    provisionedRoles: accounts.filter(({ provisionToTenant }) => provisionToTenant).map(({ role }) => role),
+    danglingFixture: true,
+  }));
 }
 
 main()
