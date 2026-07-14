@@ -73,6 +73,11 @@ test.describe('Command Center recommendation', () => {
     expect(body.turnsLimit).toBe(5);
   });
 
+  // T2 note: Twin prompt-injection coverage lives in
+  // src/__tests__/services/dashboard-discussion-service.test.ts (DI-mocked router asserts
+  // system prompt content). E2E cannot observe prompt internals, and on-topic messages
+  // would require live LLM provider keys that CI intentionally does not have.
+
   test('flag on: unified mission discussion panel sends and receives a reply', async ({ page }) => {
     test.skip(
       !(commandCenterEnabled && aiDiscussionEnabled),
