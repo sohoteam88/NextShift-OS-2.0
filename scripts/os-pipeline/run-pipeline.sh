@@ -141,8 +141,16 @@ first_open_blueprint_item() {
 
 task_brief_item() {
   awk '
-    /^# / && match($0, /[A-Za-z]+[0-9]+:/) {
-      print substr($0, RSTART, RLENGTH - 1)
+    /^# / && match($0, /[A-Za-z]+[0-9]+/) {
+      print substr($0, RSTART, RLENGTH)
+      exit
+    }
+    /\*\*Item:\*\*/ && match($0, /[A-Za-z]+[0-9]+/) {
+      print substr($0, RSTART, RLENGTH)
+      exit
+    }
+    /row \*\*[A-Za-z]+[0-9]+\*\*/ && match($0, /[A-Za-z]+[0-9]+/) {
+      print substr($0, RSTART, RLENGTH)
       exit
     }
   ' "$TASK_BRIEF"
@@ -238,6 +246,9 @@ structure: Base branch, Work branch (propose a name), Step 0 sync checklist, bac
 in actual current code (grep/read the relevant files yourself, do not guess file paths), concrete \
 requirements, an explicit list of forbidden actions including never touching packages/ or any \
 .env file, and acceptance criteria (pnpm type-check/test/build/lint must pass). \
+The brief MUST begin with a markdown heading of the exact form '# <ITEM_ID> Task Brief — ...' \
+and include a separate metadata line of the exact form '**Item:** <ITEM_ID>', where <ITEM_ID> is \
+the selected workstream ID such as T2 or G1. \
 Because this repository uses Prisma, the task brief's setup and verification steps MUST run \
 pnpm db:generate immediately after pnpm install --frozen-lockfile and before type-checking \
 or testing; Prisma Client generation is a local build prerequisite, not a schema or database change. \
