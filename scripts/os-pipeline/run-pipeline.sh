@@ -51,6 +51,9 @@ CLAUDE_CMD="${CLAUDE_CMD:-claude -p --output-format text --permission-mode bypas
 # Step 4 needs a machine-checkable review contract. Keep this separate from CLAUDE_CMD because
 # the other Claude calls intentionally produce prose or one-line text artifacts.
 CLAUDE_REVIEW_CMD="${CLAUDE_REVIEW_CMD:-claude -p --output-format json --safe-mode --no-session-persistence --permission-mode bypassPermissions}"
+# Audits also produce a release gate, so they use the same structured, isolated invocation as
+# Step 4 rather than relying on a free-form final line from a long-running Claude session.
+CLAUDE_AUDIT_CMD="${CLAUDE_AUDIT_CMD:-claude -p --output-format json --safe-mode --no-session-persistence --permission-mode bypassPermissions}"
 CODEX_CMD="${CODEX_CMD:-codex exec --dangerously-bypass-approvals-and-sandbox}"
 
 # --- Cadence ------------------------------------------------------------------
@@ -340,17 +343,47 @@ if (( COUNT >= AUDIT_EVERY_N_PRS )); then
   log "Step 6: $COUNT PRs merged since last audit (threshold $AUDIT_EVERY_N_PRS) — running code-level audit"
 
   AUDIT_REPORT="audit/PIPELINE_AUDIT_$RUN_ID.md"
-  $CLAUDE_CMD "You are acting as the code-level Audit Engineer role for the NextShift OS project \
-(the 'Claude Code' role in this project's triangle workflow). \
-Audit the current state of $BASE_BRANCH against $BLUEPRINT_PATH's stated requirements. \
-Run real verification: type-check, test, build, lint, and grep-verify claims — do not take prior \
-PR descriptions at face value. Write a complete audit report to $AUDIT_REPORT in this repo \
-following the existing style of files under audit/ (see audit/README.md and any prior \
-OS3*_R*_CODE_REVIEW_REPORT.md for format). End your own final output with exactly one line: \
-VERDICT=PASS or VERDICT=PASS_WITH_CONDITION or VERDICT=FAIL." \
-    > "$LOG_DIR/$RUN_ID-audit-run.log"
+  AUDIT_RUN_LOG="$LOG_DIR/$RUN_ID-audit-run.log"
+  AUDIT_JSON="$LOG_DIR/$RUN_ID-audit.json"
+  AUDIT_STDERR="$LOG_DIR/$RUN_ID-audit.stderr.log"
+  AUDIT_SCHEMA='{"type":"object","properties":{"verdict":{"type":"string","enum":["PASS","PASS_WITH_CONDITION","FAIL"]},"reason":{"type":"string","minLength":1}},"required":["verdict","reason"],"additionalProperties":false}'
+  AUDIT_PROMPT="You are acting as the code-level Audit Engineer role for the NextShift OS project \
+(the 'Claude Code' role in this project's triangle workflow). Audit the current state of \
+$BASE_BRANCH against $BLUEPRINT_PATH's stated requirements. Run real verification: type-check, \
+test, build, lint, and grep-verify claims — do not take prior PR descriptions at face value. Write \
+a complete audit report to $AUDIT_REPORT in this repo following the existing style of files under \
+audit/ (see audit/README.md and any prior OS3*_R*_CODE_REVIEW_REPORT.md for format). Return JSON \
+matching the supplied schema. verdict must be PASS, PASS_WITH_CONDITION, or FAIL; reason must state \
+the key evidence or blocking issue."
+  AUDIT_RECEIVED=false
 
-  if grep -q '^VERDICT=PASS$' "$LOG_DIR/$RUN_ID-audit-run.log"; then
+  for attempt in 1 2 3; do
+    if $CLAUDE_AUDIT_CMD --json-schema "$AUDIT_SCHEMA" "$AUDIT_PROMPT" \
+      > "$AUDIT_JSON" 2> "$AUDIT_STDERR"; then
+      if jq -e '
+        .type == "result" and
+        .subtype == "success" and
+        (.structured_output.verdict == "PASS" or .structured_output.verdict == "PASS_WITH_CONDITION" or .structured_output.verdict == "FAIL") and
+        (.structured_output.reason | type == "string" and length > 0)
+      ' "$AUDIT_JSON" >/dev/null && [[ -s "$AUDIT_REPORT" ]]; then
+        jq -r '[.structured_output.reason, "VERDICT=" + .structured_output.verdict] | join("\n")' \
+          "$AUDIT_JSON" > "$AUDIT_RUN_LOG"
+        AUDIT_RECEIVED=true
+        break
+      fi
+    fi
+
+    if (( attempt < 3 )); then
+      log "Audit attempt $attempt returned no valid structured verdict or report; retrying."
+      sleep 2
+    fi
+  done
+
+  if [[ "$AUDIT_RECEIVED" != true ]]; then
+    printf 'AUDIT_ERROR=No valid structured verdict and report after 3 attempts.\n' > "$AUDIT_RUN_LOG"
+  fi
+
+  if [[ "$AUDIT_RECEIVED" == true ]] && grep -q '^VERDICT=PASS$' "$AUDIT_RUN_LOG"; then
     echo 0 > "$MERGED_SINCE_LAST_AUDIT_FILE"
     log "Audit PASS (plain, no conditions) — flagging ready for RC stage."
     touch "$LOG_DIR/.ready-for-rc"
