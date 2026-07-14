@@ -58,21 +58,16 @@ test.describe('Mission Engine', () => {
     expect(['engine', 'rule']).toContain(body.data.source);
   });
 
-  test('dashboard shows today recommendation card and CTA navigates when enabled', async ({ page }) => {
+  test('dashboard renders the mission card instead of a separate recommendation card when enabled', async ({ page }) => {
     const response = await page.request.get('/api/v1/dashboard/recommendation');
     expect(response.ok()).toBeTruthy();
 
     const body = await response.json();
     expect(body.data).toBeTruthy();
 
-    const route = body.data.recommendation.route ?? '/dashboard';
-    const ctaLabel = body.data.recommendation.ctaLabel ?? 'Open recommendation';
-
     await page.goto('/dashboard');
-    await expect(page.getByTestId('today-recommendation-card')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("Today's Recommendation")).toBeVisible();
-    await page.getByRole('button', { name: ctaLabel }).click();
-    await expect(page).toHaveURL(new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    await expect(page.getByTestId('today-mission-card')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
   });
 
   test('progress bar is visible', async ({ page }) => {
