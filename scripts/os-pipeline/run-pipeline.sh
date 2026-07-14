@@ -59,6 +59,16 @@ CODEX_CMD="${CODEX_CMD:-codex exec --dangerously-bypass-approvals-and-sandbox}"
 # --- Cadence ------------------------------------------------------------------
 AUDIT_EVERY_N_PRS="${AUDIT_EVERY_N_PRS:-3}"
 PR_CHECKS_TIMEOUT_SECONDS="${PR_CHECKS_TIMEOUT_SECONDS:-1800}"
+PR_CHECKS_REGISTRATION_TIMEOUT_SECONDS="${PR_CHECKS_REGISTRATION_TIMEOUT_SECONDS:-600}"
+
+# Must stay in sync with .github/workflows/ci.yml pull_request.paths-ignore.
+# A diff is CI-exempt only when every changed file matches one of these patterns.
+CI_IGNORED_PATTERNS=(
+  'docs/**'
+  'audit/**'
+  '**/*.md'
+  'platform/status.md'
+)
 
 # --- Hard safety guards (do not weaken these without deliberately deciding to) -
 # Paths that must NEVER appear in a Codex-produced diff, aside from the narrowly-scoped C0
@@ -159,23 +169,26 @@ task_brief_item() {
 wait_for_pr_checks() {
   local pr_url="$1"
   local checks_pid
-  local deadline=$((SECONDS + PR_CHECKS_TIMEOUT_SECONDS))
+  local deadline
+  local registration_deadline=$((SECONDS + PR_CHECKS_REGISTRATION_TIMEOUT_SECONDS))
   local check_count
 
   # A newly opened PR can take several seconds before Actions registers any check runs. Treat an
-  # empty rollup as pending until the configured deadline, not as a failed check suite.
+  # empty rollup as pending, but distinguish a genuinely absent suite after ten minutes.
   while true; do
     check_count="$(gh pr view "$pr_url" --json statusCheckRollup --jq '.statusCheckRollup | length')" \
       || return 1
     if (( check_count > 0 )); then
       break
     fi
-    if (( SECONDS >= deadline )); then
-      return 124
+    if (( SECONDS >= registration_deadline )); then
+      return 125
     fi
     log "No GitHub checks reported yet; waiting for Actions to register them."
-    sleep 15
+    sleep 30
   done
+
+  deadline=$((SECONDS + PR_CHECKS_TIMEOUT_SECONDS))
 
   gh pr checks "$pr_url" --watch --fail-fast &
   checks_pid=$!
@@ -190,6 +203,34 @@ wait_for_pr_checks() {
   done
 
   wait "$checks_pid"
+}
+
+matches_ci_ignored_pattern() {
+  local file="$1"
+  local pattern
+  local root_pattern
+
+  for pattern in "${CI_IGNORED_PATTERNS[@]}"; do
+    if [[ "$file" == $pattern ]]; then
+      return 0
+    fi
+    # GitHub's **/ also matches zero directories; Bash's conditional matcher does not.
+    root_pattern="${pattern#**/}"
+    if [[ "$pattern" == '**/'* && "$file" == $root_pattern ]]; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+is_ci_exempt_diff() {
+  local file
+
+  [[ -n "$DIFF_FILES" ]] || return 1
+  while IFS= read -r file; do
+    matches_ci_ignored_pattern "$file" || return 1
+  done <<< "$DIFF_FILES"
 }
 
 block_current_item() {
@@ -434,15 +475,22 @@ log "Architecture review PASS."
 
 log "Step 5: merging $PR_URL into $BASE_BRANCH"
 
-log "Waiting up to $PR_CHECKS_TIMEOUT_SECONDS seconds for GitHub checks to pass."
-if wait_for_pr_checks "$PR_URL"; then
-  log "GitHub checks passed."
+if is_ci_exempt_diff; then
+  log "docs-only diff, CI intentionally skipped; proceeding on local verification + review PASS"
 else
-  CHECKS_STATUS=$?
-  if [[ "$CHECKS_STATUS" -eq 124 ]]; then
-    abort "GitHub checks timed out after $PR_CHECKS_TIMEOUT_SECONDS seconds; PR left open: $PR_URL"
+  log "Waiting up to $PR_CHECKS_TIMEOUT_SECONDS seconds for GitHub checks to pass."
+  if wait_for_pr_checks "$PR_URL"; then
+    log "GitHub checks passed."
+  else
+    CHECKS_STATUS=$?
+    if [[ "$CHECKS_STATUS" -eq 125 ]]; then
+      abort "GitHub checks were not registered after $PR_CHECKS_REGISTRATION_TIMEOUT_SECONDS seconds; PR left open: $PR_URL"
+    fi
+    if [[ "$CHECKS_STATUS" -eq 124 ]]; then
+      abort "GitHub checks timed out after $PR_CHECKS_TIMEOUT_SECONDS seconds; PR left open: $PR_URL"
+    fi
+    abort "GitHub checks failed; PR left open: $PR_URL"
   fi
-  abort "GitHub checks failed; PR left open: $PR_URL"
 fi
 
 PR_IS_DRAFT="$(gh pr view "$PR_URL" --json isDraft --jq '.isDraft')" \

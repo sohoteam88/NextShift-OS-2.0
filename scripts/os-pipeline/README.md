@@ -97,6 +97,19 @@ Step 5 (merge), before trusting it to run unattended in a loop through Steps 6-8
 Read `logs/<run-id>.log` after each run rather than watching it live once you trust it — that's
 the whole point of unattended execution.
 
+### CI checks and documentation-only PRs
+
+For every diff that is not CI-exempt, Step 5 waits for GitHub Actions checks to register (polling
+every 30 seconds for up to 10 minutes), then requires `gh pr checks --watch --fail-fast` to pass
+before it can merge. A failed, timed-out, or never-registered non-document check suite leaves the
+PR open and aborts the cycle.
+
+The repository CI intentionally ignores diffs composed entirely of `docs/**`, `audit/**`, Markdown
+files, or `platform/status.md`. The pipeline mirrors that exact `ci.yml` `paths-ignore` policy:
+only a diff where **every** changed file matches it may skip the GitHub-check wait, and only after
+the pipeline's local verification and architecture review have already passed. Any non-ignored
+file keeps the full GitHub Checks gate.
+
 ## Bounded loop mode
 
 Run the loop from this directory:
