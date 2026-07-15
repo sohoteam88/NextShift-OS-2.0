@@ -7,6 +7,8 @@ REPO_DIR="${REPO_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 MANIFEST_PATH="${MANIFEST_PATH:-$REPO_DIR/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
 STOP_FILE="${STOP_FILE:-$LOG_DIR/STOP}"
+CONTROL_ROOT="${CONTROL_ROOT:-${TMPDIR:-/tmp}/nextshift-os-pipeline-control}"
+STATE_LOCK_DIR="${STATE_LOCK_DIR:-$REPO_DIR/.git/os-pipeline-state.lock}"
 VALIDATOR="$SCRIPT_DIR/validate-manifest.sh"
 AUTO_RELEASE="${AUTO_RELEASE:-0}"
 AUTO_DEPLOY="${AUTO_DEPLOY:-0}"
@@ -28,6 +30,7 @@ Commands:
   --verify-pr PR_URL                    Run local gates and wait for required GitHub checks.
   --merge-task-pr TASK_ID PR_URL        Verify and merge an eligible task PR (explicit opt-in).
   --dispatch                            Explicitly dispatch the next eligible task (operator opt-in only).
+  --cycle                               Route one restart-safe pipeline action (operator opt-in for task work).
 
 The manifest is the sole state source. AUTO_RELEASE and AUTO_DEPLOY must remain 0.
 EOF
@@ -44,7 +47,7 @@ synchronization_gate() {
   [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]] && { STATE_EXPECTED_HEAD="test-head"; return; }
   git -C "$repo" fetch origin --prune || die "git fetch origin --prune failed"
   remote_url="$(git -C "$repo" remote get-url origin)"
-  [[ "$remote_url" == *"sohoteam88/NextShift-OS-2.0"* ]] || die "unexpected repository origin: $remote_url"
+  [[ "${PIPELINE_ALLOW_LOCAL_TEST_REMOTE:-0}" == "1" || "$remote_url" == *"${PIPELINE_EXPECTED_REPOSITORY:-sohoteam88/NextShift-OS-2.0}"* ]] || die "unexpected repository origin: $remote_url"
   [[ "$(git -C "$repo" branch --show-current)" == "$expected_branch" ]] || die "unexpected branch; expected $expected_branch"
   [[ -z "$(git -C "$repo" status --porcelain)" ]] || die "dirty worktree (including untracked files)"
   local_head="$(git -C "$repo" rev-parse HEAD)"
@@ -62,7 +65,18 @@ synchronization_gate() {
 persist_state() {
   local message="$1"; shift
   [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]] && return
-  local base_branch remote_now
+  local base_branch remote_now lock_age
+  mkdir -p "$(dirname "$STATE_LOCK_DIR")"
+  if ! mkdir "$STATE_LOCK_DIR" 2>/dev/null; then
+    lock_age="$(find "$STATE_LOCK_DIR" -maxdepth 0 -mtime +1 -print 2>/dev/null)"
+    if [[ -n "$lock_age" ]]; then
+      rmdir "$STATE_LOCK_DIR" 2>/dev/null || die "stale state lock requires human cleanup: $STATE_LOCK_DIR"
+      mkdir "$STATE_LOCK_DIR" 2>/dev/null || die "state lock unavailable"
+    else
+      die "state transition lock is held: $STATE_LOCK_DIR"
+    fi
+  fi
+  trap 'rmdir "$STATE_LOCK_DIR" 2>/dev/null || true' RETURN
   base_branch="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   [[ "$(git -C "$REPO_DIR" branch --show-current)" == "$base_branch" ]] || die "state persistence requires authorized planning branch: $base_branch"
   [[ -n "$STATE_EXPECTED_HEAD" ]] || die "state persistence requires a synchronization gate"
@@ -73,6 +87,16 @@ persist_state() {
   git -C "$REPO_DIR" commit -m "$message"
   git -C "$REPO_DIR" push origin "$base_branch" || die "state push failed; do not retry without a new synchronization gate"
   [[ "$(git -C "$REPO_DIR" rev-parse HEAD)" == "$(git -C "$REPO_DIR" rev-parse "origin/$base_branch")" ]] || die "state commit did not reach origin"
+  rmdir "$STATE_LOCK_DIR" 2>/dev/null || true
+  trap - RETURN
+}
+
+reconcile_planning_state() {
+  local base_branch="$1" repo="$2"
+  [[ -z "$(git -C "$repo" status --porcelain)" ]] || die "cannot reconcile a dirty planning checkout"
+  git -C "$repo" fetch origin --prune || die "planning fetch failed"
+  git -C "$repo" pull --ff-only origin "$base_branch" || die "planning reconciliation is not fast-forward; human resolution required"
+  synchronization_gate "$base_branch" "$repo"
 }
 
 require_selected_task() {
@@ -199,7 +223,7 @@ create_checkpoint() {
   synchronization_gate "$(jq -r '.base_branch' "$MANIFEST_PATH")"
   base_sha="$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .start_sha // empty' "$MANIFEST_PATH")"
   [[ -n "$base_sha" ]] || die "wave $wave has no start_sha evidence"
-  if [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then end_sha="test-end-sha"; else end_sha="$(git -C "$REPO_DIR" rev-parse HEAD)"; fi
+  if [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then end_sha="0123456789012345678901234567890123456789"; else end_sha="$(git -C "$REPO_DIR" rev-parse HEAD)"; fi
   request="$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.request_artifact' "$MANIFEST_PATH")"
   request="$(artifact_path "$request")"
   mkdir -p "$(dirname "$request")"
@@ -231,7 +255,7 @@ EOF
   else
     printf '# %s Architecture Review Request\nCheckpoint: %s\nCumulative start SHA: %s\nCumulative end SHA: %s\n' "$wave" "$checkpoint" "$base_sha" "$end_sha" >"$request"
   fi
-  record_checkpoint "$checkpoint" "awaiting_review"
+  jq --arg id "$checkpoint" --arg end_sha "$end_sha" '.waves |= map(if .checkpoint.id == $id then .checkpoint.status="awaiting_review" | .checkpoint.requested_end_sha=$end_sha else . end)' "$MANIFEST_PATH" | write_manifest
   persist_state "chore(pipeline): request ${checkpoint} architecture review" "$request"
   log "${checkpoint} is awaiting independent Architecture Review: $request"
 }
@@ -240,7 +264,7 @@ dispatch_task() {
   [[ "${PIPELINE_ALLOW_PRODUCT_DISPATCH:-0}" == "1" ]] || die "dispatch requires PIPELINE_ALLOW_PRODUCT_DISPATCH=1"
   [[ -n "${CODEX_CMD:-}" ]] || die "dispatch requires an explicit CODEX_CMD; no unsafe default is provided"
   [[ ! -e "$STOP_FILE" ]] || die "STOP file exists: $STOP_FILE"
-  local base_branch action task task_branch task_dir brief outcome log_file contract execution_task dispatch_artifact
+  local base_branch action task task_branch task_dir control_dir brief outcome log_file contract execution_task dispatch_artifact title section deps
   base_branch="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   synchronization_gate "$base_branch"
   action="$(select_action)"; [[ "$(jq -r '.action' <<<"$action")" == "task" ]] || die "no eligible product task to dispatch"
@@ -248,9 +272,13 @@ dispatch_task() {
   require_selected_task "$task"
   task_branch="chore/os-3.8-$(printf '%s' "$task" | tr '[:upper:]' '[:lower:]')-$(date -u +%Y%m%d%H%M%S)"
   task_dir="$(mktemp -d "${TMPDIR:-/tmp}/os38-${task}.XXXXXX")"
-  brief="$task_dir/TASK_BRIEF.md"; outcome="$task_dir/TASK_OUTCOME.json"; log_file="$task_dir/codex.log"
+  mkdir -p "$CONTROL_ROOT"; control_dir="$(mktemp -d "$CONTROL_ROOT/${task}.XXXXXX")"
+  brief="$control_dir/TASK_BRIEF.md"; outcome="$control_dir/TASK_OUTCOME.json"; log_file="$control_dir/codex.log"
   contract="$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .contract // empty' "$MANIFEST_PATH")"
   execution_task="$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .execution_task // empty' "$MANIFEST_PATH")"
+  title="$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .title' "$MANIFEST_PATH")"
+  section="$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .blueprint_section' "$MANIFEST_PATH")"
+  deps="$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | (.depends_on | join(", "))' "$MANIFEST_PATH")"
   if [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then
     task_branch="test-os38-${task}"
   else
@@ -260,12 +288,15 @@ dispatch_task() {
   cat >"$brief" <<EOF
 # Bounded OS 3.8 task: $task
 
+Title: $title
 Base branch: $base_branch
 Task branch: $task_branch
+Blueprint: $(jq -r '.blueprint' "$MANIFEST_PATH") section $section
+Dependencies already satisfied: ${deps:-none}
 Contract: ${contract:-none; generate a bounded brief from the manifest task only}
 Execution task: ${execution_task:-none}
 
-Implement only this selected task. Do not execute later OS 3.8 tasks, deploy, tag, release, or modify production. Open a PR targeting $base_branch. Write $outcome as JSON containing pr_url and implementation_report when complete.
+Read the Blueprint and current repository evidence before implementation. Implement only this selected task. Do not execute later OS 3.8 tasks, deploy, tag, release, or modify production. Open a PR targeting $base_branch. Write $outcome as JSON containing pr_url and implementation_report when complete.
 EOF
   set +e
   (cd "$task_dir" && PIPELINE_TASK_ID="$task" PIPELINE_TASK_BRANCH="$task_branch" PIPELINE_TASK_BRIEF="$brief" PIPELINE_TASK_OUTCOME="$outcome" bash -lc "$CODEX_CMD") >"$log_file" 2>&1
@@ -273,12 +304,17 @@ EOF
   set -e
   (( codex_rc == 0 )) || die "CODEX_CMD failed for $task; manifest remains pending (log: $log_file)"
   [[ -s "$outcome" ]] || die "CODEX_CMD produced no required task outcome; manifest remains pending (expected $outcome)"
-  jq -e '.pr_url | type == "string" and test("^https://github\\.com/sohoteam88/NextShift-OS-2\\.0/pull/[0-9]+$")' "$outcome" >/dev/null || die "invalid task outcome PR URL"
+  jq -e '(.pr_url | type == "string" and test("^https://github\\.com/sohoteam88/NextShift-OS-2\\.0/pull/[0-9]+$")) and (.implementation_report | type == "string" and length > 0)' "$outcome" >/dev/null || die "task outcome requires valid pr_url and implementation_report"
+  if [[ "${PIPELINE_TEST_MODE:-0}" != "1" ]]; then [[ -z "$(git -C "$task_dir" status --porcelain)" ]] || die "task worktree is dirty; control files must remain outside it"; fi
   dispatch_artifact="$(artifact_path "docs/nextshift-os-3/os-3-8/runs/${task}_DISPATCH.json")"
   mkdir -p "$(dirname "$dispatch_artifact")"
   jq --arg task "$task" --arg branch "$task_branch" --arg base "$base_branch" --arg dispatched_at "$(date -u +%FT%TZ)" '. + {task_id:$task, task_branch:$branch, base_branch:$base, dispatched_at:$dispatched_at}' "$outcome" >"$dispatch_artifact"
   start_task "$task"
   persist_state "chore(pipeline): start OS 3.8 task $task" "$dispatch_artifact"
+  if [[ "${PIPELINE_AUTOMATE_TASK_CYCLE:-0}" == "1" ]]; then
+    local state_repo="$REPO_DIR"
+    (REPO_DIR="$task_dir" MANIFEST_PATH="$task_dir/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" STATE_REPO_DIR="$state_repo" TASK_BRANCH="$task_branch" IMPLEMENTATION_REPORT="$(jq -r '.implementation_report' "$outcome")" PIPELINE_ALLOW_PR_MERGE="${PIPELINE_ALLOW_PR_MERGE:-0}" merge_task_pr "$task" "$(jq -r '.pr_url' "$outcome")")
+  fi
   log "Task $task dispatched through CODEX_CMD on $task_branch; outcome captured at $outcome"
 }
 
@@ -288,7 +324,7 @@ verify_pr() {
   [[ "$pr_url" == https://github.com/*/pull/* ]] || die "invalid PR URL"
   [[ -n "$task_branch" ]] || die "verification requires TASK_BRANCH"
   synchronization_gate "$task_branch"
-  expected_repo="$(git -C "$REPO_DIR" remote get-url origin | sed -E 's#^.*github\.com[:/]##; s#\.git$##')"
+  expected_repo="${PIPELINE_EXPECTED_REPOSITORY:-$(git -C "$REPO_DIR" remote get-url origin | sed -E 's#^.*github\.com[:/]##; s#\.git$##')}"
   expected_base="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   repo_json="$(gh pr view "$pr_url" --json repository,baseRefName,headRefName,headRefOid,url)"
   [[ "$(jq -r '.repository.nameWithOwner' <<<"$repo_json")" == "$expected_repo" ]] || die "PR repository does not match origin"
@@ -315,20 +351,39 @@ verify_pr() {
 merge_task_pr() {
   local task="$1" pr_url="$2" evidence state_repo state_manifest base_branch tmp
   [[ "${PIPELINE_ALLOW_PR_MERGE:-0}" == "1" ]] || die "merge requires PIPELINE_ALLOW_PR_MERGE=1"
-  [[ "$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")" == "running" ]] || die "task must be running before merge: $task"
   verify_pr "$pr_url" "${TASK_BRANCH:?TASK_BRANCH required}"
   gh pr merge "$pr_url" --squash --delete-branch || die "PR merge failed"
   state_repo="${STATE_REPO_DIR:?STATE_REPO_DIR must be a clean planning-branch checkout}"
   base_branch="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   REPO_DIR="$state_repo"
   MANIFEST_PATH="$state_repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
-  synchronization_gate "$base_branch" "$state_repo"
+  reconcile_planning_state "$base_branch" "$state_repo"
   state_manifest="$MANIFEST_PATH"
+  [[ "$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .status' "$state_manifest")" == "running" ]] || die "merged PR cannot be persisted because manifest is not running: $task"
   evidence="$(jq -n --arg pr "$pr_url" --arg merged_at "$(date -u +%FT%TZ)" --arg merge_sha "$(gh pr view "$pr_url" --json mergeCommit --jq '.mergeCommit.oid')" --arg report "${IMPLEMENTATION_REPORT:?IMPLEMENTATION_REPORT required}" '{pr_url:$pr, merge_sha:$merge_sha, implementation_report:$report, validation:{checks:"passed"}, merged_at:$merged_at}')"
   validate_evidence "$evidence"
   tmp="$(mktemp "${state_manifest}.XXXXXX")"
   jq --arg id "$task" --argjson evidence "$evidence" '.waves |= map(.tasks |= map(if .id == $id and .status == "running" then .status="completed" | .evidence=$evidence else . end))' "$state_manifest" >"$tmp" && mv "$tmp" "$state_manifest"
   persist_state "chore(pipeline): record merged OS 3.8 task $task"
+}
+
+run_cycle() {
+  local action kind
+  action="$(select_action)"; kind="$(jq -r '.action' <<<"$action")"
+  case "$kind" in
+    task)
+      [[ "${PIPELINE_AUTOMATE_TASK_CYCLE:-0}" == "1" ]] || die "task cycle requires PIPELINE_AUTOMATE_TASK_CYCLE=1"
+      dispatch_task
+      ;;
+    checkpoint) create_checkpoint ;;
+    remediation)
+      [[ "${PIPELINE_AUTOMATE_TASK_CYCLE:-0}" == "1" ]] || die "remediation cycle requires PIPELINE_AUTOMATE_TASK_CYCLE=1"
+      die "remediation requires a manifest-designated remediation task brief before dispatch"
+      ;;
+    awaiting_review|awaiting_human_gate|needs_human|complete)
+      log "clean stop: $kind"; return 0 ;;
+    *) die "cycle cannot proceed: $kind" ;;
+  esac
 }
 
 require_jq
@@ -374,6 +429,9 @@ case "$command" in
     if [[ "$result" == PASS ]]; then
       reviewed_sha="$(grep -E '^REVIEWED_SHA=[0-9a-f]{40}$' "$result_source" | head -n1 | cut -d= -f2)"
       [[ -n "$reviewed_sha" ]] || die "PASS result must include REVIEWED_SHA"
+      requested_sha="$(jq -r --arg id "$id" '.waves[] | select(.checkpoint.id == $id) | .checkpoint.requested_end_sha // empty' "$MANIFEST_PATH")"
+      [[ -n "$requested_sha" && "$reviewed_sha" == "$requested_sha" ]] || die "review result SHA must equal checkpoint requested_end_sha"
+      [[ "${PIPELINE_TEST_MODE:-0}" == "1" || "$reviewed_sha" == "$(git -C "$REPO_DIR" rev-parse HEAD)" ]] || die "stale review result: planning HEAD changed after request"
       jq --arg id "$id" --arg sha "$reviewed_sha" '.waves |= map(if .checkpoint.id == $id then .checkpoint.status="passed" | .checkpoint.reviewed_sha=$sha else . end)' "$MANIFEST_PATH" | write_manifest
     else record_checkpoint "$id" changes_requested; fi
     persist_state "chore(pipeline): record $id architecture review" "$result_target"
@@ -419,6 +477,7 @@ case "$command" in
   --verify-pr) verify_pr "${2:?PR URL required}" ;;
   --merge-task-pr) merge_task_pr "${2:?task ID required}" "${3:?PR URL required}" ;;
   --dispatch) dispatch_task ;;
+  --cycle) run_cycle ;;
   --help|-h) usage ;;
   *) usage >&2; die "unknown command: $command" ;;
 esac

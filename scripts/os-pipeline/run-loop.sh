@@ -23,7 +23,7 @@ aborts=0
 while (( cycles < MAX_CYCLES_PER_DAY )); do
   [[ ! -e "$STOP_FILE" ]] || { echo "STOP file found; exiting gracefully"; exit 0; }
   stamp="$(date +%F)-loop-$(date +%H%M%S)"; result="$LOG_DIR/$stamp.result"
-  if PIPELINE_ALLOW_PRODUCT_DISPATCH="${PIPELINE_ALLOW_PRODUCT_DISPATCH:-0}" "$RUNNER" --dispatch >"$result" 2>&1; then
+  if PIPELINE_ALLOW_PRODUCT_DISPATCH="${PIPELINE_ALLOW_PRODUCT_DISPATCH:-0}" PIPELINE_AUTOMATE_TASK_CYCLE="${PIPELINE_AUTOMATE_TASK_CYCLE:-0}" "$RUNNER" --cycle >"$result" 2>&1; then
     echo "OK" >>"$result"; notify "OS 3.8 pipeline loop OK: $stamp"; aborts=0
   else
     echo "ABORT" >>"$result"; notify "OS 3.8 pipeline loop ABORT: $stamp"; aborts=$((aborts + 1))

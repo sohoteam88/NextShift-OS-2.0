@@ -73,7 +73,11 @@ as `blocked`; it never tags, releases, or deploys.
 
 ## Loop and stop controls
 
-`run-loop.sh` uses an atomic directory lock, a daily limit of three cycles,
+`run-loop.sh` calls `--cycle`, which routes a task, checkpoint, remediation,
+or clean human/review wait. Review and human-gate waits return success and do
+not count as loop failures. State commit/push operations also take a separate
+repository state lock; a held or stale lock fails closed with human recovery
+instructions. `run-loop.sh` uses an atomic directory lock, a daily limit of three cycles,
 a ten-minute default pause, and stops after two consecutive failures.
 Create `scripts/os-pipeline/logs/STOP` to end it gracefully. An optional
 `NOTIFY_WEBHOOK` receives one compact result per cycle (for example an ntfy
@@ -88,6 +92,11 @@ PIPELINE_ALLOW_PRODUCT_DISPATCH=1 CODEX_CMD='codex exec' \
 the operator's decision. The runner does not default to bypassing approvals or
 sandboxing. Missing tools, dirty worktrees, a missing base branch, STOP, and
 unknown review/check states fail closed.
+
+The test suite includes a temporary bare Git remote with independent planning
+and task worktrees plus fake `gh` and Codex. It proves E1 → verified PR → merge
+→ planning fast-forward → Manifest completion → E2 → AR-W1 awaiting-review,
+without contacting GitHub or executing product work.
 
 ## Migration from local operator scripts
 
