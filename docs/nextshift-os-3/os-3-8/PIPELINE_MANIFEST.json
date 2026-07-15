@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "release": "v3.8.0",
+  "blueprint": "docs/nextshift-os-3/OS_3_8_BLUEPRINT.md",
+  "base_branch": "planning/os-3.8-product-usability",
+  "main_branch": "main",
+  "execution_policy": {
+    "task_pr_verification": "required",
+    "task_pr_auto_merge_to_base": true,
+    "architecture_review": "wave_end_manual_chatgpt_work",
+    "independent_audit": "final_only_claude_code",
+    "auto_release": false,
+    "auto_deploy": false,
+    "max_architecture_remediation_attempts": 2
+  },
+  "waves": [
+    {
+      "id": "W1",
+      "title": "Core Content Working Loop",
+      "status": "pending",
+      "start_sha": null,
+      "tasks": [
+        {
+          "id": "E1",
+          "title": "Editable Content Output",
+          "blueprint_section": "6",
+          "contract": "docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md",
+          "execution_task": "docs/nextshift-os-3/os-3-8/3.8-A/EXECUTION_TASK.md",
+          "depends_on": [],
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "E2",
+          "title": "Content Library",
+          "blueprint_section": "7",
+          "contract": null,
+          "execution_task": null,
+          "depends_on": ["E1"],
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "checkpoint": {
+        "id": "AR-W1",
+        "status": "pending",
+        "review_mode": "cumulative_diff",
+        "reviewer": "ChatGPT Work Chief Product Architect",
+        "request_artifact": "docs/nextshift-os-3/os-3-8/reviews/W1_ARCHITECTURE_REVIEW_REQUEST.md",
+        "result_artifact": "docs/nextshift-os-3/os-3-8/reviews/W1_ARCHITECTURE_REVIEW_RESULT.md",
+        "reviewed_sha": null
+      },
+      "human_gate": null
+    },
+    {
+      "id": "W2",
+      "title": "Information Architecture Decision",
+      "status": "pending",
+      "start_sha": null,
+      "tasks": [
+        {
+          "id": "U1A",
+          "title": "Dead-code Inventory Only",
+          "blueprint_section": "9",
+          "contract": null,
+          "execution_task": null,
+          "depends_on": ["AR-W1"],
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "U2",
+          "title": "One-page Information Architecture",
+          "blueprint_section": "8",
+          "contract": null,
+          "execution_task": null,
+          "depends_on": ["AR-W1"],
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "checkpoint": {
+        "id": "AR-W2",
+        "status": "pending",
+        "review_mode": "cumulative_diff",
+        "reviewer": "ChatGPT Work Chief Product Architect",
+        "request_artifact": "docs/nextshift-os-3/os-3-8/reviews/W2_ARCHITECTURE_REVIEW_REQUEST.md",
+        "result_artifact": "docs/nextshift-os-3/os-3-8/reviews/W2_ARCHITECTURE_REVIEW_RESULT.md",
+        "reviewed_sha": null
+      },
+      "human_gate": {
+        "id": "STEVEN-IA",
+        "status": "pending",
+        "description": "Steven approves the complete U2 Keep/Merge/Hide/Redirect map before U3 or deletion.",
+        "approved_by": null,
+        "approved_at": null
+      }
+    },
+    {
+      "id": "W3",
+      "title": "Convergence and Pattern Extension",
+      "status": "pending",
+      "start_sha": null,
+      "tasks": [
+        {
+          "id": "U1B",
+          "title": "Approved Dead-code Removal",
+          "blueprint_section": "9",
+          "contract": null,
+          "execution_task": null,
+          "depends_on": ["AR-W2", "STEVEN-IA"],
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "U3",
+          "title": "Navigation Convergence",
+          "blueprint_section": "10",
+          "contract": null,
+          "execution_task": null,
+          "depends_on": ["AR-W2", "STEVEN-IA"],
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "E3A",
+          "title": "Video Lead Magnet Webinar Capability Revalidation",
+          "blueprint_section": "11",
+          "contract": null,
+          "execution_task": null,
+          "depends_on": ["AR-W2", "STEVEN-IA"],
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "E3B",
+          "title": "Fix Only Proven Pattern Gaps",
+          "blueprint_section": "11",
+          "contract": null,
+          "execution_task": null,
+          "depends_on": ["E3A"],
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "checkpoint": {
+        "id": "AR-W3",
+        "status": "pending",
+        "review_mode": "cumulative_diff",
+        "reviewer": "ChatGPT Work Chief Product Architect",
+        "request_artifact": "docs/nextshift-os-3/os-3-8/reviews/W3_ARCHITECTURE_REVIEW_REQUEST.md",
+        "result_artifact": "docs/nextshift-os-3/os-3-8/reviews/W3_ARCHITECTURE_REVIEW_RESULT.md",
+        "reviewed_sha": null
+      },
+      "human_gate": null
+    }
+  ],
+  "final_audit": {
+    "id": "AUDIT-OS3.8",
+    "status": "pending",
+    "trigger": "all_wave_checkpoints_passed_and_all_human_gates_approved",
+    "auditor": "Claude Code CLI",
+    "report": "audit/OS38_FINAL_CODE_REVIEW_REPORT.md"
+  },
+  "release_gate": {
+    "status": "blocked",
+    "requires": ["AUDIT-OS3.8:PASS", "Steven release approval"],
+    "auto_tag": false,
+    "auto_deploy": false
+  }
+}
