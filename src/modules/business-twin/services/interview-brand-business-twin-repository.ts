@@ -35,13 +35,15 @@ export class InterviewBrandBusinessTwinRepository implements BusinessTwinReposit
 
     if (!identity && !brand) return null;
 
+    const deduplicated = deduplicateTwinContexts(identity, brand);
+
     return {
       businessId,
       tenant,
       version: 1,
       capturedAt: (this.dependencies.now?.() ?? new Date()).toISOString() as Timestamp,
-      ...(identity ? { identity } : {}),
-      ...(brand ? { brand } : {}),
+      ...(deduplicated.identity ? { identity: deduplicated.identity } : {}),
+      ...(deduplicated.brand ? { brand: deduplicated.brand } : {}),
     };
   }
 }
@@ -94,6 +96,64 @@ function buildBrandDNAContext(brandContext: BrandContext | null): BrandDNAContex
   };
 
   return Object.keys(brand).length > 0 ? brand : undefined;
+}
+
+function deduplicateTwinContexts(
+  identity: BusinessIdentityContext | undefined,
+  brand: BrandDNAContext | undefined,
+) {
+  let deduplicatedIdentity = identity;
+  let deduplicatedBrand = brand;
+
+  if (
+    deduplicatedIdentity?.businessName
+    && deduplicatedBrand?.brandName
+    && sameTwinValue(deduplicatedIdentity.businessName, deduplicatedBrand.brandName)
+  ) {
+    const { brandName: _brandName, ...remainingBrand } = deduplicatedBrand;
+    deduplicatedBrand = remainingBrand;
+  }
+
+  const retainedPositioningValues = new Set<string>();
+
+  if (deduplicatedIdentity?.positioning) {
+    retainedPositioningValues.add(normalizeTwinValue(deduplicatedIdentity.positioning));
+  }
+
+  if (deduplicatedIdentity?.mission) {
+    const normalizedMission = normalizeTwinValue(deduplicatedIdentity.mission);
+    if (retainedPositioningValues.has(normalizedMission)) {
+      const { mission: _mission, ...remainingIdentity } = deduplicatedIdentity;
+      deduplicatedIdentity = remainingIdentity;
+    } else {
+      retainedPositioningValues.add(normalizedMission);
+    }
+  }
+
+  if (deduplicatedBrand?.positioning) {
+    const normalizedPositioning = normalizeTwinValue(deduplicatedBrand.positioning);
+    if (retainedPositioningValues.has(normalizedPositioning)) {
+      const { positioning: _positioning, ...remainingBrand } = deduplicatedBrand;
+      deduplicatedBrand = remainingBrand;
+    }
+  }
+
+  return {
+    identity: hasContextFields(deduplicatedIdentity) ? deduplicatedIdentity : undefined,
+    brand: hasContextFields(deduplicatedBrand) ? deduplicatedBrand : undefined,
+  };
+}
+
+function sameTwinValue(first: string, second: string) {
+  return normalizeTwinValue(first) === normalizeTwinValue(second);
+}
+
+function normalizeTwinValue(value: string) {
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function hasContextFields<T extends object>(context: T | undefined): context is T {
+  return Boolean(context && Object.keys(context).length > 0);
 }
 
 function stringValue(value: unknown): string | undefined {

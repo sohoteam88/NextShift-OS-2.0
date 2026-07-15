@@ -392,14 +392,14 @@ function buildTwinSummary(twin?: BusinessTwinSnapshot | null) {
   if (!twin) return [];
 
   const lines = [
-    formatTwinField('Business name', twin.identity?.businessName),
-    formatTwinField('Industry', twin.identity?.industry),
-    formatTwinField('Business stage', twin.identity?.businessStage),
+    formatTwinField('Business name', twin.identity?.businessName, 200),
+    formatTwinField('Industry', twin.identity?.industry, 200),
+    formatTwinField('Business stage', twin.identity?.businessStage, 200),
     formatTwinField('Mission', twin.identity?.mission, 200),
     formatTwinField('Business positioning', twin.identity?.positioning, 200),
-    formatTwinField('Brand name', twin.brand?.brandName),
+    formatTwinField('Brand name', twin.brand?.brandName, 200),
     formatTwinField('Brand story', twin.brand?.brandStory, 200),
-    formatTwinField('Brand voice', twin.brand?.voice),
+    formatTwinField('Brand voice', twin.brand?.voice, 200),
     formatTwinField('Brand positioning', twin.brand?.positioning, 200),
   ].filter((line): line is string => line !== undefined);
 
