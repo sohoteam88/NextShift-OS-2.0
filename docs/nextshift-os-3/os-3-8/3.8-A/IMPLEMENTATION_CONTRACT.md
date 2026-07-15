@@ -2,7 +2,7 @@
 
 Version: 1.0
 
-Status: Stop A Draft — awaiting Steven merge approval
+Status: Wave W1 / E1 Contract — pending Pipeline bootstrap
 
 Last Updated: 2026-07-15
 
@@ -10,13 +10,13 @@ Execution Role: Lead Software Engineer
 
 Assigned Agent: Codex
 
-Lifecycle Phase: Documentation → Implementation handoff
+Lifecycle Phase: Wave W1 Task E1
 
 Inputs: Approved [OS 3.8 Blueprint](../../OS_3_8_BLUEPRINT.md), production-verified `v3.7.0`, repository state after PR #78
 
-Outputs: E1 implementation, tests, implementation report, and review evidence
+Outputs: E1 task PR, tests, implementation report, and Pipeline-verifiable evidence
 
-Exit Criteria: Section 12 acceptance criteria and Section 13 validation pass; implementation stops before E2
+Exit Criteria: Section 12 acceptance criteria and Section 13 validation pass; Codex stops at the task PR, then the Pipeline verifies and advances to E2
 
 ---
 
@@ -303,9 +303,20 @@ Required outputs:
 
 ## 15. Stop Condition
 
-Stop after implementation, validation, implementation report, draft PR creation, and Architecture Review handoff.
+Codex stops after implementation, validation, implementation report, evidence, and draft task PR creation.
 
-Do not trigger an independent technical Audit for 3.8-A. The single OS 3.8 Audit runs only after E1/E2/E3 and U1/U2/U3 are complete.
+Codex must not merge the PR, start E2 itself, trigger Architecture Review, run the independent Audit, deploy, tag, or release.
 
-Do not implement E2 Content Library, U2 information architecture, navigation changes, dead-code deletion, E3 expansion, Prisma changes, deployment, release tag, or production rollout.
+After Codex stops, the Wave Pipeline:
 
+1. runs the required verification and checks scope;
+2. merges the task PR into `planning/os-3.8-product-usability` only when every gate passes;
+3. records the E1 evidence and commit in the Pipeline Manifest;
+4. generates the E2 contract/task if still absent;
+5. starts E2 automatically.
+
+There is no Architecture Review between E1 and E2. AR-W1 is requested only after both tasks pass and the Pipeline has produced the cumulative W1 review package.
+
+Do not implement E2 Content Library inside the E1 PR, U2 information architecture, navigation changes, dead-code deletion, E3 expansion, Prisma changes, deployment, release tag, or production rollout.
+
+Do not trigger an independent technical Audit for E1 or W1. The single OS 3.8 Audit runs only after every Wave checkpoint and human gate has passed.
