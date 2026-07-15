@@ -1,16 +1,31 @@
 # Blueprint Status
 
-Version: 1.0
+Version: 1.1
 
-Status: Approved
+Status: Current
 
-## NextShift OS 3.0 Blueprint Status
+## Blueprint Authority
 
 This document is the authoritative status dashboard for the NextShift OS Blueprint.
 
 It records the current architectural state of the repository and determines whether implementation may proceed.
 
 When conflicts arise regarding project status, this document is the single source of truth.
+
+## Active Product Blueprint — OS 3.8
+
+| Item | Current Value |
+| --- | --- |
+| Blueprint | [OS 3.8 Product Usability Recovery](OS_3_8_BLUEPRINT.md) |
+| Version | 0.1 Draft |
+| Lifecycle State | Planning |
+| Architecture Status | Awaiting Steven approval |
+| Implementation Status | BLOCKED |
+| P0 Scope | E1 Editable Content Output; E2 Content Library; U2 Information Architecture Decision |
+| Next Stop | Steven approves scope, ordering, and U2 decision gate |
+| Next Artifacts After Approval | 3.8-A Implementation Contract and Execution Task |
+
+The frozen OS 3.0 foundation below remains historical architecture authority. It does not authorize OS 3.8 implementation.
 
 ## Blueprint Information
 
@@ -29,7 +44,7 @@ When conflicts arise regarding project status, this document is the single sourc
 | Architecture Auditor | Claude Code |
 | Implementation Lead | Codex |
 
-## Current Phase
+## Foundational OS 3.0 Phase (historical)
 
 Current Epoch:
 
@@ -60,9 +75,9 @@ Changes to these layers require an approved RFC.
 
 ## Engineering Authorization
 
-Implementation is authorized.
+Foundational OS 3.0 implementation remains authorized.
 
-Codex may begin engineering work.
+OS 3.8 implementation is blocked until Steven approves [OS_3_8_BLUEPRINT.md](OS_3_8_BLUEPRINT.md). Codex must not begin OS 3.8 engineering work before that approval.
 
 Implementation should follow:
 
