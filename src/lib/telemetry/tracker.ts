@@ -83,6 +83,32 @@ export function trackAIContentGenerated(userId: string, properties: { feature: s
   analytics.track('ai_content_generated', { ...properties, userId });
 }
 
+type ContentLoopProperties = {
+  contentId: string;
+  platform: string;
+  contentType: string;
+};
+
+export function trackContentEditStarted(userId: string, properties: ContentLoopProperties) {
+  analytics.track('content_edit_started', { ...properties, userId });
+}
+
+export function trackContentGenerated(userId: string, properties: ContentLoopProperties) {
+  analytics.track('content_generated', { ...properties, userId });
+}
+
+export function trackContentSaved(userId: string, properties: ContentLoopProperties) {
+  analytics.track('content_saved', { ...properties, userId });
+}
+
+export function trackContentCopied(userId: string, properties: ContentLoopProperties) {
+  analytics.track('content_copied', { ...properties, userId });
+}
+
+export function trackContentLoopCompleted(userId: string, properties: ContentLoopProperties) {
+  analytics.track('content_loop_completed', { ...properties, userId });
+}
+
 export function trackContentPublished(userId: string, properties: { platform: string; content_type: string; word_count: number }) {
   analytics.track('content_published', { ...properties, userId });
 }

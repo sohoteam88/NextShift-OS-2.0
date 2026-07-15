@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import type { ContentRecordPatchPlatform } from '@/lib/content-platforms';
 import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
@@ -222,7 +223,7 @@ export const contentService = {
       content?: string;
       title?: string;
       status?: 'draft' | 'published';
-      platform?: string;
+      platform?: ContentRecordPatchPlatform;
     },
   ) {
     const existing = await this.getById(user, id);

@@ -242,5 +242,6 @@ export function generatePost(
     status: 'generated',
     qualityScore: 75,
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
