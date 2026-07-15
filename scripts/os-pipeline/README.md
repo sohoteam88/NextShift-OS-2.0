@@ -96,6 +96,15 @@ repository/base/head mismatch, missing report at the exact PR head, or report
 absent from the PR diff fails closed. Product-task verification has no
 docs-only bypass.
 
+After those checks and before merge, a short state transaction writes the
+exact repository, base, task branch, PR URL, verified head SHA, implementation
+report, report-at-head/diff proofs, check status, and verification timestamp to
+both the task's canonical `*_DISPATCH.json` and the Manifest task record. The
+runner then re-runs the synchronization gate, reloads exact PR metadata and
+checks, and merges only with `--match-head-commit <verified-head-sha>`. A head
+change between verification and merge is rejected; it cannot produce completed
+task evidence.
+
 ## Bounded loop
 
 `run-loop.sh` invokes one restart-safe `--cycle` at a time. The same task-cycle
@@ -151,6 +160,16 @@ PID, host, UTC start time, and command. Contention fails closed. A stale lock is
 never removed automatically, and cleanup removes only a lock whose owner still
 matches the process that acquired it.
 
+Transactions receive a fixed function callback plus separately quoted
+positional data arguments. They never use `eval` or reconstruct a shell command
+from Manifest, Codex outcome, PR, report-path, or evidence data. Mutation
+callbacks register canonical persistence paths separately from their data
+arguments; the transaction rejects unregistered repository changes. Safe
+repository-relative paths reject absolute paths, leading options, `.`, `..`,
+and `.git` path components, backslashes, control characters, directories, and
+symlink targets. Quotes, semicolons, and `$()` in accepted data remain literal
+data and are never evaluated.
+
 Manifest and canonical evidence are committed and pushed in the same
 transaction. Identical STEVEN-IA and Final Audit results are clean no-ops;
 conflicting terminal evidence is rejected.
@@ -161,11 +180,14 @@ Canonical `*_DISPATCH.json` and remediation run artifacts hold the PR, branch,
 report, verification, and merge evidence required to resume without a second
 dispatch.
 
-- A normal task recorded as `running` selects `recovery`. If its PR is already
-  merged, the runner verifies the merge evidence, fast-forwards the planning
-  checkout, and atomically records `completed`. If the PR is still open, it
-  stops and asks the operator to resume verification/merge from a clean
-  worktree at the exact remote task head.
+- A normal task recorded as `running` selects `recovery`. Recovery reads the
+  canonical dispatch artifact and validates its task/base/branch/PR/report and
+  persisted verification against exact GitHub repository, head-repository,
+  base, head branch, head SHA, checks, report-at-head/diff, and merge metadata.
+  A merged PR is completed only after a clean planning fast-forward and proof
+  that its 40-character merge SHA is on authorized planning history. An open
+  PR is restored in a clean detached worktree, reverified, and merged against
+  the exact head without a second Codex dispatch.
 - An `active_remediation` selects `remediation_recovery`, not another Codex
   call. A uniquely identifiable open PR is restored at its exact remote head,
   reverified, and merged. A previously merged PR is completed only when its
@@ -173,7 +195,9 @@ dispatch.
   and merge SHA still agree.
 - If only a remediation branch is known, exactly one matching PR must be found.
   Missing, multiple, or ambiguous PR/evidence state moves to or stops at
-  `needs_human`; it is never guessed.
+  `needs_human`; it is never guessed. For a normal task, any repository, base,
+  head, report, checks, or merge-ancestry ambiguity fails closed with the task
+  still `running` and requires explicit human recovery.
 - A final audit in `running` selects `awaiting_final_audit` and exits cleanly.
   It does not regenerate the request and does not report completion.
 
@@ -183,11 +207,11 @@ Operator recovery procedure:
    remediation, review, approval, or audit artifact.
 2. Run `git fetch origin --prune`, `git status --short`, and compare local and
    remote heads. Preserve any user work; do not auto-reset, stash, or delete it.
-3. For an open normal-task PR, create a clean detached worktree at
-   `origin/<recorded-task-branch>` and invoke `--merge-task-pr` with
-   `TASK_BRANCH`, `IMPLEMENTATION_REPORT`, `STATE_REPO_DIR`,
-   `PIPELINE_ALLOW_DETACHED_TASK_WORKTREE=1`, and
-   `PIPELINE_ALLOW_PR_MERGE=1` set to the recorded values.
+3. For an unambiguous open or merged normal-task PR, run
+   `PIPELINE_ALLOW_PR_MERGE=1 scripts/os-pipeline/run-pipeline.sh --recover-task
+   <TASK_ID>` from the clean planning checkout. It restores the recorded exact
+   task head when needed and never redispatches Codex. Do not override a
+   mismatch; investigate the canonical dispatch artifact and GitHub metadata.
 4. For `remediation_recovery`, rerun one opted-in `--cycle`; do not invoke
    Codex manually for the same reserved run.
 5. For a lock failure, inspect
@@ -352,16 +376,20 @@ scripts/os-pipeline/tests/run.sh
 scripts/os-pipeline/tests/git-integration.sh
 scripts/os-pipeline/tests/remediation-integration.sh
 scripts/os-pipeline/tests/governance-integration.sh
+scripts/os-pipeline/tests/safety-integration.sh
 
 git diff --check
 pnpm type-check
+pnpm test
 pnpm lint
 pnpm build
 ```
 
 Expected pipeline-specific coverage is:
 
-- `tests/run.sh`: **37 state-machine assertions**.
+- Bash syntax and ShellCheck: **8 Pipeline/test shell files**, with zero
+  ShellCheck issues.
+- `tests/run.sh`: **40 state-machine/Manifest assertions**.
 - `tests/git-integration.sh`: a real temporary bare-Git
   **E1 → Codex outcome → exact PR verification → merge → planning
   reconciliation → E1 completion → automatic E2 selection/completion → AR-W1
@@ -377,6 +405,14 @@ Expected pipeline-specific coverage is:
   `final_audit_pass_persistence`, `final_audit_wrong_sha_rejected`,
   `final_audit_product_change_rejected`, and
   `final_audit_cannot_release`.
+- `tests/safety-integration.sh`: **14 named Round 5 real-Git fixtures** covering
+  normal task merged/running crash recovery and ambiguous identity, exact-head
+  merge races, Wave checkpoint PASS persistence and stale-product rejection,
+  tracked/untracked dirty gates, local/remote divergence, live/stale common-dir
+  lock contention, quoted metacharacter injection, pre-write final-component
+  symlink rejection, and invalid/missing/out-of-PR implementation reports. The
+  invalid-report fixture contains independent invalid, missing-at-head, and
+  absent-from-diff subcases.
 
 The real-Git fixtures use temporary bare remotes/worktrees plus fake GitHub and
 Codex commands. They do not contact GitHub, execute real E1/E2 product work,

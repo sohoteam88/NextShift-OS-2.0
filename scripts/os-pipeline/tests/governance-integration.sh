@@ -35,7 +35,7 @@ reset_manifest() {
     .waves |= map(
       .status="pending" |
       .start_sha=null |
-      .tasks |= map(.status="pending" | .evidence=null) |
+      .tasks |= map(.status="pending" | .verification=null | .evidence=null) |
       .checkpoint.status="pending" |
       .checkpoint.reviewed_sha=null |
       del(
@@ -82,12 +82,23 @@ seed_steven_ready() {
         .status="completed" |
         .start_sha=$sha |
         .tasks |= map(
+          .id as $task_id |
           .status="completed" |
+          .verification={
+            status:"passed",repository:"fixture/NextShift-OS-2.0",base_branch:"planning",
+            task_branch:("fixture-" + $task_id),pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
+            verified_head_sha:$sha,implementation_report:"docs/fixture-task-report.md",
+            dispatch_artifact:("docs/nextshift-os-3/os-3-8/runs/" + $task_id + "_DISPATCH.json"),
+            report_exists_at_exact_head:true,report_in_pr_diff:true,checks:"passed",verified_at:"2026-07-15T12:00:00Z"
+          } |
           .evidence={
             pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
             merge_sha:$sha,
             implementation_report:"docs/fixture-task-report.md",
-            validation:{checks:"passed"}
+            verification:.verification,
+            validation:{checks:"passed",head_sha:$sha},
+            recovered:false,
+            merged_at:"2026-07-15T12:00:00Z"
           }
         ) |
         .checkpoint.status="passed" |
@@ -106,12 +117,23 @@ seed_final_ready() {
       .status="completed" |
       .start_sha=$sha |
       .tasks |= map(
+        .id as $task_id |
         .status="completed" |
+        .verification={
+          status:"passed",repository:"fixture/NextShift-OS-2.0",base_branch:"planning",
+          task_branch:("fixture-" + $task_id),pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
+          verified_head_sha:$sha,implementation_report:"docs/fixture-task-report.md",
+          dispatch_artifact:("docs/nextshift-os-3/os-3-8/runs/" + $task_id + "_DISPATCH.json"),
+          report_exists_at_exact_head:true,report_in_pr_diff:true,checks:"passed",verified_at:"2026-07-15T12:00:00Z"
+        } |
         .evidence={
           pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
           merge_sha:$sha,
           implementation_report:"docs/fixture-task-report.md",
-          validation:{checks:"passed"}
+          verification:.verification,
+          validation:{checks:"passed",head_sha:$sha},
+          recovered:false,
+          merged_at:"2026-07-15T12:00:00Z"
         }
       ) |
       .checkpoint.status="passed" |

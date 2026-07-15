@@ -80,16 +80,37 @@ jq -e '
 jq -e '
   def sha40: type == "string" and test("^[0-9a-f]{40}$");
   def utc: type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$");
-  def rel: type == "string" and length > 0 and (startswith("/") | not) and (contains("..") | not) and (test("[\\r\\n]") | not);
+  def rel:
+    type == "string" and length > 0 and
+    (startswith("/") | not) and (startswith("-") | not) and (endswith("/") | not) and
+    (contains("//") | not) and (contains("\\") | not) and
+    (test("(^|/)\\.\\.?(/|$)") | not) and (test("(^|/)\\.git(/|$)") | not) and
+    (test("[\\x00-\\x1f\\x7f]") | not);
   def uint: type == "number" and . >= 0 and floor == .;
   def ghpr: type == "string" and test("^https://github\\.com/[^/]+/[^/]+/pull/[0-9]+$");
-  def task_evidence:
+  def task_verification($base; $id):
+    type == "object" and .status == "passed" and .checks == "passed" and
+    (.repository | type == "string" and length > 0) and .base_branch == $base and
+    (.task_branch | type == "string" and length > 0) and (.pr_url | ghpr) and
+    (.verified_head_sha | sha40) and (.implementation_report | rel) and
+    .dispatch_artifact == ("docs/nextshift-os-3/os-3-8/runs/" + $id + "_DISPATCH.json") and
+    (.dispatch_artifact | rel) and .report_exists_at_exact_head == true and
+    .report_in_pr_diff == true and (.verified_at | utc);
+  def task_evidence($base; $id):
     type == "object" and
     (.pr_url | type == "string" and test("^https://github\\.com/sohoteam88/NextShift-OS-2\\.0/pull/[0-9]+$")) and
     (.merge_sha | sha40) and (.implementation_report | rel) and
-    (.validation | type == "object" and .checks == "passed" and (((.head_sha? // null) == null) or (.head_sha | sha40))) and
-    (((.merged_at? // null) == null) or (.merged_at | utc)) and
-    (((.recovered? // null) == null) or (.recovered | type == "boolean"));
+    (.recovered | type == "boolean") and
+    (.validation | type == "object" and .checks == "passed" and (.head_sha | sha40)) and
+    (.verification | task_verification($base; $id)) and
+    .verification.pr_url == .pr_url and
+    .verification.implementation_report == .implementation_report and
+    .verification.verified_head_sha == .validation.head_sha and
+    (if .recovered then
+      ((.merged_at? // null) == null) and (.recovered_at | utc)
+     else
+      (.merged_at | utc) and ((.recovered_at? // null) == null)
+     end);
   def active_ok($attempts; $max; $base):
     . as $active |
     type == "object" and .status == "running" and
@@ -113,8 +134,14 @@ jq -e '
   .base_branch as $base |
   all(.waves[];
     all(.tasks[];
-      if .status == "completed" then (.evidence | task_evidence)
-      else ((.evidence? // null) == null) end
+      . as $task |
+      if .status == "completed" then
+        (.verification | task_verification($base; $task.id)) and (.evidence | task_evidence($base; $task.id)) and .verification == .evidence.verification
+      elif .status == "running" then
+        ((.evidence? // null) == null) and (((.verification? // null) == null) or (.verification | task_verification($base; $task.id)))
+      else
+        ((.evidence? // null) == null) and ((.verification? // null) == null)
+      end
     ) and
     (.checkpoint as $checkpoint |
       ($checkpoint.remediation_attempts // 0) as $attempts |
@@ -144,6 +171,7 @@ jq -e '
       end)
     )
   ) and
+  ([.waves[].tasks[] | select(.status == "running")] | length <= 1) and
   (if .final_audit.status == "pending" then true
    else
     all(.waves[];

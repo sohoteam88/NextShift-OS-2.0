@@ -20,16 +20,34 @@ task() { run --plan | jq -r '.task // empty'; }
 set_task() {
   local id="$1" status="$2" tmp="$TMP_DIR/state.json"
   jq --arg id "$id" --arg status "$status" '
+    .base_branch as $base |
     .waves |= map(.tasks |= map(if .id == $id then
       .status = $status |
       if $status == "completed" then
+        .verification={
+          status:"passed",
+          repository:"fixture/NextShift-OS-2.0",
+          base_branch:$base,
+          task_branch:("fixture-" + $id),
+          pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
+          verified_head_sha:"0123456789012345678901234567890123456789",
+          implementation_report:("docs/fixture-" + $id + ".md"),
+          dispatch_artifact:("docs/nextshift-os-3/os-3-8/runs/" + $id + "_DISPATCH.json"),
+          report_exists_at_exact_head:true,
+          report_in_pr_diff:true,
+          checks:"passed",
+          verified_at:"2026-07-15T12:00:00Z"
+        } |
         .evidence={
           pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
           merge_sha:"0123456789012345678901234567890123456789",
           implementation_report:("docs/fixture-" + $id + ".md"),
-          validation:{checks:"passed"}
+          verification:.verification,
+          validation:{checks:"passed",head_sha:"0123456789012345678901234567890123456789"},
+          recovered:false,
+          merged_at:"2026-07-15T12:00:00Z"
         }
-      else .evidence=null end
+      else .verification=null | .evidence=null end
     else . end))
   ' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
 }
@@ -68,7 +86,22 @@ set_gate() {
   fi
 }
 complete_wave_tasks() { local wave="$1"; local id; while IFS= read -r id; do set_task "$id" completed; done < <(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .tasks[].id' "$TMP_DIR/manifest.json"); }
-valid_evidence() { jq -n --arg n "${1:-1}" '{pr_url:("https://github.com/sohoteam88/NextShift-OS-2.0/pull/" + $n),merge_sha:"0123456789012345678901234567890123456789",implementation_report:"docs/report.md",validation:{checks:"passed"}}'; }
+valid_evidence() {
+  jq -n --arg n "${1:-1}" '{
+    pr_url:("https://github.com/sohoteam88/NextShift-OS-2.0/pull/" + $n),
+    merge_sha:"0123456789012345678901234567890123456789",
+    implementation_report:"docs/report.md",
+    verification:{
+      status:"passed",repository:"fixture/NextShift-OS-2.0",base_branch:"planning/os-3.8-product-usability",
+      task_branch:"fixture-E1",pr_url:("https://github.com/sohoteam88/NextShift-OS-2.0/pull/" + $n),
+      verified_head_sha:"0123456789012345678901234567890123456789",implementation_report:"docs/report.md",
+      dispatch_artifact:"docs/nextshift-os-3/os-3-8/runs/E1_DISPATCH.json",
+      report_exists_at_exact_head:true,report_in_pr_diff:true,checks:"passed",verified_at:"2026-07-15T12:00:00Z"
+    },
+    validation:{checks:"passed",head_sha:"0123456789012345678901234567890123456789"},
+    recovered:false,merged_at:"2026-07-15T12:00:00Z"
+  }'
+}
 review_result() { printf 'VERDICT=%s\nREVIEWED_SHA=0123456789012345678901234567890123456789\n' "$1" >"$TMP_DIR/review-result.md"; }
 
 "$PIPELINE_DIR/validate-manifest.sh" --manifest "$SOURCE_MANIFEST" >/dev/null
@@ -81,6 +114,19 @@ jq '.execution_policy.auto_release = true' "$TMP_DIR/manifest.json" >"$TMP_DIR/b
 if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/bad-policy.json" >/dev/null 2>&1; then fail "auto-release manifest accepted"; fi
 pass=$((pass + 1))
 if AUTO_RELEASE=1 run --plan >/dev/null 2>&1; then fail "AUTO_RELEASE override accepted"; fi
+pass=$((pass + 1))
+
+# Exact normal-task verification/evidence schema fails closed.
+fresh
+set_task E1 completed
+jq 'del(.waves[0].tasks[0].verification)' "$TMP_DIR/manifest.json" >"$TMP_DIR/bad-task-verification.json"
+if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/bad-task-verification.json" >/dev/null 2>&1; then fail "completed task without persisted verification accepted"; fi
+pass=$((pass + 1))
+jq '.waves[0].tasks[0].verification.dispatch_artifact="docs/nextshift-os-3/os-3-8/runs/E2_DISPATCH.json" | .waves[0].tasks[0].evidence.verification=.waves[0].tasks[0].verification' "$TMP_DIR/manifest.json" >"$TMP_DIR/bad-dispatch-identity.json"
+if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/bad-dispatch-identity.json" >/dev/null 2>&1; then fail "non-canonical task dispatch artifact accepted"; fi
+pass=$((pass + 1))
+jq '.waves[0].tasks[0].evidence.recovered=true | del(.waves[0].tasks[0].evidence.merged_at,.waves[0].tasks[0].evidence.recovered_at)' "$TMP_DIR/manifest.json" >"$TMP_DIR/bad-recovery-timestamp.json"
+if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/bad-recovery-timestamp.json" >/dev/null 2>&1; then fail "recovered task without recovery timestamp accepted"; fi
 pass=$((pass + 1))
 
 # Initial selection and restart-safe task transition.

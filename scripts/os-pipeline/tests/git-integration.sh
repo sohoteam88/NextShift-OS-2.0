@@ -33,7 +33,8 @@ mkdir -p docs/nextshift-os-3/os-3-8/reports
 printf 'fixture %s\n' "$PIPELINE_TASK_ID" >"docs/nextshift-os-3/os-3-8/reports/$PIPELINE_TASK_ID.md"
 git add . && git commit -m "fixture $PIPELINE_TASK_ID" >/dev/null
 git push -u origin "$PIPELINE_TASK_BRANCH" >/dev/null
-printf '{"pr_url":"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1","implementation_report":"docs/nextshift-os-3/os-3-8/reports/%s.md"}\n' "$PIPELINE_TASK_ID" >"$PIPELINE_TASK_OUTCOME"
+case "$PIPELINE_TASK_ID" in E1) pr=1 ;; E2) pr=2 ;; *) exit 2 ;; esac
+printf '{"pr_url":"https://github.com/sohoteam88/NextShift-OS-2.0/pull/%s","implementation_report":"docs/nextshift-os-3/os-3-8/reports/%s.md"}\n' "$pr" "$PIPELINE_TASK_ID" >"$PIPELINE_TASK_OUTCOME"
 EOF
 cat >"$BIN/gh" <<'EOF'
 #!/usr/bin/env bash
@@ -78,13 +79,22 @@ fi
 if [[ "$*" == *"pr diff"* ]]; then printf '%s\n' "${IMPLEMENTATION_REPORT:?}"; exit 0; fi
 if [[ "$*" == *"pr checks"* ]]; then exit 0; fi
 if [[ "$*" == *"pr merge"* ]]; then
+  pr_url=""; expected_head=""
+  args=("$@")
+  for ((i=0; i<${#args[@]}; i++)); do
+    [[ "${args[$i]}" == https://github.com/*/pull/* ]] && pr_url="${args[$i]}"
+    if [[ "${args[$i]}" == --match-head-commit ]]; then expected_head="${args[$((i+1))]:-}"; fi
+  done
+  [[ -n "$pr_url" && -n "$expected_head" ]] || { echo 'merge requires exact head' >&2; exit 3; }
+  pr_number="${pr_url##*/}"
+  [[ "$expected_head" == "$(git --git-dir="$remote" rev-parse "refs/heads/$branch")" ]] || { echo 'head changed' >&2; exit 4; }
   work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
   git clone -b "$base" "$remote" "$work" >/dev/null
   git -C "$work" config user.email fixture@example.test; git -C "$work" config user.name fixture
   git -C "$work" merge --squash "origin/$branch" >/dev/null
   git -C "$work" commit -m "merge fixture $branch" >/dev/null
   git -C "$work" push origin "$base" >/dev/null
-  git --git-dir="$remote" rev-parse "refs/heads/$base" >"${remote}.pr-1-merged"
+  git --git-dir="$remote" rev-parse "refs/heads/$base" >"${remote}.pr-${pr_number}-merged"
   exit 0
 fi
 exit 1

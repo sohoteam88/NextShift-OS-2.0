@@ -14,8 +14,8 @@ AUTO_RELEASE="${AUTO_RELEASE:-0}"
 AUTO_DEPLOY="${AUTO_DEPLOY:-0}"
 STATE_EXPECTED_HEAD=""
 STATE_LOCK_OWNER=""
-STATE_ARTIFACT=""
 STATE_TRANSACTION_NOOP=0
+declare -a STATE_STAGE_PATHS=()
 
 usage() {
   cat <<'EOF'
@@ -31,6 +31,7 @@ Commands:
   --record-final-audit PASS|FAIL PATH   Record an external final independent-audit result.
   --verify-pr PR_URL                    Run local gates and wait for required GitHub checks.
   --merge-task-pr TASK_ID PR_URL        Verify and merge an eligible task PR (explicit opt-in).
+  --recover-task TASK_ID                Resume one exact normal-task PR without redispatching Codex.
   --dispatch                            Explicitly dispatch the next eligible task (operator opt-in only).
   --cycle                               Route one restart-safe pipeline action (operator opt-in for task work).
 
@@ -69,46 +70,77 @@ synchronization_gate() {
   log "SYNC repository=$remote_url branch=$expected_branch local=$local_head remote=$remote_head base=$base_branch@$base_head ahead_behind=$counts"
 }
 
+release_state_lock() {
+  [[ -n "$STATE_LOCK_DIR" && -n "$STATE_LOCK_OWNER" ]] || return 0
+  if [[ "$(cat "$STATE_LOCK_DIR/owner" 2>/dev/null || true)" == "$STATE_LOCK_OWNER" ]]; then
+    rm -f "$STATE_LOCK_DIR/owner"
+    rmdir "$STATE_LOCK_DIR" 2>/dev/null || true
+  fi
+  STATE_LOCK_OWNER=""
+}
+
+transaction_stage_path() {
+  local path="$1" repo_root path_root normalized_path relative existing
+  [[ -n "$path" ]] || die "state artifact path is empty"
+  if [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then
+    STATE_STAGE_PATHS+=("$path")
+    return
+  fi
+  repo_root="$(cd "$REPO_DIR" && pwd -P)"
+  if [[ "$path" == /* ]]; then
+    path_root="$(cd "$(dirname "$path")" && pwd -P)" || die "cannot resolve state artifact directory"
+    normalized_path="$path_root/$(basename "$path")"
+    [[ "$normalized_path" == "$repo_root/"* ]] || die "state artifact is outside the authorized repository: $path"
+    relative="${normalized_path#"$repo_root"/}"
+  else
+    relative="$path"
+  fi
+  safe_relative_path "$relative" || die "state artifact path is unsafe: $relative"
+  [[ ! -d "$repo_root/$relative" && ! -L "$repo_root/$relative" ]] || die "state artifact must be a non-symlink file path: $relative"
+  for existing in "${STATE_STAGE_PATHS[@]:-}"; do
+    [[ "$existing" == "$relative" ]] && return
+  done
+  STATE_STAGE_PATHS+=("$relative")
+}
+
 persist_state() {
   local message="$1"; shift
   [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]] && return
-  local base_branch remote_now lock_age
-  [[ -n "$STATE_LOCK_DIR" ]] || STATE_LOCK_DIR="$(git -C "$REPO_DIR" rev-parse --git-common-dir)/os-pipeline-state.lock"
-  [[ "$STATE_LOCK_DIR" = /* ]] || STATE_LOCK_DIR="$REPO_DIR/$STATE_LOCK_DIR"
-  mkdir -p "$(dirname "$STATE_LOCK_DIR")"
-  if [[ -n "$STATE_LOCK_OWNER" && "$(cat "$STATE_LOCK_DIR/owner" 2>/dev/null || true)" == "$STATE_LOCK_OWNER" ]]; then
-    :
-  elif ! mkdir "$STATE_LOCK_DIR" 2>/dev/null; then
-    lock_age="$(cat "$STATE_LOCK_DIR/owner" 2>/dev/null || true)"
-    die "state transition lock is held (owner: ${lock_age:-unknown}); explicit human cleanup required: $STATE_LOCK_DIR"
-  fi
-  if [[ -z "$STATE_LOCK_OWNER" ]]; then
-    STATE_LOCK_OWNER="pid=$$ host=$(hostname) started=$(date -u +%FT%TZ) command=${PIPELINE_STATE_COMMAND:-unknown}"
-    printf '%s\n' "$STATE_LOCK_OWNER" >"$STATE_LOCK_DIR/owner"
-  fi
-  trap 'rm -f "$STATE_LOCK_DIR/owner"; rmdir "$STATE_LOCK_DIR" 2>/dev/null || true' RETURN
+  local base_branch remote_now repo_root manifest_root manifest_relative staged allowed path
+  [[ -n "$STATE_LOCK_DIR" && -n "$STATE_LOCK_OWNER" ]] || die "state persistence requires an owned transaction lock"
+  [[ "$(cat "$STATE_LOCK_DIR/owner" 2>/dev/null || true)" == "$STATE_LOCK_OWNER" ]] || die "state transaction lock ownership changed"
   base_branch="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   [[ "$(git -C "$REPO_DIR" branch --show-current)" == "$base_branch" ]] || die "state persistence requires authorized planning branch: $base_branch"
   [[ -n "$STATE_EXPECTED_HEAD" ]] || die "state persistence requires a synchronization gate"
   remote_now="$(git -C "$REPO_DIR" rev-parse "origin/$base_branch")"
   [[ "$remote_now" == "$STATE_EXPECTED_HEAD" ]] || die "planning branch changed after synchronization; refusing state write"
-  git -C "$REPO_DIR" add -- "$MANIFEST_PATH" "$@"
+  git -C "$REPO_DIR" add -A -- "$MANIFEST_PATH" "$@"
+  [[ -z "$(git -C "$REPO_DIR" diff --name-only)" && -z "$(git -C "$REPO_DIR" ls-files --others --exclude-standard)" ]] || die "state callback changed an unregistered path"
+  repo_root="$(cd "$REPO_DIR" && pwd -P)"; manifest_root="$(cd "$(dirname "$MANIFEST_PATH")" && pwd -P)"
+  manifest_relative="${manifest_root#"$repo_root"/}/$(basename "$MANIFEST_PATH")"
+  while IFS= read -r staged; do
+    [[ -n "$staged" ]] || continue
+    allowed=0
+    [[ "$staged" == "$manifest_relative" ]] && allowed=1
+    for path in "$@"; do [[ "$staged" == "$path" ]] && allowed=1; done
+    (( allowed == 1 )) || die "state callback staged an unregistered path: $staged"
+  done < <(git -C "$REPO_DIR" diff --cached --name-only)
   git -C "$REPO_DIR" diff --cached --quiet && die "state transition produced no staged artifact"
   git -C "$REPO_DIR" commit -m "$message"
   git -C "$REPO_DIR" push origin "$base_branch" || die "state push failed; do not retry without a new synchronization gate"
   [[ "$(git -C "$REPO_DIR" rev-parse HEAD)" == "$(git -C "$REPO_DIR" rev-parse "origin/$base_branch")" ]] || die "state commit did not reach origin"
-  rm -f "$STATE_LOCK_DIR/owner"; rmdir "$STATE_LOCK_DIR" 2>/dev/null || true
-  trap - RETURN
 }
 
-# Short, serialized state transaction. Callers perform Codex/PR/check work first,
-# then pass only the final mutation command after re-synchronizing under this lock.
+# Short, serialized state transaction. The callback name and each data argument are
+# passed separately; repository state is never interpreted as shell source.
 state_transaction() {
-  local command_name="$1" mutate="$2" message="$3"; shift 3
-  PIPELINE_STATE_COMMAND="$command_name"
+  local command_name="$1" message="$2" mutation_callback="$3"; shift 3
+  if [[ ! "$mutation_callback" =~ ^transaction_[A-Za-z0-9_]+$ ]] || ! declare -F "$mutation_callback" >/dev/null; then
+    die "invalid state transaction callback: $mutation_callback"
+  fi
   if [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then
-    STATE_ARTIFACT=""; STATE_TRANSACTION_NOOP=0
-    eval "$mutate"
+    STATE_STAGE_PATHS=(); STATE_TRANSACTION_NOOP=0
+    "$mutation_callback" "$@"
     "$VALIDATOR" --manifest "$MANIFEST_PATH" >/dev/null
     return
   fi
@@ -120,33 +152,87 @@ state_transaction() {
   mkdir "$STATE_LOCK_DIR" 2>/dev/null || die "state transition lock is held; explicit human recovery required: $STATE_LOCK_DIR"
   STATE_LOCK_OWNER="pid=$$ host=$(hostname) started=$(date -u +%FT%TZ) command=$command_name"
   printf '%s\n' "$STATE_LOCK_OWNER" >"$STATE_LOCK_DIR/owner"
-  trap 'test "$(cat "$STATE_LOCK_DIR/owner" 2>/dev/null || true)" = "$STATE_LOCK_OWNER" && { rm -f "$STATE_LOCK_DIR/owner"; rmdir "$STATE_LOCK_DIR" 2>/dev/null || true; }' RETURN EXIT
+  trap release_state_lock EXIT
   synchronization_gate "$base_branch"
   "$VALIDATOR" --manifest "$MANIFEST_PATH" >/dev/null
-  STATE_ARTIFACT=""
+  STATE_STAGE_PATHS=()
   STATE_TRANSACTION_NOOP=0
-  eval "$mutate"
+  "$mutation_callback" "$@"
   "$VALIDATOR" --manifest "$MANIFEST_PATH" >/dev/null
   if [[ "$STATE_TRANSACTION_NOOP" == "1" ]]; then
+    [[ -z "$(git -C "$REPO_DIR" status --porcelain)" ]] || die "no-op state callback changed repository state"
     log "clean stop: state transaction already applied ($command_name)"
+    release_state_lock
+    trap - EXIT
     return 0
   fi
-  if [[ -n "$STATE_ARTIFACT" ]]; then persist_state "$message" "$STATE_ARTIFACT" "$@"; else persist_state "$message" "$@"; fi
+  if [[ -n "${STATE_STAGE_PATHS[*]-}" ]]; then
+    persist_state "$message" "${STATE_STAGE_PATHS[@]}"
+  else
+    persist_state "$message"
+  fi
+  release_state_lock
+  trap - EXIT
 }
 
 transaction_start_task() {
-  local id="$1" artifact_source="$2" artifact_target="$3"
+  local id="$1" artifact_source="$2" artifact_target="$3" expected_digest="$4" canonical_source actual_digest
   require_selected_task "$id"
   [[ "$(jq -r --arg id "$id" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")" == pending ]] || die "task changed before transaction: $id"
-  cp "$artifact_source" "$artifact_target"
+  canonical_source="$(external_source_path "$artifact_source" || true)"
+  [[ "$canonical_source" == "$artifact_source" ]] || die "task dispatch control artifact must be a regular file outside the repository"
+  actual_digest="$(shasum -a 256 "$canonical_source" | awk '{print $1}')"
+  [[ "$actual_digest" == "$expected_digest" ]] || die "task dispatch control artifact changed before state transaction"
+  cp "$canonical_source" "$artifact_target"
   start_task "$id"
+  transaction_stage_path "$artifact_target"
 }
 
 transaction_complete_task() {
-  local id="$1" evidence="$2"
-  [[ "$(jq -r --arg id "$id" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")" == running ]] || die "task is no longer running: $id"
-  validate_evidence "$evidence"
+  local id="$1" evidence="$2" dispatch_relative="$3" status existing
+  status="$(jq -r --arg id "$id" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")"
+  if [[ "$status" == completed ]]; then
+    existing="$(jq -Sc --arg id "$id" '.waves[] | .tasks[] | select(.id == $id) | .evidence' "$MANIFEST_PATH")"
+    if [[ "$existing" == "$(jq -Sc . <<<"$evidence")" ]]; then STATE_TRANSACTION_NOOP=1; return; fi
+    die "task already has different completion evidence: $id"
+  fi
+  [[ "$status" == running ]] || die "task is no longer running: $id"
+  validate_task_completion_evidence "$evidence"
+  validate_persisted_task_verification "$id" "$dispatch_relative" "$(jq -c '.verification' <<<"$evidence")"
+  assert_merged_task_contract "$id" "$evidence"
   update_task_status "$id" running completed "$evidence"
+}
+
+transaction_record_task_verification() {
+  local id="$1" dispatch_relative="$2" verification="$3" artifact status current artifact_verification metadata remote_head
+  status="$(jq -r --arg id "$id" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")"
+  [[ "$status" == running ]] || die "task is no longer running before verification persistence: $id"
+  [[ "$dispatch_relative" == "$(task_dispatch_relative "$id")" ]] || die "task verification targets a non-canonical dispatch artifact"
+  safe_relative_path "$dispatch_relative" || die "task dispatch artifact path is invalid"
+  artifact="$(artifact_path "$dispatch_relative")"
+  [[ -f "$artifact" && ! -L "$artifact" ]] || die "canonical task dispatch artifact is missing"
+  validate_task_verification "$id" "$artifact" "$verification"
+  current="$(jq -c --arg id "$id" '.waves[] | .tasks[] | select(.id == $id) | .verification // null' "$MANIFEST_PATH")"
+  artifact_verification="$(jq -c '.verification // null' "$artifact")"
+  if [[ "$current" != null || "$artifact_verification" != null ]]; then
+    if [[ "$(jq -Sc 'del(.verified_at)' <<<"$current")" == "$(jq -Sc 'del(.verified_at)' <<<"$verification")" && "$(jq -Sc 'del(.verified_at)' <<<"$artifact_verification")" == "$(jq -Sc 'del(.verified_at)' <<<"$verification")" ]]; then
+      STATE_TRANSACTION_NOOP=1
+      return
+    fi
+    die "task already has conflicting persisted verification: $id"
+  fi
+  metadata="$(github_pr_metadata "$(jq -r '.pr_url' <<<"$verification")")"
+  validate_task_pr_metadata "$metadata" "$(jq -r '.pr_url' <<<"$verification")" "$(jq -r '.task_branch' <<<"$verification")" OPEN "$(jq -r '.verified_head_sha' <<<"$verification")" || die "task PR identity changed before verification persistence"
+  remote_head="$(git -C "$REPO_DIR" rev-parse "origin/$(jq -r '.task_branch' <<<"$verification")" 2>/dev/null || true)"
+  [[ "$remote_head" == "$(jq -r '.verified_head_sha' <<<"$verification")" ]] || die "remote task head changed before verification persistence"
+  ensure_exact_report_at_head "$REPO_DIR" "$(jq -r '.verified_head_sha' <<<"$verification")" "$(jq -r '.implementation_report' <<<"$verification")" "$(jq -r '.pr_url' <<<"$verification")"
+  gh pr diff "$(jq -r '.pr_url' <<<"$verification")" --name-only | grep -Fqx -e "$(jq -r '.implementation_report' <<<"$verification")" || die "task report changed before verification persistence"
+  gh pr checks "$(jq -r '.pr_url' <<<"$verification")" >/dev/null || die "task checks changed before verification persistence"
+  jq --argjson verification "$verification" '.verification=$verification' "$artifact" >"${artifact}.tmp" && mv "${artifact}.tmp" "$artifact"
+  jq --arg id "$id" --argjson verification "$verification" '
+    .waves |= map(.tasks |= map(if .id == $id and .status == "running" then .verification=$verification else . end))
+  ' "$MANIFEST_PATH" | write_manifest
+  transaction_stage_path "$artifact"
 }
 
 reconcile_planning_state() {
@@ -173,13 +259,124 @@ validate_evidence() {
     (.validation | type == "object" and (.checks == "passed"))
   ' <<<"$evidence" >/dev/null || die "evidence must include verified PR, merge SHA, report, and passed validation"
 }
+
+validate_task_completion_evidence() {
+  local evidence="$1"
+  jq -e '
+    . as $e |
+    ($e | type == "object") and
+    ($e.pr_url | type == "string" and test("^https://github\\.com/[^/]+/[^/]+/pull/[0-9]+$")) and
+    ($e.merge_sha | type == "string" and test("^[0-9a-f]{40}$")) and
+    ($e.implementation_report | type == "string" and length > 0) and
+    ($e.recovered | type == "boolean") and
+    ($e.validation | type == "object" and .checks == "passed" and (.head_sha | test("^[0-9a-f]{40}$"))) and
+    ($e.verification | type == "object" and .status == "passed" and .checks == "passed" and
+      .report_exists_at_exact_head == true and .report_in_pr_diff == true and
+      (.verified_head_sha | test("^[0-9a-f]{40}$")) and
+      .pr_url == $e.pr_url and .implementation_report == $e.implementation_report and
+      .verified_head_sha == $e.validation.head_sha)
+  ' <<<"$evidence" >/dev/null || die "task completion evidence does not preserve the exact verified PR contract"
+  safe_relative_path "$(jq -r '.implementation_report' <<<"$evidence")" || die "task completion report path is unsafe"
+}
+
+task_dispatch_relative() {
+  local id="$1"
+  [[ "$id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] || die "task ID is unsafe for an artifact path: $id"
+  printf 'docs/nextshift-os-3/os-3-8/runs/%s_DISPATCH.json\n' "$id"
+}
+
 artifact_path() {
-  local relative="$1"
-  if [[ "$relative" == /* ]]; then printf '%s\n' "$relative"; elif [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then printf '%s/%s\n' "$(dirname "$MANIFEST_PATH")" "$(basename "$relative")"; else printf '%s/%s\n' "$REPO_DIR" "$relative"; fi
+  local relative="$1" repo_root parent_root parent_probe
+  safe_relative_path "$relative" || die "artifact path is not a safe repository-relative path: $relative"
+  if [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then
+    printf '%s/%s\n' "$(dirname "$MANIFEST_PATH")" "$(basename "$relative")"
+  else
+    repo_root="$(cd "$REPO_DIR" && pwd -P)"
+    [[ ! -L "$repo_root/$relative" ]] || die "artifact target must not be a symlink: $relative"
+    parent_probe="$repo_root/$(dirname "$relative")"
+    while [[ ! -e "$parent_probe" ]]; do parent_probe="$(dirname "$parent_probe")"; done
+    [[ -d "$parent_probe" ]] || die "artifact parent is not a directory: $relative"
+    parent_root="$(cd "$parent_probe" && pwd -P)"
+    [[ "$parent_root" == "$repo_root" || "$parent_root" == "$repo_root/"* ]] || die "artifact path escapes through a symlink parent: $relative"
+    printf '%s/%s\n' "$repo_root" "$relative"
+  fi
 }
 safe_relative_path() {
   local path="$1"
-  [[ -n "$path" && "$path" != /* && "$path" != *".."* && "$path" != *$'\n'* ]] || return 1
+  [[ -n "$path" && "$path" != /* && "$path" != -* && "$path" != */ && "$path" != *//* && "$path" != *\\* ]] || return 1
+  [[ ! "$path" =~ (^|/)\.\.?(/|$) ]] || return 1
+  [[ ! "$path" =~ (^|/)\.git(/|$) ]] || return 1
+  [[ ! "$path" =~ [[:cntrl:]] ]] || return 1
+}
+
+validate_task_pr_metadata() {
+  local metadata="$1" pr="$2" branch="$3" expected_state="${4:-}" expected_head="${5:-}" expected_repo base
+  expected_repo="$(expected_repository)"; base="$(jq -r '.base_branch' "$MANIFEST_PATH")"
+  jq -e --arg repo "$expected_repo" --arg base "$base" --arg branch "$branch" --arg pr "$pr" --arg state "$expected_state" --arg head "$expected_head" '
+    .repository.nameWithOwner == $repo and .headRepository.nameWithOwner == $repo and
+    .baseRefName == $base and .headRefName == $branch and .url == $pr and
+    (.headRefOid | test("^[0-9a-f]{40}$")) and
+    ($state == "" or .state == $state) and ($head == "" or .headRefOid == $head)
+  ' <<<"$metadata" >/dev/null
+}
+
+ensure_exact_report_at_head() {
+  local repo="$1" head_sha="$2" report="$3" pr_url="$4" pr_number fetched_head
+  safe_relative_path "$report" || die "implementation report path is unsafe"
+  if ! git -C "$repo" cat-file -e "$head_sha:$report" 2>/dev/null; then
+    [[ "$pr_url" =~ /pull/([0-9]+)$ ]] || die "cannot identify PR head ref for report validation"
+    pr_number="${BASH_REMATCH[1]}"
+    git -C "$repo" fetch origin "refs/pull/$pr_number/head" >/dev/null 2>&1 || die "cannot fetch exact PR head ref for report validation"
+    fetched_head="$(git -C "$repo" rev-parse FETCH_HEAD)"
+    [[ "$fetched_head" == "$head_sha" ]] || die "fetched PR head differs from persisted verified head"
+  fi
+  git -C "$repo" cat-file -e "$head_sha:$report" || die "implementation report is absent from exact verified PR head"
+}
+
+validate_task_verification() {
+  local id="$1" artifact="$2" verification="$3" repo base branch pr report head dispatch_relative
+  repo="$(expected_repository)"; base="$(jq -r '.base_branch' "$MANIFEST_PATH")"
+  branch="$(jq -r '.task_branch // empty' "$artifact")"; pr="$(jq -r '.pr_url // empty' "$artifact")"; report="$(jq -r '.implementation_report // empty' "$artifact")"
+  head="$(jq -r '.verified_head_sha // empty' <<<"$verification")"; dispatch_relative="$(task_dispatch_relative "$id")"
+  safe_relative_path "$report" || die "task dispatch report path is unsafe"
+  jq -e --arg id "$id" --arg branch "$branch" --arg base "$base" --arg pr "$pr" --arg report "$report" '
+    .task_id == $id and .task_branch == $branch and .base_branch == $base and
+    .pr_url == $pr and .implementation_report == $report
+  ' "$artifact" >/dev/null || die "task dispatch artifact identity is inconsistent"
+  jq -e --arg repo "$repo" --arg base "$base" --arg branch "$branch" --arg pr "$pr" --arg report "$report" --arg dispatch "$dispatch_relative" '
+    .status == "passed" and .repository == $repo and .base_branch == $base and
+    .task_branch == $branch and .pr_url == $pr and .implementation_report == $report and
+    .dispatch_artifact == $dispatch and .checks == "passed" and
+    .report_exists_at_exact_head == true and .report_in_pr_diff == true and
+    (.verified_head_sha | test("^[0-9a-f]{40}$")) and
+    (.verified_at | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"))
+  ' <<<"$verification" >/dev/null || die "task verification metadata is invalid"
+  [[ "$head" =~ ^[0-9a-f]{40}$ ]]
+}
+
+validate_persisted_task_verification() {
+  local id="$1" dispatch_relative="$2" expected="$3" artifact manifest_verification artifact_verification
+  [[ "$dispatch_relative" == "$(task_dispatch_relative "$id")" ]] || die "task completion references a non-canonical dispatch artifact"
+  artifact="$(artifact_path "$dispatch_relative")"; [[ -f "$artifact" && ! -L "$artifact" ]] || die "canonical task dispatch artifact is missing"
+  manifest_verification="$(jq -c --arg id "$id" '.waves[] | .tasks[] | select(.id == $id) | .verification // null' "$MANIFEST_PATH")"
+  artifact_verification="$(jq -c '.verification // null' "$artifact")"
+  validate_task_verification "$id" "$artifact" "$expected"
+  [[ "$(jq -Sc . <<<"$manifest_verification")" == "$(jq -Sc . <<<"$expected")" ]] || die "Manifest task verification differs from completion evidence"
+  [[ "$(jq -Sc . <<<"$artifact_verification")" == "$(jq -Sc . <<<"$expected")" ]] || die "dispatch artifact verification differs from completion evidence"
+}
+
+assert_merged_task_contract() {
+  local id="$1" evidence="$2" verification metadata pr branch report verified_head merge_sha
+  verification="$(jq -c '.verification' <<<"$evidence")"; pr="$(jq -r '.pr_url' <<<"$evidence")"
+  branch="$(jq -r '.task_branch' <<<"$verification")"; report="$(jq -r '.implementation_report' <<<"$verification")"
+  verified_head="$(jq -r '.verified_head_sha' <<<"$verification")"; merge_sha="$(jq -r '.merge_sha' <<<"$evidence")"
+  metadata="$(github_pr_metadata "$pr")"
+  validate_task_pr_metadata "$metadata" "$pr" "$branch" MERGED "$verified_head" || die "merged task PR identity is ambiguous: $id"
+  [[ "$(jq -r '.mergeCommit.oid // empty' <<<"$metadata")" == "$merge_sha" && "$merge_sha" =~ ^[0-9a-f]{40}$ ]] || die "merged task PR merge SHA is inconsistent"
+  gh pr checks "$pr" >/dev/null || die "merged task PR checks are not passing"
+  gh pr diff "$pr" --name-only | grep -Fqx -e "$report" || die "implementation report is no longer in the exact PR diff"
+  ensure_exact_report_at_head "$REPO_DIR" "$verified_head" "$report" "$pr"
+  git -C "$REPO_DIR" merge-base --is-ancestor "$merge_sha" HEAD || die "task merge SHA is not on the authorized planning history"
 }
 valid_approver() {
   [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._@+-]{0,127}$ ]]
@@ -395,30 +592,53 @@ select_action() {
 }
 
 recover_running_task() {
-  local task="$1" artifact pr branch report state_repo
-  artifact="$(artifact_path "docs/nextshift-os-3/os-3-8/runs/${task}_DISPATCH.json")"
-  [[ -f "$artifact" ]] || die "running task has no dispatch artifact; human recovery required: $task"
-  pr="$(jq -r '.pr_url // empty' "$artifact")"; branch="$(jq -r '.task_branch // empty' "$artifact")"; report="$(jq -r '.implementation_report // empty' "$artifact")"
-  [[ -n "$pr" && -n "$branch" && -n "$report" ]] || die "dispatch artifact is ambiguous; human recovery required"
-  state_repo="$REPO_DIR"
-  case "$(gh pr view "$pr" --json state --jq '.state')" in
+  local task="$1" status dispatch_relative artifact pr branch report base state_repo metadata verification merge_sha evidence task_dir rc
+  status="$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .status // empty' "$MANIFEST_PATH")"
+  if [[ "$status" == completed ]]; then log "clean stop: task already recovered: $task"; return; fi
+  [[ "$status" == running ]] || die "task is not in a recoverable running state: $task"
+  dispatch_relative="$(task_dispatch_relative "$task")"; artifact="$(artifact_path "$dispatch_relative")"
+  [[ -f "$artifact" && ! -L "$artifact" ]] || die "running task has no canonical dispatch artifact; human recovery required: $task"
+  pr="$(jq -r '.pr_url // empty' "$artifact")"; branch="$(jq -r '.task_branch // empty' "$artifact")"; report="$(jq -r '.implementation_report // empty' "$artifact")"; base="$(jq -r '.base_branch // empty' "$artifact")"
+  [[ "$pr" =~ ^https://github\.com/[^/]+/[^/]+/pull/[0-9]+$ && -n "$branch" ]] || die "dispatch artifact PR/branch identity is ambiguous; human recovery required"
+  safe_relative_path "$report" || die "dispatch artifact report path is unsafe; human recovery required"
+  [[ "$base" == "$(jq -r '.base_branch' "$MANIFEST_PATH")" && "$(jq -r '.task_id // empty' "$artifact")" == "$task" ]] || die "dispatch artifact task/base identity is ambiguous; human recovery required"
+  state_repo="$REPO_DIR"; metadata="$(github_pr_metadata "$pr")"
+  validate_task_pr_metadata "$metadata" "$pr" "$branch" || die "task PR repository/base/head identity is ambiguous; human recovery required"
+  case "$(jq -r '.state' <<<"$metadata")" in
     MERGED)
-      reconcile_planning_state "$(jq -r '.base_branch' "$MANIFEST_PATH")" "$state_repo"
-      evidence="$(jq -n --arg pr "$pr" --arg merge_sha "$(gh pr view "$pr" --json mergeCommit --jq '.mergeCommit.oid')" --arg report "$report" '{pr_url:$pr,merge_sha:$merge_sha,implementation_report:$report,validation:{checks:"passed"},recovered:true}')"
-      validate_evidence "$evidence"
-      if [[ "$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")" == completed ]]; then log "clean stop: task already recovered"; return; fi
-      state_transaction "task-recovery:$task" "transaction_complete_task '$task' '$evidence'" "chore(pipeline): recover merged OS 3.8 task $task"
+      verification="$(jq -c '.verification // null' "$artifact")"
+      [[ "$verification" != null ]] || die "merged task PR has no persisted pre-merge verification; human recovery required"
+      validate_persisted_task_verification "$task" "$dispatch_relative" "$verification"
+      validate_task_pr_metadata "$metadata" "$pr" "$branch" MERGED "$(jq -r '.verified_head_sha' <<<"$verification")" || die "merged task PR differs from persisted verification; human recovery required"
+      [[ "$(jq -r '.implementation_report' <<<"$verification")" == "$report" ]] || die "merged task report differs from persisted verification; human recovery required"
+      gh pr checks "$pr" >/dev/null || die "merged task checks are not passing; human recovery required"
+      gh pr diff "$pr" --name-only | grep -Fqx -e "$report" || die "merged task report is absent from the exact PR diff; human recovery required"
+      ensure_exact_report_at_head "$state_repo" "$(jq -r '.verified_head_sha' <<<"$verification")" "$report" "$pr"
+      merge_sha="$(jq -r '.mergeCommit.oid // empty' <<<"$metadata")"; [[ "$merge_sha" =~ ^[0-9a-f]{40}$ ]] || die "merged task has no valid merge SHA; human recovery required"
+      reconcile_planning_state "$base" "$state_repo"
+      git -C "$state_repo" merge-base --is-ancestor "$merge_sha" HEAD || die "merged task SHA is not on authorized planning history; human recovery required"
+      evidence="$(jq -n --arg pr "$pr" --arg merge_sha "$merge_sha" --arg report "$report" --arg head "$(jq -r '.verified_head_sha' <<<"$verification")" --argjson verification "$verification" --arg recovered_at "$(date -u +%FT%TZ)" '{pr_url:$pr,merge_sha:$merge_sha,implementation_report:$report,verification:$verification,validation:{checks:"passed",head_sha:$head},recovered:true,recovered_at:$recovered_at}')"
+      state_transaction "task-recovery:$task" "chore(pipeline): recover merged OS 3.8 task $task" transaction_complete_task "$task" "$evidence" "$dispatch_relative"
       ;;
     OPEN)
-      die "task PR is still open; resume exact-head verification/merge in a clean task worktree: $branch"
+      git -C "$state_repo" fetch origin "$branch" || die "open task PR branch is unavailable; human recovery required"
+      [[ "$(git -C "$state_repo" rev-parse "origin/$branch")" == "$(jq -r '.headRefOid' <<<"$metadata")" ]] || die "open task PR remote head is ambiguous; human recovery required"
+      task_dir="$(mktemp -d "${TMPDIR:-/tmp}/os38-task-recovery.XXXXXX")"
+      git -C "$state_repo" worktree add --detach "$task_dir" "origin/$branch" >/dev/null || die "cannot restore exact task worktree for recovery"
+      set +e
+      (REPO_DIR="$task_dir" MANIFEST_PATH="$task_dir/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" STATE_REPO_DIR="$state_repo" TASK_BRANCH="$branch" IMPLEMENTATION_REPORT="$report" PIPELINE_ALLOW_DETACHED_TASK_WORKTREE=1 merge_task_pr "$task" "$pr")
+      rc=$?
+      set -e
+      git -C "$state_repo" worktree remove --force "$task_dir" >/dev/null 2>&1 || true
+      (( rc == 0 )) || die "open task PR recovery failed closed; task remains running for human recovery"
       ;;
-    *) die "task PR state is ambiguous; human recovery required: $pr" ;;
+    *) die "task PR state is not OPEN or MERGED; human recovery required: $pr" ;;
   esac
 }
 
 # shellcheck disable=SC2329
 transaction_reserve_remediation() {
-  local checkpoint="$REMEDIATION_CHECKPOINT" wave attempts max reviewed_sha run_id branch artifact result_relative result
+  local checkpoint="$REMEDIATION_CHECKPOINT" wave attempts max reviewed_sha run_id branch artifact artifact_relative result_relative result
   wave="$(wave_for_id "$checkpoint")"; [[ -n "$wave" ]] || die "unknown remediation checkpoint"
   [[ "$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.status' "$MANIFEST_PATH")" == changes_requested ]] || die "checkpoint is no longer changes_requested"
   attempts="$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | (.checkpoint.remediation_attempts // 0)' "$MANIFEST_PATH")"; max="$(jq -r '.execution_policy.max_architecture_remediation_attempts' "$MANIFEST_PATH")"
@@ -433,11 +653,13 @@ transaction_reserve_remediation() {
   grep -Fqx 'VERDICT=CHANGES_REQUESTED' "$result" || die "remediation requires a CHANGES_REQUESTED result"
   [[ "$(grep -E '^REVIEWED_SHA=[0-9a-f]{40}$' "$result" | head -n1 | cut -d= -f2)" == "$reviewed_sha" ]] || die "remediation result no longer matches requested product SHA"
   run_id="${wave}-${checkpoint}-r$((attempts + 1))-$(date -u +%Y%m%d%H%M%S)-$$"; branch="chore/os-3.8-remediation-$(printf '%s' "$run_id" | tr '[:upper:]' '[:lower:]')"
-  artifact="$(artifact_path "docs/nextshift-os-3/os-3-8/runs/${run_id}.json")"; [[ ! -e "$artifact" ]] || die "remediation run artifact already exists"
+  artifact_relative="docs/nextshift-os-3/os-3-8/runs/${run_id}.json"
+  artifact="$(artifact_path "$artifact_relative")"; [[ ! -e "$artifact" ]] || die "remediation run artifact already exists"
   mkdir -p "$(dirname "$artifact")"
   jq -n --arg run "$run_id" --arg checkpoint "$checkpoint" --arg sha "$reviewed_sha" --arg branch "$branch" --argjson attempt "$((attempts + 1))" --arg started "$(date -u +%FT%TZ)" '{status:"running",run_id:$run,checkpoint:$checkpoint,reviewed_product_sha:$sha,attempt:$attempt,branch:$branch,started_at:$started}' >"$artifact"
-  jq --arg wave "$wave" --arg run "$run_id" --arg branch "$branch" --arg artifact "${artifact#"$REPO_DIR"/}" --argjson attempt "$((attempts + 1))" '.waves |= map(if .id == $wave then .checkpoint.active_remediation={status:"running",run_id:$run,attempt:$attempt,branch:$branch,artifact:$artifact} else . end)' "$MANIFEST_PATH" | write_manifest
-  REMEDIATION_RUN_ID="$run_id"; REMEDIATION_BRANCH="$branch"; REMEDIATION_ARTIFACT="$artifact"; STATE_ARTIFACT="$artifact"
+  jq --arg wave "$wave" --arg run "$run_id" --arg branch "$branch" --arg artifact "$artifact_relative" --argjson attempt "$((attempts + 1))" '.waves |= map(if .id == $wave then .checkpoint.active_remediation={status:"running",run_id:$run,attempt:$attempt,branch:$branch,artifact:$artifact} else . end)' "$MANIFEST_PATH" | write_manifest
+  REMEDIATION_RUN_ID="$run_id"; REMEDIATION_BRANCH="$branch"; REMEDIATION_ARTIFACT="$artifact"
+  transaction_stage_path "$artifact"
 }
 
 # shellcheck disable=SC2329
@@ -451,7 +673,7 @@ transaction_record_remediation_pr() {
   safe_relative_path "$REMEDIATION_REPORT" || die "remediation implementation report path is invalid"
   metadata="$(github_pr_metadata "$REMEDIATION_PR")"
   validate_remediation_pr_metadata "$metadata" "$REMEDIATION_PR" "$REMEDIATION_BRANCH" || die "remediation PR repository/base/head changed before recording"
-  gh pr diff "$REMEDIATION_PR" --name-only | grep -Fxq "$REMEDIATION_REPORT" || die "remediation implementation report is absent from the exact PR diff"
+  gh pr diff "$REMEDIATION_PR" --name-only | grep -Fqx -e "$REMEDIATION_REPORT" || die "remediation implementation report is absent from the exact PR diff"
   pr_state="$(jq -r '.state' <<<"$metadata")"
   if [[ "$pr_state" == OPEN ]]; then
     remote_head="$(git -C "$REPO_DIR" rev-parse "origin/$REMEDIATION_BRANCH" 2>/dev/null || true)"
@@ -463,7 +685,7 @@ transaction_record_remediation_pr() {
   [[ -z "$existing_pr" && -z "$existing_report" ]] || die "conflicting remediation PR evidence already exists"
   jq --arg pr "$REMEDIATION_PR" --arg report "$REMEDIATION_REPORT" '.pr_url=$pr | .implementation_report=$report' "$artifact" >"${artifact}.tmp" && mv "${artifact}.tmp" "$artifact"
   jq --arg wave "$wave" --arg pr "$REMEDIATION_PR" --arg report "$REMEDIATION_REPORT" '.waves |= map(if .id == $wave then .checkpoint.active_remediation.pr_url=$pr | .checkpoint.active_remediation.implementation_report=$report else . end)' "$MANIFEST_PATH" | write_manifest
-  STATE_ARTIFACT="$artifact"
+  transaction_stage_path "$artifact"
 }
 
 # shellcheck disable=SC2329
@@ -485,25 +707,27 @@ transaction_record_remediation_verification() {
   [[ "$existing" == null ]] || die "conflicting remediation verification already exists"
   jq --argjson verification "$REMEDIATION_VERIFICATION" '.verification=$verification' "$artifact" >"${artifact}.tmp" && mv "${artifact}.tmp" "$artifact"
   jq --arg wave "$wave" --argjson verification "$REMEDIATION_VERIFICATION" '.waves |= map(if .id == $wave then .checkpoint.active_remediation.verification=$verification else . end)' "$MANIFEST_PATH" | write_manifest
-  STATE_ARTIFACT="$artifact"
+  transaction_stage_path "$artifact"
 }
 
 # shellcheck disable=SC2329
 transaction_mark_remediation_needs_human() {
-  local wave active artifact ended
+  local wave active artifact artifact_relative ended
   wave="$(wave_for_id "$REMEDIATION_CHECKPOINT")"; active="$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.active_remediation.run_id // empty' "$MANIFEST_PATH")"
   [[ "$active" == "$REMEDIATION_RUN_ID" ]] || die "active remediation changed before needs_human transition"
-  artifact="$(remediation_artifact_from_manifest "$wave")"; [[ -f "$artifact" ]] || die "remediation run artifact missing"
+  artifact_relative="$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.active_remediation.artifact' "$MANIFEST_PATH")"
+  safe_relative_path "$artifact_relative" || die "remediation run artifact path is invalid"
+  artifact="$(artifact_path "$artifact_relative")"; [[ -f "$artifact" ]] || die "remediation run artifact missing"
   ended="$(date -u +%FT%TZ)"
   jq --arg reason "$REMEDIATION_REASON" --arg ended "$ended" '.status="needs_human" | .reason=$reason | .ended_at=$ended' "$artifact" >"${artifact}.tmp" && mv "${artifact}.tmp" "$artifact"
-  jq --arg wave "$wave" --arg run "$REMEDIATION_RUN_ID" --arg artifact "${artifact#"$REPO_DIR"/}" --arg reason "$REMEDIATION_REASON" '.waves |= map(if .id == $wave then .checkpoint.status="needs_human" | .checkpoint.remediation_block={run_id:$run,artifact:$artifact,reason:$reason} | .checkpoint.active_remediation=null else . end)' "$MANIFEST_PATH" | write_manifest
-  STATE_ARTIFACT="$artifact"
+  jq --arg wave "$wave" --arg run "$REMEDIATION_RUN_ID" --arg artifact "$artifact_relative" --arg reason "$REMEDIATION_REASON" '.waves |= map(if .id == $wave then .checkpoint.status="needs_human" | .checkpoint.remediation_block={run_id:$run,artifact:$artifact,reason:$reason} | .checkpoint.active_remediation=null else . end)' "$MANIFEST_PATH" | write_manifest
+  transaction_stage_path "$artifact"
 }
 
 # shellcheck disable=SC2329
 transaction_complete_remediation() {
   local checkpoint="$REMEDIATION_CHECKPOINT" wave active branch pr report attempts max artifact verification expected_repo base pr_json merge_sha old_sha
-  local request_relative result_relative request result request_archive result_archive end_sha completed
+  local request_relative result_relative request result request_archive_relative result_archive_relative request_archive result_archive end_sha completed
   wave="$(wave_for_id "$checkpoint")"; active="$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.active_remediation.run_id // empty' "$MANIFEST_PATH")"
   [[ "$active" == "$REMEDIATION_RUN_ID" ]] || die "active remediation changed before completion"
   [[ "$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.status' "$MANIFEST_PATH")" == changes_requested ]] || die "checkpoint changed before remediation completion"
@@ -533,15 +757,20 @@ transaction_complete_remediation() {
   [[ -f "$request" && -f "$result" ]] || die "source review request/result is missing"
   grep -Fqx 'VERDICT=CHANGES_REQUESTED' "$result" || die "source review result is not CHANGES_REQUESTED"
   [[ "$(grep -E '^REVIEWED_SHA=[0-9a-f]{40}$' "$result" | head -n1 | cut -d= -f2)" == "$old_sha" ]] || die "source review result SHA changed"
-  request_archive="$(artifact_path "docs/nextshift-os-3/os-3-8/runs/${REMEDIATION_RUN_ID}-source-review-request.md")"; result_archive="$(artifact_path "docs/nextshift-os-3/os-3-8/runs/${REMEDIATION_RUN_ID}-source-review-result.md")"
+  request_archive_relative="docs/nextshift-os-3/os-3-8/runs/${REMEDIATION_RUN_ID}-source-review-request.md"
+  result_archive_relative="docs/nextshift-os-3/os-3-8/runs/${REMEDIATION_RUN_ID}-source-review-result.md"
+  request_archive="$(artifact_path "$request_archive_relative")"; result_archive="$(artifact_path "$result_archive_relative")"
   [[ ! -e "$request_archive" && ! -e "$result_archive" ]] || die "remediation review archive already exists"
   mv "$request" "$request_archive"; mv "$result" "$result_archive"
   completed="$(date -u +%FT%TZ)"
-  jq --argjson evidence "$REMEDIATION_EVIDENCE" --arg request_archive "${request_archive#"$REPO_DIR"/}" --arg result_archive "${result_archive#"$REPO_DIR"/}" --arg completed "$completed" '.status="completed" | .completion=$evidence | .source_review_request=$request_archive | .source_review_result=$result_archive | .completed_at=$completed' "$artifact" >"${artifact}.tmp" && mv "${artifact}.tmp" "$artifact"
+  jq --argjson evidence "$REMEDIATION_EVIDENCE" --arg request_archive "$request_archive_relative" --arg result_archive "$result_archive_relative" --arg completed "$completed" '.status="completed" | .completion=$evidence | .source_review_request=$request_archive | .source_review_result=$result_archive | .completed_at=$completed' "$artifact" >"${artifact}.tmp" && mv "${artifact}.tmp" "$artifact"
   end_sha="$(git -C "$REPO_DIR" rev-parse HEAD)"; render_checkpoint_request "$wave" "$checkpoint" "$end_sha" "$request" "$REMEDIATION_RUN_ID"
   jq --arg wave "$wave" --arg sha "$end_sha" '.waves |= map(if .id == $wave then .checkpoint.status="awaiting_review" | .checkpoint.remediation_attempts=((.checkpoint.remediation_attempts // 0)+1) | .checkpoint.active_remediation=null | .checkpoint.requested_end_sha=$sha | .checkpoint.reviewed_sha=null else . end)' "$MANIFEST_PATH" | write_manifest
-  if [[ "${PIPELINE_TEST_MODE:-0}" != "1" ]]; then git -C "$REPO_DIR" add -A -- "$artifact" "$request" "$request_archive" "$result" "$result_archive"; fi
-  STATE_ARTIFACT="$artifact"
+  transaction_stage_path "$artifact"
+  transaction_stage_path "$request"
+  transaction_stage_path "$request_archive"
+  transaction_stage_path "$result"
+  transaction_stage_path "$result_archive"
 }
 
 validate_remediation_pr_metadata() {
@@ -574,7 +803,7 @@ record_remediation_verification() {
   REMEDIATION_CHECKPOINT="$checkpoint"; REMEDIATION_RUN_ID="$run"; REMEDIATION_BRANCH="$branch"; REMEDIATION_PR="$pr"; REMEDIATION_REPORT="$report"
   REMEDIATION_VERIFICATION="$(jq -n --arg repo "$(jq -r '.repository.nameWithOwner' <<<"$metadata")" --arg base "$(jq -r '.baseRefName' <<<"$metadata")" --arg head "$branch" --arg head_sha "$(jq -r '.headRefOid' <<<"$metadata")" --arg pr "$pr" --arg report "$report" --arg verified "$(date -u +%FT%TZ)" '{status:"passed",checks:"passed",repository:$repo,base:$base,head:$head,head_sha:$head_sha,pr_url:$pr,implementation_report:$report,verified_at:$verified}')"
   REPO_DIR="$state_repo"; MANIFEST_PATH="$state_repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
-  state_transaction "remediation-verified:$run" "transaction_record_remediation_verification" "chore(pipeline): verify remediation PR $run"
+  state_transaction "remediation-verified:$run" "chore(pipeline): verify remediation PR $run" transaction_record_remediation_verification
 }
 
 merge_verified_remediation_pr() {
@@ -597,7 +826,7 @@ build_merged_remediation_evidence() {
   verification="$(jq -c '.verification // null' "$artifact")"
   jq -e --arg head "$(jq -r '.headRefOid' <<<"$metadata")" --arg pr "$pr" --arg report "$report" '.status=="passed" and .checks=="passed" and .head_sha==$head and .pr_url==$pr and .implementation_report==$report' <<<"$verification" >/dev/null || die "merged remediation PR lacks matching persisted verification"
   gh pr checks "$pr" >/dev/null || die "merged remediation PR checks are not all passing"
-  gh pr diff "$pr" --name-only | grep -Fxq "$report" || die "remediation implementation report is not in the exact PR diff"
+  gh pr diff "$pr" --name-only | grep -Fqx -e "$report" || die "remediation implementation report is not in the exact PR diff"
   merge_sha="$(jq -r '.mergeCommit.oid // empty' <<<"$metadata")"; [[ "$merge_sha" =~ ^[0-9a-f]{40}$ ]] || die "merged remediation PR has no merge SHA"
   jq -n --arg pr "$pr" --arg merge_sha "$merge_sha" --arg report "$report" --arg head_sha "$(jq -r '.headRefOid' <<<"$metadata")" --argjson recovered "$recovered" '{pr_url:$pr,merge_sha:$merge_sha,implementation_report:$report,validation:{checks:"passed",head_sha:$head_sha},recovered:$recovered}'
 }
@@ -605,7 +834,7 @@ build_merged_remediation_evidence() {
 mark_remediation_needs_human() {
   local checkpoint="$1" run="$2" reason="$3"
   REMEDIATION_CHECKPOINT="$checkpoint"; REMEDIATION_RUN_ID="$run"; REMEDIATION_REASON="$reason"
-  state_transaction "remediation-needs-human:$run" "transaction_mark_remediation_needs_human" "chore(pipeline): block remediation $run for human review"
+  state_transaction "remediation-needs-human:$run" "chore(pipeline): block remediation $run for human review" transaction_mark_remediation_needs_human
   log "clean stop: remediation needs human ($reason)"
 }
 
@@ -617,7 +846,7 @@ run_remediation() {
   [[ -f "$result" ]] || die "remediation requires the Architecture Review result artifact"
   requested_sha="$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.requested_end_sha' "$MANIFEST_PATH")"
   [[ "$(grep -E '^REVIEWED_SHA=' "$result" | cut -d= -f2)" == "$requested_sha" ]] || die "remediation review SHA does not match requested product SHA"
-  REMEDIATION_CHECKPOINT="$checkpoint"; state_transaction "remediation-reserve:$checkpoint" "transaction_reserve_remediation" "chore(pipeline): reserve remediation for $checkpoint"
+  REMEDIATION_CHECKPOINT="$checkpoint"; state_transaction "remediation-reserve:$checkpoint" "chore(pipeline): reserve remediation for $checkpoint" transaction_reserve_remediation
   run_id="$REMEDIATION_RUN_ID"; branch="$REMEDIATION_BRANCH"; artifact="$REMEDIATION_ARTIFACT"; attempt="$(jq -r '.attempt' "$artifact")"
   mkdir -p "$CONTROL_ROOT"; control="$(mktemp -d "$CONTROL_ROOT/remediation.${run_id}.XXXXXX")"; brief="$control/BRIEF.md"; outcome="$control/OUTCOME.json"
   findings="$(sed -n '/^##/,$p' "$result")"
@@ -647,13 +876,13 @@ EOF
   [[ -z "$(git -C "$task_dir" status --porcelain)" ]] || die "remediation worktree is dirty"
   validate_open_remediation_identity "$task_dir" "$pr" "$branch" "$report"
   REPO_DIR="$state_repo"; MANIFEST_PATH="$state_repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"; REMEDIATION_CHECKPOINT="$checkpoint"; REMEDIATION_RUN_ID="$run_id"; REMEDIATION_BRANCH="$branch"; REMEDIATION_PR="$pr"; REMEDIATION_REPORT="$report"
-  state_transaction "remediation-pr:$run_id" "transaction_record_remediation_pr" "chore(pipeline): record remediation PR $run_id"
+  state_transaction "remediation-pr:$run_id" "chore(pipeline): record remediation PR $run_id" transaction_record_remediation_pr
   record_remediation_verification "$checkpoint" "$run_id" "$branch" "$pr" "$report" "$task_dir" "$state_repo"
   merge_verified_remediation_pr "$pr" "$branch" "$(jq -r '.verification.head_sha' "$artifact")"
   reconcile_planning_state "$(jq -r '.base_branch' "$MANIFEST_PATH")" "$state_repo"
   artifact="$(remediation_artifact_from_manifest "$wave")"; REMEDIATION_EVIDENCE="$(build_merged_remediation_evidence "$pr" "$branch" "$report" "$artifact")"
   REMEDIATION_CHECKPOINT="$checkpoint"; REMEDIATION_RUN_ID="$run_id"; REMEDIATION_BRANCH="$branch"
-  state_transaction "remediation-complete:$run_id" "transaction_complete_remediation" "chore(pipeline): complete remediation $run_id"
+  state_transaction "remediation-complete:$run_id" "chore(pipeline): complete remediation $run_id" transaction_complete_remediation
 }
 
 recover_active_remediation() {
@@ -678,7 +907,7 @@ recover_active_remediation() {
     fi
     if ! safe_relative_path "$report"; then mark_remediation_needs_human "$checkpoint" "$run" "unique PR has no safe Implementation-Report marker"; return; fi
     REMEDIATION_CHECKPOINT="$checkpoint"; REMEDIATION_RUN_ID="$run"; REMEDIATION_BRANCH="$branch"; REMEDIATION_PR="$pr"; REMEDIATION_REPORT="$report"
-    state_transaction "remediation-pr-recovery:$run" "transaction_record_remediation_pr" "chore(pipeline): recover remediation PR metadata $run"
+    state_transaction "remediation-pr-recovery:$run" "chore(pipeline): recover remediation PR metadata $run" transaction_record_remediation_pr
   fi
   safe_relative_path "$report" || { mark_remediation_needs_human "$checkpoint" "$run" "recorded remediation report path is invalid"; return; }
   metadata="$(github_pr_metadata "$pr")"
@@ -696,7 +925,7 @@ recover_active_remediation() {
       mark_remediation_needs_human "$checkpoint" "$run" "merged remediation PR has no persisted pre-merge verification"
       return
     fi
-    if ! gh pr checks "$pr" >/dev/null || ! gh pr diff "$pr" --name-only | grep -Fxq "$report" || [[ ! "$(jq -r '.mergeCommit.oid // empty' <<<"$metadata")" =~ ^[0-9a-f]{40}$ ]]; then
+    if ! gh pr checks "$pr" >/dev/null || ! gh pr diff "$pr" --name-only | grep -Fqx -e "$report" || [[ ! "$(jq -r '.mergeCommit.oid // empty' <<<"$metadata")" =~ ^[0-9a-f]{40}$ ]]; then
       mark_remediation_needs_human "$checkpoint" "$run" "merged remediation PR evidence no longer satisfies the verified checks/report/merge contract"
       return
     fi
@@ -708,13 +937,16 @@ recover_active_remediation() {
   reconcile_planning_state "$(jq -r '.base_branch' "$MANIFEST_PATH")" "$state_repo"
   artifact="$(remediation_artifact_from_manifest "$wave")"; REMEDIATION_EVIDENCE="$(build_merged_remediation_evidence "$pr" "$branch" "$report" "$artifact" true)"
   REMEDIATION_CHECKPOINT="$checkpoint"; REMEDIATION_RUN_ID="$run"; REMEDIATION_BRANCH="$branch"
-  state_transaction "remediation-recovery:$run" "transaction_complete_remediation" "chore(pipeline): recover remediation $run"
+  state_transaction "remediation-recovery:$run" "chore(pipeline): recover remediation $run" transaction_complete_remediation
 }
 
 update_task_status() {
   local id="$1" from="$2" to="$3" evidence="${4:-null}"
   jq --arg id "$id" --arg from "$from" --arg to "$to" --argjson evidence "$evidence" '
-    .waves |= map(.tasks |= map(if .id == $id and .status == $from then .status = $to | if $evidence != null then .evidence = $evidence else . end else . end))
+    .waves |= map(.tasks |= map(if .id == $id and .status == $from then
+      .status = $to |
+      if $evidence != null then .evidence = $evidence | .verification = ($evidence.verification // .verification) else . end
+    else . end))
   ' "$MANIFEST_PATH" | write_manifest
 }
 
@@ -726,7 +958,7 @@ start_task() {
     .waves |= map(if .id == $wave then
       .status = "running" |
       if .start_sha == null then .start_sha = $sha else . end |
-      .tasks |= map(if .id == $id and .status == "pending" then .status = "running" else . end)
+      .tasks |= map(if .id == $id and .status == "pending" then .status = "running" | .verification=null | .evidence=null else . end)
     else . end)
   ' "$MANIFEST_PATH" | write_manifest
 }
@@ -742,12 +974,12 @@ transaction_checkpoint() {
   if [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then end_sha="0123456789012345678901234567890123456789"; else end_sha="$(git -C "$REPO_DIR" rev-parse HEAD)"; fi
   request="$(artifact_path "$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.request_artifact' "$MANIFEST_PATH")")"
   render_checkpoint_request "$wave" "$checkpoint" "$end_sha" "$request"
-  STATE_ARTIFACT="$request"
+  transaction_stage_path "$request"
   jq --arg id "$checkpoint" --arg sha "$end_sha" '.waves |= map(if .checkpoint.id == $id then .checkpoint.status="awaiting_review" | .checkpoint.requested_end_sha=$sha else . end)' "$MANIFEST_PATH" | write_manifest
 }
 
 create_checkpoint() {
-  state_transaction "checkpoint-request" "transaction_checkpoint" "chore(pipeline): request architecture review"
+  state_transaction "checkpoint-request" "chore(pipeline): request architecture review" transaction_checkpoint
 }
 
 # shellcheck disable=SC2329
@@ -762,7 +994,7 @@ transaction_review_result() {
   existing="$(test -f "$target" && shasum -a 256 "$target" | awk '{print $1}' || true)"
   if [[ -n "$existing" && "$existing" == "$(shasum -a 256 "$source" | awk '{print $1}')" ]]; then die "identical review result already recorded"; fi
   [[ ! -e "$target" ]] || die "different review result already exists; refusing overwrite"
-  mkdir -p "$(dirname "$target")"; cp "$source" "$target"; STATE_ARTIFACT="$target"
+  mkdir -p "$(dirname "$target")"; cp "$source" "$target"; transaction_stage_path "$target"
   if [[ "$result" == PASS ]]; then
     jq --arg id "$id" --arg sha "$requested_sha" '.waves |= map(if .checkpoint.id == $id then .checkpoint.status="passed" | .checkpoint.reviewed_sha=$sha else . end)' "$MANIFEST_PATH" | write_manifest
   else
@@ -775,7 +1007,7 @@ dispatch_task() {
   [[ "${PIPELINE_ALLOW_PRODUCT_DISPATCH:-0}" == "1" ]] || die "dispatch requires PIPELINE_ALLOW_PRODUCT_DISPATCH=1"
   [[ -n "${CODEX_CMD:-}" ]] || die "dispatch requires an explicit CODEX_CMD; no unsafe default is provided"
   [[ ! -e "$STOP_FILE" ]] || die "STOP file exists: $STOP_FILE"
-  local base_branch action task task_branch task_dir control_dir brief outcome log_file contract execution_task dispatch_artifact control_artifact title section deps
+  local base_branch action task task_branch task_dir control_dir brief outcome log_file contract execution_task dispatch_artifact control_artifact control_digest title section deps
   base_branch="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   synchronization_gate "$base_branch"
   action="$(select_action)"; [[ "$(jq -r '.action' <<<"$action")" == "task" ]] || die "no eligible product task to dispatch"
@@ -816,12 +1048,15 @@ EOF
   (( codex_rc == 0 )) || die "CODEX_CMD failed for $task; manifest remains pending (log: $log_file)"
   [[ -s "$outcome" ]] || die "CODEX_CMD produced no required task outcome; manifest remains pending (expected $outcome)"
   jq -e '(.pr_url | type == "string" and test("^https://github\\.com/sohoteam88/NextShift-OS-2\\.0/pull/[0-9]+$")) and (.implementation_report | type == "string" and length > 0)' "$outcome" >/dev/null || die "task outcome requires valid pr_url and implementation_report"
+  safe_relative_path "$(jq -r '.implementation_report' "$outcome")" || die "task outcome implementation_report is not a safe repository-relative path"
   if [[ "${PIPELINE_TEST_MODE:-0}" != "1" ]]; then [[ -z "$(git -C "$task_dir" status --porcelain)" ]] || die "task worktree is dirty; control files must remain outside it"; fi
-  dispatch_artifact="$(artifact_path "docs/nextshift-os-3/os-3-8/runs/${task}_DISPATCH.json")"
+  dispatch_artifact="$(artifact_path "$(task_dispatch_relative "$task")")"
   control_artifact="$control_dir/DISPATCH.json"
   jq --arg task "$task" --arg branch "$task_branch" --arg base "$base_branch" --arg dispatched_at "$(date -u +%FT%TZ)" '. + {task_id:$task, task_branch:$branch, base_branch:$base, dispatched_at:$dispatched_at}' "$outcome" >"$control_artifact"
+  control_artifact="$(external_source_path "$control_artifact")" || die "cannot canonicalize task dispatch control artifact"
+  control_digest="$(shasum -a 256 "$control_artifact" | awk '{print $1}')"
   mkdir -p "$(dirname "$dispatch_artifact")"
-  state_transaction "task-start:$task" "transaction_start_task '$task' '$control_artifact' '$dispatch_artifact'" "chore(pipeline): start OS 3.8 task $task" "$dispatch_artifact"
+  state_transaction "task-start:$task" "chore(pipeline): start OS 3.8 task $task" transaction_start_task "$task" "$control_artifact" "$dispatch_artifact" "$control_digest"
   if [[ "${PIPELINE_AUTOMATE_TASK_CYCLE:-0}" == "1" ]]; then
     local state_repo="$REPO_DIR"
     (REPO_DIR="$task_dir" MANIFEST_PATH="$task_dir/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" STATE_REPO_DIR="$state_repo" TASK_BRANCH="$task_branch" IMPLEMENTATION_REPORT="$(jq -r '.implementation_report' "$outcome")" PIPELINE_ALLOW_PR_MERGE="${PIPELINE_ALLOW_PR_MERGE:-0}" merge_task_pr "$task" "$(jq -r '.pr_url' "$outcome")")
@@ -830,24 +1065,23 @@ EOF
 }
 
 verify_pr() {
-  local pr_url="$1" task_branch="${2:-${TASK_BRANCH:-}}" repo_json expected_repo expected_base local_head remote_head checks_deadline checks_rc
+  local pr_url="$1" task_branch="${2:-${TASK_BRANCH:-}}" repo_json refreshed_json expected_repo expected_base local_head remote_head initial_head checks_deadline checks_rc report
   command -v gh >/dev/null 2>&1 || die "gh is required for PR verification"
   [[ "$pr_url" == https://github.com/*/pull/* ]] || die "invalid PR URL"
   [[ -n "$task_branch" ]] || die "verification requires TASK_BRANCH"
   synchronization_gate "$task_branch" "$REPO_DIR" "${PIPELINE_ALLOW_DETACHED_TASK_WORKTREE:-0}"
-  expected_repo="${PIPELINE_EXPECTED_REPOSITORY:-$(git -C "$REPO_DIR" remote get-url origin | sed -E 's#^.*github\.com[:/]##; s#\.git$##')}"
+  expected_repo="$(expected_repository "$REPO_DIR")"
   expected_base="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   repo_json="$(github_pr_metadata "$pr_url")"
-  [[ "$(jq -r '.repository.nameWithOwner' <<<"$repo_json")" == "$expected_repo" ]] || die "PR repository does not match origin"
-  [[ "$(jq -r '.headRepository.nameWithOwner' <<<"$repo_json")" == "$expected_repo" ]] || die "PR head repository does not match origin"
-  [[ "$(jq -r '.baseRefName' <<<"$repo_json")" == "$expected_base" ]] || die "PR base does not match manifest base branch"
-  [[ "$(jq -r '.headRefName' <<<"$repo_json")" == "$task_branch" ]] || die "PR head branch does not match authorized task branch"
+  validate_task_pr_metadata "$repo_json" "$pr_url" "$task_branch" OPEN || die "PR repository/base/head identity is invalid"
   local_head="$(git -C "$REPO_DIR" rev-parse HEAD)"; remote_head="$(git -C "$REPO_DIR" rev-parse "origin/$task_branch")"
-  [[ "$local_head" == "$remote_head" && "$local_head" == "$(jq -r '.headRefOid' <<<"$repo_json")" ]] || die "local, remote task branch, and PR head SHA differ"
-  if [[ -n "${IMPLEMENTATION_REPORT:-}" ]]; then
-    [[ "$IMPLEMENTATION_REPORT" != /* && "$IMPLEMENTATION_REPORT" != *".."* ]] || die "implementation report must be a safe repository-relative path"
-    git -C "$REPO_DIR" cat-file -e "$local_head:$IMPLEMENTATION_REPORT" || die "implementation report is absent from exact PR head"
-    gh pr diff "$pr_url" --name-only | grep -Fxq "$IMPLEMENTATION_REPORT" || die "implementation report is not included in PR diff"
+  initial_head="$(jq -r '.headRefOid' <<<"$repo_json")"
+  [[ "$local_head" == "$remote_head" && "$local_head" == "$initial_head" ]] || die "local, remote task branch, and PR head SHA differ"
+  report="${IMPLEMENTATION_REPORT:-}"
+  if [[ -n "$report" ]]; then
+    safe_relative_path "$report" || die "implementation report must be a safe repository-relative path"
+    ensure_exact_report_at_head "$REPO_DIR" "$initial_head" "$report" "$pr_url"
+    gh pr diff "$pr_url" --name-only | grep -Fqx -e "$report" || die "implementation report is not included in PR diff"
   fi
   if gh pr diff "$pr_url" --name-only | grep -Eq '(^|/)\.env($|\.)|^packages/|^prisma/migrations/|^\.github/workflows/deploy'; then
     die "PR changes a forbidden path"
@@ -857,33 +1091,62 @@ verify_pr() {
   checks_deadline=$((SECONDS + 1800))
   while (( SECONDS < checks_deadline )); do
     set +e; gh pr checks "$pr_url" --watch --fail-fast; checks_rc=$?; set -e
-    [[ "$checks_rc" == 0 ]] && { log "required GitHub checks passed"; return; }
+    [[ "$checks_rc" == 0 ]] && break
     # GitHub can return before a newly-created workflow registers; retry only then.
     if gh pr checks "$pr_url" 2>&1 | grep -q 'no checks reported'; then sleep 30; continue; fi
     die "GitHub checks failed"
   done
-  die "timed out waiting for GitHub checks"
+  (( checks_rc == 0 )) || die "timed out waiting for GitHub checks"
+  git -C "$REPO_DIR" fetch origin "$task_branch" >/dev/null || die "cannot refresh verified task branch"
+  refreshed_json="$(github_pr_metadata "$pr_url")"
+  validate_task_pr_metadata "$refreshed_json" "$pr_url" "$task_branch" OPEN "$initial_head" || die "PR identity or head changed during verification"
+  local_head="$(git -C "$REPO_DIR" rev-parse HEAD)"; remote_head="$(git -C "$REPO_DIR" rev-parse "origin/$task_branch")"
+  [[ "$local_head" == "$remote_head" && "$local_head" == "$initial_head" ]] || die "local, remote, or PR head changed during verification"
+  if [[ -n "$report" ]]; then
+    ensure_exact_report_at_head "$REPO_DIR" "$initial_head" "$report" "$pr_url"
+    gh pr diff "$pr_url" --name-only | grep -Fqx -e "$report" || die "implementation report changed after checks"
+  fi
+  VERIFIED_PR_JSON="$(jq -n \
+    --arg repo "$expected_repo" --arg base "$expected_base" --arg branch "$task_branch" \
+    --arg pr "$pr_url" --arg head "$initial_head" --arg report "$report" \
+    --arg dispatch "$(task_dispatch_relative "${PIPELINE_TASK_ID:-TASK}")" --arg verified_at "$(date -u +%FT%TZ)" \
+    '{status:"passed",repository:$repo,base_branch:$base,task_branch:$branch,pr_url:$pr,verified_head_sha:$head,implementation_report:$report,dispatch_artifact:$dispatch,report_exists_at_exact_head:($report != ""),report_in_pr_diff:($report != ""),checks:"passed",verified_at:$verified_at}')"
+  log "required GitHub checks passed for exact head $initial_head"
 }
 
 merge_task_pr() {
-  local task="$1" pr_url="$2" evidence state_repo state_manifest base_branch tmp
+  local task="$1" pr_url="$2" evidence state_repo task_repo task_manifest base_branch dispatch_relative verification metadata verified_head merge_sha report
   [[ "${PIPELINE_ALLOW_PR_MERGE:-0}" == "1" ]] || die "merge requires PIPELINE_ALLOW_PR_MERGE=1"
+  task_repo="$REPO_DIR"; task_manifest="$MANIFEST_PATH"
+  PIPELINE_TASK_ID="$task"
   verify_pr "$pr_url" "${TASK_BRANCH:?TASK_BRANCH required}"
-  gh pr merge "$pr_url" --squash --delete-branch || die "PR merge failed"
+  verification="$VERIFIED_PR_JSON"; report="${IMPLEMENTATION_REPORT:?IMPLEMENTATION_REPORT required}"
+  dispatch_relative="$(task_dispatch_relative "$task")"
   state_repo="${STATE_REPO_DIR:?STATE_REPO_DIR must be a clean planning-branch checkout}"
-  base_branch="$(jq -r '.base_branch' "$MANIFEST_PATH")"
+  base_branch="$(jq -r '.base_branch' "$task_manifest")"
   REPO_DIR="$state_repo"
   MANIFEST_PATH="$state_repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
+  state_transaction "task-verified:$task" "chore(pipeline): persist exact verification for OS 3.8 task $task" transaction_record_task_verification "$task" "$dispatch_relative" "$verification"
+  verification="$(jq -c '.verification' "$(artifact_path "$dispatch_relative")")"
+
+  REPO_DIR="$task_repo"; MANIFEST_PATH="$task_manifest"
+  synchronization_gate "${TASK_BRANCH}" "$task_repo" "${PIPELINE_ALLOW_DETACHED_TASK_WORKTREE:-0}"
+  metadata="$(github_pr_metadata "$pr_url")"; verified_head="$(jq -r '.verified_head_sha' <<<"$verification")"
+  validate_task_pr_metadata "$metadata" "$pr_url" "${TASK_BRANCH}" OPEN "$verified_head" || die "task PR identity changed before merge"
+  gh pr checks "$pr_url" >/dev/null || die "task checks changed before merge"
+  ensure_exact_report_at_head "$task_repo" "$verified_head" "$report" "$pr_url"
+  gh pr diff "$pr_url" --name-only | grep -Fqx -e "$report" || die "implementation report changed before merge"
+  gh pr merge "$pr_url" --squash --delete-branch --match-head-commit "$verified_head" || die "PR merge failed or verified head changed"
+  metadata="$(github_pr_metadata "$pr_url")"
+  validate_task_pr_metadata "$metadata" "$pr_url" "${TASK_BRANCH}" MERGED "$verified_head" || die "merged task PR metadata does not match the verified identity"
+  merge_sha="$(jq -r '.mergeCommit.oid // empty' <<<"$metadata")"; [[ "$merge_sha" =~ ^[0-9a-f]{40}$ ]] || die "merged task PR has no valid merge SHA"
+
+  REPO_DIR="$state_repo"; MANIFEST_PATH="$state_repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
   reconcile_planning_state "$base_branch" "$state_repo"
-  state_manifest="$MANIFEST_PATH"
-  if [[ "$task" != "__remediation__" ]]; then
-    [[ "$(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .status' "$state_manifest")" == "running" ]] || die "merged PR cannot be persisted because manifest is not running: $task"
-  fi
-  evidence="$(jq -n --arg pr "$pr_url" --arg merged_at "$(date -u +%FT%TZ)" --arg merge_sha "$(gh pr view "$pr_url" --json mergeCommit --jq '.mergeCommit.oid')" --arg report "${IMPLEMENTATION_REPORT:?IMPLEMENTATION_REPORT required}" '{pr_url:$pr, merge_sha:$merge_sha, implementation_report:$report, validation:{checks:"passed"}, merged_at:$merged_at}')"
-  validate_evidence "$evidence"
-  if [[ "$task" != "__remediation__" ]]; then
-    state_transaction "task-complete:$task" "transaction_complete_task '$task' '$evidence'" "chore(pipeline): record merged OS 3.8 task $task"
-  fi
+  git -C "$state_repo" merge-base --is-ancestor "$merge_sha" HEAD || die "task merge SHA is not on authorized planning history"
+  evidence="$(jq -n --arg pr "$pr_url" --arg merge_sha "$merge_sha" --arg report "$report" --arg head "$verified_head" --argjson verification "$verification" --arg merged_at "$(date -u +%FT%TZ)" '{pr_url:$pr,merge_sha:$merge_sha,implementation_report:$report,verification:$verification,validation:{checks:"passed",head_sha:$head},merged_at:$merged_at,recovered:false}')"
+  validate_task_completion_evidence "$evidence"
+  state_transaction "task-complete:$task" "chore(pipeline): record merged OS 3.8 task $task" transaction_complete_task "$task" "$evidence" "$dispatch_relative"
 }
 
 # shellcheck disable=SC2329
@@ -921,7 +1184,7 @@ transaction_record_steven_ia() {
       .human_gate.approved_reviewed_sha=$sha
     else . end)
   ' "$MANIFEST_PATH" | write_manifest
-  STATE_ARTIFACT="$artifact"
+  transaction_stage_path "$artifact"
 }
 
 record_steven_ia() {
@@ -929,7 +1192,7 @@ record_steven_ia() {
   valid_approver "$approver" || die "approver must be a valid GitHub-style identity"
   valid_utc_timestamp "$approved_at" || die "approval timestamp must be a valid UTC RFC3339 timestamp"
   STEVEN_IA_APPROVER="$approver"; STEVEN_IA_APPROVED_AT="$approved_at"
-  state_transaction "steven-ia" "transaction_record_steven_ia" "chore(pipeline): record STEVEN-IA approval"
+  state_transaction "steven-ia" "chore(pipeline): record STEVEN-IA approval" transaction_record_steven_ia
 }
 
 # shellcheck disable=SC2329
@@ -967,11 +1230,11 @@ EOF
     .final_audit.completed_at=null |
     .release_gate.status="blocked"
   ' "$MANIFEST_PATH" | write_manifest
-  STATE_ARTIFACT="$request"
+  transaction_stage_path "$request"
 }
 
 create_final_audit_request() {
-  state_transaction "final-audit-request" "transaction_final_audit_request" "chore(pipeline): request OS 3.8 final audit"
+  state_transaction "final-audit-request" "chore(pipeline): request OS 3.8 final audit" transaction_final_audit_request
   log "clean stop: final audit requested"
 }
 
@@ -1016,7 +1279,7 @@ transaction_final_audit_result() {
     .final_audit.completed_at=$completed_at |
     .release_gate.status="blocked"
   ' "$MANIFEST_PATH" | write_manifest
-  STATE_ARTIFACT="$report"
+  transaction_stage_path "$report"
 }
 
 record_final_audit_result() {
@@ -1031,7 +1294,7 @@ record_final_audit_result() {
   [[ "$reviewed_sha" =~ ^[0-9a-f]{40}$ ]] || die "audit result requires a 40-character REVIEWED_SHA"
   source_digest="$(shasum -a 256 "$canonical_source" | awk '{print $1}')"
   FINAL_AUDIT_VERDICT="$verdict"; FINAL_AUDIT_SOURCE="$canonical_source"; FINAL_AUDIT_REVIEWED_SHA="$reviewed_sha"; FINAL_AUDIT_SOURCE_SHA256="$source_digest"
-  state_transaction "final-audit-result" "transaction_final_audit_result" "chore(pipeline): record OS 3.8 final audit"
+  state_transaction "final-audit-result" "chore(pipeline): record OS 3.8 final audit" transaction_final_audit_result
 }
 
 run_cycle() {
@@ -1090,7 +1353,7 @@ case "$command" in
     grep -Fqx "VERDICT=$result" "$result_source" || die "review result verdict does not match command"
     result_sha="$(grep -E '^REVIEWED_SHA=[0-9a-f]{40}$' "$result_source" | head -n1 | cut -d= -f2)"
     [[ -n "$result_sha" ]] || die "review result requires a 40-character REVIEWED_SHA"
-    REVIEW_ID="$id" REVIEW_VERDICT="$result" REVIEW_SOURCE="$result_source" state_transaction "review-result:$id" "transaction_review_result" "chore(pipeline): record $id architecture review"
+    REVIEW_ID="$id" REVIEW_VERDICT="$result" REVIEW_SOURCE="$result_source" state_transaction "review-result:$id" "chore(pipeline): record $id architecture review" transaction_review_result
     ;;
   --record-steven-ia)
     record_steven_ia "${2:?approver required}" "${3:?timestamp required}"
@@ -1100,6 +1363,7 @@ case "$command" in
     ;;
   --verify-pr) verify_pr "${2:?PR URL required}" ;;
   --merge-task-pr) merge_task_pr "${2:?task ID required}" "${3:?PR URL required}" ;;
+  --recover-task) recover_running_task "${2:?task ID required}" ;;
   --dispatch) dispatch_task ;;
   --cycle) run_cycle ;;
   --help|-h) usage ;;

@@ -183,11 +183,21 @@ create_fixture() {
     .waves[0].start_sha=$sha |
     .waves[0].tasks |= map(
       .status="completed" |
+      .verification={
+        status:"passed",repository:"fixture/NextShift-OS-2.0",base_branch:"planning",
+        task_branch:("fixture-" + .id),pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
+        verified_head_sha:$sha,implementation_report:"docs/fixture-task-report.md",
+        dispatch_artifact:("docs/nextshift-os-3/os-3-8/runs/" + .id + "_DISPATCH.json"),
+        report_exists_at_exact_head:true,report_in_pr_diff:true,checks:"passed",verified_at:"2026-07-15T12:00:00Z"
+      } |
       .evidence={
         pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
         merge_sha:$sha,
         implementation_report:"docs/fixture-task-report.md",
-        validation:{checks:"passed"}
+        verification:.verification,
+        validation:{checks:"passed",head_sha:$sha},
+        recovered:false,
+        merged_at:"2026-07-15T12:00:00Z"
       }
     ) |
     .waves[0].checkpoint.status="changes_requested" |
@@ -267,7 +277,12 @@ reservation_commit() {
 assert_atomic_reservation() {
   local commit artifact files count
   commit="$(reservation_commit)"
-  [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || fail 'reservation commit is missing'
+  if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
+    [[ ! -f "$CASE_DIR/cycle.log" ]] || sed -n '1,240p' "$CASE_DIR/cycle.log" >&2
+    [[ ! -f "$MANIFEST" ]] || jq '.waves[0].checkpoint' "$MANIFEST" >&2
+    git -C "$STATE" status --short >&2 || true
+    fail 'reservation commit is missing'
+  fi
   artifact="$(git -C "$STATE" show "$commit:$MANIFEST_REL" | jq -r '.waves[0].checkpoint.active_remediation.artifact')"
   [[ -n "$artifact" && "$artifact" != null ]] || fail 'reservation artifact is absent from committed Manifest'
   files="$(git -C "$STATE" diff-tree --no-commit-id --name-only -r "$commit")"
