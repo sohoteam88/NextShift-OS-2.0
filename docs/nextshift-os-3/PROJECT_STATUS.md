@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-11
+Last Updated: 2026-07-15
 
 ---
 
@@ -21,11 +21,11 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | `v3.4.0` production |
-| Current Release | OS 3.5 Business Discussion RC package prepared, awaiting approval |
+| Current Version | `v3.6.0` production (`fb08541`) |
+| Current Release | OS 3.7 Command Center + Business Twin RC package prepared; C-3 post-deploy verification remains |
 | Current Planning Branch | `planning/os-3.3-runtime-platform` |
 | Repository Default Branch | `main` |
-| Production Status | OS 3.4 deployed to production after tag `v3.4.0`; OS 3.5 RC awaiting approval |
+| Production Status | OS 3.6 deployed to production; OS 3.7 RC is source-verified and awaits approval plus post-deploy C-3 observation |
 
 Canonical navigation:
 
@@ -41,6 +41,7 @@ Canonical navigation:
 - [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md)
 - [OS 3.4 Command Center RC Package](releases/OS_3_4_COMMAND_CENTER/README.md)
 - [OS 3.5 Business Discussion RC Package](releases/OS_3_5_BUSINESS_DISCUSSION/README.md)
+- [OS 3.7 Command Center + Business Twin RC Package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md)
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
 - [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
@@ -91,7 +92,7 @@ Components:
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
 | Developer Platform | OS 3.2 Developer Platform audit PASS; records remain historical release preparation artifacts | [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md) |
-| Current Capability Focus | OS 3.5 RC package prepared, awaiting approval | [OS 3.5 Blueprint](OS_3_5_BLUEPRINT.md) |
+| Current Capability Focus | OS 3.7 RC package prepared; registration recovery observation remains post-deploy | [OS 3.7 Blueprint](OS_3_7_BLUEPRINT.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -102,11 +103,11 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Field | Current State |
 | --- | --- |
 | Active Planning Branch | `planning/os-3.3-runtime-platform` |
-| Active Milestone | OS 3.5 Business Discussion |
-| Current Phase | OS 3.5 RC package prepared, awaiting approval |
-| Current Focus | Graduation merge from `planning/os-3.3-runtime-platform` to `main` after approval |
-| Current Blockers | None recorded for the next planning step |
-| Current Priorities | Review OS 3.5 RC package, then perform graduation merge to `main` only after approval |
+| Active Milestone | OS 3.7 Command Center + Business Twin |
+| Current Phase | OS 3.7 RC package prepared; source validation and two audits recorded |
+| Current Focus | Review RC package; schedule C-3 post-deploy recovery and PostHog observation after authorized release |
+| Current Blockers | No source blocker; C-3 requires production observation after deployment |
+| Current Priorities | Review OS 3.7 RC package, approve graduation only when post-deploy C-3 verification is planned |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -141,7 +142,7 @@ Release tag created: `v3.3.0`.
 | Production Commit | `c472345` |
 | Deployment Method | GitHub Actions Docker image deployment to VPS Docker Compose |
 | VPS Alignment Status | Aligned to `v3.4.0` production release |
-| Last Verification Summary | OS 3.4 production release verified after tag `v3.4.0`; version endpoint verification requires a cache-buster query parameter because of proxy caching |
+| Last Verification Summary | OS 3.6 production release verified at `fb08541` through `/api/v1/version` with a cache-buster query parameter; `v3.6.0` peels to the same commit |
 
 Planning branch documentation remains pre-merge work until it is reviewed and merged under [STD-004 Release Governance](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md) and [STD-005 GitHub Alignment Standard](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
 
@@ -157,9 +158,9 @@ The `v3.4.0` release tag has been created and pushed.
 
 ## 7. Next Recommended Actions
 
-1. Review the [OS 3.5 Business Discussion RC Package](releases/OS_3_5_BUSINESS_DISCUSSION/README.md).
+1. Review the [OS 3.7 Command Center + Business Twin RC Package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md).
 2. After approval, perform the graduation merge from `planning/os-3.3-runtime-platform` to `main`.
-3. Prepare the `v3.5.0` tag only after explicit approval.
+3. Prepare the `v3.7.0` tag only after explicit approval and schedule the C-3 post-deploy verification.
 4. Do not modify production deployment, Prisma, env files, or release tags without explicit approval.
 
 ---
