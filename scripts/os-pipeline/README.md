@@ -1,0 +1,429 @@
+# OS 3.8 Pipeline Runner
+
+This directory contains the repository-owned OS 3.8 pipeline. The committed
+execution state is
+`docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json`; canonical dispatch,
+review, remediation, approval, and audit artifacts provide evidence for that
+state. The runner validates the Manifest before every command and before and
+after each state transaction.
+
+The runner can create and merge bounded product-task and remediation PRs into
+the Manifest planning branch. It cannot tag, release, deploy, or modify
+production. Both the environment (`AUTO_RELEASE=0`, `AUTO_DEPLOY=0`) and the
+Manifest (`auto_release=false`, `auto_deploy=false`, `auto_tag=false`) must keep
+those operations disabled.
+
+## Safe first run
+
+Run these commands from a clean checkout of the Manifest `base_branch`:
+
+```bash
+scripts/os-pipeline/validate-manifest.sh
+scripts/os-pipeline/run-pipeline.sh --plan
+```
+
+`--plan` is read-only. It returns the next action selected solely from the
+Manifest: a task, task recovery, checkpoint, review wait, remediation,
+remediation recovery, human-gate wait, final-audit request/wait, `needs_human`,
+or completion.
+
+Before dispatch, verification, merge, or any state transaction, the runner
+fetches `origin --prune` and verifies all of the following:
+
+- the expected repository and authorized branch;
+- a clean worktree, including no untracked files;
+- local HEAD equals the corresponding remote branch HEAD;
+- ahead/behind is exactly `0/0`;
+- the Manifest planning branch exists remotely; and
+- for a PR, repository, base, task/remediation branch, local HEAD, remote HEAD,
+  and PR head SHA all agree.
+
+It never repairs a dirty or divergent checkout with reset, rebase, stash, or
+file deletion. An operator must reconcile that state deliberately.
+
+## One automatic cycle
+
+The full product-task opt-in is deliberately verbose:
+
+```bash
+PIPELINE_ALLOW_PRODUCT_DISPATCH=1 \
+PIPELINE_AUTOMATE_TASK_CYCLE=1 \
+PIPELINE_ALLOW_PR_MERGE=1 \
+AUTO_RELEASE=0 \
+AUTO_DEPLOY=0 \
+CODEX_CMD='codex exec' \
+  scripts/os-pipeline/run-pipeline.sh --cycle
+```
+
+The flags mean:
+
+- `PIPELINE_ALLOW_PRODUCT_DISPATCH=1` permits creation of one bounded task or
+  remediation worktree and invocation of `CODEX_CMD`.
+- `PIPELINE_AUTOMATE_TASK_CYCLE=1` lets `--cycle` continue a product task from
+  dispatch through verification and merge. Without it, a task action stops.
+- `PIPELINE_ALLOW_PR_MERGE=1` permits a PR merge only after exact-head local
+  verification and required GitHub checks pass.
+- `CODEX_CMD` is mandatory for task and remediation dispatch and has no
+  default. Any CLI approval or sandbox options remain an operator decision.
+- `AUTO_RELEASE` and `AUTO_DEPLOY` must both be exactly `0`; any other value is
+  rejected before execution.
+
+The planning checkout is the state checkout. A task cycle creates a fresh
+`chore/os-3.8-<task>-<timestamp>` worktree from `origin/<base_branch>` and
+passes the clean planning checkout internally as `STATE_REPO_DIR` when it
+verifies, merges, fast-forwards, and records completion.
+
+Briefs, Codex outcome JSON, and Codex logs live outside every Git worktree under
+`CONTROL_ROOT` (default:
+`${TMPDIR:-/tmp}/nextshift-os-pipeline-control`). The required task outcome is
+JSON containing `pr_url` and a safe repository-relative
+`implementation_report`. A failed Codex command or missing outcome leaves a
+normal task pending.
+
+For every task PR, the runner verifies the exact PR checkout and runs:
+
+```bash
+pnpm type-check
+pnpm test
+pnpm build
+pnpm lint
+git diff --check
+```
+
+It then waits up to 30 minutes for required GitHub checks, retrying every 30
+seconds only while checks have not registered. A failed check, forbidden path,
+repository/base/head mismatch, missing report at the exact PR head, or report
+absent from the PR diff fails closed. Product-task verification has no
+docs-only bypass.
+
+After those checks and before merge, a short state transaction writes the
+exact repository, base, task branch, PR URL, verified head SHA, implementation
+report, report-at-head/diff proofs, check status, and verification timestamp to
+both the task's canonical `*_DISPATCH.json` and the Manifest task record. The
+runner then re-runs the synchronization gate, reloads exact PR metadata and
+checks, and merges only with `--match-head-commit <verified-head-sha>`. A head
+change between verification and merge is rejected; it cannot produce completed
+task evidence.
+
+## Bounded loop
+
+`run-loop.sh` invokes one restart-safe `--cycle` at a time. The same task-cycle
+flags are required:
+
+```bash
+PIPELINE_ALLOW_PRODUCT_DISPATCH=1 \
+PIPELINE_AUTOMATE_TASK_CYCLE=1 \
+PIPELINE_ALLOW_PR_MERGE=1 \
+AUTO_RELEASE=0 \
+AUTO_DEPLOY=0 \
+CODEX_CMD='codex exec' \
+MAX_CYCLES_PER_DAY=3 \
+SLEEP_SECONDS=600 \
+  scripts/os-pipeline/run-loop.sh
+```
+
+Loop controls are:
+
+- `MAX_CYCLES_PER_DAY` (default `3`);
+- `SLEEP_SECONDS` between cycles (default `600`);
+- `LOG_DIR` for one result file per cycle;
+- `STOP_FILE` (default `$LOG_DIR/STOP`) for a graceful stop;
+- `NOTIFY_WEBHOOK` for an optional compact `OK`/`ABORT` POST; and
+- an atomic `$LOG_DIR/.loop.lock` that prevents concurrent loops.
+
+Review waits, the STEVEN-IA wait, the final-audit wait, `needs_human`, and a
+terminal state are clean stops and do not count as loop failures. Two
+consecutive command failures stop the loop for human intervention.
+
+## Transaction-scoped state lock
+
+Automated task lifecycle, checkpoint/review, remediation, STEVEN-IA, and final
+audit state transitions use `state_transaction`. The short critical section is:
+
+```text
+acquire lock
+→ fetch and synchronize
+→ validate the latest Manifest and expected transition
+→ mutate Manifest and canonical evidence
+→ validate again
+→ commit and push together
+→ verify local HEAD equals remote HEAD
+→ release lock
+```
+
+Codex execution, package verification, GitHub-check waiting, and PR merge run
+outside the lock. After each long operation, the transaction reloads and
+revalidates synchronized state before it writes anything.
+
+The lock is `<git-common-dir>/os-pipeline-state.lock`. Its owner file records
+PID, host, UTC start time, and command. Contention fails closed. A stale lock is
+never removed automatically, and cleanup removes only a lock whose owner still
+matches the process that acquired it.
+
+Transactions receive a fixed function callback plus separately quoted
+positional data arguments. They never use `eval` or reconstruct a shell command
+from Manifest, Codex outcome, PR, report-path, or evidence data. Mutation
+callbacks register canonical persistence paths separately from their data
+arguments; the transaction rejects unregistered repository changes. Safe
+repository-relative paths reject absolute paths, leading options, `.`, `..`,
+and `.git` path components, backslashes, control characters, directories, and
+symlink targets. Quotes, semicolons, and `$()` in accepted data remain literal
+data and are never evaluated.
+
+Manifest and canonical evidence are committed and pushed in the same
+transaction. Identical STEVEN-IA and Final Audit results are clean no-ops;
+conflicting terminal evidence is rejected.
+
+## Synchronization, restart, and recovery
+
+Canonical `*_DISPATCH.json` and remediation run artifacts hold the PR, branch,
+report, verification, and merge evidence required to resume without a second
+dispatch.
+
+- A normal task recorded as `running` selects `recovery`. Recovery reads the
+  canonical dispatch artifact and validates its task/base/branch/PR/report and
+  persisted verification against exact GitHub repository, head-repository,
+  base, head branch, head SHA, checks, report-at-head/diff, and merge metadata.
+  A merged PR is completed only after a clean planning fast-forward and proof
+  that its 40-character merge SHA is on authorized planning history. An open
+  PR is restored in a clean detached worktree, reverified, and merged against
+  the exact head without a second Codex dispatch.
+- An `active_remediation` selects `remediation_recovery`, not another Codex
+  call. A uniquely identifiable open PR is restored at its exact remote head,
+  reverified, and merged. A previously merged PR is completed only when its
+  persisted pre-merge verification, report, checks, repository, base, head,
+  and merge SHA still agree.
+- If only a remediation branch is known, exactly one matching PR must be found.
+  Missing, multiple, or ambiguous PR/evidence state moves to or stops at
+  `needs_human`; it is never guessed. For a normal task, any repository, base,
+  head, report, checks, or merge-ancestry ambiguity fails closed with the task
+  still `running` and requires explicit human recovery.
+- A final audit in `running` selects `awaiting_final_audit` and exits cleanly.
+  It does not regenerate the request and does not report completion.
+
+Operator recovery procedure:
+
+1. Run `--plan` and inspect the Manifest plus the referenced dispatch,
+   remediation, review, approval, or audit artifact.
+2. Run `git fetch origin --prune`, `git status --short`, and compare local and
+   remote heads. Preserve any user work; do not auto-reset, stash, or delete it.
+3. For an unambiguous open or merged normal-task PR, run
+   `PIPELINE_ALLOW_PR_MERGE=1 scripts/os-pipeline/run-pipeline.sh --recover-task
+   <TASK_ID>` from the clean planning checkout. It restores the recorded exact
+   task head when needed and never redispatches Codex. Do not override a
+   mismatch; investigate the canonical dispatch artifact and GitHub metadata.
+4. For `remediation_recovery`, rerun one opted-in `--cycle`; do not invoke
+   Codex manually for the same reserved run.
+5. For a lock failure, inspect
+   `<git-common-dir>/os-pipeline-state.lock/owner`. Only after proving the
+   recorded process is gone, no runner is active, and local/remote state is
+   synchronized may an operator remove `owner` and then the empty lock
+   directory. Never remove a live or unknown owner's lock.
+6. For `needs_human`, an ambiguous PR, failed checks, or unauthorized product
+   changes after review, resolve the evidence/state explicitly before retrying.
+
+Temporary worktrees and external control directories are diagnostic evidence.
+Remove them only after their PR and Manifest state have been reconciled.
+
+## Architecture Review checkpoints
+
+When every task in a wave is `completed` or `superseded`, `--cycle` (or
+`--checkpoint`) creates the Manifest-designated request and atomically changes
+the checkpoint from `pending` to `awaiting_review`. The request records:
+
+- checkpoint and wave;
+- cumulative start SHA and exact product end SHA;
+- completed-task PR, merge, and implementation-report evidence;
+- cumulative changed files; and
+- the remediation run, when the request follows remediation.
+
+The reviewer writes a result source containing these control lines:
+
+```text
+VERDICT=PASS
+REVIEWED_SHA=<the request's exact 40-character product end SHA>
+```
+
+or:
+
+```text
+VERDICT=CHANGES_REQUESTED
+REVIEWED_SHA=<the request's exact 40-character product end SHA>
+```
+
+Record it with:
+
+```bash
+scripts/os-pipeline/run-pipeline.sh \
+  --record-review-result AR-W1 PASS /path/to/review-result.md
+```
+
+The transaction rechecks checkpoint status, requested SHA, result SHA, and
+freshness before copying the source to the Manifest-designated canonical result
+path. Product/code changes after the request reject the old review; only
+authorized pipeline governance artifacts may follow the requested product SHA.
+
+## Architecture remediation
+
+`CHANGES_REQUESTED` selects a real remediation PR cycle. Before invoking Codex,
+the runner reserves a unique run ID, attempt, branch, and canonical run artifact
+in one state transaction. The external remediation brief includes the wave,
+checkpoint, attempt, cumulative start/end SHA, Architecture Review findings,
+fixed scope, and required planning target.
+
+Codex must create a PR and implementation report. The runner verifies exact
+repository/base/head/report identity, executes local and GitHub checks, records
+pre-merge verification, merges with the verified head, fast-forwards planning,
+archives the prior review request/result, increments the attempt once, and
+generates a fresh checkpoint request for the new product SHA. The resulting
+checkpoint is `awaiting_review`; remediation never self-approves it.
+
+A Codex failure leaves the reservation recoverable and does not increment
+`remediation_attempts`. A second reviewed remediation failure changes the
+checkpoint to `needs_human`; a third remediation cannot start. There is no
+production `--record-remediation-result` shortcut.
+
+## STEVEN-IA gate
+
+STEVEN-IA can be recorded only after AR-W2 is `passed` with a valid reviewed
+SHA. Use a GitHub-style approver identity and a UTC RFC3339 timestamp:
+
+```bash
+scripts/os-pipeline/run-pipeline.sh \
+  --record-steven-ia stevenmacmini 2026-07-15T12:00:00Z
+```
+
+The transaction commits the Manifest approval and this canonical artifact
+together:
+
+```text
+GATE=STEVEN-IA
+DECISION=APPROVED
+APPROVER=stevenmacmini
+APPROVED_AT=2026-07-15T12:00:00Z
+AR_W2_REVIEWED_SHA=<AR-W2 reviewed SHA>
+```
+
+An identical replay is a clean no-op. A different or incomplete duplicate
+fails closed.
+
+## Final Audit
+
+The final audit becomes eligible only when every task is completed/superseded,
+every wave checkpoint has passed with a reviewed SHA, and every human gate is
+approved with matching canonical evidence. One `--cycle` transaction creates
+`audit/OS38_FINAL_CODE_REVIEW_REQUEST.md`, records the exact final reviewed
+product SHA and `requested_at`, and changes `final_audit.status` from `pending`
+to `running`.
+
+The request contains:
+
+```text
+AUDIT_ID=AUDIT-OS3.8
+BASELINE_SHA=<first wave start SHA>
+REQUESTED_PRODUCT_SHA=<exact final reviewed product SHA>
+REQUESTED_AT=<UTC timestamp>
+REPORT_PATH=audit/OS38_FINAL_CODE_REVIEW_REPORT.md
+RELEASE_GATE=BLOCKED
+```
+
+While status is `running`, restarts cleanly wait and never generate a second
+request. The independent auditor writes a regular, non-symlink result file
+outside the repository with exactly one verdict and one reviewed SHA:
+
+```text
+VERDICT=PASS
+REVIEWED_SHA=<REQUESTED_PRODUCT_SHA>
+```
+
+or `VERDICT=FAIL`. `PASS_WITH_CONDITION` is not accepted as PASS. Record the
+external source with:
+
+```bash
+scripts/os-pipeline/run-pipeline.sh \
+  --record-final-audit PASS /path/outside/repository/final-audit-result.md
+```
+
+The source checksum is rechecked inside the state transaction. The runner also
+revalidates every wave/gate, the canonical request, the requested SHA, and the
+absence of unauthorized product changes. It then copies the result to the
+Manifest-configured report path and atomically records `pass` or `fail`, the
+same `requested_at`, the matching `reviewed_sha`, and `completed_at`.
+
+For `running`, `pass`, and `fail` states, the validator requires the configured
+request/report paths and their state-specific timestamps/SHA invariants. A
+terminal result must retain a valid `requested_at`, and its `reviewed_sha` must
+equal `requested_product_sha`.
+
+Even a valid Final Audit PASS leaves `release_gate.status=blocked`,
+`auto_tag=false`, and `auto_deploy=false`. A separate explicit Steven release
+approval and a manual release/deploy procedure outside this runner are always
+required.
+
+## Validation suite
+
+Run the complete pipeline validation from the repository root:
+
+```bash
+scripts/os-pipeline/validate-manifest.sh
+
+while IFS= read -r file; do bash -n "$file"; done \
+  < <(find scripts/os-pipeline -type f -name '*.sh' -print)
+
+shellcheck $(find scripts/os-pipeline -type f -name '*.sh' -print)
+
+scripts/os-pipeline/tests/run.sh
+scripts/os-pipeline/tests/git-integration.sh
+scripts/os-pipeline/tests/remediation-integration.sh
+scripts/os-pipeline/tests/governance-integration.sh
+scripts/os-pipeline/tests/safety-integration.sh
+
+git diff --check
+pnpm type-check
+pnpm test
+pnpm lint
+pnpm build
+```
+
+Expected pipeline-specific coverage is:
+
+- Bash syntax and ShellCheck: **8 Pipeline/test shell files**, with zero
+  ShellCheck issues.
+- `tests/run.sh`: **40 state-machine/Manifest assertions**.
+- `tests/git-integration.sh`: a real temporary bare-Git
+  **E1 → Codex outcome → exact PR verification → merge → planning
+  reconciliation → E1 completion → automatic E2 selection/completion → AR-W1
+  request → clean `awaiting_review` stop** flow.
+- `tests/remediation-integration.sh`: **18 named Group C real-Git fixtures**
+  covering atomic reservation, failed-Codex restart state, exact PR
+  verify/merge, regenerated checkpoint, source-review archival, attempt limits,
+  branch-only/open/merged recovery, and two reviewed failures to
+  `needs_human`.
+- `tests/governance-integration.sh`: **8 named Group D real-Git fixtures**:
+  `steven_ia_transaction`, `steven_ia_duplicate_rejected`,
+  `final_audit_request_once`, `final_audit_running_clean_wait`,
+  `final_audit_pass_persistence`, `final_audit_wrong_sha_rejected`,
+  `final_audit_product_change_rejected`, and
+  `final_audit_cannot_release`.
+- `tests/safety-integration.sh`: **14 named Round 5 real-Git fixtures** covering
+  normal task merged/running crash recovery and ambiguous identity, exact-head
+  merge races, Wave checkpoint PASS persistence and stale-product rejection,
+  tracked/untracked dirty gates, local/remote divergence, live/stale common-dir
+  lock contention, quoted metacharacter injection, pre-write final-component
+  symlink rejection, and invalid/missing/out-of-PR implementation reports. The
+  invalid-report fixture contains independent invalid, missing-at-head, and
+  absent-from-diff subcases.
+
+The real-Git fixtures use temporary bare remotes/worktrees plus fake GitHub and
+Codex commands. They do not contact GitHub, execute real E1/E2 product work,
+tag, release, deploy, or touch production. `PIPELINE_TEST_MODE` and
+`PIPELINE_ALLOW_LOCAL_TEST_REMOTE` are fixture-only controls and must not be
+used for operator runs.
+
+## Migration from local operator scripts
+
+Do not overwrite or delete an existing local pipeline installation. Back it up
+outside the repository, update the authorized checkout, then run the validator
+and `--plan` before changing any scheduled command. No VPS address, SSH key,
+production URL, or deployment path belongs in this runner or its configuration;
+production settings remain external and release/deploy remain manual.
