@@ -18,14 +18,14 @@ When conflicts arise regarding project status, this document is the single sourc
 | --- | --- |
 | Blueprint | [OS 3.8 Product Usability Recovery](OS_3_8_BLUEPRINT.md) |
 | Version | 1.0 Approved through PR #78 |
-| Lifecycle State | Documentation / STD-006 Stop A |
+| Lifecycle State | Wave governance / Pipeline bootstrap |
 | Architecture Status | Approved |
-| Implementation Status | BLOCKED until 3.8-A Stop A artifacts are merged |
+| Implementation Status | BLOCKED until the one-time Pipeline Upgrade PR is implemented, reviewed, and merged |
 | P0 Scope | E1 Editable Content Output; E2 Content Library; U2 Information Architecture Decision |
-| Next Stop | Steven reviews and merges 3.8-A Implementation Contract and Execution Task |
-| Active Stop A Artifacts | [3.8-A Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md) and [Execution Task](os-3-8/3.8-A/EXECUTION_TASK.md) |
+| Next Stop | Steven reviews and merges PR #79, then Codex executes the Pipeline Upgrade Task in a separate bootstrap PR |
+| Active Wave Artifacts | [Pipeline Manifest](os-3-8/PIPELINE_MANIFEST.json), [Wave Execution Contract](os-3-8/WAVE_EXECUTION_CONTRACT.md), [Pipeline Upgrade Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md), [E1 Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md), and [E1 Task](os-3-8/3.8-A/EXECUTION_TASK.md) |
 
-PR #78 records Steven's approval of the OS 3.8 Blueprint. The frozen OS 3.0 foundation below remains historical architecture authority. OS 3.8 implementation begins only after the 3.8-A Stop A artifacts are merged.
+PR #78 records Steven's approval of the OS 3.8 Blueprint. PR #79 defines Wave execution governance but contains no executable pipeline or product code. OS 3.8 product work begins only after PR #79 is merged and Codex's separate Pipeline Upgrade PR passes review.
 
 ## Blueprint Information
 
@@ -77,7 +77,7 @@ Changes to these layers require an approved RFC.
 
 Foundational OS 3.0 implementation remains authorized.
 
-OS 3.8 Blueprint is approved through PR #78. Codex must not begin OS 3.8-A engineering work until the [3.8-A Implementation Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md) and [Execution Task](os-3-8/3.8-A/EXECUTION_TASK.md) are reviewed and merged.
+OS 3.8 Blueprint is approved through PR #78. Codex must first implement the [Pipeline Upgrade Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md) after PR #79 merges. Product implementation remains blocked until that bootstrap PR is reviewed and merged.
 
 Implementation should follow:
 
