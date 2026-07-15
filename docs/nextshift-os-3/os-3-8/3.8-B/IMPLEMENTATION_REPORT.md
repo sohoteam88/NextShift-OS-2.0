@@ -13,6 +13,17 @@ Date: 2026-07-15
 
 The initial worktree was clean, the task branch did not exist locally or remotely, and it was created from the exact remote baseline with ahead/behind `0/0`.
 
+## Files changed
+
+- Architecture and delivery evidence: `docs/architecture/07_DATABASE_ARCHITECTURE.md`, the three delivery files under `docs/nextshift-os-3/os-3-8/3.8-B/`, and `docs/nextshift-os-3/os-3-8/adr/ADR-E2-CONTENT-UPDATED-AT.md`.
+- Database and module inventory: `prisma/schema.prisma`, `prisma/migrations/20260715220949_add_content_updated_at/migration.sql`, and `eslint-boundaries.config.mjs`.
+- Content API/contracts/services: `src/app/api/v1/ai/content/route.ts`, `src/lib/content-library-contracts.ts`, `src/modules/ai/services/content-service.ts`, `src/modules/ai/components/ContentHistory.tsx`, and `src/modules/ai/hooks/use-content-generator.ts`.
+- Content Library UI/state: `src/app/(auth)/content-engine/page.tsx` and all five implementation/test files under `src/modules/content-library/`.
+- E1 persisted-time/invalidation compatibility: `src/modules/content-engine/components/ContentCommandCenter.tsx`, `contentDraftEditor.ts`, `contentEngineService.ts`, and their focused tests.
+- Telemetry and test evidence: `src/lib/telemetry/tracker.ts`, `tracker.test.ts`, `src/__tests__/api/content-list-route.test.ts`, `src/__tests__/services/content-service.test.ts`, `tests/e2e/content-engine.spec.ts`, and `tests/e2e/content-library.spec.ts`.
+
+The exact baseline-to-head diff contains 31 files. No Pipeline, Manifest, navigation, canonical-route, production configuration, secret, log, or generated runtime artifact is included.
+
 ## Delivered behavior
 
 1. `/content-engine` now composes the active `ContentCommandCenter` with a standalone `ContentLibrary`; no route or navigation authority changed.
