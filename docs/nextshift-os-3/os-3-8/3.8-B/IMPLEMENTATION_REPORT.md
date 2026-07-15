@@ -64,6 +64,8 @@ Migration: `prisma/migrations/20260715220949_add_content_updated_at/migration.sq
 | Targeted local Playwright runtime | Not claimed: this clean worktree has no `.env.local`/`.env.e2e`, E2E credentials, or configured application server. GitHub E2E is the runtime acceptance environment. |
 | Markdown link validator | Blocked by pre-existing `docs/nextshift-os-3/os-3-8/WAVE_EXECUTION_CONTRACT.md:13`, whose `../../OS_3_8_BLUEPRINT.md` target does not exist. E2 did not modify that governance file. |
 
+The first GitHub E2E run on PR #82 exposed two test/runtime issues without weakening any assertion: the list query's automatic retry hid the explicit first-failure state, and unscoped editor field locators were ambiguous on the combined E1/E2 page. The remediation disables automatic list retry so the operator controls retry, gives the editor fields explicit accessible names, and scopes browser interaction to the Content Library dialog.
+
 The E2 Playwright cases cover the save/reopen/copy/delete flow, true empty and request failures, save/delete retry, filter pagination reset, dirty switch/close protection, accessible delete cancellation/confirmation, and a 390×844 viewport. Because their Content API calls are intercepted, they are explicitly mocked browser evidence.
 
 ## E2E evidence boundary

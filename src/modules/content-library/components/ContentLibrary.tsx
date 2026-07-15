@@ -116,6 +116,9 @@ export function ContentLibrary() {
   const listQuery = useQuery({
     queryKey: ['content-library', { page, status, platform }],
     queryFn: () => fetchJson<ListResponse>(`/api/v1/ai/content?${params.toString()}`),
+    // Surface the first failure so the operator-controlled retry state is not
+    // hidden behind React Query's automatic retry cycle.
+    retry: false,
   });
 
   const itemQuery = useQuery({
@@ -457,6 +460,7 @@ export function ContentLibrary() {
               <label className="sm:col-span-2 text-sm font-medium text-[var(--color-text)]">
                 标题
                 <input
+                  aria-label="标题"
                   value={editorDraft.title ?? ''}
                   maxLength={200}
                   onChange={(event) => {
@@ -472,6 +476,7 @@ export function ContentLibrary() {
             <label className="block text-sm font-medium text-[var(--color-text)]">
               正文
               <textarea
+                aria-label="正文"
                 value={editorDraft.body}
                 maxLength={20_000}
                 rows={13}

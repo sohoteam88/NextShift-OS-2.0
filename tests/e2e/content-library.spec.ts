@@ -60,6 +60,12 @@ async function fulfillError(route: Route, status: number, message: string) {
   });
 }
 
+function editorDialog(page: Page) {
+  return page.getByRole('dialog').filter({
+    has: page.getByRole('button', { name: '保存同一草稿' }),
+  });
+}
+
 test.describe('Content Library mocked browser evidence', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsUser(page);
@@ -110,11 +116,11 @@ test.describe('Content Library mocked browser evidence', () => {
     await page.goto('/content-engine');
     await expect(page.getByRole('heading', { name: '内容资料库' })).toBeVisible();
     await page.getByRole('button', { name: '打开 E1 saved draft' }).click();
-    await expect(page.getByLabel('标题', { exact: true })).toHaveValue('E1 saved draft');
-    await expect(page.getByLabel('正文', { exact: true })).toHaveValue('E1 saved body');
+    await expect(editorDialog(page).getByRole('textbox', { name: '标题' })).toHaveValue('E1 saved draft');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('E1 saved body');
 
-    await page.getByLabel('标题', { exact: true }).fill('Library edited title');
-    await page.getByLabel('正文', { exact: true }).fill('Library edited current body');
+    await editorDialog(page).getByRole('textbox', { name: '标题' }).fill('Library edited title');
+    await editorDialog(page).getByRole('textbox', { name: '正文' }).fill('Library edited current body');
     await expect(page.getByText('有未保存的修改')).toBeVisible();
     await page.getByRole('button', { name: '保存同一草稿' }).click();
     await expect(page.getByText('已保存', { exact: true })).toBeVisible();
@@ -123,7 +129,7 @@ test.describe('Content Library mocked browser evidence', () => {
 
     await page.getByRole('button', { name: '关闭对话框' }).click();
     await page.getByRole('button', { name: '打开 Library edited title' }).click();
-    await expect(page.getByLabel('正文', { exact: true })).toHaveValue('Library edited current body');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('Library edited current body');
 
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await page.getByRole('button', { name: '复制正文' }).click();
@@ -132,7 +138,7 @@ test.describe('Content Library mocked browser evidence', () => {
     await page.getByRole('button', { name: '删除', exact: true }).click();
     await expect(page.getByRole('dialog', { name: '确认删除这项内容？' })).toBeVisible();
     await page.getByRole('button', { name: '取消' }).click();
-    await expect(page.getByLabel('正文', { exact: true })).toHaveValue('Library edited current body');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('Library edited current body');
 
     await page.getByRole('button', { name: '删除', exact: true }).click();
     await page.getByRole('button', { name: '确认删除' }).click();
@@ -188,11 +194,11 @@ test.describe('Content Library mocked browser evidence', () => {
 
     await page.goto('/content-engine');
     await page.getByRole('button', { name: '打开 E1 saved draft' }).click();
-    await page.getByLabel('标题', { exact: true }).fill('Retry title');
-    await page.getByLabel('正文', { exact: true }).fill('Retry body');
+    await editorDialog(page).getByRole('textbox', { name: '标题' }).fill('Retry title');
+    await editorDialog(page).getByRole('textbox', { name: '正文' }).fill('Retry body');
     await page.getByRole('button', { name: '保存同一草稿' }).click();
     await expect(page.getByText(/Temporary save failure.*编辑仍保留/)).toBeVisible();
-    await expect(page.getByLabel('正文', { exact: true })).toHaveValue('Retry body');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('Retry body');
     await page.getByRole('button', { name: '保存同一草稿' }).click();
     await expect(page.getByText('已保存', { exact: true })).toBeVisible();
 
@@ -227,7 +233,7 @@ test.describe('Content Library mocked browser evidence', () => {
     await page.getByRole('button', { name: '打开 E1 saved draft' }).click();
     await expect(page.getByText('Temporary item failure')).toBeVisible();
     await page.getByRole('button', { name: '重试' }).click();
-    await expect(page.getByLabel('正文', { exact: true })).toHaveValue('E1 saved body');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('E1 saved body');
     await page.getByRole('button', { name: '关闭对话框' }).click();
 
     await page.getByRole('button', { name: '下一页' }).click();
@@ -262,20 +268,20 @@ test.describe('Content Library mocked browser evidence', () => {
 
     await page.goto('/content-engine');
     await page.getByRole('button', { name: '打开 E1 saved draft' }).click();
-    await page.getByLabel('正文', { exact: true }).fill('Unsaved mobile edit');
+    await editorDialog(page).getByRole('textbox', { name: '正文' }).fill('Unsaved mobile edit');
     await page.getByLabel('切换到其他内容').selectOption(secondContent.id);
     await expect(page.getByRole('dialog', { name: '舍弃未保存的修改？' })).toBeVisible();
     await page.getByRole('button', { name: '继续编辑' }).click();
-    await expect(page.getByLabel('正文', { exact: true })).toHaveValue('Unsaved mobile edit');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('Unsaved mobile edit');
 
     await page.getByLabel('切换到其他内容').selectOption(secondContent.id);
     await page.getByRole('button', { name: '舍弃并继续' }).click();
-    await expect(page.getByLabel('正文', { exact: true })).toHaveValue('Second saved body');
-    await page.getByLabel('正文', { exact: true }).fill('Unsaved second mobile edit');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('Second saved body');
+    await editorDialog(page).getByRole('textbox', { name: '正文' }).fill('Unsaved second mobile edit');
     await page.getByRole('button', { name: '关闭对话框' }).click();
     await expect(page.getByRole('dialog', { name: '舍弃未保存的修改？' })).toBeVisible();
     await page.getByRole('button', { name: '继续编辑' }).click();
-    await expect(page.getByLabel('正文', { exact: true })).toHaveValue('Unsaved second mobile edit');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('Unsaved second mobile edit');
     await expect(page.locator('body')).not.toHaveCSS('overflow-x', 'scroll');
   });
 });
