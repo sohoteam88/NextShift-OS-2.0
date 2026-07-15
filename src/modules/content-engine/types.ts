@@ -21,6 +21,12 @@ export interface GeneratedPost {
   status: ContentStatus;
   qualityScore: number;
   createdAt: string;
+  /**
+   * The Content model does not yet persist a separate updatedAt column. For
+   * generated drafts this is the persisted creation time; the editor records
+   * a successful save locally after a PATCH response.
+   */
+  updatedAt: string;
 }
 
 export interface ContentCalendar {

@@ -153,8 +153,9 @@ export const contentEngineService = {
 
     const post = generatePost(ctx, pillar, platform, format, funnelStage);
 
-    // Save to Content model
-    await prisma.content.create({
+    // Save to the canonical Content model and return its identity. The client
+    // must PATCH this record rather than using the temporary generator ID.
+    const content = await prisma.content.create({
       data: {
         tenantId,
         ownerId: userId,
@@ -169,14 +170,46 @@ export const contentEngineService = {
       },
     });
 
-    return post;
+    return {
+      ...post,
+      id: content.id,
+      title: content.title ?? post.title,
+      body: content.body,
+      platform: (content.platform as GeneratedPost['platform']) ?? post.platform,
+      format: content.type as GeneratedPost['format'],
+      status: (content.status as GeneratedPost['status']) ?? 'draft',
+      createdAt: content.createdAt.toISOString(),
+      // Content has no separate persisted updatedAt field. This remains a
+      // server-derived timestamp until a future, separately approved schema
+      // change introduces one.
+      updatedAt: content.createdAt.toISOString(),
+    };
   },
 
   async getLastPost(userId: string): Promise<GeneratedPost | null> {
     // Read from Content model (canonical source)
-    const content = await prisma.content.findFirst({ where: { ownerId: userId }, orderBy: { createdAt: 'desc' } });
+    const content = await prisma.content.findFirst({
+      where: { ownerId: userId },
+      orderBy: { createdAt: 'desc' },
+    });
     if (!content) return null;
-    return { id: content.id, pillar: '', pillarEmoji: '', title: content.title ?? '', hook: '', body: content.body, cta: '', hashtags: [], platform: (content.platform as GeneratedPost['platform']) ?? 'instagram', format: (content.type as GeneratedPost['format']) ?? 'text_post', funnelStage: 'awareness', status: (content.status as GeneratedPost['status']) ?? 'generated', qualityScore: 75, createdAt: content.createdAt.toISOString() };
+    return {
+      id: content.id,
+      pillar: '',
+      pillarEmoji: '',
+      title: content.title ?? '',
+      hook: '',
+      body: content.body,
+      cta: '',
+      hashtags: [],
+      platform: (content.platform as GeneratedPost['platform']) ?? 'instagram',
+      format: (content.type as GeneratedPost['format']) ?? 'text_post',
+      funnelStage: 'awareness',
+      status: (content.status as GeneratedPost['status']) ?? 'draft',
+      qualityScore: 75,
+      createdAt: content.createdAt.toISOString(),
+      updatedAt: content.createdAt.toISOString(),
+    };
   },
 
   async getPublishedCount(userId: string): Promise<number> {

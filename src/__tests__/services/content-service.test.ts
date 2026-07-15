@@ -20,6 +20,7 @@ vi.mock('@/modules/ai/prompt/validator', () => validatorMocks);
 import { contentService } from '@/modules/ai/services/content-service';
 
 const makeUser = () => ({ id: 'u1', email: 't@t.com', tenantId: 't1', role: 'operator', name: 'T', preferredLanguage: 'zh', status: 'active' as const });
+const makeMember = () => ({ ...makeUser(), role: 'member' as const });
 
 describe('contentService', () => {
   beforeEach(() => {
@@ -63,5 +64,24 @@ describe('contentService', () => {
     quotaMocks.enforceQuota.mockRejectedValue(new Error('QUOTA_EXCEEDED'));
     await expect(contentService.generate(makeUser(), { topic: 'Test', platform: 'facebook' }))
       .rejects.toThrow('QUOTA_EXCEEDED');
+  });
+
+  it('does not update a guessed content ID outside the authenticated member ownership scope', async () => {
+    prismaMocks.content.findFirst.mockResolvedValue(null);
+
+    await expect(
+      contentService.update(makeMember(), 'another-tenant-content', {
+        content: 'Attempted cross-tenant update',
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND', statusCode: 404 });
+
+    expect(prismaMocks.content.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'another-tenant-content',
+        tenantId: 't1',
+        ownerId: 'u1',
+      },
+    });
+    expect(prismaMocks.content.update).not.toHaveBeenCalled();
   });
 });

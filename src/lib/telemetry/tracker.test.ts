@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   analytics,
+  trackContentCopied,
+  trackContentEditStarted,
+  trackContentGenerated,
+  trackContentLoopCompleted,
+  trackContentSaved,
   trackDiscussionTurnSent,
   trackRecommendationClicked,
   trackRecommendationViewed,
@@ -67,5 +72,26 @@ describe('telemetry tracker events', () => {
     expect(track).toHaveBeenCalledWith('weekly_active', {
       userId: 'user-1',
     });
+  });
+
+  it('tracks content-loop events without content text or prompt properties', () => {
+    const track = vi.spyOn(analytics, 'track').mockResolvedValue(undefined);
+    const properties = {
+      contentId: 'content-1',
+      platform: 'instagram',
+      contentType: 'text_post',
+    };
+
+    trackContentGenerated('user-1', properties);
+    trackContentEditStarted('user-1', properties);
+    trackContentSaved('user-1', properties);
+    trackContentCopied('user-1', properties);
+    trackContentLoopCompleted('user-1', properties);
+
+    expect(track).toHaveBeenNthCalledWith(1, 'content_generated', { ...properties, userId: 'user-1' });
+    expect(track).toHaveBeenNthCalledWith(2, 'content_edit_started', { ...properties, userId: 'user-1' });
+    expect(track).toHaveBeenNthCalledWith(3, 'content_saved', { ...properties, userId: 'user-1' });
+    expect(track).toHaveBeenNthCalledWith(4, 'content_copied', { ...properties, userId: 'user-1' });
+    expect(track).toHaveBeenNthCalledWith(5, 'content_loop_completed', { ...properties, userId: 'user-1' });
   });
 });
