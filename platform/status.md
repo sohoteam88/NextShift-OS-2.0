@@ -13,8 +13,9 @@ This status registry provides the current platform state for repository navigati
 | Field | Current Value |
 | --- | --- |
 | Active planning branch | `planning/os-3.3-runtime-platform` |
-| Current release status | v3.6.0 released to production at `fb08541`; OS 3.7 Command Center + Business Twin RC package prepared, awaiting Steven approval and post-deploy C-3 verification |
+| Current release status | `v3.7.0` released to production at `28c077f`; version endpoint and `/api/health` verified, C-3 closed |
 | Last Updated | 2026-07-15 |
+| Production verification | commit `28c077f115a4e43c5e11e1097ae06b8744043643`; environment `production`; build `2026-07-15T02:18:35Z`; health HTTP 200 `ok` with no-store/no-cache |
 | Current repository architecture project | Repository Architecture Reset v1.0 |
 | Current RAR migration unit | MU-001 Platform Registry Migration |
 | Migration mode | Registry-first platform navigation |
@@ -39,7 +40,9 @@ This status registry provides the current platform state for repository navigati
 | Runtime status | [docs/nextshift-os-3/RUNTIME_STATUS.md](../docs/nextshift-os-3/RUNTIME_STATUS.md) |
 | Blueprint status | [docs/nextshift-os-3/BLUEPRINT_STATUS.md](../docs/nextshift-os-3/BLUEPRINT_STATUS.md) |
 | OS 3.6 release candidate | [docs/nextshift-os-3/RC_3.6.md](../docs/nextshift-os-3/RC_3.6.md) |
-| OS 3.7 release candidate | [docs/nextshift-os-3/releases/OS_3_7_COMMAND_CENTER_TWIN/README.md](../docs/nextshift-os-3/releases/OS_3_7_COMMAND_CENTER_TWIN/README.md) |
+| OS 3.7 release package | [docs/nextshift-os-3/releases/OS_3_7_COMMAND_CENTER_TWIN/README.md](../docs/nextshift-os-3/releases/OS_3_7_COMMAND_CENTER_TWIN/README.md) |
+| Master roadmap | [docs/nextshift-os-3/MASTER_ROADMAP_2026-07.md](../docs/nextshift-os-3/MASTER_ROADMAP_2026-07.md) |
+| Product usability audit | [docs/nextshift-os-3/reviews/PRODUCT_USABILITY_AUDIT_2026-07.md](../docs/nextshift-os-3/reviews/PRODUCT_USABILITY_AUDIT_2026-07.md) |
 
 ## Current Platform Baseline
 

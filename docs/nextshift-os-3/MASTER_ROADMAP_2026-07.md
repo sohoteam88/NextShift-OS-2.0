@@ -1,10 +1,10 @@
-# NextShift OS Master Roadmap — 从 v3.5.0 到完整愿景
+# NextShift OS Master Roadmap — 从 v3.7.0 到完整愿景
 
-Version: 1.0
-Status: Draft — awaiting Steven approval
-Date: 2026-07-12
-Author: Claude (Architecture / Orchestration)
-Baseline: `v3.5.0`（Command Center 卡片 + AI 讨论 + flag 生命周期首个完整闭环）
+Version: 1.1
+Status: Approved by Steven — active governance baseline
+Date: 2026-07-15
+Author: ChatGPT Work (Architecture Governance), based on Claude's original roadmap
+Baseline: `v3.7.0` at `28c077f`（Command Center + Business Memory + Business Twin v1；production health/version verification PASS）
 Source: [LAYER_ROADMAP_P0.md](LAYER_ROADMAP_P0.md)（15 层愿景 + Top 10 + AI Success Engine）
 
 ---
@@ -13,19 +13,19 @@ Source: [LAYER_ROADMAP_P0.md](LAYER_ROADMAP_P0.md)（15 层愿景 + Top 10 + AI 
 
 | Layer | 愿景 | 现状 |
 |---|---|---|
-| 1 Business Brain | Twin/记忆/知识图谱 | packages 骨架全在,**无真实数据积累**——已建成"脑",还没开始"记" |
+| 1 Business Brain | Twin/记忆/知识图谱 | ✅ Business Memory + Business Twin v1 已上线；真实使用数据仍待 Dogfood 累积 |
 | 2 Decision Engine | 推荐/置信/解释 | ✅ 已上产品(推荐卡片),规则+引擎双路 |
 | 3 Conversation | Business Discussion | ✅ 首切片已上(锚定推荐的 5 轮讨论) |
 | 4 Creative Studio | 内容全家桶 | 存量功能多(content/video 模块),未经 Brain 个性化 |
 | 5 Growth | Funnel/Webinar | 存量功能在,AI recommendation 未接入 |
 | 6 Traffic/Trend | 各平台 viral 情报 | ❌ 外部数据无解,维持降级 |
 | 7 Revenue/WhatsApp | AI 成交引擎 | whatsapp-ai 模块存量在,AI Reply 未激活 |
-| 8 Command Center | AI 每日任务中心 | ✅ 第一张脸已揭幕 |
+| 8 Command Center | AI 每日任务中心 | ✅ Business Score、统一 Mission/Recommendation、Weekly Review 已上线 |
 | 9-12 BI/Presence/Relationship/Knowledge | | 存量模块散在,未串联 |
 | 13-15 Workforce/Learning/Marketplace | | P2 未动(正确) |
 | Success Engine | 目标→每日动态策略 | 未动——**这是终局** |
 
-工程基线:5/68 模块 runtime 化、E2E 32+、6 flag 生命周期管理、部署一键、四轮 audit 纪律。**最大的空白不是功能,是真实用户和真实数据——Brain 没有东西可记,Success Engine 没有目标可追。**
+工程基线:`v3.7.0` production、5/68 模块按需 runtime 化、Business Memory/Twin/Command Center 上线、E2E 与 release audit 纪律持续执行。**当前最大空白不是继续增加功能，而是核心工作流尚未达到 Steven 可连续使用的标准。**
 
 ---
 
@@ -33,7 +33,7 @@ Source: [LAYER_ROADMAP_P0.md](LAYER_ROADMAP_P0.md)（15 层愿景 + Top 10 + AI 
 
 OS 3.3-3.5 的闸门是工程性的（测试绿、审计过）。从 Stage A 起,每个 Stage 增加一个**结果闸门**——不满足就不开下一个 Stage 的新功能,只做打磨:
 
-> **Stage 结果闸门 = 有 N 个真实用户在用上一 Stage 的核心能力,且留存/激活数据可查（PostHog 已接）。**
+> **Stage 结果闸门 = 先通过 Steven Dogfood，再有 N 个真实用户使用上一 Stage 核心能力，且留存/激活数据可查（PostHog 已接）。**
 
 理由:15 层愿景的每一层都假设"用户在用前一层产生的数据"。没有用户,Layer 1 的记忆、Layer 14 的教练、Success Engine 全是空转。这个项目现在最贵的不是代码,是真实使用。
 
@@ -41,17 +41,31 @@ OS 3.3-3.5 的闸门是工程性的（测试绿、审计过）。从 Stage A 起
 
 ## 2. 分阶段大纲
 
-### Stage A — "Brain 开始记住"（OS 3.6-3.7,约 4-6 周工程量）
+### Stage A — "Brain 开始记住"（OS 3.6-3.7，工程交付完成）
 
 主题:Layer 1 从骨架变活体 + Layer 8 长全。
 
 - **A1 Business Memory v1**:把用户在系统里的真实行为（任务完成、内容发布、lead 变化、讨论内容）写进 business-brain 的 memory 存储;推荐卡片和讨论开始引用"上周你做了什么"
 - **A2 Command Center 长全**（Layer 8 完整版）:Business Score 卡、Today's Mission 与推荐卡合并信息层级（消除现在"两个声音"问题）、Weekly Review 雏形（Layer 9 借壳先行）
 - **A3 Business Twin v1**:AI Interview + Brand DNA 的存量数据 → Twin 初始画像;讨论的 system prompt 注入 Twin 摘要（个性化第一步）
-- **⭐ 结果闸门 A**:≥10 个真实用户完成 onboarding 且周活跃,dashboard 推荐点击率可查
-- 并行获客轨（非工程）:Steven 用自己的 Herbalife/团队圈子做种子用户——**产品的目标客群就是你自己的人脉网,这是你相对任何竞品的唯一不公平优势**
+- **Stage A 工程状态**：A1/A2/A3 已随 `v3.6.0`–`v3.7.0` 发布；工程完成不等于产品闸门完成。
+- **⭐ Dogfood 闸门（获客前置）**：Steven 连续 7 天用真实业务完成「生成 → 编辑 → 保存 → 复制/发布」，且愿意继续使用。
+- **⭐ 结果闸门 A**：Dogfood PASS 后，≥10 个真实用户完成 onboarding 且周活跃，dashboard 推荐点击率可查。
+- 获客轨（非工程）：闸门开放后，Steven 用 Herbalife/团队圈子招募种子用户。
 
-### Stage B — "Brain 开始干活"（OS 3.8-3.9）
+### Stage A+ — "产品先能用"（OS 3.8 Product Usability Recovery）
+
+主题：修复「生成 → 编辑 → 保存 → 复制/发布」闭环，并收敛用户信息架构；不提前扩建 Stage B 功能。
+
+- **E1 Content 编辑闭环**：生成结果可编辑、可复制，沿用 Brand Builder 已验证的交互范式。
+- **E2 Content Library**：已保存内容可查看、再编辑、删除、复制。
+- **E3 范式推广**：Video 补保存；Lead Magnet/Webinar 接入统一编辑与留存范式。
+- **U1 死代码治理**：先盘点再删除重复/孤儿组件。
+- **U2 信息架构一页纸**：45 个 auth routes 按保留/合并/隐藏分类，Steven 批准后才能实施。
+- **U3 页面收敛**：依据批准后的 IA 统一导航与页面。
+- **证据**：[Product Usability Audit 2026-07](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md)
+
+### Stage B — "Brain 开始干活"（OS 3.9+，须通过 Dogfood 与结果闸门 A）
 
 主题:Layer 4/5 的存量功能接上 Brain——从"工具箱"变"参谋部"。
 
@@ -122,8 +136,8 @@ OS 3.3-3.5 的闸门是工程性的（测试绿、审计过）。从 Stage A 起
 ## 5. 一页时间观
 
 ```
-now ──► Stage A(OS 3.6-3.7) ──► 闸门A:10 真实周活 ──► Stage B(3.8-3.9)
-        Brain 记住                                    Brain 干活
+v3.7 ──► Stage A+(OS 3.8) ──► Dogfood 7天 ──► 闸门A:10真实周活 ──► Stage B(3.9+)
+         产品能用                                             Brain 干活
                                                         │
    Stage E ◄── 闸门C:首批付费 ◄── Stage C(4.0) ◄── 闸门B:AI 产出占比
    待验证区                        Brain 成交(收钱)

@@ -21,11 +21,11 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | `v3.6.0` production (`fb08541`) |
-| Current Release | OS 3.7 Command Center + Business Twin RC package prepared; C-3 post-deploy verification remains |
+| Current Version | `v3.7.0` production (`28c077f`) |
+| Current Release | OS 3.7 Command Center + Business Twin released; production verification PASS and C-3 closed |
 | Current Planning Branch | `planning/os-3.3-runtime-platform` |
 | Repository Default Branch | `main` |
-| Production Status | OS 3.6 deployed to production; OS 3.7 RC is source-verified and awaits approval plus post-deploy C-3 observation |
+| Production Status | OS 3.7 deployed and verified: version commit `28c077f`, environment `production`, health HTTP 200 `ok` |
 
 Canonical navigation:
 
@@ -41,7 +41,9 @@ Canonical navigation:
 - [OS 3.3 Runtime Platform RC Package](releases/OS_3_3_RUNTIME_PLATFORM/README.md)
 - [OS 3.4 Command Center RC Package](releases/OS_3_4_COMMAND_CENTER/README.md)
 - [OS 3.5 Business Discussion RC Package](releases/OS_3_5_BUSINESS_DISCUSSION/README.md)
-- [OS 3.7 Command Center + Business Twin RC Package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md)
+- [OS 3.7 Command Center + Business Twin Release Package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md)
+- [Product Usability Audit 2026-07](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md)
+- [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md)
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
 - [AI Engineering Foundation](ai/AI_ENGINEERING_FOUNDATION.md)
@@ -92,7 +94,7 @@ Components:
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
 | Developer Platform | OS 3.2 Developer Platform audit PASS; records remain historical release preparation artifacts | [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md) |
-| Current Capability Focus | OS 3.7 RC package prepared; registration recovery observation remains post-deploy | [OS 3.7 Blueprint](OS_3_7_BLUEPRINT.md) |
+| Current Capability Focus | OS 3.8 Product Usability Recovery planning; no implementation before Blueprint approval | [Product Usability Audit](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -103,11 +105,11 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Field | Current State |
 | --- | --- |
 | Active Planning Branch | `planning/os-3.3-runtime-platform` |
-| Active Milestone | OS 3.7 Command Center + Business Twin |
-| Current Phase | OS 3.7 RC package prepared; source validation and two audits recorded |
-| Current Focus | Review RC package; schedule C-3 post-deploy recovery and PostHog observation after authorized release |
-| Current Blockers | No source blocker; C-3 requires production observation after deployment |
-| Current Priorities | Review OS 3.7 RC package, approve graduation only when post-deploy C-3 verification is planned |
+| Active Milestone | OS 3.8 Product Usability Recovery — planning |
+| Current Phase | Governance sync after verified `v3.7.0` release |
+| Current Focus | Convert the usability audit into a Steven-approved OS 3.8 Blueprint; prioritize editable/copyable content workflow and information architecture |
+| Current Blockers | Dogfood gate not yet passable because the core generate → edit → save → copy/publish workflow is incomplete |
+| Current Priorities | Governance sync → OS 3.8 Blueprint approval → E1 editable/copyable content → content library → IA decision |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -138,11 +140,11 @@ Release tag created: `v3.3.0`.
 | Field | Current State |
 | --- | --- |
 | Release Branch | `main` |
-| Release Tag | `v3.4.0` |
-| Production Commit | `c472345` |
+| Release Tag | `v3.7.0` |
+| Production Commit | `28c077f115a4e43c5e11e1097ae06b8744043643` |
 | Deployment Method | GitHub Actions Docker image deployment to VPS Docker Compose |
-| VPS Alignment Status | Aligned to `v3.4.0` production release |
-| Last Verification Summary | OS 3.6 production release verified at `fb08541` through `/api/v1/version` with a cache-buster query parameter; `v3.6.0` peels to the same commit |
+| VPS Alignment Status | Aligned to verified `v3.7.0` production release |
+| Last Verification Summary | OS 3.7 production release verified at `28c077f115a4e43c5e11e1097ae06b8744043643`; `main` and `v3.7.0` are identical; environment `production`; build `2026-07-15T02:18:35Z`; health HTTP 200 `ok` with no-store/no-cache |
 
 Planning branch documentation remains pre-merge work until it is reviewed and merged under [STD-004 Release Governance](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md) and [STD-005 GitHub Alignment Standard](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
 
@@ -158,9 +160,9 @@ The `v3.4.0` release tag has been created and pushed.
 
 ## 7. Next Recommended Actions
 
-1. Review the [OS 3.7 Command Center + Business Twin RC Package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md).
-2. After approval, perform the graduation merge from `planning/os-3.3-runtime-platform` to `main`.
-3. Prepare the `v3.7.0` tag only after explicit approval and schedule the C-3 post-deploy verification.
+1. Review the [Product Usability Audit](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md).
+2. Draft and obtain Steven approval for the OS 3.8 Product Usability Recovery Blueprint.
+3. Do not start Stage B expansion or seed-user acquisition until the Dogfood gate passes.
 4. Do not modify production deployment, Prisma, env files, or release tags without explicit approval.
 
 ---
