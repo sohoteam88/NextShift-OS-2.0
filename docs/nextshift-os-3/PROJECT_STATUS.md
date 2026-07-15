@@ -23,7 +23,7 @@ It summarizes project state for AI assistants and human contributors without rep
 | Project Name | NextShift OS |
 | Current Version | `v3.7.0` production (`28c077f`) |
 | Current Release | OS 3.7 Command Center + Business Twin released; production verification PASS and C-3 closed |
-| Current Planning Branch | `planning/os-3.3-runtime-platform` |
+| Current Planning Branch | `agent/os-3-8-blueprint` |
 | Repository Default Branch | `main` |
 | Production Status | OS 3.7 deployed and verified: version commit `28c077f`, environment `production`, health HTTP 200 `ok` |
 
