@@ -62,8 +62,8 @@ describe('content draft editor state', () => {
         type: 'text_post',
         status: 'draft',
         createdAt: '2026-07-15T00:00:00.000Z',
+        updatedAt: '2026-07-15T00:02:00.000Z',
       },
-      '2026-07-15T00:02:00.000Z',
     );
 
     expect(isDraftDirty(saved, saved)).toBe(false);
@@ -88,8 +88,8 @@ describe('content draft editor state', () => {
         type: 'text_post',
         status: 'draft',
         createdAt: '2026-07-15T00:00:00.000Z',
+        updatedAt: '2026-07-15T00:02:00.000Z',
       },
-      '2026-07-15T00:02:00.000Z',
     );
 
     const editor = reconcilePersistedEditorDraft(newerEditor, submitted, saved);
@@ -113,8 +113,8 @@ describe('content draft editor state', () => {
         type: 'text_post',
         status: 'draft',
         createdAt: '2026-07-15T00:00:00.000Z',
+        updatedAt: '2026-07-15T00:02:00.000Z',
       },
-      '2026-07-15T00:02:00.000Z',
     );
 
     expect(reconcilePersistedEditorDraft(submitted, submitted, saved)).toEqual(saved);

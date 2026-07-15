@@ -3,12 +3,69 @@ import type { ContentRecordPatchPlatform } from '@/lib/content-platforms';
 import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
+import {
+  contentBodyPreview,
+  contentDisplayTitle,
+  type ContentLibraryItem,
+  type ContentLibraryListItem,
+  type ContentLibraryListQuery,
+} from '@/lib/content-library-contracts';
 import { getRouterForTenant } from '../router';
 import { templateService } from './template-service';
 import { resolveVariables, buildPrompt } from '../prompt/resolver';
 import { validateAIOutput } from '../prompt/validator';
 import { logAIUsage } from '../usage/tracker';
 import { enforceQuota } from '../usage/quota';
+
+const CONTENT_SAFE_SELECT = {
+  id: true,
+  title: true,
+  body: true,
+  platform: true,
+  type: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.ContentSelect;
+
+type ContentSafeRow = Prisma.ContentGetPayload<{ select: typeof CONTENT_SAFE_SELECT }>;
+
+function isTenantContentManager(user: AuthUser) {
+  return user.role === 'operator' || user.role === 'platform_admin';
+}
+
+function ownershipWhere(user: AuthUser): Prisma.ContentWhereInput {
+  return isTenantContentManager(user)
+    ? { tenantId: user.tenantId }
+    : { tenantId: user.tenantId, ownerId: user.id };
+}
+
+function toContentItem(row: ContentSafeRow): ContentLibraryItem {
+  return {
+    id: row.id,
+    title: row.title,
+    body: row.body,
+    platform: row.platform,
+    type: row.type,
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function toContentListItem(row: ContentSafeRow): ContentLibraryListItem {
+  return {
+    id: row.id,
+    title: row.title,
+    displayTitle: contentDisplayTitle(row.title, row.type, row.id),
+    platform: row.platform,
+    type: row.type,
+    status: row.status,
+    preview: contentBodyPreview(row.body),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
 
 export interface ContentGenerateInput {
   templateId?: string;
@@ -163,27 +220,30 @@ export const contentService = {
         promptUsed: data.promptUsed ?? null,
       } satisfies Prisma.ContentUncheckedCreateInput;
 
-    return prisma.content.create({
+    const content = await prisma.content.create({
       data: dataPayload,
+      select: CONTENT_SAFE_SELECT,
     });
+    return toContentItem(content);
   },
 
   async listSavedContent(
     user: AuthUser,
-    opts: { page?: number; limit?: number } = {},
+    opts: ContentLibraryListQuery,
   ) {
-    const page = Math.max(1, opts.page ?? 1);
-    const limit = Math.min(50, Math.max(1, opts.limit ?? 10));
+    const { page, limit } = opts;
     const skip = (page - 1) * limit;
-
-    const where = user.role === 'operator' || user.role === 'platform_admin'
-      ? { tenantId: user.tenantId }
-      : { tenantId: user.tenantId, ownerId: user.id };
+    const where: Prisma.ContentWhereInput = {
+      ...ownershipWhere(user),
+      ...(opts.status ? { status: opts.status } : {}),
+      ...(opts.platform ? { platform: opts.platform } : {}),
+    };
 
     const [items, total] = await Promise.all([
       prisma.content.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        select: CONTENT_SAFE_SELECT,
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
         skip,
         take: limit,
       }),
@@ -191,29 +251,27 @@ export const contentService = {
     ]);
 
     return {
-      items,
+      items: items.map(toContentListItem),
       meta: {
         page,
         limit,
         total,
-        total_pages: Math.max(1, Math.ceil(total / limit)),
+        totalPages: Math.ceil(total / limit),
       },
     };
   },
 
   async getById(user: AuthUser, id: string) {
     const content = await prisma.content.findFirst({
-      where:
-        user.role === 'operator' || user.role === 'platform_admin'
-          ? { id, tenantId: user.tenantId }
-          : { id, tenantId: user.tenantId, ownerId: user.id },
+      where: { id, ...ownershipWhere(user) },
+      select: CONTENT_SAFE_SELECT,
     });
 
     if (!content) {
       throw new AppError('NOT_FOUND', 404, 'Content not found');
     }
 
-    return content;
+    return toContentItem(content);
   },
 
   async update(
@@ -228,7 +286,7 @@ export const contentService = {
   ) {
     const existing = await this.getById(user, id);
 
-    return prisma.content.update({
+    const content = await prisma.content.update({
       where: { id: existing.id },
       data: {
         ...(data.content !== undefined ? { body: data.content } : {}),
@@ -236,12 +294,14 @@ export const contentService = {
         ...(data.status !== undefined ? { status: data.status } : {}),
         ...(data.platform !== undefined ? { platform: data.platform } : {}),
       },
+      select: CONTENT_SAFE_SELECT,
     });
+    return toContentItem(content);
   },
 
   async delete(user: AuthUser, id: string) {
     const existing = await this.getById(user, id);
     await prisma.content.delete({ where: { id: existing.id } });
-    return { deleted: true };
+    return { id: existing.id, deleted: true };
   },
 };

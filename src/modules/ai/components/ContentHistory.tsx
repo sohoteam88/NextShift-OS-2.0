@@ -12,13 +12,16 @@ import { useToast } from '@/stores/toast-store';
 type ContentItem = {
   id: string;
   title?: string | null;
+  displayTitle: string;
   platform?: string | null;
-  body: string;
+  preview: string;
+  type: string;
   status: string;
-  language: string;
   createdAt: string;
-  generatedByAi: boolean;
+  updatedAt: string;
 };
+
+type ContentDetail = ContentItem & { body: string };
 
 function useHistory() {
   return useQuery({
@@ -28,7 +31,7 @@ function useHistory() {
       if (!res.ok) throw new Error('Failed to fetch content history');
       return res.json() as Promise<{
         data: ContentItem[];
-        meta: { page: number; limit: number; total: number; total_pages: number };
+        meta: { page: number; limit: number; total: number; totalPages: number };
       }>;
     },
   });
@@ -45,6 +48,7 @@ export function ContentHistory() {
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState('');
+  const [details, setDetails] = React.useState<Record<string, ContentDetail>>({});
 
   const items = (data?.data ?? []).filter((item) => {
     if (platform !== 'all' && item.platform !== platform) return false;
@@ -65,8 +69,28 @@ export function ContentHistory() {
       body: JSON.stringify({ content: draft, status: item.status }),
     });
     setEditingId(null);
+    setDetails((current) => ({
+      ...current,
+      [item.id]: { ...(current[item.id] ?? item), body: draft },
+    }));
     await qc.invalidateQueries({ queryKey: ['ai-content-history'] });
     toast('success', common('save'));
+  }
+
+  async function toggleExpanded(item: ContentItem) {
+    if (expandedId === item.id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(item.id);
+    if (details[item.id]) return;
+    const response = await fetch(`/api/v1/ai/content/${item.id}`);
+    if (!response.ok) {
+      toast('error', 'Failed to fetch content');
+      return;
+    }
+    const payload = await response.json() as { data: ContentDetail };
+    setDetails((current) => ({ ...current, [item.id]: payload.data }));
   }
 
   async function handlePublish(item: ContentItem) {
@@ -112,15 +136,16 @@ export function ContentHistory() {
           items.map((item) => {
             const expanded = expandedId === item.id;
             const editing = editingId === item.id;
+            const detail = details[item.id];
             return (
               <div key={item.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm">
                 <button
                   type="button"
-                  onClick={() => setExpandedId((current) => (current === item.id ? null : item.id))}
+                  onClick={() => void toggleExpanded(item)}
                   className="flex w-full items-start justify-between gap-4 text-left"
                 >
                   <div>
-                    <p className="font-medium text-[var(--color-text)]">{item.title || item.body.slice(0, 48)}</p>
+                    <p className="font-medium text-[var(--color-text)]">{item.displayTitle}</p>
                     <p className="mt-1 text-xs text-[var(--color-text-muted)]">
                       {new Date(item.createdAt).toLocaleString()}
                     </p>
@@ -144,19 +169,20 @@ export function ContentHistory() {
                         className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm"
                       />
                     ) : (
-                      <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--color-text)]">{item.body}</p>
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--color-text)]">{detail?.body ?? item.preview}</p>
                     )}
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="secondary" size="sm" icon={<Copy className="h-4 w-4" />} onClick={() => navigator.clipboard.writeText(item.body)}>
+                      <Button variant="secondary" size="sm" icon={<Copy className="h-4 w-4" />} disabled={!detail} onClick={() => detail && navigator.clipboard.writeText(detail.body)}>
                         {t('copy')}
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
                         icon={<Edit className="h-4 w-4" />}
+                        disabled={!detail}
                         onClick={() => {
                           setEditingId(item.id);
-                          setDraft(item.body);
+                          setDraft(detail?.body ?? '');
                         }}
                       >
                         {common('edit')}

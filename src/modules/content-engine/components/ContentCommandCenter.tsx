@@ -68,6 +68,7 @@ type PersistedContent = {
   type: string;
   status: string;
   createdAt: string;
+  updatedAt: string;
 };
 
 const CONTENT_MIX = [
@@ -338,6 +339,7 @@ export function ContentCommandCenter() {
         });
       }
       void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
+      void queryClient.invalidateQueries({ queryKey: ['content-library'] });
     },
   });
 
@@ -357,7 +359,7 @@ export function ContentCommandCenter() {
       return payload.data;
     },
     onSuccess: (content, draft) => {
-      const saved = applyPersistedContent(draft, content, new Date().toISOString());
+      const saved = applyPersistedContent(draft, content);
       setSavedDraft(saved);
       setEditorDraft((currentDraft) =>
         reconcilePersistedEditorDraft(currentDraft, draft, saved),
@@ -372,6 +374,7 @@ export function ContentCommandCenter() {
         });
       }
       void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
+      void queryClient.invalidateQueries({ queryKey: ['content-library'] });
     },
   });
 

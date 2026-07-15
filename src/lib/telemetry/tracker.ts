@@ -101,12 +101,20 @@ export function trackContentSaved(userId: string, properties: ContentLoopPropert
   analytics.track('content_saved', { ...properties, userId });
 }
 
+export function trackContentReopened(userId: string, properties: ContentLoopProperties) {
+  analytics.track('content_reopened', { ...properties, userId });
+}
+
 export function trackContentCopied(userId: string, properties: ContentLoopProperties) {
   analytics.track('content_copied', { ...properties, userId });
 }
 
 export function trackContentLoopCompleted(userId: string, properties: ContentLoopProperties) {
   analytics.track('content_loop_completed', { ...properties, userId });
+}
+
+export function trackContentDeleted(userId: string, properties: ContentLoopProperties) {
+  analytics.track('content_deleted', { ...properties, userId });
 }
 
 export function trackContentPublished(userId: string, properties: { platform: string; content_type: string; word_count: number }) {
