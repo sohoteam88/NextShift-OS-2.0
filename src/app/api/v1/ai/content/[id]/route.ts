@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { contentService } from '@/modules/ai/services/content-service';
+import { CONTENT_RECORD_PATCH_PLATFORMS } from '@/lib/content-platforms';
 import {
-  CONTENT_PLATFORMS,
   CONTENT_UPDATE_LIMITS,
 } from '@/modules/content-engine/types';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
@@ -13,7 +13,7 @@ const UpdateContentSchema = z.object({
   content: z.string().min(1).max(CONTENT_UPDATE_LIMITS.body).optional(),
   title: z.string().min(1).max(CONTENT_UPDATE_LIMITS.title).optional(),
   status: z.enum(['draft', 'published']).optional(),
-  platform: z.enum(CONTENT_PLATFORMS).optional(),
+  platform: z.enum(CONTENT_RECORD_PATCH_PLATFORMS).optional(),
 }).strict();
 
 async function getContentId(

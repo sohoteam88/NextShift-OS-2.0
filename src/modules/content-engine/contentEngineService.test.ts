@@ -18,6 +18,7 @@ vi.mock('@/modules/brand-dna/services/BrandContextProvider', () => brandContextM
 vi.mock('./contentGenerators', () => generatorMocks);
 
 import { contentEngineService } from './contentEngineService';
+import { CONTENT_COMMAND_CENTER_PLATFORMS } from './types';
 
 describe('contentEngineService.generatePlatformPost', () => {
   beforeEach(() => {
@@ -82,5 +83,63 @@ describe('contentEngineService.generatePlatformPost', () => {
       status: 'draft',
       createdAt: '2026-07-15T01:02:03.000Z',
     });
+  });
+});
+
+describe('contentEngineService.getLastPost', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('refresh-hydrates the latest E1-compatible canonical text post', async () => {
+    prismaMocks.content.findFirst.mockResolvedValue({
+      id: 'content-refresh-id',
+      title: 'Saved title',
+      body: 'Saved body',
+      platform: 'instagram',
+      type: 'text_post',
+      status: 'draft',
+      createdAt: new Date('2026-07-15T02:03:04.000Z'),
+    });
+
+    const result = await contentEngineService.getLastPost('owner-1');
+
+    expect(prismaMocks.content.findFirst).toHaveBeenCalledWith({
+      where: {
+        ownerId: 'owner-1',
+        type: 'text_post',
+        platform: { in: [...CONTENT_COMMAND_CENTER_PLATFORMS] },
+        status: { in: ['draft', 'generated', 'copied', 'published'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(result).toMatchObject({
+      id: 'content-refresh-id',
+      title: 'Saved title',
+      body: 'Saved body',
+      platform: 'instagram',
+      format: 'text_post',
+      status: 'draft',
+      createdAt: '2026-07-15T02:03:04.000Z',
+    });
+  });
+
+  it.each([
+    ['legacy post type', { type: 'post', platform: 'facebook' }],
+    ['WhatsApp record', { type: 'text_post', platform: 'whatsapp' }],
+    ['legacy Xiaohongshu alias', { type: 'text_post', platform: 'xiaohongshu' }],
+    ['missing platform', { type: 'text_post', platform: null }],
+    ['unknown status', { type: 'text_post', platform: 'facebook', status: 'archived' }],
+  ])('does not expose an incompatible %s to the E1 editor', async (_case, incompatible) => {
+    prismaMocks.content.findFirst.mockResolvedValue({
+      id: 'content-incompatible-id',
+      title: 'Not an E1 draft',
+      body: 'Unsupported body',
+      status: 'draft',
+      createdAt: new Date('2026-07-15T02:03:04.000Z'),
+      ...incompatible,
+    });
+
+    await expect(contentEngineService.getLastPost('owner-1')).resolves.toBeNull();
   });
 });

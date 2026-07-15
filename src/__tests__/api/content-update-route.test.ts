@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CONTENT_RECORD_PATCH_PLATFORMS } from '@/lib/content-platforms';
 import {
-  CONTENT_PLATFORMS,
   CONTENT_UPDATE_LIMITS,
 } from '@/modules/content-engine/types';
 
@@ -65,15 +65,18 @@ describe('content update API input boundary', () => {
     });
   });
 
-  it.each(CONTENT_PLATFORMS)('accepts the supported %s platform', async (platform) => {
-    const response = await patchRequest({ content: 'Saved body', platform });
+  it.each(CONTENT_RECORD_PATCH_PLATFORMS)(
+    'accepts the supported persisted Content record platform %s',
+    async (platform) => {
+      const response = await patchRequest({ content: 'Saved body', platform });
 
-    expect(response.status).toBe(200);
-    expect(contentMocks.update).toHaveBeenCalledWith(authenticatedUser, 'content_1', {
-      content: 'Saved body',
-      platform,
-    });
-  });
+      expect(response.status).toBe(200);
+      expect(contentMocks.update).toHaveBeenCalledWith(authenticatedUser, 'content_1', {
+        content: 'Saved body',
+        platform,
+      });
+    },
+  );
 
   it.each([
     ['title', { title: 't'.repeat(CONTENT_UPDATE_LIMITS.title + 1) }],

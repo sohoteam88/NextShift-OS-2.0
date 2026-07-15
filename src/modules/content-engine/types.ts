@@ -1,6 +1,7 @@
 import type { ContentPillar } from '@/modules/brand-dna/types';
 
-export const CONTENT_PLATFORMS = [
+/** Platforms supported by Content Engine generation. */
+export const CONTENT_ENGINE_PLATFORMS = [
   'facebook',
   'instagram',
   'tiktok',
@@ -10,7 +11,30 @@ export const CONTENT_PLATFORMS = [
   'blog',
 ] as const;
 
-export type Platform = (typeof CONTENT_PLATFORMS)[number];
+export type Platform = (typeof CONTENT_ENGINE_PLATFORMS)[number];
+
+/**
+ * The E1 Command Center editor deliberately exposes only its four contracted
+ * post platforms. Shared Content records support additional identifiers, but
+ * those records must not be hydrated into this editor implicitly.
+ */
+export const CONTENT_COMMAND_CENTER_PLATFORMS = [
+  'facebook',
+  'instagram',
+  'tiktok',
+  'xhs',
+] as const satisfies readonly Platform[];
+
+export type ContentCommandCenterPlatform =
+  (typeof CONTENT_COMMAND_CENTER_PLATFORMS)[number];
+
+export function isContentCommandCenterPlatform(
+  value: string | null,
+): value is ContentCommandCenterPlatform {
+  return CONTENT_COMMAND_CENTER_PLATFORMS.some(
+    (platform) => platform === value,
+  );
+}
 
 /**
  * Shared editor/API limits. A 200-character title matches the repository's

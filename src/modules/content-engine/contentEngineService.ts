@@ -7,10 +7,27 @@ import prisma from '@/lib/prisma';
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { ContentPillar } from '@/modules/brand-dna/types';
-import type { GeneratedPost, ContentCalendar, ContentCalendarItem, Platform, ContentFormat, FunnelStage, ContentTrack } from './types';
+import {
+  CONTENT_COMMAND_CENTER_PLATFORMS,
+  isContentCommandCenterPlatform,
+  type GeneratedPost,
+  type ContentCalendar,
+  type ContentCalendarItem,
+  type Platform,
+  type ContentFormat,
+  type FunnelStage,
+  type ContentStatus,
+  type ContentTrack,
+} from './types';
 import { generateContentPillars, generateCalendar, generatePost } from './contentGenerators';
 
 const CONTENT_TRACKS: ContentTrack[] = ['retail', 'recruitment'];
+const CONTENT_EDITOR_STATUSES: ContentStatus[] = [
+  'draft',
+  'generated',
+  'copied',
+  'published',
+];
 
 function isContentCalendar(value: unknown): value is ContentCalendar {
   return Boolean(value && typeof value === 'object' && Array.isArray((value as Partial<ContentCalendar>).items));
@@ -175,9 +192,9 @@ export const contentEngineService = {
       id: content.id,
       title: content.title ?? post.title,
       body: content.body,
-      platform: (content.platform as GeneratedPost['platform']) ?? post.platform,
-      format: content.type as GeneratedPost['format'],
-      status: (content.status as GeneratedPost['status']) ?? 'draft',
+      platform,
+      format,
+      status: 'draft',
       createdAt: content.createdAt.toISOString(),
       // Content has no separate persisted updatedAt field. This remains a
       // server-derived timestamp until a future, separately approved schema
@@ -187,12 +204,27 @@ export const contentEngineService = {
   },
 
   async getLastPost(userId: string): Promise<GeneratedPost | null> {
-    // Read from Content model (canonical source)
+    // The shared Content table also stores legacy `post`, `whatsapp`, and
+    // `xiaohongshu` records. Only hydrate the latest record whose persisted
+    // type/platform/status are compatible with the E1 Command Center editor.
     const content = await prisma.content.findFirst({
-      where: { ownerId: userId },
+      where: {
+        ownerId: userId,
+        type: 'text_post',
+        platform: { in: [...CONTENT_COMMAND_CENTER_PLATFORMS] },
+        status: { in: CONTENT_EDITOR_STATUSES },
+      },
       orderBy: { createdAt: 'desc' },
     });
-    if (!content) return null;
+    if (
+      !content ||
+      content.type !== 'text_post' ||
+      !isContentCommandCenterPlatform(content.platform) ||
+      !isContentStatus(content.status)
+    ) {
+      return null;
+    }
+
     return {
       id: content.id,
       pillar: '',
@@ -202,10 +234,10 @@ export const contentEngineService = {
       body: content.body,
       cta: '',
       hashtags: [],
-      platform: (content.platform as GeneratedPost['platform']) ?? 'instagram',
-      format: (content.type as GeneratedPost['format']) ?? 'text_post',
+      platform: content.platform,
+      format: 'text_post',
       funnelStage: 'awareness',
-      status: (content.status as GeneratedPost['status']) ?? 'draft',
+      status: content.status,
       qualityScore: 75,
       createdAt: content.createdAt.toISOString(),
       updatedAt: content.createdAt.toISOString(),
@@ -230,4 +262,8 @@ function resolveContentTrack(track: ContentTrack, workspaceContext?: WorkspaceCo
   return CONTENT_TRACKS.includes(configuredTrack as ContentTrack)
     ? configuredTrack as ContentTrack
     : track;
+}
+
+function isContentStatus(value: string): value is ContentStatus {
+  return CONTENT_EDITOR_STATUSES.some((status) => status === value);
 }

@@ -1,5 +1,5 @@
 import {
-  CONTENT_PLATFORMS,
+  CONTENT_ENGINE_PLATFORMS,
   type ContentFormat,
   type ContentStatus,
   type GeneratedPost,
@@ -145,7 +145,7 @@ function draftsMatch(
 }
 
 function isPlatform(value: string | null): value is Platform {
-  return Boolean(value && CONTENT_PLATFORMS.includes(value as Platform));
+  return CONTENT_ENGINE_PLATFORMS.some((platform) => platform === value);
 }
 
 function isContentFormat(value: string): value is ContentFormat {

@@ -21,11 +21,13 @@ import {
   Target,
 } from 'lucide-react';
 import {
+  CONTENT_COMMAND_CENTER_PLATFORMS,
   CONTENT_UPDATE_LIMITS,
+  isContentCommandCenterPlatform,
   type ContentCalendar,
+  type ContentCommandCenterPlatform,
   type ContentTrack,
   type GeneratedPost,
-  type Platform,
 } from '@/modules/content-engine/types';
 import {
   applyPersistedContent,
@@ -78,12 +80,17 @@ const CONTENT_MIX = [
 
 const PLATFORMS = ['Facebook', 'Instagram', 'TikTok', '小红书'];
 
-const POST_PLATFORMS: Array<{ value: Platform; label: string }> = [
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'tiktok', label: 'TikTok' },
-  { value: 'xhs', label: '小红书' },
-];
+const POST_PLATFORM_LABELS: Record<ContentCommandCenterPlatform, string> = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  xhs: '小红书',
+};
+
+const POST_PLATFORMS = CONTENT_COMMAND_CENTER_PLATFORMS.map((value) => ({
+  value,
+  label: POST_PLATFORM_LABELS[value],
+}));
 
 type OutputTabId =
   | 'calendar'
@@ -247,7 +254,8 @@ export function ContentCommandCenter() {
   const queryClient = useQueryClient();
   const [activeOutputTab, setActiveOutputTab] =
     useState<OutputTabId>('calendar');
-  const [selectedPlatform, setSelectedPlatform] = useState<Platform>('facebook');
+  const [selectedPlatform, setSelectedPlatform] =
+    useState<ContentCommandCenterPlatform>('facebook');
   const [editorDraft, setEditorDraft] = useState<EditableContentDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<EditableContentDraft | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<'idle' | 'success' | 'error'>('idle');
@@ -314,7 +322,9 @@ export function ContentCommandCenter() {
       const draft = toEditableContentDraft(post);
       setEditorDraft(draft);
       setSavedDraft(draft);
-      setSelectedPlatform(draft.platform);
+      if (isContentCommandCenterPlatform(draft.platform)) {
+        setSelectedPlatform(draft.platform);
+      }
       savedAfterEditRef.current = null;
       trackedEditingRef.current = null;
       reportedEditingRef.current = null;
@@ -405,11 +415,18 @@ export function ContentCommandCenter() {
   const isDirty = isDraftDirty(editorDraft, savedDraft);
 
   useEffect(() => {
-    if (editorDraft || !lastPost) return;
+    if (
+      editorDraft ||
+      !lastPost ||
+      lastPost.format !== 'text_post' ||
+      !isContentCommandCenterPlatform(lastPost.platform)
+    ) {
+      return;
+    }
     const draft = toEditableContentDraft(lastPost);
     setEditorDraft(draft);
     setSavedDraft(draft);
-    setSelectedPlatform(draft.platform);
+    setSelectedPlatform(lastPost.platform);
     trackedEditingRef.current = null;
     reportedEditingRef.current = null;
     setPendingEditStarted(null);
@@ -796,7 +813,11 @@ export function ContentCommandCenter() {
             <select
               id="content-post-platform"
               value={selectedPlatform}
-              onChange={(event) => setSelectedPlatform(event.target.value as Platform)}
+              onChange={(event) =>
+                setSelectedPlatform(
+                  event.target.value as ContentCommandCenterPlatform,
+                )
+              }
               disabled={generatePost.isPending}
               className="mt-2 h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-[var(--color-surface)] md:max-w-sm"
             >
