@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-11
+Last Updated: 2026-07-15
 
 ---
 
@@ -35,7 +35,7 @@ For first-time contributors:
 11. [Layer Roadmap P0](LAYER_ROADMAP_P0.md)
 12. [OS 3.4 Blueprint — Shipped v3.4.0](OS_3_4_BLUEPRINT.md)
 13. [OS 3.5 Blueprint — Shipped v3.5.0](OS_3_5_BLUEPRINT.md)
-13a. [Master Roadmap 2026-07 — Draft, Stage A-E outline to full 15-layer vision](MASTER_ROADMAP_2026-07.md)
+13a. [Master Roadmap 2026-07 — Approved, v3.7 baseline and usability-first gates](MASTER_ROADMAP_2026-07.md)
 13b. [OS 3.6 Blueprint — Draft, Stage A part 1 (Business Memory)](OS_3_6_BLUEPRINT.md)
 14. [Decision Engine v1.0 - Released](decision-engine-v1/README.md)
 15. [Conversation Engine v1.0 - Released](conversation-engine-v1/README.md)
@@ -61,6 +61,7 @@ For first-time contributors:
 35. [Generated Project Context Package](context-package/PROJECT_CONTEXT_PACKAGE.md)
 36. [Project Context Package Release Manifest](context-package/RELEASE_MANIFEST.md)
 37. [Review Archive](reviews/)
+37a. [Product Usability Audit 2026-07](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md)
 38. [Codex Execution Plan 2026-07-08](reviews/CODEX_EXECUTION_PLAN_2026-07-08.md)
 39. [Project Audit 2026-07-08](reviews/PROJECT_AUDIT_2026-07-08.md)
 40. [Architecture Review 2026-07-09](reviews/ARCHITECTURE_REVIEW_2026-07-09.md)
