@@ -21,11 +21,11 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | `v3.6.0` production |
+| Current Version | `v3.5.0` production |
 | Current Release | OS 3.7 Command Center + Business Twin RC package prepared; C-3 post-deploy verification remains |
 | Current Planning Branch | `planning/os-3.3-runtime-platform` |
 | Repository Default Branch | `main` |
-| Production Status | OS 3.6 deployed to production; OS 3.7 RC is source-verified and awaits approval plus post-deploy C-3 observation |
+| Production Status | OS 3.5 deployed to production; OS 3.7 RC is source-verified and awaits approval plus post-deploy C-3 observation |
 
 Canonical navigation:
 
