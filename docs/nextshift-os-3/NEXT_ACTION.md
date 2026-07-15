@@ -20,11 +20,11 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 OS 3.7 RC package ready, awaiting Steven's review, approval, and a scheduled C-3 post-deploy verification
 
-`v3.5.0` is released to production and verified (commit `413de70`; six runtime flags including `AI_DISCUSSION` are live).
+`v3.6.0` is released to production and verified: `origin/main` is `fb08541` (`merge: release OS 3.6`), annotated tag `v3.6.0` peels to that same commit, and the public `/api/v1/version` endpoint returned `fb08541` on 2026-07-15 with a cache-buster query parameter.
 
 A [Master Roadmap](MASTER_ROADMAP_2026-07.md) frames OS 3.6 onward as Stage A ("Brain starts remembering") of a longer staged plan toward the full 15-layer vision, with a result-gate principle (real active users, not just green tests) governing when each Stage opens.
 
-[OS 3.6 Blueprint](OS_3_6_BLUEPRINT.md) Stage A part 1 is complete: PostHog analytics wiring, Business Memory writing/reading in the discussion service, recommendation use of discussion memory, storage evaluation, and the overdue hygiene work (production `admin` role audit, rate-limit IP trust, UI escape baseline remeasurement). Round 6's F-1/F-3 conditions are cleared. The [OS 3.6 RC package](RC_3.6.md) is ready for Steven's release decision.
+[OS 3.6 Blueprint](OS_3_6_BLUEPRINT.md) Stage A part 1 was released as `v3.6.0`: PostHog analytics wiring, Business Memory writing/reading in the discussion service, recommendation use of discussion memory, storage evaluation, and the overdue hygiene work (production `admin` role audit, rate-limit IP trust, UI escape baseline remeasurement).
 
 Previously, OS 3.4 Command Center was released as `v3.4.0`, and OS 3.3 Runtime Platform was released as `v3.3.0` (deployed to the VPS, verified through `/api/v1/version` at commit `50282b9`).
 
@@ -70,7 +70,7 @@ OS 3.5 release state: RC package prepared, awaiting approval.
 
 OS 3.6 Round 6 audit result: PASS WITH CONDITION; F-1/F-3 conditions cleared in PR #61.
 
-OS 3.6 release state: RC ready, awaiting Steven's manual merge to `main` and `v3.6.0` tag.
+OS 3.6 release state: Released to production as `v3.6.0` at `fb08541`; public version endpoint verified 2026-07-15.
 
 OS 3.7 audit result: two 2026-07-15 audits are PASS WITH CONDITION; C-1/C-2/A-2 are closed, and C-3 is a post-deploy production observation.
 

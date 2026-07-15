@@ -21,11 +21,11 @@ It summarizes project state for AI assistants and human contributors without rep
 | Field | Current State |
 | --- | --- |
 | Project Name | NextShift OS |
-| Current Version | `v3.5.0` production |
+| Current Version | `v3.6.0` production (`fb08541`) |
 | Current Release | OS 3.7 Command Center + Business Twin RC package prepared; C-3 post-deploy verification remains |
 | Current Planning Branch | `planning/os-3.3-runtime-platform` |
 | Repository Default Branch | `main` |
-| Production Status | OS 3.5 deployed to production; OS 3.7 RC is source-verified and awaits approval plus post-deploy C-3 observation |
+| Production Status | OS 3.6 deployed to production; OS 3.7 RC is source-verified and awaits approval plus post-deploy C-3 observation |
 
 Canonical navigation:
 
@@ -142,7 +142,7 @@ Release tag created: `v3.3.0`.
 | Production Commit | `c472345` |
 | Deployment Method | GitHub Actions Docker image deployment to VPS Docker Compose |
 | VPS Alignment Status | Aligned to `v3.4.0` production release |
-| Last Verification Summary | OS 3.4 production release verified after tag `v3.4.0`; version endpoint verification requires a cache-buster query parameter because of proxy caching |
+| Last Verification Summary | OS 3.6 production release verified at `fb08541` through `/api/v1/version` with a cache-buster query parameter; `v3.6.0` peels to the same commit |
 
 Planning branch documentation remains pre-merge work until it is reviewed and merged under [STD-004 Release Governance](engineering/STD-004_RELEASE_GOVERNANCE_v1.0.md) and [STD-005 GitHub Alignment Standard](engineering/STD-005_GITHUB_ALIGNMENT_STANDARD_v1.0.md).
 
@@ -158,9 +158,9 @@ The `v3.4.0` release tag has been created and pushed.
 
 ## 7. Next Recommended Actions
 
-1. Review the [OS 3.5 Business Discussion RC Package](releases/OS_3_5_BUSINESS_DISCUSSION/README.md).
+1. Review the [OS 3.7 Command Center + Business Twin RC Package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md).
 2. After approval, perform the graduation merge from `planning/os-3.3-runtime-platform` to `main`.
-3. Prepare the `v3.5.0` tag only after explicit approval.
+3. Prepare the `v3.7.0` tag only after explicit approval and schedule the C-3 post-deploy verification.
 4. Do not modify production deployment, Prisma, env files, or release tags without explicit approval.
 
 ---

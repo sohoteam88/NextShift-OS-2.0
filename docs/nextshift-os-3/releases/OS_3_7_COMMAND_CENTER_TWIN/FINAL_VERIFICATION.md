@@ -19,6 +19,18 @@ Last Updated: 2026-07-15
 | Tag creation | PASS | No tag created |
 | Deployment | PASS | Not triggered |
 
+## Production Baseline Evidence
+
+This package's production baseline is **v3.6.0**, not v3.5.0. The evidence was re-verified on 2026-07-15:
+
+| Evidence | Result |
+| --- | --- |
+| `origin/main` HEAD | `fb085412641a7bc982f1f723b5d3e5dba957b84a` — `merge: release OS 3.6` |
+| `v3.6.0^{}` | Peels to `fb085412641a7bc982f1f723b5d3e5dba957b84a` |
+| Public production version | `https://nextshiftos.com/api/v1/version?cb=20260715-rc37` returned commit `fb085412641a7bc982f1f723b5d3e5dba957b84a` |
+
+The cache-buster is intentional: the version endpoint is behind a proxy cache. No deployment was performed while collecting this evidence.
+
 ## Blueprint Section 8 Release Standard
 
 Reference: [OS 3.7 Blueprint §8](../../OS_3_7_BLUEPRINT.md)
