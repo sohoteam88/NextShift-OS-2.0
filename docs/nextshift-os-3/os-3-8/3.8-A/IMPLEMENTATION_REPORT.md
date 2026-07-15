@@ -16,10 +16,12 @@ This task implements E1 only. It does not add a Content Library, alter navigatio
 2. The active Content Engine now offers Facebook, Instagram, TikTok, and 小红书 post generation with the existing `text_post` / `awareness` defaults.
 3. The returned and refreshed draft hydrates an accessible title input and body textarea.
 4. Save calls only `PATCH /api/v1/ai/content/:id` with the current title, body, and platform; it never creates another record.
-5. Failed saves leave the in-memory edited values intact and expose a retry action. Successful saves reset dirty state and show an accessible saved status.
-6. Copy uses the current textarea body, reports success/failure accessibly, and records the supported content-loop telemetry without content text.
-7. Browser exit, in-app link navigation, and regeneration require confirmation when the draft is dirty.
-8. The existing `GET /api/v1/content-engine` `lastPost` response now rehydrates the editor after refresh.
+5. Failed saves leave the in-memory edited values intact and expose a retry action. A successful save always advances the server-confirmed saved baseline, but only replaces the editor when the user has not typed newer title/body changes while the PATCH was in flight.
+6. `content_edit_started` is emitted once per loaded canonical content ID editing session; repeated keystrokes do not duplicate it, while a newly generated or newly loaded canonical ID can start a new session.
+7. Copy uses the current textarea body, reports success/failure accessibly, and records the supported content-loop telemetry without content text.
+8. Browser exit, in-app link navigation, and regeneration require confirmation when the draft is dirty.
+9. The existing `GET /api/v1/content-engine` `lastPost` response now rehydrates the editor after refresh.
+10. PATCH accepts only the mutable `content`, `title`, `status`, and supported `platform` fields. Titles are bounded at 200 characters and bodies at 20,000 characters; immutable ownership/generation metadata is rejected.
 
 ## Files changed
 
@@ -28,10 +30,12 @@ This task implements E1 only. It does not add a Content Library, alter navigatio
 - `src/modules/content-engine/types.ts`
 - `src/modules/content-engine/contentDraftEditor.ts`
 - `src/modules/content-engine/components/ContentCommandCenter.tsx`
+- `src/app/api/v1/ai/content/[id]/route.ts`
 - `src/lib/telemetry/tracker.ts`
 - `src/modules/content-engine/contentEngineService.test.ts`
 - `src/modules/content-engine/contentDraftEditor.test.ts`
 - `src/__tests__/services/content-service.test.ts`
+- `src/__tests__/api/content-update-route.test.ts`
 - `src/lib/telemetry/tracker.test.ts`
 - `tests/e2e/content-engine.spec.ts`
 - `docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_REPORT.md`
@@ -46,23 +50,31 @@ This task implements E1 only. It does not add a Content Library, alter navigatio
 ### State and UI coverage
 
 - Draft-state tests cover canonical editor hydration, dirty detection, PATCH payload using edited values, and applying the server-confirmed saved state.
-- Focused Playwright coverage defines the authenticated Generate → Edit → Save → Refresh → Copy path using intercepted canonical API responses. It validates PATCH body values, refreshed title/body, and the visible copy-success state.
+- Save-race tests prove the submitted server-confirmed snapshot becomes `savedDraft`, while title/body changes made during the request remain in `editorDraft` and keep the editor dirty. When the current editor still equals the submitted snapshot, it is replaced by the server-confirmed response.
+- Edit-session tests prove the same canonical content ID produces one `content_edit_started` event candidate across repeated keystrokes and that a different ID can start a new session.
+- Focused Playwright coverage defines the authenticated Generate → Edit → Save → Refresh → Copy path using intercepted canonical API responses. It also delays a PATCH to prove in-flight edits survive and verifies that returning to the submitted value matches the new server-confirmed saved baseline.
+- Failed-save Playwright coverage returns 503 on the first PATCH, proves the user's title/body and retry affordance remain visible, then succeeds with the same canonical URL and identical allowlisted payload.
+
+### PATCH input boundary
+
+- `CONTENT_UPDATE_LIMITS` documents and shares the 200-character title and 20,000-character body limits between the editor and server route.
+- The PATCH route uses the existing runtime `CONTENT_PLATFORMS` enum and a strict Zod object, rather than accepting arbitrary platform strings or silently forwarding unknown keys.
+- Route tests accept both exact length boundaries and every supported platform, while rejecting max+1 values, an unknown platform, and `tenantId`, `ownerId`, `generatedByAi`, and `promptUsed`.
 
 ### Validation results
 
 | Command | Result |
 | --- | --- |
-| `XDG_CACHE_HOME=/tmp/nextshift-prisma-cache pnpm db:generate` | Passed. The first default-cache attempt was blocked by a sandbox `utime` permission; the writable cache succeeded. |
 | `pnpm type-check` | Passed. |
-| `pnpm lint` | Passed with 425 pre-existing repository warnings and no errors. |
-| `pnpm vitest run src/modules/content-engine/contentEngineService.test.ts src/modules/content-engine/contentDraftEditor.test.ts src/__tests__/services/content-service.test.ts src/lib/telemetry/tracker.test.ts` | Passed: 4 files, 14 tests. |
-| `pnpm test` | Passed: 93 files / 478 tests; 7 files / 44 tests skipped. |
+| `pnpm lint` | Passed with 425 existing repository warnings and no errors. |
+| `pnpm vitest run src/modules/content-engine/contentEngineService.test.ts src/modules/content-engine/contentDraftEditor.test.ts src/__tests__/services/content-service.test.ts src/lib/telemetry/tracker.test.ts src/__tests__/api/content-update-route.test.ts` | Passed: 5 files, 32 tests. |
+| `pnpm test` | Passed: 94 files / 496 tests; 7 files / 44 tests skipped. |
 | `pnpm build` | Passed and wrote `.next/BUILD_ID`. It logs the repository's existing lint warnings and expected static-generation database probe errors because `DATABASE_URL` is absent locally. |
 | `git diff --check` | Passed. |
-| `pnpm e2e tests/e2e/content-engine.spec.ts --list` | Passed: 4 tests discovered. |
-| `pnpm e2e tests/e2e/content-engine.spec.ts --grep 'generates, edits, saves, reloads, and copies the current draft'` | Blocked: `ERR_CONNECTION_REFUSED` at `http://localhost:3000/login`; no local app server or E2E credentials were available. |
+| `pnpm e2e tests/e2e/content-engine.spec.ts --list` | Passed: 6 tests discovered, including save-race and failed-save retry scenarios. |
+| Runtime `tests/e2e/content-engine.spec.ts` | Not claimed locally: this worktree has no `.env.local`/`.env.e2e`, E2E credentials, or configured local application server. The committed scenarios must run in the repository's configured GitHub E2E job. |
 
-The blocked E2E attempt produced the diagnostic trace at `test-results/content-engine-Content-Eng-12e7d-nd-copies-the-current-draft/trace.zip`; it is an environment-failure trace, not acceptance evidence for UI states. CI must execute the committed E2E scenario with its configured server and credentials. Consequently, no runtime screenshots of empty/generated/dirty/saved/failed-save/copied states are claimed from this workstation.
+No runtime screenshots of empty/generated/dirty/saved/failed-save/copied states are claimed from this workstation. Local Playwright discovery proves the six scenarios compile; GitHub E2E remains the runtime acceptance environment.
 
 ## Known limitation
 

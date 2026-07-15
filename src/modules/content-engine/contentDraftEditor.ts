@@ -1,9 +1,21 @@
-import type { ContentFormat, ContentStatus, GeneratedPost, Platform } from './types';
+import {
+  CONTENT_PLATFORMS,
+  type ContentFormat,
+  type ContentStatus,
+  type GeneratedPost,
+  type Platform,
+} from './types';
 
 export type EditableContentDraft = Pick<
   GeneratedPost,
   'id' | 'title' | 'body' | 'platform' | 'format' | 'status' | 'createdAt' | 'updatedAt'
 >;
+
+export type ContentEditStartedProperties = {
+  contentId: string;
+  platform: Platform;
+  contentType: ContentFormat;
+};
 
 type PersistedContent = {
   id: string;
@@ -48,6 +60,37 @@ export function applyPersistedContent(
   };
 }
 
+/**
+ * Reconcile a completed save without replacing edits made while the PATCH was
+ * in flight. The server-confirmed value always becomes the saved baseline, but
+ * it only replaces the editor when the editor still matches the submitted
+ * snapshot exactly.
+ */
+export function reconcilePersistedEditorDraft(
+  currentDraft: EditableContentDraft | null,
+  submittedDraft: EditableContentDraft,
+  persistedDraft: EditableContentDraft,
+): EditableContentDraft | null {
+  return draftsMatch(currentDraft, submittedDraft) ? persistedDraft : currentDraft;
+}
+
+/**
+ * Returns telemetry properties only when a canonical content ID starts a new
+ * editing session. Repeated keystrokes for the same loaded draft return null.
+ */
+export function contentEditStartedProperties(
+  activeSessionContentId: string | null,
+  draft: EditableContentDraft,
+): ContentEditStartedProperties | null {
+  if (activeSessionContentId === draft.id) return null;
+
+  return {
+    contentId: draft.id,
+    platform: draft.platform,
+    contentType: draft.format,
+  };
+}
+
 export function isDraftDirty(
   draft: EditableContentDraft | null,
   savedDraft: EditableContentDraft | null,
@@ -84,8 +127,25 @@ export function contentPatchPayload(draft: EditableContentDraft) {
   };
 }
 
+function draftsMatch(
+  left: EditableContentDraft | null,
+  right: EditableContentDraft,
+) {
+  return Boolean(
+    left &&
+      left.id === right.id &&
+      left.title === right.title &&
+      left.body === right.body &&
+      left.platform === right.platform &&
+      left.format === right.format &&
+      left.status === right.status &&
+      left.createdAt === right.createdAt &&
+      left.updatedAt === right.updatedAt,
+  );
+}
+
 function isPlatform(value: string | null): value is Platform {
-  return Boolean(value && ['facebook', 'instagram', 'tiktok', 'xhs', 'threads', 'email', 'blog'].includes(value));
+  return Boolean(value && CONTENT_PLATFORMS.includes(value as Platform));
 }
 
 function isContentFormat(value: string): value is ContentFormat {

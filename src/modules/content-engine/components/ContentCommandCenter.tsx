@@ -20,18 +20,22 @@ import {
   Sparkles,
   Target,
 } from 'lucide-react';
-import type {
-  ContentCalendar,
-  ContentTrack,
-  GeneratedPost,
-  Platform,
+import {
+  CONTENT_UPDATE_LIMITS,
+  type ContentCalendar,
+  type ContentTrack,
+  type GeneratedPost,
+  type Platform,
 } from '@/modules/content-engine/types';
 import {
   applyPersistedContent,
   canSaveDraft,
+  contentEditStartedProperties,
   contentPatchPayload,
   isDraftDirty,
+  reconcilePersistedEditorDraft,
   toEditableContentDraft,
+  type ContentEditStartedProperties,
   type EditableContentDraft,
 } from '@/modules/content-engine/contentDraftEditor';
 import {
@@ -248,9 +252,11 @@ export function ContentCommandCenter() {
   const [savedDraft, setSavedDraft] = useState<EditableContentDraft | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<'idle' | 'success' | 'error'>('idle');
   const [copyError, setCopyError] = useState<string | null>(null);
-  const [editStartedContentId, setEditStartedContentId] = useState<string | null>(null);
+  const [pendingEditStarted, setPendingEditStarted] =
+    useState<ContentEditStartedProperties | null>(null);
   const savedAfterEditRef = useRef<string | null>(null);
   const trackedEditingRef = useRef<string | null>(null);
+  const reportedEditingRef = useRef<string | null>(null);
   const handleIntentResolved = useCallback((resolution: RevenueDriverResolvedIntent) => {
     const outputTab = resolution.state.outputTab as OutputTabId | undefined;
     if (outputTab && OUTPUTS.some((output) => output.id === outputTab)) {
@@ -311,6 +317,8 @@ export function ContentCommandCenter() {
       setSelectedPlatform(draft.platform);
       savedAfterEditRef.current = null;
       trackedEditingRef.current = null;
+      reportedEditingRef.current = null;
+      setPendingEditStarted(null);
       const userId = telemetryUserQuery.data;
       if (userId) {
         trackContentGenerated(userId, {
@@ -340,8 +348,10 @@ export function ContentCommandCenter() {
     },
     onSuccess: (content, draft) => {
       const saved = applyPersistedContent(draft, content, new Date().toISOString());
-      setEditorDraft(saved);
       setSavedDraft(saved);
+      setEditorDraft((currentDraft) =>
+        reconcilePersistedEditorDraft(currentDraft, draft, saved),
+      );
       savedAfterEditRef.current = saved.id;
       const userId = telemetryUserQuery.data;
       if (userId) {
@@ -400,18 +410,22 @@ export function ContentCommandCenter() {
     setEditorDraft(draft);
     setSavedDraft(draft);
     setSelectedPlatform(draft.platform);
+    trackedEditingRef.current = null;
+    reportedEditingRef.current = null;
+    setPendingEditStarted(null);
   }, [editorDraft, lastPost]);
 
   useEffect(() => {
-    if (!editStartedContentId || !telemetryUserQuery.data) return;
-    const draft = editorDraft;
-    if (!draft || draft.id !== editStartedContentId) return;
-    trackContentEditStarted(telemetryUserQuery.data, {
-      contentId: draft.id,
-      platform: draft.platform,
-      contentType: draft.format,
-    });
-  }, [editStartedContentId, editorDraft, telemetryUserQuery.data]);
+    if (!pendingEditStarted || !telemetryUserQuery.data) return;
+    if (reportedEditingRef.current === pendingEditStarted.contentId) {
+      setPendingEditStarted(null);
+      return;
+    }
+
+    reportedEditingRef.current = pendingEditStarted.contentId;
+    trackContentEditStarted(telemetryUserQuery.data, pendingEditStarted);
+    setPendingEditStarted(null);
+  }, [pendingEditStarted, telemetryUserQuery.data]);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -451,9 +465,19 @@ export function ContentCommandCenter() {
 
   function updateEditorDraft(field: 'title' | 'body', value: string) {
     if (!editorDraft) return;
-    if (trackedEditingRef.current !== editorDraft.id) {
-      trackedEditingRef.current = editorDraft.id;
-      setEditStartedContentId(editorDraft.id);
+    const editStarted = contentEditStartedProperties(
+      trackedEditingRef.current,
+      editorDraft,
+    );
+    if (editStarted) {
+      trackedEditingRef.current = editStarted.contentId;
+      const userId = telemetryUserQuery.data;
+      if (userId) {
+        reportedEditingRef.current = editStarted.contentId;
+        trackContentEditStarted(userId, editStarted);
+      } else {
+        setPendingEditStarted(editStarted);
+      }
     }
     setCopyFeedback('idle');
     setCopyError(null);
@@ -844,6 +868,7 @@ export function ContentCommandCenter() {
                 id="content-post-title"
                 value={editorDraft.title}
                 onChange={(event) => updateEditorDraft('title', event.target.value)}
+                maxLength={CONTENT_UPDATE_LIMITS.title}
                 className="mt-2 h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
@@ -858,6 +883,7 @@ export function ContentCommandCenter() {
                 id="content-post-body"
                 value={editorDraft.body}
                 onChange={(event) => updateEditorDraft('body', event.target.value)}
+                maxLength={CONTENT_UPDATE_LIMITS.body}
                 rows={12}
                 className="mt-2 w-full resize-y rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white p-3 text-sm leading-6 text-[var(--color-text)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />

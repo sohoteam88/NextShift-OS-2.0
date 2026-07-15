@@ -1,6 +1,27 @@
 import type { ContentPillar } from '@/modules/brand-dna/types';
 
-export type Platform = 'facebook' | 'instagram' | 'tiktok' | 'xhs' | 'threads' | 'email' | 'blog';
+export const CONTENT_PLATFORMS = [
+  'facebook',
+  'instagram',
+  'tiktok',
+  'xhs',
+  'threads',
+  'email',
+  'blog',
+] as const;
+
+export type Platform = (typeof CONTENT_PLATFORMS)[number];
+
+/**
+ * Shared editor/API limits. A 200-character title matches the repository's
+ * existing title boundary; 20,000 characters supports long-form drafts while
+ * keeping PATCH request bodies bounded.
+ */
+export const CONTENT_UPDATE_LIMITS = {
+  title: 200,
+  body: 20_000,
+} as const;
+
 export type ContentFormat = 'text_post' | 'carousel' | 'reel' | 'short_video' | 'story' | 'email' | 'blog';
 export type FunnelStage = 'awareness' | 'consideration' | 'conversion' | 'retention';
 export type ContentStatus = 'draft' | 'generated' | 'copied' | 'published';
