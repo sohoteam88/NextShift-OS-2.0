@@ -17,15 +17,15 @@ When conflicts arise regarding project status, this document is the single sourc
 | Item | Current Value |
 | --- | --- |
 | Blueprint | [OS 3.8 Product Usability Recovery](OS_3_8_BLUEPRINT.md) |
-| Version | 0.1 Draft |
-| Lifecycle State | Planning |
-| Architecture Status | Awaiting Steven approval |
-| Implementation Status | BLOCKED |
+| Version | 1.0 Approved through PR #78 |
+| Lifecycle State | Wave governance / Pipeline bootstrap |
+| Architecture Status | Approved |
+| Implementation Status | BLOCKED until the one-time Pipeline Upgrade PR is implemented, reviewed, and merged |
 | P0 Scope | E1 Editable Content Output; E2 Content Library; U2 Information Architecture Decision |
-| Next Stop | Steven approves scope, ordering, and U2 decision gate |
-| Next Artifacts After Approval | 3.8-A Implementation Contract and Execution Task |
+| Next Stop | Steven reviews and merges PR #79, then Codex executes the Pipeline Upgrade Task in a separate bootstrap PR |
+| Active Wave Artifacts | [Pipeline Manifest](os-3-8/PIPELINE_MANIFEST.json), [Wave Execution Contract](os-3-8/WAVE_EXECUTION_CONTRACT.md), [Pipeline Upgrade Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md), [E1 Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md), and [E1 Task](os-3-8/3.8-A/EXECUTION_TASK.md) |
 
-The frozen OS 3.0 foundation below remains historical architecture authority. It does not authorize OS 3.8 implementation.
+PR #78 records Steven's approval of the OS 3.8 Blueprint. PR #79 defines Wave execution governance but contains no executable pipeline or product code. OS 3.8 product work begins only after PR #79 is merged and Codex's separate Pipeline Upgrade PR passes review.
 
 ## Blueprint Information
 
@@ -77,7 +77,7 @@ Changes to these layers require an approved RFC.
 
 Foundational OS 3.0 implementation remains authorized.
 
-OS 3.8 implementation is blocked until Steven approves [OS_3_8_BLUEPRINT.md](OS_3_8_BLUEPRINT.md). Codex must not begin OS 3.8 engineering work before that approval.
+OS 3.8 Blueprint is approved through PR #78. Codex must first implement the [Pipeline Upgrade Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md) after PR #79 merges. Product implementation remains blocked until that bootstrap PR is reviewed and merged.
 
 Implementation should follow:
 

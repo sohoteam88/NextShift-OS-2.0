@@ -1,8 +1,8 @@
 # NextShift OS 3.8 Blueprint — Product Usability Recovery
 
-Version: 0.1 Draft
+Version: 1.0
 
-Status: Draft — awaiting Steven approval
+Status: Approved — PR #78 merged
 
 Date: 2026-07-15
 
@@ -10,13 +10,13 @@ Owner: ChatGPT Work — Chief Product Architect / Architecture Review Board
 
 Runtime baseline: `v3.7.0` at `28c077f115a4e43c5e11e1097ae06b8744043643`
 
-Governance baseline: `main` after PR #77 at `ec62fc8cab3c6aef7ee85d678dd3636a9f82c915`
+Governance baseline: `main` after PR #78 at `e2bb12d0161a7ca73e0067001980009045a57ee8`
 
 Parent: [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md), Stage A+
 
 Evidence: [Product Usability Audit 2026-07](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md)
 
-Lifecycle: Planning; implementation is not authorized until Steven approves this Blueprint and task order.
+Lifecycle: Approved Blueprint; product implementation remains blocked until the one-time Wave Pipeline bootstrap is reviewed and merged.
 
 ---
 
@@ -286,19 +286,32 @@ The Dogfood dashboard must distinguish a generated event from a completed loop; 
 
 Capture active Content Engine, editor states, library states, confirmation dialog, errors, and mobile navigation. Screenshots are evidence, not a replacement for interaction tests.
 
-## 15. Delivery Slices and Stop Points
+## 15. Wave Delivery Plan and Stop Points
 
-| Slice | Deliverable | Stop point |
-| --- | --- | --- |
-| 3.8-A | E1 implementation contract and execution task | Steven approves Blueprint before implementation |
-| 3.8-B | E1 editable/save/copy loop | Architecture review before E2 |
-| 3.8-C | E2 Content Library | Product walkthrough before U3/E3 |
-| 3.8-D | U2 one-page IA + U1 inventory | Steven approves IA before navigation/deletion |
-| 3.8-E | U3 navigation + approved U1 removals | Independent audit |
-| 3.8-F | E3 revalidation and only proven gap fixes | Scope decision from evidence |
-| Release | Verification, independent audit, RC, production evidence | Explicit release approval |
+OS 3.8 executes through the machine-readable [Pipeline Manifest](os-3-8/PIPELINE_MANIFEST.json) and the [Wave Execution Contract](os-3-8/WAVE_EXECUTION_CONTRACT.md).
 
-E1 and U2 documentation may proceed in parallel after Blueprint approval. U3 cannot run ahead of U2 approval. E2 must reuse the E1 resource contract. E3 cannot invent another editing/storage pattern.
+Before product implementation starts, Codex must complete the one-time [Pipeline Upgrade Execution Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md) in a separate bootstrap PR. That PR creates the canonical runner under `scripts/os-pipeline/`; this Blueprint PR does not add or run executable pipeline code.
+
+| Wave | Ordered tasks | Automatic continuation | Stop point |
+| --- | --- | --- | --- |
+| W1 — Content Working Loop | E1 editable/save/copy loop → E2 Content Library | After each task PR passes required verification, the Pipeline merges it into the planning branch and selects the next pending task | AR-W1 cumulative Architecture Review after E2 |
+| W2 — Product Structure Decision | U1A dead-code inventory → U2 one-page IA | U2 starts automatically after the inventory task passes | AR-W2 cumulative Architecture Review, then Steven approves the complete IA map |
+| W3 — Convergence and Extension | U1B approved removals → U3 navigation → E3A capability revalidation → E3B proven gap fixes | Each task advances only after required verification; E3B scope is derived from E3A evidence | AR-W3 cumulative Architecture Review |
+| Final | Full verification → independent technical Audit → release evidence | No automatic release or deployment | One Claude Code Audit, then explicit Steven release approval |
+
+Rules:
+
+- A task remains a focused PR with its own tests, evidence, and implementation report.
+- Codex stops after opening each task PR. The Pipeline owns verification, merge into the planning branch, state update, and selection of the next task.
+- The Pipeline must not request Architecture Review between tasks inside a Wave.
+- At Wave end, it records the Wave start SHA, cumulative end SHA, task results, validation evidence, and changed-file summary in an Architecture Review Request artifact, sets the checkpoint to `awaiting_review`, and exits cleanly.
+- ChatGPT Work records the Architecture Review result. The Pipeline must never self-approve or substitute Claude for this decision.
+- A failed review creates a bounded remediation task. After two failed remediation attempts, the Wave becomes `needs_human`.
+- W3 cannot begin until AR-W2 passes and Steven records the U2 IA approval.
+- Independent technical Audit occurs exactly once, after AR-W1, AR-W2, AR-W3, and the Steven IA gate have passed.
+- Release tagging and production deployment are never automatic.
+
+The restart-safe state machine, artifact paths, task order, and gates are authoritative in the Pipeline Manifest. Markdown checkboxes are explanatory, not the execution state source.
 
 ## 16. Release and Rollback
 
@@ -332,20 +345,23 @@ E1 and U2 documentation may proceed in parallel after Blueprint approval. U3 can
 - Seed-user recruitment before Dogfood PASS.
 - Deleting routes or components before evidence and approval.
 
-## 19. Steven Approval Checklist
+## 19. Approval and Human Gate Checklist
 
-- [ ] Approve E1 and E2 as OS 3.8 P0.
-- [ ] Approve U2 in parallel with E1; U3 remains blocked until the one-page IA is approved.
-- [ ] Approve E3 as revalidation-first, with fixes only for proven gaps.
-- [ ] Approve reuse of canonical `Content` with no Prisma change by default.
-- [ ] Approve delivery order 3.8-A through 3.8-F.
-- [ ] Decide whether invite-link environment hardening and audit A-1/A-3 remain deferred unless directly touched or become a release blocker.
-- [ ] Add missing real-world usability pain points.
+- [x] Steven approved E1 and E2 as OS 3.8 P0 by merging PR #78.
+- [x] Steven approved U2 in parallel with E1; U3 remains blocked until the one-page IA is approved.
+- [x] Steven approved E3 as revalidation-first, with fixes only for proven gaps.
+- [x] Steven approved reuse of canonical `Content` with no Prisma change by default.
+- [x] Steven approved the complete OS 3.8 Blueprint scope and ordering.
+- [x] Invite-link environment hardening and audit A-1/A-3 remain deferred unless directly touched or proven to be a release blocker.
+- [ ] Steven approves the U2 one-page IA after AR-W2.
+- [ ] Steven approves OS 3.8 release after final independent Audit and release evidence.
 
 ## 20. Authorization Record
 
-Current decision: Draft only.
+Blueprint decision: **APPROVED** by Steven through merged PR #78.
 
-Implementation authorization: **BLOCKED**.
+Wave governance decision: awaiting Steven merge of the Wave contract/bootstrap documentation PR.
 
-Approval requires Steven to approve the P0 scope, ordering, and U2 decision stop. After approval, the next required artifacts are the 3.8-A Implementation Contract and Execution Task under STD-006 Stop A.
+Product implementation authorization: **BLOCKED** until the one-time Pipeline Upgrade PR is implemented, reviewed, and merged.
+
+After the Pipeline bootstrap passes, it may execute only the tasks and order encoded in `os-3-8/PIPELINE_MANIFEST.json`. It must pause at every Architecture Review or Steven gate, and it may not release or deploy automatically.

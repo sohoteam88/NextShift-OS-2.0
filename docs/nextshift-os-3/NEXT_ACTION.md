@@ -18,19 +18,23 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-Review and approve the [OS 3.8 Product Usability Recovery Blueprint](OS_3_8_BLUEPRINT.md); implementation remains blocked until Steven approves scope, ordering, and the U2 information-architecture decision gate.
+Review and merge Draft PR #79, which defines the OS 3.8 [Pipeline Manifest](os-3-8/PIPELINE_MANIFEST.json), [Wave Execution Contract](os-3-8/WAVE_EXECUTION_CONTRACT.md), [Pipeline Upgrade Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md), and W1/E1 task contract. This PR contains governance documentation only.
 
-`v3.7.0` is released and verified in production. `main` and tag `v3.7.0` both point to `28c077f115a4e43c5e11e1097ae06b8744043643`. The production version endpoint reported environment `production` and build time `2026-07-15T02:18:35Z`; `/api/health` returned HTTP 200 `ok` with no-store/no-cache headers. C-3 is closed.
+After PR #79 merges, give the Pipeline Upgrade Task to Codex. Codex must open a separate draft bootstrap PR that creates and tests the canonical runner under `scripts/os-pipeline/`. Do not start E1 until the bootstrap PR is reviewed and merged.
 
-The [Master Roadmap](MASTER_ROADMAP_2026-07.md) now treats OS 3.8 as Stage A+ Product Usability Recovery before Stage B expansion. The governing evidence is the [Product Usability Audit](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md).
+`v3.7.0` remains released and verified in production. `main` and tag `v3.7.0` both point to `28c077f115a4e43c5e11e1097ae06b8744043643`. The production version endpoint reported environment `production` and build time `2026-07-15T02:18:35Z`; `/api/health` returned HTTP 200 `ok` with no-store/no-cache headers. C-3 is closed.
 
-Next work is governance and usability recovery only:
+The next governed sequence is:
 
-1. Steven reviews the OS 3.8 Blueprint P0 scope: E1 editable output, E2 Content Library, and U2 information-architecture decision.
-2. Steven approves or revises the proposed 3.8-A through 3.8-F delivery order.
-3. Decide whether invite-link environment hardening and audit A-1/A-3 remain deferred or become an OS 3.8 release blocker.
-4. After approval, create only the 3.8-A Implementation Contract and Execution Task under STD-006 Stop A.
-5. Do not start implementation, Stage B personalization, navigation deletion, or seed-user acquisition before the applicable approval and Dogfood gates.
+1. Steven reviews and merges PR #79.
+2. Codex executes only the one-time Pipeline Upgrade Task and opens a draft bootstrap PR.
+3. Review and merge the bootstrap PR after its safety, manifest, checkpoint, and restart tests pass.
+4. Start W1. The Pipeline runs E1 → E2 automatically, verifying and merging each focused task PR into the planning branch.
+5. The Pipeline pauses once after E2 and creates AR-W1 evidence for ChatGPT Work Architecture Review.
+6. No standalone Claude Audit runs during W1, W2, or W3. One independent Audit runs only after the whole approved OS 3.8 scope and all Wave reviews pass.
+7. Release and deployment remain manual Steven decisions.
+
+Invite-link hardening and audit A-1/A-3 remain deferred unless directly touched or proven to be a release blocker.
 
 ---
 
@@ -97,6 +101,6 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-OS 3.8 Product Usability Recovery Blueprint draft is prepared. Await Steven review and approval; implementation remains blocked.
+OS 3.8 Product Usability Recovery Blueprint was approved through PR #78. Wave governance is in Draft PR #79; implementation remains blocked until PR #79 and the subsequent Pipeline bootstrap PR are merged.
 
 Do not create release tags, modify Prisma, modify env files, change deployment configuration, or alter production release state without explicit approval.
