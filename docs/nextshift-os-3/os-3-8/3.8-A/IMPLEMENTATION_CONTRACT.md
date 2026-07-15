@@ -303,7 +303,9 @@ Required outputs:
 
 ## 15. Stop Condition
 
-Stop after implementation, validation, implementation report, and PR creation.
+Stop after implementation, validation, implementation report, draft PR creation, and Architecture Review handoff.
+
+Do not trigger an independent technical Audit for 3.8-A. The single OS 3.8 Audit runs only after E1/E2/E3 and U1/U2/U3 are complete.
 
 Do not implement E2 Content Library, U2 information architecture, navigation changes, dead-code deletion, E3 expansion, Prisma changes, deployment, release tag, or production rollout.
 
