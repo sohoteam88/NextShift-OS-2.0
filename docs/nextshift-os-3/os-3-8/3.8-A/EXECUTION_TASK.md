@@ -163,4 +163,6 @@ Return:
 
 Stop after the draft implementation PR and evidence report.
 
-Do not merge, deploy, tag, begin E2, or continue to audit without a separate Architecture Review decision.
+Do not merge, deploy, tag, or begin E2 without a separate Architecture Review decision.
+
+Do not trigger Claude or another independent technical Audit for this slice. The single independent Audit is scheduled only after the complete OS 3.8 scope is implemented and Architecture Review has passed.
