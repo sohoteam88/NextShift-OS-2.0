@@ -26,6 +26,7 @@ Only these files remain active in `audit/`:
 - [OS 3.7 Pipeline Audit 20260714-143721](PIPELINE_AUDIT_20260714-143721.md)
 - [OS 3.7 Pipeline Audit 20260714-160343](PIPELINE_AUDIT_20260714-160343.md)
 - [OS 3.7 Pipeline Audit 20260715-000338](PIPELINE_AUDIT_20260715-000338.md)
+- [OS 3.7 Pipeline Audit 20260715-081449](PIPELINE_AUDIT_20260715-081449.md)
 
 All other pre-OS 3.3 per-feature audit files are archived under `archive/audit-history/` by `git mv`.
 
