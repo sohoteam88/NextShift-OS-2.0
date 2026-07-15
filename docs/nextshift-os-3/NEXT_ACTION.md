@@ -18,7 +18,7 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-Review and approve the [OS 3.8 Product Usability Recovery Blueprint](OS_3_8_BLUEPRINT.md); implementation remains blocked until Steven approves scope, ordering, and the U2 information-architecture decision gate.
+Review and merge the [OS 3.8-A Implementation Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md) and [Execution Task](os-3-8/3.8-A/EXECUTION_TASK.md). The OS 3.8 Blueprint was approved through PR #78; implementation remains blocked until these Stop A artifacts are merged.
 
 `v3.7.0` is released and verified in production. `main` and tag `v3.7.0` both point to `28c077f115a4e43c5e11e1097ae06b8744043643`. The production version endpoint reported environment `production` and build time `2026-07-15T02:18:35Z`; `/api/health` returned HTTP 200 `ok` with no-store/no-cache headers. C-3 is closed.
 
@@ -26,11 +26,11 @@ The [Master Roadmap](MASTER_ROADMAP_2026-07.md) now treats OS 3.8 as Stage A+ Pr
 
 Next work is governance and usability recovery only:
 
-1. Steven reviews the OS 3.8 Blueprint P0 scope: E1 editable output, E2 Content Library, and U2 information-architecture decision.
-2. Steven approves or revises the proposed 3.8-A through 3.8-F delivery order.
-3. Decide whether invite-link environment hardening and audit A-1/A-3 remain deferred or become an OS 3.8 release blocker.
-4. After approval, create only the 3.8-A Implementation Contract and Execution Task under STD-006 Stop A.
-5. Do not start implementation, Stage B personalization, navigation deletion, or seed-user acquisition before the applicable approval and Dogfood gates.
+1. Steven reviews the 3.8-A Contract and Execution Task for exact E1 scope.
+2. Merge the Stop A documentation to authorize implementation on a new feature branch.
+3. After merge, Codex implements only the active Content Engine editable/save/copy loop and opens a draft implementation PR.
+4. Keep E2, U1/U2/U3, and E3 outside the 3.8-A code diff.
+5. Invite-link hardening and audit A-1/A-3 remain deferred unless directly touched or proven to be a release blocker.
 
 ---
 
@@ -97,6 +97,6 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-OS 3.8 Product Usability Recovery Blueprint draft is prepared. Await Steven review and approval; implementation remains blocked.
+OS 3.8 Product Usability Recovery Blueprint was approved through PR #78. The 3.8-A Stop A contract/task are prepared for review; implementation remains blocked until merge.
 
 Do not create release tags, modify Prisma, modify env files, change deployment configuration, or alter production release state without explicit approval.
