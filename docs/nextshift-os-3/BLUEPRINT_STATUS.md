@@ -17,15 +17,15 @@ When conflicts arise regarding project status, this document is the single sourc
 | Item | Current Value |
 | --- | --- |
 | Blueprint | [OS 3.8 Product Usability Recovery](OS_3_8_BLUEPRINT.md) |
-| Version | 0.1 Draft |
-| Lifecycle State | Planning |
-| Architecture Status | Awaiting Steven approval |
-| Implementation Status | BLOCKED |
+| Version | 1.0 Approved through PR #78 |
+| Lifecycle State | Documentation / STD-006 Stop A |
+| Architecture Status | Approved |
+| Implementation Status | BLOCKED until 3.8-A Stop A artifacts are merged |
 | P0 Scope | E1 Editable Content Output; E2 Content Library; U2 Information Architecture Decision |
-| Next Stop | Steven approves scope, ordering, and U2 decision gate |
-| Next Artifacts After Approval | 3.8-A Implementation Contract and Execution Task |
+| Next Stop | Steven reviews and merges 3.8-A Implementation Contract and Execution Task |
+| Active Stop A Artifacts | [3.8-A Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md) and [Execution Task](os-3-8/3.8-A/EXECUTION_TASK.md) |
 
-The frozen OS 3.0 foundation below remains historical architecture authority. It does not authorize OS 3.8 implementation.
+PR #78 records Steven's approval of the OS 3.8 Blueprint. The frozen OS 3.0 foundation below remains historical architecture authority. OS 3.8 implementation begins only after the 3.8-A Stop A artifacts are merged.
 
 ## Blueprint Information
 
@@ -77,7 +77,7 @@ Changes to these layers require an approved RFC.
 
 Foundational OS 3.0 implementation remains authorized.
 
-OS 3.8 implementation is blocked until Steven approves [OS_3_8_BLUEPRINT.md](OS_3_8_BLUEPRINT.md). Codex must not begin OS 3.8 engineering work before that approval.
+OS 3.8 Blueprint is approved through PR #78. Codex must not begin OS 3.8-A engineering work until the [3.8-A Implementation Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md) and [Execution Task](os-3-8/3.8-A/EXECUTION_TASK.md) are reviewed and merged.
 
 Implementation should follow:
 
