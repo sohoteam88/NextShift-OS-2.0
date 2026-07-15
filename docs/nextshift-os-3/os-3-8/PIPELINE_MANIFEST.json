@@ -74,7 +74,7 @@
           "blueprint_section": "8",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["AR-W1"],
+          "depends_on": ["U1A"],
           "status": "pending",
           "evidence": null
         }
@@ -118,7 +118,7 @@
           "blueprint_section": "10",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["AR-W2", "STEVEN-IA"],
+          "depends_on": ["U1B"],
           "status": "pending",
           "evidence": null
         },
@@ -128,7 +128,7 @@
           "blueprint_section": "11",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["AR-W2", "STEVEN-IA"],
+          "depends_on": ["U3"],
           "status": "pending",
           "evidence": null
         },
