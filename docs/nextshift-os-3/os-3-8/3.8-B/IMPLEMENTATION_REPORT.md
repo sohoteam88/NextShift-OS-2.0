@@ -66,6 +66,8 @@ Migration: `prisma/migrations/20260715220949_add_content_updated_at/migration.sq
 
 The first GitHub E2E run on PR #82 exposed two test/runtime issues without weakening any assertion: the list query's automatic retry hid the explicit first-failure state, and unscoped editor field locators were ambiguous on the combined E1/E2 page. The remediation disables automatic list retry so the operator controls retry, gives the editor fields explicit accessible names, and scopes browser interaction to the Content Library dialog.
 
+The second GitHub E2E run reduced the failures from five to one and exposed a real reopen regression: PATCH updated the visible draft and list, but the exact item query cache still held the pre-save body. Save success now atomically updates that canonical item cache, so closing and reopening the same ID hydrates the server-confirmed snapshot.
+
 The E2 Playwright cases cover the save/reopen/copy/delete flow, true empty and request failures, save/delete retry, filter pagination reset, dirty switch/close protection, accessible delete cancellation/confirmation, and a 390×844 viewport. Because their Content API calls are intercepted, they are explicitly mocked browser evidence.
 
 ## E2E evidence boundary

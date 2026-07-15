@@ -220,6 +220,10 @@ export function ContentLibrary() {
     onSuccess: ({ submitted, persisted }) => {
       setSavedDraft(persisted);
       setEditorDraft((current) => reconcileContentLibrarySave(current, submitted, persisted));
+      queryClient.setQueryData<ItemResponse>(
+        ['content-library-item', persisted.id],
+        { data: persisted },
+      );
       savedInLibraryRef.current = persisted.id;
       setCopyState('idle');
       const userId = telemetryUserQuery.data;
