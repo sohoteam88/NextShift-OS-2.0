@@ -58,13 +58,13 @@ OS 3.4 release state: Released to production as `v3.4.0`.
 
 OS 3.5 Round 5 audit result (PR #38-#47): PASS.
 
-OS 3.5 release state: RC package prepared, awaiting approval.
+OS 3.5 release state: Released to production as `v3.5.0` at `413de70`.
 
 OS 3.6 Round 6 audit result: PASS WITH CONDITION; F-1/F-3 conditions cleared in PR #61.
 
 OS 3.6 release state: Released to production as `v3.6.0` at `fb08541`; public version endpoint verified 2026-07-15.
 
-OS 3.7 audit result: two 2026-07-15 audits are PASS WITH CONDITION; C-1/C-2/A-2 are closed, and C-3 is a post-deploy production observation.
+OS 3.7 audit result: two 2026-07-15 audits recorded; C-1/C-2/A-2 were closed before release and C-3 closed through verified production observation.
 
 OS 3.7 release state: Released and production-verified as `v3.7.0` at `28c077f`; C-3 closed.
 
