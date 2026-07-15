@@ -18,27 +18,19 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-OS 3.7 RC package ready, awaiting Steven's review, approval, and a scheduled C-3 post-deploy verification
+Prepare the OS 3.8 Product Usability Recovery Blueprint from the verified usability audit; do not begin implementation until Steven approves scope and ordering.
 
-`v3.6.0` is released to production and verified: `origin/main` is `fb08541` (`merge: release OS 3.6`), annotated tag `v3.6.0` peels to that same commit, and the public `/api/v1/version` endpoint returned `fb08541` on 2026-07-15 with a cache-buster query parameter.
+`v3.7.0` is released and verified in production. `main` and tag `v3.7.0` both point to `28c077f115a4e43c5e11e1097ae06b8744043643`. The production version endpoint reported environment `production` and build time `2026-07-15T02:18:35Z`; `/api/health` returned HTTP 200 `ok` with no-store/no-cache headers. C-3 is closed.
 
-A [Master Roadmap](MASTER_ROADMAP_2026-07.md) frames OS 3.6 onward as Stage A ("Brain starts remembering") of a longer staged plan toward the full 15-layer vision, with a result-gate principle (real active users, not just green tests) governing when each Stage opens.
+The [Master Roadmap](MASTER_ROADMAP_2026-07.md) now treats OS 3.8 as Stage A+ Product Usability Recovery before Stage B expansion. The governing evidence is the [Product Usability Audit](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md).
 
-[OS 3.6 Blueprint](OS_3_6_BLUEPRINT.md) Stage A part 1 was released as `v3.6.0`: PostHog analytics wiring, Business Memory writing/reading in the discussion service, recommendation use of discussion memory, storage evaluation, and the overdue hygiene work (production `admin` role audit, rate-limit IP trust, UI escape baseline remeasurement).
+Next work is governance and usability recovery only:
 
-Previously, OS 3.4 Command Center was released as `v3.4.0`, and OS 3.3 Runtime Platform was released as `v3.3.0` (deployed to the VPS, verified through `/api/v1/version` at commit `50282b9`).
-
-OS 3.3 Runtime Platform was released as `v3.3.0`, deployed to the VPS, and verified through `/api/v1/version` at commit `50282b9`.
-
-OS 3.4 Command Center was subsequently released as `v3.4.0` (tag → commit `c472345`) and verified in production (note: the version endpoint sits behind a proxy cache and needs a cache-buster query parameter to verify).
-
-Next work is OS 3.7 graduation only:
-
-1. Steven reviews the [OS 3.7 RC package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md) and approves release progression.
-2. After explicit authorization, merge `planning/os-3.3-runtime-platform` to `main` and create the prepared `v3.7.0` tag.
-3. Deploy only after separate authorization.
-4. Immediately after deployment, execute C-3: recover the designated dangling account and record the new `user_signed_up` PostHog event, closing G2 from 4/5 to 5/5.
-5. Preserve existing deployment gates; do not claim C-3 complete before observing production evidence.
+1. Convert E1/E2/E3 and U1/U2/U3 into an OS 3.8 Blueprint with explicit dependencies and acceptance criteria.
+2. Put E1 first: generated content must be editable and copyable using the existing Brand Builder interaction pattern.
+3. Draft the one-page information architecture for Steven approval before changing navigation or deleting routes.
+4. Do not start Stage B personalization or seed-user acquisition until Steven passes the seven-day Dogfood gate.
+5. Preserve production, tag, Prisma, env, and deployment gates; this governance sync is documentation-only.
 
 ---
 
@@ -74,7 +66,7 @@ OS 3.6 release state: Released to production as `v3.6.0` at `fb08541`; public ve
 
 OS 3.7 audit result: two 2026-07-15 audits are PASS WITH CONDITION; C-1/C-2/A-2 are closed, and C-3 is a post-deploy production observation.
 
-OS 3.7 release state: RC package prepared, awaiting Steven approval and post-deploy C-3 verification.
+OS 3.7 release state: Released and production-verified as `v3.7.0` at `28c077f`; C-3 closed.
 
 ---
 
@@ -105,6 +97,6 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-Continue OS 3.7 graduation from `planning/os-3.3-runtime-platform` only after Steven's review.
+Proceed to OS 3.8 Product Usability Recovery Blueprint preparation. Implementation remains blocked until Steven approves the Blueprint and task order.
 
 Do not create release tags, modify Prisma, modify env files, change deployment configuration, or alter production release state without explicit approval.
