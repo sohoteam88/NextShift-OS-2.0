@@ -84,9 +84,14 @@ Create `scripts/os-pipeline/logs/STOP` to end it gracefully. An optional
 topic URL); when omitted no notification is sent.
 
 ```bash
-PIPELINE_ALLOW_PRODUCT_DISPATCH=1 CODEX_CMD='codex exec' \
+PIPELINE_ALLOW_PRODUCT_DISPATCH=1 PIPELINE_AUTOMATE_TASK_CYCLE=1 \
+PIPELINE_ALLOW_PR_MERGE=1 CODEX_CMD='codex exec' \
   scripts/os-pipeline/run-loop.sh
 ```
+
+This is the full, deliberate opt-in for a task cycle: it permits Codex task
+dispatch and verified PR merge, but never release or deploy. Use it only from a
+clean authorized planning checkout with a separately configured state checkout.
 
 `CODEX_CMD` has no default, and any operator-supplied CLI permissions remain
 the operator's decision. The runner does not default to bypassing approvals or

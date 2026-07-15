@@ -74,6 +74,7 @@ assert_eq "$(task)" U1B "approved STEVEN-IA unlocks W3"
 fresh
 complete_wave_tasks W1
 set_checkpoint AR-W1 awaiting_review
+jq '.waves |= map(if .checkpoint.id == "AR-W1" then .checkpoint.requested_end_sha="0123456789012345678901234567890123456789" else . end)' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
 review_result CHANGES_REQUESTED
 run --record-review-result AR-W1 CHANGES_REQUESTED "$TMP_DIR/review-result.md"
 assert_eq "$(action)" remediation "changes requested selects remediation"

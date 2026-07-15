@@ -8,7 +8,7 @@ MANIFEST_PATH="${MANIFEST_PATH:-$REPO_DIR/docs/nextshift-os-3/os-3-8/PIPELINE_MA
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs}"
 STOP_FILE="${STOP_FILE:-$LOG_DIR/STOP}"
 CONTROL_ROOT="${CONTROL_ROOT:-${TMPDIR:-/tmp}/nextshift-os-pipeline-control}"
-STATE_LOCK_DIR="${STATE_LOCK_DIR:-$REPO_DIR/.git/os-pipeline-state.lock}"
+STATE_LOCK_DIR="${STATE_LOCK_DIR:-}"
 VALIDATOR="$SCRIPT_DIR/validate-manifest.sh"
 AUTO_RELEASE="${AUTO_RELEASE:-0}"
 AUTO_DEPLOY="${AUTO_DEPLOY:-0}"
@@ -66,17 +66,15 @@ persist_state() {
   local message="$1"; shift
   [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]] && return
   local base_branch remote_now lock_age
+  [[ -n "$STATE_LOCK_DIR" ]] || STATE_LOCK_DIR="$(git -C "$REPO_DIR" rev-parse --git-common-dir)/os-pipeline-state.lock"
+  [[ "$STATE_LOCK_DIR" = /* ]] || STATE_LOCK_DIR="$REPO_DIR/$STATE_LOCK_DIR"
   mkdir -p "$(dirname "$STATE_LOCK_DIR")"
   if ! mkdir "$STATE_LOCK_DIR" 2>/dev/null; then
-    lock_age="$(find "$STATE_LOCK_DIR" -maxdepth 0 -mtime +1 -print 2>/dev/null)"
-    if [[ -n "$lock_age" ]]; then
-      rmdir "$STATE_LOCK_DIR" 2>/dev/null || die "stale state lock requires human cleanup: $STATE_LOCK_DIR"
-      mkdir "$STATE_LOCK_DIR" 2>/dev/null || die "state lock unavailable"
-    else
-      die "state transition lock is held: $STATE_LOCK_DIR"
-    fi
+    lock_age="$(cat "$STATE_LOCK_DIR/owner" 2>/dev/null || true)"
+    die "state transition lock is held (owner: ${lock_age:-unknown}); explicit human cleanup required: $STATE_LOCK_DIR"
   fi
-  trap 'rmdir "$STATE_LOCK_DIR" 2>/dev/null || true' RETURN
+  printf 'pid=%s started=%s repo=%s\n' "$$" "$(date -u +%FT%TZ)" "$REPO_DIR" >"$STATE_LOCK_DIR/owner"
+  trap 'rm -f "$STATE_LOCK_DIR/owner"; rmdir "$STATE_LOCK_DIR" 2>/dev/null || true' RETURN
   base_branch="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   [[ "$(git -C "$REPO_DIR" branch --show-current)" == "$base_branch" ]] || die "state persistence requires authorized planning branch: $base_branch"
   [[ -n "$STATE_EXPECTED_HEAD" ]] || die "state persistence requires a synchronization gate"
@@ -87,7 +85,7 @@ persist_state() {
   git -C "$REPO_DIR" commit -m "$message"
   git -C "$REPO_DIR" push origin "$base_branch" || die "state push failed; do not retry without a new synchronization gate"
   [[ "$(git -C "$REPO_DIR" rev-parse HEAD)" == "$(git -C "$REPO_DIR" rev-parse "origin/$base_branch")" ]] || die "state commit did not reach origin"
-  rmdir "$STATE_LOCK_DIR" 2>/dev/null || true
+  rm -f "$STATE_LOCK_DIR/owner"; rmdir "$STATE_LOCK_DIR" 2>/dev/null || true
   trap - RETURN
 }
 
@@ -118,6 +116,14 @@ validate_evidence() {
 artifact_path() {
   local relative="$1"
   if [[ "$relative" == /* ]]; then printf '%s\n' "$relative"; elif [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]]; then printf '%s/%s\n' "$(dirname "$MANIFEST_PATH")" "$(basename "$relative")"; else printf '%s/%s\n' "$REPO_DIR" "$relative"; fi
+}
+assert_checkpoint_fresh() {
+  local requested_sha="$1" changed
+  [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]] && return
+  changed="$(git -C "$REPO_DIR" diff --name-only "$requested_sha...HEAD")"
+  if grep -Ev '^(docs/nextshift-os-3/os-3-8/(reviews|runs)/|docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST\.json$)' <<<"$changed" | grep -q .; then
+    die "stale review: product/code changed after checkpoint request"
+  fi
 }
 
 manifest_ids() { jq -r '[.waves[] | .tasks[]?.id, .checkpoint.id, .human_gate?.id] | .[]? // empty' "$MANIFEST_PATH"; }
@@ -367,6 +373,25 @@ merge_task_pr() {
   persist_state "chore(pipeline): record merged OS 3.8 task $task"
 }
 
+create_final_audit_request() {
+  local action request
+  action="$(select_action)"; [[ "$(jq -r '.action' <<<"$action")" == "final_audit" ]] || die "final audit is not eligible"
+  synchronization_gate "$(jq -r '.base_branch' "$MANIFEST_PATH")"
+  request="$(artifact_path "audit/OS38_FINAL_CODE_REVIEW_REQUEST.md")"
+  mkdir -p "$(dirname "$request")"
+  cat >"$request" <<EOF
+# OS 3.8 Final Audit Request
+
+- Reviewed product SHA: $(jq -r '.waves[-1].checkpoint.reviewed_sha' "$MANIFEST_PATH")
+- Manifest: docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json
+
+Write the configured final audit report with VERDICT and REVIEWED_SHA. Release remains blocked.
+EOF
+  jq '.final_audit.status="running" | .release_gate.status="blocked"' "$MANIFEST_PATH" | write_manifest
+  persist_state "chore(pipeline): request OS 3.8 final audit" "$request"
+  log "clean stop: final audit requested"
+}
+
 run_cycle() {
   local action kind
   action="$(select_action)"; kind="$(jq -r '.action' <<<"$action")"
@@ -376,10 +401,8 @@ run_cycle() {
       dispatch_task
       ;;
     checkpoint) create_checkpoint ;;
-    remediation)
-      [[ "${PIPELINE_AUTOMATE_TASK_CYCLE:-0}" == "1" ]] || die "remediation cycle requires PIPELINE_AUTOMATE_TASK_CYCLE=1"
-      die "remediation requires a manifest-designated remediation task brief before dispatch"
-      ;;
+    remediation) die "remediation requires --remediate CHECKPOINT with an explicit review result artifact" ;;
+    final_audit) create_final_audit_request ;;
     awaiting_review|awaiting_human_gate|needs_human|complete)
       log "clean stop: $kind"; return 0 ;;
     *) die "cycle cannot proceed: $kind" ;;
@@ -424,14 +447,15 @@ case "$command" in
     [[ -f "$result_source" ]] || die "review result artifact is missing"
     grep -Fqx "VERDICT=$result" "$result_source" || die "review result verdict does not match command"
     synchronization_gate "$(jq -r '.base_branch' "$MANIFEST_PATH")"
+    requested_sha="$(jq -r --arg id "$id" '.waves[] | select(.checkpoint.id == $id) | .checkpoint.requested_end_sha // empty' "$MANIFEST_PATH")"
+    result_sha="$(grep -E '^REVIEWED_SHA=[0-9a-f]{40}$' "$result_source" | head -n1 | cut -d= -f2)"
+    [[ -n "$requested_sha" && "$result_sha" == "$requested_sha" ]] || die "review result SHA must equal checkpoint requested product SHA"
+    assert_checkpoint_fresh "$requested_sha"
     wave="$(wave_for_id "$id")"; result_target="$(artifact_path "$(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .checkpoint.result_artifact' "$MANIFEST_PATH")")"
     mkdir -p "$(dirname "$result_target")"; cp "$result_source" "$result_target"
     if [[ "$result" == PASS ]]; then
       reviewed_sha="$(grep -E '^REVIEWED_SHA=[0-9a-f]{40}$' "$result_source" | head -n1 | cut -d= -f2)"
       [[ -n "$reviewed_sha" ]] || die "PASS result must include REVIEWED_SHA"
-      requested_sha="$(jq -r --arg id "$id" '.waves[] | select(.checkpoint.id == $id) | .checkpoint.requested_end_sha // empty' "$MANIFEST_PATH")"
-      [[ -n "$requested_sha" && "$reviewed_sha" == "$requested_sha" ]] || die "review result SHA must equal checkpoint requested_end_sha"
-      [[ "${PIPELINE_TEST_MODE:-0}" == "1" || "$reviewed_sha" == "$(git -C "$REPO_DIR" rev-parse HEAD)" ]] || die "stale review result: planning HEAD changed after request"
       jq --arg id "$id" --arg sha "$reviewed_sha" '.waves |= map(if .checkpoint.id == $id then .checkpoint.status="passed" | .checkpoint.reviewed_sha=$sha else . end)' "$MANIFEST_PATH" | write_manifest
     else record_checkpoint "$id" changes_requested; fi
     persist_state "chore(pipeline): record $id architecture review" "$result_target"
