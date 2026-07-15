@@ -44,8 +44,11 @@ Canonical navigation:
 - [OS 3.7 Command Center + Business Twin Release Package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md)
 - [Product Usability Audit 2026-07](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md)
 - [OS 3.8 Product Usability Recovery Blueprint — Approved](OS_3_8_BLUEPRINT.md)
-- [OS 3.8-A Implementation Contract — Stop A Draft](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md)
-- [OS 3.8-A Execution Task — Stop A Draft](os-3-8/3.8-A/EXECUTION_TASK.md)
+- [OS 3.8 Wave Pipeline Manifest](os-3-8/PIPELINE_MANIFEST.json)
+- [OS 3.8 Wave Execution Contract](os-3-8/WAVE_EXECUTION_CONTRACT.md)
+- [OS 3.8 Pipeline Upgrade Execution Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md)
+- [OS 3.8 E1 Implementation Contract — Wave W1](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md)
+- [OS 3.8 E1 Execution Task — Wave W1](os-3-8/3.8-A/EXECUTION_TASK.md)
 - [Master Roadmap 2026-07](MASTER_ROADMAP_2026-07.md)
 - [Master Index](MASTER_INDEX.md)
 - [AI Bootstrap Framework](ai/AI_BOOTSTRAP.md)
@@ -97,7 +100,7 @@ Components:
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
 | Developer Platform | OS 3.2 Developer Platform audit PASS; records remain historical release preparation artifacts | [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md) |
-| Current Capability Focus | OS 3.8-A Stop A documentation review; implementation blocked until merge | [3.8-A Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md) |
+| Current Capability Focus | OS 3.8 Wave governance and one-time Pipeline bootstrap; product implementation blocked | [Wave Execution Contract](os-3-8/WAVE_EXECUTION_CONTRACT.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -109,10 +112,10 @@ Product planning and capability scope remain governed by the canonical capabilit
 | --- | --- |
 | Active Planning Branch | `agent/os-3-8-a-stop-a` |
 | Active Milestone | OS 3.8 Product Usability Recovery — planning |
-| Current Phase | OS 3.8-A Documentation / STD-006 Stop A |
-| Current Focus | Review exact E1 contract and execution task; no implementation before Stop A merge |
+| Current Phase | OS 3.8 Wave governance / Pipeline bootstrap |
+| Current Focus | Merge Wave governance, then Codex opens a separate Pipeline Upgrade PR; no E1 implementation yet |
 | Current Blockers | Dogfood gate not yet passable because the core generate → edit → save → copy/publish workflow is incomplete |
-| Current Priorities | Stop A merge → isolated E1 implementation PR → architecture review → E2 planning |
+| Current Priorities | PR #79 merge → Pipeline Upgrade PR → W1 E1 → E2 → one AR-W1 checkpoint |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -163,10 +166,12 @@ The `v3.4.0` release tag has been created and pushed.
 
 ## 7. Next Recommended Actions
 
-1. Review and merge the [OS 3.8-A Implementation Contract](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md) and [Execution Task](os-3-8/3.8-A/EXECUTION_TASK.md).
-2. After Stop A merge, implement only E1 on `feature/os-3-8-a-editable-content` and open a draft PR.
-3. Do not start Stage B expansion or seed-user acquisition until the Dogfood gate passes.
-4. Do not modify production deployment, Prisma, env files, or release tags without explicit approval.
+1. Review and merge Draft PR #79 containing the OS 3.8 Wave governance artifacts.
+2. Give the [Pipeline Upgrade Execution Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md) to Codex and require a separate draft bootstrap PR.
+3. Review and merge the bootstrap PR before starting any OS 3.8 product task.
+4. Run W1 through the Pipeline: E1 then E2, with task-level verification and one cumulative AR-W1 stop after E2.
+5. Do not start Stage B expansion or seed-user acquisition until the Dogfood gate passes.
+6. Do not modify production deployment, Prisma, env files, release tags, or release state without explicit approval.
 
 ---
 
