@@ -2,7 +2,7 @@
 
 Version: 1.0
 
-Status: Stop A Draft — awaiting Steven merge approval
+Status: Wave W1 / E1 Task — pending Pipeline bootstrap
 
 Last Updated: 2026-07-15
 
@@ -14,9 +14,9 @@ Lifecycle Phase: Implementation
 
 Inputs: [Implementation Contract](IMPLEMENTATION_CONTRACT.md), approved [OS 3.8 Blueprint](../../OS_3_8_BLUEPRINT.md)
 
-Outputs: E1 code/tests, implementation report, and a reviewable PR
+Outputs: E1 code/tests, implementation report, evidence, and a Pipeline-verifiable draft task PR
 
-Exit Criteria: Contract acceptance criteria pass; stop before E2
+Exit Criteria: Contract acceptance criteria pass; Codex stops at the task PR and returns control to the Pipeline
 
 ---
 
@@ -26,13 +26,9 @@ Implement only OS 3.8-A E1: the active Content Engine must generate one canonica
 
 ## 2. Implementation Branch
 
-After this Stop A documentation is merged, create from updated `main`:
+The Wave Pipeline creates the E1 task branch from the current `planning/os-3.8-product-usability` head after the Pipeline bootstrap PR is merged.
 
-```text
-feature/os-3-8-a-editable-content
-```
-
-Do not implement on the documentation branch.
+Do not implement on the documentation branch or directly on `main`. Record both the planning-branch baseline SHA and task-branch name in the implementation report.
 
 ## 3. Mandatory Reading
 
@@ -71,8 +67,9 @@ Read before editing:
 16. Run required validation and fix only failures caused by this slice.
 17. Create `IMPLEMENTATION_REPORT.md` in this directory.
 18. Review the final diff for scope leakage.
-19. Commit, push, and open a draft implementation PR; do not merge it.
-20. Stop and return the evidence listed in Section 9.
+19. Commit, push, and open a draft E1 task PR targeting `planning/os-3.8-product-usability`; do not merge it.
+20. Stop and return the evidence listed in Section 9 to the Wave Pipeline.
+21. Do not request Architecture Review; the Pipeline requests AR-W1 only after E2 also passes.
 
 ## 5. Required Behavior
 
@@ -161,8 +158,8 @@ Return:
 
 ## 10. Stop Condition
 
-Stop after the draft implementation PR and evidence report.
+Stop after the draft E1 task PR and evidence report. Return control to the Wave Pipeline.
 
-Do not merge, deploy, tag, or begin E2 without a separate Architecture Review decision.
+Do not merge, deploy, tag, start E2 directly, or request Architecture Review. The Pipeline owns required verification, merge into the planning branch, manifest state update, and automatic E2 selection.
 
-Do not trigger Claude or another independent technical Audit for this slice. The single independent Audit is scheduled only after the complete OS 3.8 scope is implemented and Architecture Review has passed.
+AR-W1 occurs once after both E1 and E2 are complete. Do not trigger Claude or another independent technical Audit for E1 or W1. The single independent Audit is scheduled only after the complete OS 3.8 scope and all Wave Architecture Reviews pass.
