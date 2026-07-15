@@ -11,6 +11,7 @@ import { logAIUsage } from '@/modules/ai/usage/tracker';
 import type { BusinessContextProjection } from '@/modules/business-context-memory/contracts/BusinessContextMemory';
 import { businessMemoryEventStore } from '@/modules/business-context-memory/services/business-memory-event-store';
 import { businessContextMemoryService } from '@/modules/business-context-memory/services/business-context-memory-service';
+import { getBusinessTwin } from '@/modules/business-twin/services/interview-brand-business-twin-repository';
 import {
   DecisionContext,
   DecisionConversation,
@@ -66,6 +67,7 @@ export type DiscussionServiceDependencies = {
   enforceQuota?: typeof enforceQuota;
   logUsage?: typeof logAIUsage;
   getBusinessContext?: typeof businessContextMemoryService.getBusinessContext;
+  getBusinessTwin?: typeof getBusinessTwin;
   appendMemoryEvent?: typeof businessMemoryEventStore.append;
   logFallback?: typeof runtimeFallbackLogger.warn;
   now?: () => Date;
@@ -105,7 +107,8 @@ export async function discussCommandCenterRecommendation(
 
   const now = dependencies.now?.() ?? new Date();
   const observedAt = now.toISOString() as Timestamp;
-  const decisionContext = buildDiscussionDecisionContext(user, recommendation, observedAt);
+  const businessTwin = await loadDiscussionBusinessTwin(user.id, tenantId, dependencies);
+  const decisionContext = buildDiscussionDecisionContext(user, recommendation, observedAt, businessTwin);
   const conversationEngine = dependencies.conversationEngine ?? new RecommendationDiscussionEngine({
     message,
     history,
@@ -128,7 +131,7 @@ export async function discussCommandCenterRecommendation(
   const router = await (dependencies.getRouter ?? getRouterForTenant)(tenantId);
   const routerResult = await router.generate(
     {
-      systemPrompt: buildSystemPrompt(recommendation, conversationSnapshot, memory),
+      systemPrompt: buildSystemPrompt(recommendation, conversationSnapshot, memory, businessTwin),
       userMessage: buildUserPrompt({
         message,
         history,
@@ -207,6 +210,7 @@ function buildDiscussionDecisionContext(
   user: CommandCenterRecommendationUser,
   recommendation: CommandCenterRecommendationResult,
   observedAt: Timestamp,
+  businessTwin?: BusinessTwinSnapshot | null,
 ) {
   const tenantId = (user.tenantId ?? user.id) as TenantId;
   const businessId = `business-${user.tenantId ?? user.id}` as BusinessId;
@@ -216,10 +220,8 @@ function buildDiscussionDecisionContext(
     tenant: { tenantId },
     version: 1,
     capturedAt: observedAt,
-    identity: {
-      businessName: 'NextShift Command Center',
-      values: ['clarity', 'momentum'],
-    },
+    ...(businessTwin?.identity ? { identity: businessTwin.identity } : {}),
+    ...(businessTwin?.brand ? { brand: businessTwin.brand } : {}),
     understanding: {
       executiveSummary: [
         `Current recommendation: ${recommendation.recommendation.title}`,
@@ -265,11 +267,30 @@ function buildDiscussionDecisionContext(
   });
 }
 
+async function loadDiscussionBusinessTwin(
+  userId: string,
+  tenantId: string,
+  dependencies: DiscussionServiceDependencies,
+) {
+  try {
+    return await (dependencies.getBusinessTwin ?? getBusinessTwin)(userId, tenantId);
+  } catch (error) {
+    (dependencies.logFallback ?? runtimeFallbackLogger.warn)(
+      '[business-twin] continuing without twin data',
+      { userId, tenantId, error: errorMessage(error) },
+    );
+    return undefined;
+  }
+}
+
 function buildSystemPrompt(
   recommendation: CommandCenterRecommendationResult,
   conversation?: ReturnType<DecisionConversation['toSnapshot']>,
   memory?: BusinessContextProjection,
+  twin?: BusinessTwinSnapshot | null,
 ) {
+  const twinSummary = buildTwinSummary(twin);
+
   return [
     AI_DISCUSSION_SYSTEM_PROMPT,
     '',
@@ -287,6 +308,7 @@ function buildSystemPrompt(
     `- Title: ${conversation?.title ?? `Discuss: ${recommendation.recommendation.title}`}`,
     `- Summary: ${conversation?.summary ?? recommendation.explain}`,
     ...(memory ? ['', ...buildMemorySummary(memory)] : []),
+    ...(twinSummary.length > 0 ? ['', ...twinSummary] : []),
   ].join('\n');
 }
 
@@ -364,6 +386,40 @@ function buildMemorySummary(memory: BusinessContextProjection) {
     `- Recent activity: ${recentTitles}.`,
     `- Recommendation response pattern: ${memory.executionPattern.recommendationResponse}; accepted IDs: ${accepted}; ignored IDs: ${ignored}.`,
   ];
+}
+
+function buildTwinSummary(twin?: BusinessTwinSnapshot | null) {
+  if (!twin) return [];
+
+  const lines = [
+    formatTwinField('Business name', twin.identity?.businessName, 200),
+    formatTwinField('Industry', twin.identity?.industry, 200),
+    formatTwinField('Business stage', twin.identity?.businessStage, 200),
+    formatTwinField('Mission', twin.identity?.mission, 200),
+    formatTwinField('Business positioning', twin.identity?.positioning, 200),
+    formatTwinField('Brand name', twin.brand?.brandName, 200),
+    formatTwinField('Brand story', twin.brand?.brandStory, 200),
+    formatTwinField('Brand voice', twin.brand?.voice, 200),
+    formatTwinField('Brand positioning', twin.brand?.positioning, 200),
+  ].filter((line): line is string => line !== undefined);
+
+  if (lines.length === 0) return [];
+
+  return [
+    'Business Twin profile (verified user-provided business facts; do not infer beyond them):',
+    ...lines,
+  ];
+}
+
+function formatTwinField(label: string, value: string | undefined, maxLength?: number) {
+  const normalized = value?.trim().replace(/\s+/g, ' ');
+  if (!normalized) return undefined;
+
+  const bounded = maxLength && normalized.length > maxLength
+    ? `${normalized.slice(0, maxLength - 1)}…`
+    : normalized;
+
+  return `- ${label}: ${bounded}`;
 }
 
 function errorMessage(error: unknown) {

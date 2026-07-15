@@ -40,9 +40,39 @@ export const analytics = {
 
 // ─── Key Events ──────────────────────────────────────────────────────────────
 
-export function trackUserSignedUp(userId: string, properties: { plan: string; source?: string; locale: string }) {
-  analytics.identify(userId, { plan: properties.plan, locale: properties.locale });
-  analytics.track('user_signed_up', { ...properties, timestamp: Date.now() });
+export async function trackUserSignedUp(
+  userId: string,
+  properties: { plan: string; source?: string; locale: string },
+) {
+  const eventProperties = { ...properties, timestamp: Date.now() };
+
+  if (typeof window !== 'undefined') {
+    await analytics.identify(userId, { plan: properties.plan, locale: properties.locale });
+    await analytics.track('user_signed_up', eventProperties);
+    return;
+  }
+
+  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+  if (!apiKey) return;
+
+  const apiHost = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
+
+  try {
+    await fetch(new URL('/capture/', apiHost), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: apiKey,
+        event: 'user_signed_up',
+        properties: {
+          distinct_id: userId,
+          ...eventProperties,
+        },
+      }),
+    });
+  } catch {
+    // Telemetry must not block a successfully provisioned workspace.
+  }
 }
 
 export function trackFunnelCreated(userId: string, properties: { funnel_type: string; template_used: boolean; title: string }) {

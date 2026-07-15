@@ -81,7 +81,16 @@
     "noAccount": "还没有账号？",
     "hasAccount": "已有账号？",
     "teamName": "团队名称",
-    "pendingApproval": "你的账号正在等待审核，请联系管理员批准。"
+    "pendingApproval": "你的账号正在等待审核，请联系管理员批准。",
+    "emailVerificationRequired": "请查看收件箱并验证你的电子邮件地址，然后我们会为你完成工作区设置。",
+    "accountLoadFailed": "暂时无法读取你的账号，请稍后重试。",
+    "workspaceSetupTitle": "完成你的工作区设置",
+    "workspaceSetupDescription": "验证成功。请确认以下信息，我们会立即创建你的团队工作区。",
+    "workspaceUrl": "团队 URL",
+    "workspacePlan": "计划",
+    "finishWorkspaceSetup": "完成设置",
+    "workspaceSettingUp": "正在设置工作区...",
+    "workspaceSetupFailed": "暂时无法完成工作区设置，请稍后重试。"
   },
   "nav": {
     "dashboard": "首页",
@@ -1279,6 +1288,28 @@
     "conversionsSeries": "转化",
     "contentSeries": "内容",
     "showingMembers": "显示 {count} / {total}",
+    "businessScore": {
+      "title": "业务评分",
+      "description": "只读查看当前准备度与营收预测信心。",
+      "band": {
+        "strong": "强劲",
+        "ready": "就绪",
+        "needs_attention": "需要关注"
+      },
+      "factor": {
+        "readiness": "准备度",
+        "forecastConfidence": "预测信心"
+      }
+    },
+    "weeklyReview": {
+      "title": "每周复盘",
+      "description": "只读汇总过去 {days} 天的活动。",
+      "completedMissions": "已完成任务",
+      "recommendations": "建议",
+      "recommendationBreakdown": "发出 / 采纳 / 忽略",
+      "activities": "每周活动",
+      "emptyState": "过去 {days} 天没有记录到活动。"
+    },
     "aiCommand": {
       "nextStepBadge": "下一步行动",
       "todayFocus": "今天先做这一件事。",
@@ -1310,7 +1341,20 @@
       "expectedOutcome": "预期结果",
       "nextMilestone": "下一里程碑",
       "nextMilestoneHelp": "先完成当前这一步，再推进下一阶段的业务结果。",
-      "startMission": "开始任务"
+      "startMission": "开始任务",
+      "alternativeSuggestion": "AI 另有建议",
+      "viewAlternativeSuggestion": "查看建议",
+      "hideAlternativeSuggestion": "收起建议",
+      "discussWithAi": "和 AI 讨论",
+      "discussionTurns": "第 {used}/{limit} 轮",
+      "discussionEmpty": "当前还没有讨论内容。",
+      "discussionReplying": "AI 正在回复",
+      "discussionInputPlaceholder": "输入你的问题",
+      "discussionCharacterCount": "{count}/{limit}",
+      "sendDiscussion": "发送",
+      "discussionQuotaExceeded": "今日 AI 额度已用完。",
+      "discussionTurnsExhausted": "本次讨论已达上限，试试执行推荐吧。",
+      "discussionConnectionFailed": "暂时无法连接 AI 讨论。"
     }
   },
   "errors": {

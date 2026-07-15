@@ -455,6 +455,30 @@ const boundaryOverrides = [
     },
   },
   {
+    files: ['src/modules/business-twin/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'warn',
+        {
+          patterns: [
+            {
+              group: [
+                '@/modules/*',
+                '!@/modules/business-twin',
+                '!@/modules/business-twin/**',
+                '!@/modules/ai',
+                '!@/modules/ai/**',
+                '!@/modules/auth',
+                '!@/modules/auth/**',
+              ],
+              message: 'Module code should avoid cross-module imports unless routed through approved shared layers such as @/lib, @/components, @/modules/ai, @/modules/auth, or its own module boundary.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/modules/content-engine/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [

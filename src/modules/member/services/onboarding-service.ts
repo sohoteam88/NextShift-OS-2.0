@@ -4,7 +4,7 @@ import { AppError } from '@/lib/errors';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { contentService } from '@/modules/ai/services/content-service';
 import { enforceQuota } from '@/modules/ai/usage/quota';
-import { generateWithFallback } from '@/modules/ai/providers/factory';
+import { getRouterForTenant } from '@/modules/ai/router';
 import { logAIUsage } from '@/modules/ai/usage/tracker';
 import { funnelTemplateService } from '@/modules/funnel/services/template-service';
 import { funnelService } from '@/modules/funnel/services/funnel-service';
@@ -318,19 +318,20 @@ export const onboardingService = {
   async generateBrandPositioning(userId: string) {
     const user = await this.getUserContext(userId);
     await enforceQuota(user.tenantId);
+    const router = await getRouterForTenant(user.tenantId);
 
     const metadata = normalizeMetadata(user.metadata);
     const goals = readGoals(metadata);
     const language = (user.languagePreference as 'zh' | 'en' | 'ms') ?? 'zh';
 
-    const result = await generateWithFallback(
+    const result = await router.generate(
       {
         systemPrompt: 'You are a concise onboarding assistant for a membership platform. Return valid JSON only.',
         userMessage: buildBrandPrompt(goals, { name: user.name, bio: user.bio }, language),
         temperature: 0.4,
         maxTokens: 512,
       },
-      undefined,
+      'brand_discovery',
     );
 
     let parsed = extractJson(result.text);
@@ -352,6 +353,7 @@ export const onboardingService = {
       userId: user.id,
       feature: 'onboarding_brand',
       result,
+      routing: result.routing,
     });
 
     return brand ?? defaultBrandPositioning(goals, user.name);
@@ -372,20 +374,21 @@ export const onboardingService = {
   async generateFirstContentOptions(userId: string) {
     const user = await this.getUserContext(userId);
     await enforceQuota(user.tenantId);
+    const router = await getRouterForTenant(user.tenantId);
 
     const metadata = normalizeMetadata(user.metadata);
     const goals = readGoals(metadata);
     const brand = readBrandPositioning(metadata);
     const language = (user.languagePreference as 'zh' | 'en' | 'ms') ?? 'zh';
 
-    const result = await generateWithFallback(
+    const result = await router.generate(
       {
         systemPrompt: 'You are a social media coach. Return valid JSON only.',
         userMessage: buildContentPrompt(brand, goals, language),
         temperature: 0.8,
         maxTokens: 900,
       },
-      undefined,
+      'content_generation',
     );
 
     let parsed = extractJson(result.text);
@@ -414,6 +417,7 @@ export const onboardingService = {
       userId: user.id,
       feature: 'onboarding_first_content',
       result,
+      routing: result.routing,
     });
 
     return options;

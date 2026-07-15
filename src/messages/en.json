@@ -81,7 +81,16 @@
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
     "teamName": "Team Name",
-    "pendingApproval": "Your account is pending approval. Please wait for an admin to approve it."
+    "pendingApproval": "Your account is pending approval. Please wait for an admin to approve it.",
+    "emailVerificationRequired": "Check your inbox and verify your email address. We will finish setting up your workspace after verification.",
+    "accountLoadFailed": "We could not load your account. Please try again shortly.",
+    "workspaceSetupTitle": "Finish setting up your workspace",
+    "workspaceSetupDescription": "Your email is verified. Confirm these details and we will create your team workspace.",
+    "workspaceUrl": "Team URL",
+    "workspacePlan": "Plan",
+    "finishWorkspaceSetup": "Finish setup",
+    "workspaceSettingUp": "Setting up your workspace...",
+    "workspaceSetupFailed": "We could not finish setting up your workspace. Please try again shortly."
   },
   "nav": {
     "dashboard": "Home",
@@ -1279,6 +1288,28 @@
     "conversionsSeries": "Conversions",
     "contentSeries": "Content",
     "showingMembers": "Showing {count} of {total}",
+    "businessScore": {
+      "title": "Business Score",
+      "description": "A read-only snapshot of readiness and current revenue forecast confidence.",
+      "band": {
+        "strong": "Strong",
+        "ready": "Ready",
+        "needs_attention": "Needs attention"
+      },
+      "factor": {
+        "readiness": "Readiness",
+        "forecastConfidence": "Forecast confidence"
+      }
+    },
+    "weeklyReview": {
+      "title": "Weekly Review",
+      "description": "A read-only summary of your activity from the past {days} days.",
+      "completedMissions": "Completed missions",
+      "recommendations": "Recommendations",
+      "recommendationBreakdown": "Issued / accepted / ignored",
+      "activities": "Weekly activities",
+      "emptyState": "No activity was recorded in the past {days} days."
+    },
     "aiCommand": {
       "nextStepBadge": "Next action",
       "todayFocus": "Do this one thing today.",
@@ -1310,7 +1341,20 @@
       "expectedOutcome": "Expected outcome",
       "nextMilestone": "Next milestone",
       "nextMilestoneHelp": "Finish this step first, then move the next business result forward.",
-      "startMission": "Start mission"
+      "startMission": "Start mission",
+      "alternativeSuggestion": "AI has another suggestion",
+      "viewAlternativeSuggestion": "View suggestion",
+      "hideAlternativeSuggestion": "Hide suggestion",
+      "discussWithAi": "Discuss with AI",
+      "discussionTurns": "Turn {used}/{limit}",
+      "discussionEmpty": "There is no discussion yet.",
+      "discussionReplying": "AI is replying",
+      "discussionInputPlaceholder": "Enter your question",
+      "discussionCharacterCount": "{count}/{limit}",
+      "sendDiscussion": "Send",
+      "discussionQuotaExceeded": "Today's AI quota has been used.",
+      "discussionTurnsExhausted": "This discussion has reached its limit. Try the recommended action.",
+      "discussionConnectionFailed": "Unable to connect to the AI discussion right now."
     }
   },
   "errors": {

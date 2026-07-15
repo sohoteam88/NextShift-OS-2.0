@@ -81,7 +81,16 @@
     "noAccount": "Belum ada akaun?",
     "hasAccount": "Sudah ada akaun?",
     "teamName": "Nama Pasukan",
-    "pendingApproval": "Akaun anda sedang menunggu kelulusan. Sila tunggu pentadbir meluluskan."
+    "pendingApproval": "Akaun anda sedang menunggu kelulusan. Sila tunggu pentadbir meluluskan.",
+    "emailVerificationRequired": "Semak peti masuk anda dan sahkan alamat e-mel anda. Kami akan melengkapkan persediaan ruang kerja selepas pengesahan.",
+    "accountLoadFailed": "Kami tidak dapat memuatkan akaun anda. Sila cuba lagi sebentar lagi.",
+    "workspaceSetupTitle": "Lengkapkan persediaan ruang kerja anda",
+    "workspaceSetupDescription": "E-mel anda telah disahkan. Sahkan butiran ini dan kami akan mencipta ruang kerja pasukan anda.",
+    "workspaceUrl": "URL pasukan",
+    "workspacePlan": "Pelan",
+    "finishWorkspaceSetup": "Lengkapkan persediaan",
+    "workspaceSettingUp": "Menyediakan ruang kerja anda...",
+    "workspaceSetupFailed": "Kami tidak dapat melengkapkan persediaan ruang kerja anda. Sila cuba lagi sebentar lagi."
   },
   "nav": {
     "dashboard": "Laman Utama",
@@ -1279,6 +1288,28 @@
     "conversionsSeries": "Penukaran",
     "contentSeries": "Kandungan",
     "showingMembers": "Menunjukkan {count} daripada {total}",
+    "businessScore": {
+      "title": "Skor Perniagaan",
+      "description": "Ringkasan baca sahaja tentang kesediaan dan keyakinan unjuran hasil semasa.",
+      "band": {
+        "strong": "Kukuh",
+        "ready": "Sedia",
+        "needs_attention": "Perlu perhatian"
+      },
+      "factor": {
+        "readiness": "Kesediaan",
+        "forecastConfidence": "Keyakinan unjuran"
+      }
+    },
+    "weeklyReview": {
+      "title": "Semakan Mingguan",
+      "description": "Ringkasan baca sahaja tentang aktiviti anda dalam {days} hari lalu.",
+      "completedMissions": "Misi yang diselesaikan",
+      "recommendations": "Cadangan",
+      "recommendationBreakdown": "Dikeluarkan / diterima / diabaikan",
+      "activities": "Aktiviti mingguan",
+      "emptyState": "Tiada aktiviti direkodkan dalam {days} hari lalu."
+    },
     "aiCommand": {
       "nextStepBadge": "Tindakan seterusnya",
       "todayFocus": "Buat satu perkara ini hari ini.",
@@ -1310,7 +1341,20 @@
       "expectedOutcome": "Hasil dijangka",
       "nextMilestone": "Pencapaian seterusnya",
       "nextMilestoneHelp": "Selesaikan langkah ini dahulu, kemudian teruskan hasil bisnes seterusnya.",
-      "startMission": "Mula misi"
+      "startMission": "Mula misi",
+      "alternativeSuggestion": "AI mempunyai cadangan lain",
+      "viewAlternativeSuggestion": "Lihat cadangan",
+      "hideAlternativeSuggestion": "Sembunyikan cadangan",
+      "discussWithAi": "Bincang dengan AI",
+      "discussionTurns": "Pusingan {used}/{limit}",
+      "discussionEmpty": "Belum ada perbincangan.",
+      "discussionReplying": "AI sedang membalas",
+      "discussionInputPlaceholder": "Masukkan soalan anda",
+      "discussionCharacterCount": "{count}/{limit}",
+      "sendDiscussion": "Hantar",
+      "discussionQuotaExceeded": "Kuota AI hari ini telah digunakan.",
+      "discussionTurnsExhausted": "Perbincangan ini telah mencapai hadnya. Cuba lakukan tindakan yang dicadangkan.",
+      "discussionConnectionFailed": "Tidak dapat menyambung ke perbincangan AI sekarang."
     }
   },
   "errors": {

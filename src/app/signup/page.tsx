@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -19,6 +19,7 @@ const PLAN_OPTIONS: Array<{ id: PlanTier; label: string; price: string; descript
 
 export default function SignupPage() {
   const t = useTranslations('auth');
+  const locale = useLocale();
   const router = useRouter();
   const [name, setName] = useState('');
   const [teamName, setTeamName] = useState('');
@@ -27,6 +28,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [plan, setPlan] = useState<PlanTier>('starter');
   const [error, setError] = useState('');
+  const [verificationRequired, setVerificationRequired] = useState(false);
   const [loading, setLoading] = useState(false);
   const [slugState, setSlugState] = useState<SlugState>('idle');
   const [slugSuggestion, setSlugSuggestion] = useState('');
@@ -82,6 +84,7 @@ export default function SignupPage() {
     event.preventDefault();
     setLoading(true);
     setError('');
+    setVerificationRequired(false);
 
     const normalizedSlug = slug.trim();
     if (slugState === 'taken') {
@@ -91,16 +94,29 @@ export default function SignupPage() {
     }
 
     const supabase = createClient();
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          name: teamName || name,
+          slug: normalizedSlug,
+          plan,
+          owner_name: name,
+          locale,
+        },
       },
     });
 
     if (signUpError) {
       setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (!signUpData.session) {
+      setVerificationRequired(true);
       setLoading(false);
       return;
     }
@@ -118,12 +134,15 @@ export default function SignupPage() {
 
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as
-        | { error?: { message?: string; suggestion?: string } }
+        | { error?: { code?: string; message?: string; suggestion?: string } }
         | null;
+      const message = payload?.error?.code === 'EMAIL_VERIFICATION_REQUIRED'
+        ? t('emailVerificationRequired')
+        : payload?.error?.message ?? 'Registration failed';
       setError(
         payload?.error?.suggestion
-          ? `${payload?.error?.message ?? 'Registration failed'} - 建议: ${payload.error.suggestion}`
-          : payload?.error?.message ?? 'Registration failed',
+          ? `${message} - 建议: ${payload.error.suggestion}`
+          : message,
       );
       setLoading(false);
       return;
@@ -247,6 +266,11 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              {verificationRequired && (
+                <p role="status" className="text-sm text-[var(--color-primary)]">
+                  {t('emailVerificationRequired')}
+                </p>
+              )}
               {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
 
               <Button
