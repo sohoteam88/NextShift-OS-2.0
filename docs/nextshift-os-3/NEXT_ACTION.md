@@ -18,7 +18,7 @@ This file is maintained by [Project Context](PROJECT_CONTEXT.md) and is intentio
 
 ## Current Next Action
 
-Prepare the OS 3.8 Product Usability Recovery Blueprint from the verified usability audit; do not begin implementation until Steven approves scope and ordering.
+Review and approve the [OS 3.8 Product Usability Recovery Blueprint](OS_3_8_BLUEPRINT.md); implementation remains blocked until Steven approves scope, ordering, and the U2 information-architecture decision gate.
 
 `v3.7.0` is released and verified in production. `main` and tag `v3.7.0` both point to `28c077f115a4e43c5e11e1097ae06b8744043643`. The production version endpoint reported environment `production` and build time `2026-07-15T02:18:35Z`; `/api/health` returned HTTP 200 `ok` with no-store/no-cache headers. C-3 is closed.
 
@@ -26,11 +26,11 @@ The [Master Roadmap](MASTER_ROADMAP_2026-07.md) now treats OS 3.8 as Stage A+ Pr
 
 Next work is governance and usability recovery only:
 
-1. Convert E1/E2/E3 and U1/U2/U3 into an OS 3.8 Blueprint with explicit dependencies and acceptance criteria.
-2. Put E1 first: generated content must be editable and copyable using the existing Brand Builder interaction pattern.
-3. Draft the one-page information architecture for Steven approval before changing navigation or deleting routes.
-4. Do not start Stage B personalization or seed-user acquisition until Steven passes the seven-day Dogfood gate.
-5. Preserve production, tag, Prisma, env, and deployment gates; this governance sync is documentation-only.
+1. Steven reviews the OS 3.8 Blueprint P0 scope: E1 editable output, E2 Content Library, and U2 information-architecture decision.
+2. Steven approves or revises the proposed 3.8-A through 3.8-F delivery order.
+3. Decide whether invite-link environment hardening and audit A-1/A-3 remain deferred or become an OS 3.8 release blocker.
+4. After approval, create only the 3.8-A Implementation Contract and Execution Task under STD-006 Stop A.
+5. Do not start implementation, Stage B personalization, navigation deletion, or seed-user acquisition before the applicable approval and Dogfood gates.
 
 ---
 
@@ -97,6 +97,6 @@ Those phases are already represented by repository artifacts.
 
 ## Next Lifecycle Decision
 
-Proceed to OS 3.8 Product Usability Recovery Blueprint preparation. Implementation remains blocked until Steven approves the Blueprint and task order.
+OS 3.8 Product Usability Recovery Blueprint draft is prepared. Await Steven review and approval; implementation remains blocked.
 
 Do not create release tags, modify Prisma, modify env files, change deployment configuration, or alter production release state without explicit approval.
