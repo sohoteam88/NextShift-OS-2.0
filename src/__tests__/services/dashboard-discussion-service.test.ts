@@ -257,6 +257,40 @@ describe('Command Center discussion service', () => {
     expect(systemPrompt).not.toContain(brandPositioning);
   });
 
+  it('bounds every remaining Twin field before adding it to the prompt', async () => {
+    const generate = vi.fn().mockResolvedValue(routerResult());
+    const businessName = 'n'.repeat(240);
+    const industry = 'i'.repeat(240);
+    const businessStage = 'g'.repeat(240);
+    const brandName = 'r'.repeat(240);
+    const brandVoice = 'v'.repeat(240);
+    const dependencies = createDependencies({
+      getBusinessTwin: vi.fn().mockResolvedValue({
+        businessId: 'business-tenant_1',
+        tenant: { tenantId: 'tenant_1' },
+        version: 1,
+        capturedAt: '2026-07-11T00:00:00.000Z',
+        identity: { businessName, industry, businessStage },
+        brand: { brandName, voice: brandVoice },
+      }),
+      getRouter: vi.fn().mockResolvedValue({ generate }),
+    });
+
+    await discussCommandCenterRecommendation(user(), { message: 'What should I do first?' }, dependencies);
+
+    const systemPrompt = generate.mock.calls[0][0].systemPrompt;
+    expect(systemPrompt).toContain(`Business name: ${'n'.repeat(199)}…`);
+    expect(systemPrompt).toContain(`Industry: ${'i'.repeat(199)}…`);
+    expect(systemPrompt).toContain(`Business stage: ${'g'.repeat(199)}…`);
+    expect(systemPrompt).toContain(`Brand name: ${'r'.repeat(199)}…`);
+    expect(systemPrompt).toContain(`Brand voice: ${'v'.repeat(199)}…`);
+    expect(systemPrompt).not.toContain(businessName);
+    expect(systemPrompt).not.toContain(industry);
+    expect(systemPrompt).not.toContain(businessStage);
+    expect(systemPrompt).not.toContain(brandName);
+    expect(systemPrompt).not.toContain(brandVoice);
+  });
+
   it('includes only populated Twin fields', async () => {
     const generate = vi.fn().mockResolvedValue(routerResult());
     const dependencies = createDependencies({

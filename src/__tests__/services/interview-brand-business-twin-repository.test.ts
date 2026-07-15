@@ -21,12 +21,12 @@ describe('InterviewBrandBusinessTwinRepository', () => {
         positioning: 'Practical wellness coaching for busy professionals.',
       },
       brand: {
-        brandName: 'North Star Wellness',
         brandStory: 'I help busy professionals build sustainable wellness routines.',
         voice: 'Warm and evidence-led',
-        positioning: 'Practical wellness coaching for busy professionals.',
       },
     });
+    expect(snapshot?.brand).not.toHaveProperty('brandName');
+    expect(snapshot?.brand).not.toHaveProperty('positioning');
     expect(snapshot?.identity).not.toHaveProperty('values');
     expect(getInterviewAuthority).toHaveBeenCalledWith('user_1');
     expect(getBrandContext).toHaveBeenCalledWith('user_1');
@@ -53,7 +53,8 @@ describe('InterviewBrandBusinessTwinRepository', () => {
       businessName: 'North Star Wellness',
       positioning: 'Practical wellness coaching for busy professionals.',
     });
-    expect(snapshot?.brand?.brandName).toBe('North Star Wellness');
+    expect(snapshot?.brand?.brandName).toBeUndefined();
+    expect(snapshot?.identity?.businessName).toBe('North Star Wellness');
     expect(snapshot?.identity).not.toHaveProperty('businessStage');
     expect(snapshot?.identity).not.toHaveProperty('industry');
   });
@@ -71,6 +72,76 @@ describe('InterviewBrandBusinessTwinRepository', () => {
       industry: 'Wellness',
       businessStage: 'growth',
       mission: 'Make everyday wellness practical.',
+    });
+    expect(snapshot).not.toHaveProperty('brand');
+  });
+
+  it('omits whitespace-normalized duplicate name and positioning facts', async () => {
+    const interview = confirmedInterview();
+    const repository = createRepository({
+      getInterviewAuthority: vi.fn().mockResolvedValue({
+        ...interview,
+        profile: {
+          ...interview.profile,
+          missionStatement: 'Practical  wellness\ncoaching for busy professionals.',
+        },
+      }),
+      getBrandContext: vi.fn().mockResolvedValue(brandContext()),
+    });
+
+    const snapshot = await repository.getSnapshot(businessId(), tenant());
+
+    expect(snapshot?.identity).toMatchObject({
+      businessName: 'North Star Wellness',
+      positioning: 'Practical wellness coaching for busy professionals.',
+    });
+    expect(snapshot?.identity).not.toHaveProperty('mission');
+    expect(snapshot?.brand).toMatchObject({
+      brandStory: 'I help busy professionals build sustainable wellness routines.',
+      voice: 'Warm and evidence-led',
+    });
+    expect(snapshot?.brand).not.toHaveProperty('brandName');
+    expect(snapshot?.brand).not.toHaveProperty('positioning');
+  });
+
+  it('keeps every non-colliding source fact', async () => {
+    const repository = createRepository({
+      getInterviewAuthority: vi.fn().mockResolvedValue(confirmedInterview()),
+      getBrandContext: vi.fn().mockResolvedValue(brandContext({ brandName: '', positioning: '' })),
+    });
+
+    const snapshot = await repository.getSnapshot(businessId(), tenant());
+
+    expect(snapshot?.identity).toEqual({
+      businessName: 'Aisha Rahman',
+      industry: 'Wellness',
+      businessStage: 'growth',
+      mission: 'Make everyday wellness practical.',
+    });
+    expect(snapshot?.brand).toEqual({
+      brandStory: 'I help busy professionals build sustainable wellness routines.',
+      voice: 'Warm and evidence-led',
+    });
+  });
+
+  it('omits a Brand DNA context when de-duplication removes its final fields', async () => {
+    const repository = createRepository({
+      getInterviewAuthority: vi.fn().mockResolvedValue(confirmedInterview()),
+      getBrandContext: vi.fn().mockResolvedValue(brandContext({
+        messaging: {
+          coreMessage: '',
+          uniqueAngle: '',
+          elevatorPitch: '',
+        },
+        tone: '',
+      })),
+    });
+
+    const snapshot = await repository.getSnapshot(businessId(), tenant());
+
+    expect(snapshot?.identity).toMatchObject({
+      businessName: 'North Star Wellness',
+      positioning: 'Practical wellness coaching for busy professionals.',
     });
     expect(snapshot).not.toHaveProperty('brand');
   });
@@ -172,7 +243,7 @@ function fallbackInterview(): InterviewAuthority {
   };
 }
 
-function brandContext(): BrandContext {
+function brandContext(overrides: Partial<BrandContext> = {}): BrandContext {
   return {
     brandName: 'North Star Wellness',
     personalName: 'Aisha Rahman',
@@ -195,5 +266,6 @@ function brandContext(): BrandContext {
       imagePrompt: '',
       bannerPrompt: '',
     },
+    ...overrides,
   };
 }
