@@ -10,21 +10,62 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 pass=0
 fail() { echo "FAIL: $*" >&2; exit 1; }
 assert_eq() { [[ "$1" == "$2" ]] || fail "$3 (expected $2, got $1)"; pass=$((pass + 1)); }
-fresh() { cp "$SOURCE_MANIFEST" "$TMP_DIR/manifest.json"; }
+fresh() {
+  cp "$SOURCE_MANIFEST" "$TMP_DIR/manifest.json"
+  rm -f "$TMP_DIR"/*ARCHITECTURE_REVIEW_*.md "$TMP_DIR"/STEVEN_IA_APPROVAL.md "$TMP_DIR"/OS38_FINAL_CODE_REVIEW_REQUEST.md "$TMP_DIR"/OS38_FINAL_CODE_REVIEW_REPORT.md
+}
 run() { PIPELINE_TEST_MODE=1 "$PIPELINE_DIR/run-pipeline.sh" --manifest "$TMP_DIR/manifest.json" "$@"; }
 action() { run --plan | jq -r '.action'; }
 task() { run --plan | jq -r '.task // empty'; }
 set_task() {
   local id="$1" status="$2" tmp="$TMP_DIR/state.json"
-  jq --arg id "$id" --arg status "$status" '.waves |= map(.tasks |= map(if .id == $id then .status = $status else . end))' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
+  jq --arg id "$id" --arg status "$status" '
+    .waves |= map(.tasks |= map(if .id == $id then
+      .status = $status |
+      if $status == "completed" then
+        .evidence={
+          pr_url:"https://github.com/sohoteam88/NextShift-OS-2.0/pull/1",
+          merge_sha:"0123456789012345678901234567890123456789",
+          implementation_report:("docs/fixture-" + $id + ".md"),
+          validation:{checks:"passed"}
+        }
+      else .evidence=null end
+    else . end))
+  ' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
 }
 set_checkpoint() {
   local id="$1" status="$2" tmp="$TMP_DIR/state.json"
-  jq --arg id "$id" --arg status "$status" '.waves |= map(if .checkpoint.id == $id then .checkpoint.status = $status else . end)' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
+  jq --arg id "$id" --arg status "$status" '
+    .waves |= map(if .checkpoint.id == $id then
+      .checkpoint.status = $status |
+      if $status == "passed" then
+        .checkpoint.requested_end_sha="0123456789012345678901234567890123456789" |
+        .checkpoint.reviewed_sha="0123456789012345678901234567890123456789"
+      else . end
+    else . end)
+  ' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
 }
 set_gate() {
   local id="$1" status="$2" tmp="$TMP_DIR/state.json"
-  jq --arg id "$id" --arg status "$status" '.waves |= map(if .human_gate?.id == $id then .human_gate.status = $status else . end)' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
+  jq --arg id "$id" --arg status "$status" '
+    .waves |= map(if .human_gate?.id == $id then
+      .human_gate.status = $status |
+      if $status == "approved" then
+        .human_gate.approved_by="fixture" |
+        .human_gate.approved_at="2026-07-15T12:00:00Z" |
+        .human_gate.approved_reviewed_sha="0123456789012345678901234567890123456789"
+      else . end
+    else . end)
+  ' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
+  if [[ "$id" == "STEVEN-IA" && "$status" == "approved" ]]; then
+    printf '%s\n' \
+      'GATE=STEVEN-IA' \
+      'DECISION=APPROVED' \
+      'APPROVER=fixture' \
+      'APPROVED_AT=2026-07-15T12:00:00Z' \
+      'AR_W2_REVIEWED_SHA=0123456789012345678901234567890123456789' \
+      >"$TMP_DIR/STEVEN_IA_APPROVAL.md"
+  fi
 }
 complete_wave_tasks() { local wave="$1"; local id; while IFS= read -r id; do set_task "$id" completed; done < <(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .tasks[].id' "$TMP_DIR/manifest.json"); }
 valid_evidence() { jq -n --arg n "${1:-1}" '{pr_url:("https://github.com/sohoteam88/NextShift-OS-2.0/pull/" + $n),merge_sha:"0123456789012345678901234567890123456789",implementation_report:"docs/report.md",validation:{checks:"passed"}}'; }
@@ -68,6 +109,12 @@ complete_wave_tasks W2
 set_checkpoint AR-W2 passed
 assert_eq "$(action)" awaiting_human_gate "W2 requires STEVEN-IA"
 run --record-steven-ia steven 2026-07-15T12:00:00Z
+grep -Fqx 'DECISION=APPROVED' "$TMP_DIR/STEVEN_IA_APPROVAL.md" || fail "STEVEN-IA approval artifact missing decision"
+grep -Fqx 'AR_W2_REVIEWED_SHA=0123456789012345678901234567890123456789' "$TMP_DIR/STEVEN_IA_APPROVAL.md" || fail "STEVEN-IA approval artifact missing reviewed SHA"
+pass=$((pass + 2))
+run --record-steven-ia steven 2026-07-15T12:00:00Z
+if run --record-steven-ia another-user 2026-07-15T12:00:00Z >/dev/null 2>&1; then fail "conflicting STEVEN-IA approval accepted"; fi
+pass=$((pass + 1))
 assert_eq "$(task)" U1B "approved STEVEN-IA unlocks W3"
 
 # Remediation is bounded and never self-approves.
@@ -78,26 +125,49 @@ jq '.waves |= map(if .checkpoint.id == "AR-W1" then .checkpoint.requested_end_sh
 review_result CHANGES_REQUESTED
 run --record-review-result AR-W1 CHANGES_REQUESTED "$TMP_DIR/review-result.md"
 assert_eq "$(action)" remediation "changes requested selects remediation"
-run --record-remediation-result AR-W1 FAIL
+jq '.waves |= map(if .checkpoint.id == "AR-W1" then .checkpoint.active_remediation={status:"running",run_id:"fixture-r1",attempt:1,branch:"fixture-remediation",artifact:"docs/nextshift-os-3/os-3-8/runs/fixture-r1.json"} else . end)' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
+assert_eq "$(action)" remediation_recovery "active remediation selects recovery instead of duplicate dispatch"
+jq '.waves |= map(if .checkpoint.id == "AR-W1" then .checkpoint.active_remediation=null else . end)' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
+jq '.waves |= map(if .checkpoint.id == "AR-W1" then .checkpoint.remediation_attempts=1 else . end)' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
 assert_eq "$(action)" remediation "one failed remediation remains available"
-run --record-remediation-result AR-W1 FAIL
+jq '.waves |= map(if .checkpoint.id == "AR-W1" then .checkpoint.remediation_attempts=2 else . end)' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
 assert_eq "$(action)" needs_human "two failed remediations need human"
+if run --record-remediation-result AR-W1 FAIL >/dev/null 2>&1; then fail "removed production remediation result shortcut remains callable"; fi
+pass=$((pass + 1))
+
+# A second reviewed remediation failure transitions directly to needs_human.
+fresh
+complete_wave_tasks W1
+set_checkpoint AR-W1 awaiting_review
+jq '.waves |= map(if .checkpoint.id == "AR-W1" then .checkpoint.requested_end_sha="0123456789012345678901234567890123456789" | .checkpoint.remediation_attempts=2 else . end)' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
+review_result CHANGES_REQUESTED
+run --record-review-result AR-W1 CHANGES_REQUESTED "$TMP_DIR/review-result.md"
+assert_eq "$(action)" needs_human "reviewed failure at max attempts blocks a third remediation"
 
 # The final audit runs only once after all human controls pass and never opens release.
 fresh
 complete_wave_tasks W1; complete_wave_tasks W2; complete_wave_tasks W3
 set_checkpoint AR-W1 passed; set_checkpoint AR-W2 passed; set_checkpoint AR-W3 passed; set_gate STEVEN-IA approved
+jq '.waves |= map(.start_sha="0123456789012345678901234567890123456789")' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
 assert_eq "$(action)" final_audit "all waves select the final audit once"
-mkdir -p "$TMP_DIR/audit"
-printf 'VERDICT=PASS\nREVIEWED_SHA=0123456789012345678901234567890123456789\n' >"$TMP_DIR/audit/OS38_FINAL_CODE_REVIEW_REPORT.md"
-jq --arg report "$TMP_DIR/audit/OS38_FINAL_CODE_REVIEW_REPORT.md" '.final_audit.report=$report | .waves |= map(if .checkpoint.id == "AR-W3" then .checkpoint.reviewed_sha="0123456789012345678901234567890123456789" else . end)' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
-run --record-final-audit PASS
+run --cycle
+assert_eq "$(action)" awaiting_final_audit "running final audit is a clean wait"
+grep -Fqx 'REQUESTED_PRODUCT_SHA=0123456789012345678901234567890123456789' "$TMP_DIR/OS38_FINAL_CODE_REVIEW_REQUEST.md" || fail "final audit request did not pin product SHA"
+pass=$((pass + 1))
+printf 'VERDICT=PASS_WITH_CONDITION\nREVIEWED_SHA=0123456789012345678901234567890123456789\n' >"$TMP_DIR/conditional-audit-result.md"
+if run --record-final-audit PASS "$TMP_DIR/conditional-audit-result.md" >/dev/null 2>&1; then fail "PASS_WITH_CONDITION was accepted as PASS"; fi
+pass=$((pass + 1))
+printf 'VERDICT=PASS\nREVIEWED_SHA=0123456789012345678901234567890123456789\n' >"$TMP_DIR/final-audit-source.md"
+run --record-final-audit PASS "$TMP_DIR/final-audit-source.md"
 assert_eq "$(action)" complete "final audit PASS completes state"
 assert_eq "$(jq -r '.release_gate.status' "$TMP_DIR/manifest.json")" blocked "final audit cannot release"
+run --record-final-audit PASS "$TMP_DIR/final-audit-source.md"
 fresh
 complete_wave_tasks W1; complete_wave_tasks W2; complete_wave_tasks W3
 set_checkpoint AR-W1 passed; set_checkpoint AR-W2 passed; set_checkpoint AR-W3 passed; set_gate STEVEN-IA approved
-if run --record-final-audit PASS >/dev/null 2>&1; then fail "final audit PASS without report accepted"; fi
+jq '.waves |= map(.start_sha="0123456789012345678901234567890123456789")' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
+run --cycle
+if run --record-final-audit PASS "$TMP_DIR/missing-audit-result.md" >/dev/null 2>&1; then fail "missing external final audit result accepted"; fi
 pass=$((pass + 1))
 
 # Out-of-order and insufficient completion paths fail closed.

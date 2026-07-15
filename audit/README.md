@@ -27,6 +27,13 @@ Only these files remain active in `audit/`:
 - [OS 3.7 Pipeline Audit 20260714-160343](PIPELINE_AUDIT_20260714-160343.md)
 - [OS 3.7 Pipeline Audit 20260715-000338](PIPELINE_AUDIT_20260715-000338.md)
 - [OS 3.7 Pipeline Audit 20260715-081449](PIPELINE_AUDIT_20260715-081449.md)
+- [OS 3.8 Final Code Review Request](OS38_FINAL_CODE_REVIEW_REQUEST.md)
+- [OS 3.8 Final Code Review Report](OS38_FINAL_CODE_REVIEW_REPORT.md)
+
+The two OS 3.8 paths are reserved canonical pipeline artifacts. The request is
+created only when every Wave checkpoint and human gate has passed; the report
+is created only by the matching Final Audit result transaction. Their registry
+entries do not authorize any other ad hoc audit files.
 
 All other pre-OS 3.3 per-feature audit files are archived under `archive/audit-history/` by `git mv`.
 

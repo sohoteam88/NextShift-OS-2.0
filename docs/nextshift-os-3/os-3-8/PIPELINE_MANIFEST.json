@@ -92,6 +92,7 @@
         "id": "STEVEN-IA",
         "status": "pending",
         "description": "Steven approves the complete U2 Keep/Merge/Hide/Redirect map before U3 or deletion.",
+        "approval_artifact": "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
         "approved_by": null,
         "approved_at": null
       }
@@ -160,7 +161,12 @@
     "status": "pending",
     "trigger": "all_wave_checkpoints_passed_and_all_human_gates_approved",
     "auditor": "Claude Code CLI",
-    "report": "audit/OS38_FINAL_CODE_REVIEW_REPORT.md"
+    "request": "audit/OS38_FINAL_CODE_REVIEW_REQUEST.md",
+    "report": "audit/OS38_FINAL_CODE_REVIEW_REPORT.md",
+    "requested_product_sha": null,
+    "requested_at": null,
+    "reviewed_sha": null,
+    "completed_at": null
   },
   "release_gate": {
     "status": "blocked",

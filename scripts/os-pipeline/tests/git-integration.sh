@@ -39,6 +39,33 @@ cat >"$BIN/gh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 remote="${FIXTURE_REMOTE:?}"; base="planning"; branch="${TASK_BRANCH:-${PIPELINE_TASK_BRANCH:-}}"
+if [[ "${1:-}" == "api" ]]; then
+  endpoint="${2:?gh api endpoint required}"
+  if [[ "$endpoint" =~ ^repos/([^/]+)/([^/]+)/pulls/([0-9]+)$ ]]; then
+    pr_owner="${BASH_REMATCH[1]}"; pr_repo="${BASH_REMATCH[2]}"; pr_number="${BASH_REMATCH[3]}"
+  else
+    echo "unsupported gh api endpoint: $endpoint" >&2
+    exit 1
+  fi
+  head="$(git --git-dir="$remote" rev-parse "refs/heads/$branch")"
+  base_sha="$(git --git-dir="$remote" rev-parse "refs/heads/$base")"
+  merged=false; merge_sha=""
+  if [[ -f "${remote}.pr-${pr_number}-merged" ]]; then
+    merged=true; merge_sha="$(<"${remote}.pr-${pr_number}-merged")"
+  fi
+  jq -n \
+    --arg state "$([[ "$merged" == true ]] && printf closed || printf open)" \
+    --argjson merged "$merged" \
+    --arg base "$base" \
+    --arg base_sha "$base_sha" \
+    --arg head_ref "$branch" \
+    --arg head_sha "$head" \
+    --arg merge_sha "$merge_sha" \
+    --arg url "https://github.com/${pr_owner}/${pr_repo}/pull/${pr_number}" \
+    --arg body "Implementation-Report: ${IMPLEMENTATION_REPORT:-docs/fixture-report.md}" \
+    '{state:$state,merged:$merged,base:{ref:$base,sha:$base_sha,repo:{full_name:"fixture/NextShift-OS-2.0"}},head:{ref:$head_ref,sha:$head_sha,repo:{full_name:"fixture/NextShift-OS-2.0"}},merge_commit_sha:(if $merge_sha=="" then null else $merge_sha end),html_url:$url,body:$body}'
+  exit 0
+fi
 if [[ "$*" == *"pr view"* && "$*" == *"mergeCommit"* ]]; then
   sha="$(git --git-dir="$remote" rev-parse "refs/heads/$base")"
   if [[ "$*" == *"--jq"* ]]; then printf '%s\n' "$sha"; else printf '%s\n' "$sha" | jq -R '{mergeCommit:{oid:.}}'; fi
@@ -48,7 +75,7 @@ if [[ "$*" == *"pr view"* ]]; then
   head="$(git --git-dir="$remote" rev-parse "refs/heads/$branch")"
   jq -n --arg head "$head" --arg branch "$branch" '{repository:{nameWithOwner:"fixture/NextShift-OS-2.0"},baseRefName:"planning",headRefName:$branch,headRefOid:$head,url:"https://github.com/fixture/NextShift-OS-2.0/pull/1"}'; exit 0
 fi
-if [[ "$*" == *"pr diff"* ]]; then exit 0; fi
+if [[ "$*" == *"pr diff"* ]]; then printf '%s\n' "${IMPLEMENTATION_REPORT:?}"; exit 0; fi
 if [[ "$*" == *"pr checks"* ]]; then exit 0; fi
 if [[ "$*" == *"pr merge"* ]]; then
   work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
@@ -57,6 +84,7 @@ if [[ "$*" == *"pr merge"* ]]; then
   git -C "$work" merge --squash "origin/$branch" >/dev/null
   git -C "$work" commit -m "merge fixture $branch" >/dev/null
   git -C "$work" push origin "$base" >/dev/null
+  git --git-dir="$remote" rev-parse "refs/heads/$base" >"${remote}.pr-1-merged"
   exit 0
 fi
 exit 1
