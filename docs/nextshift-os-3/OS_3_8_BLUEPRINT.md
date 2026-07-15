@@ -294,11 +294,13 @@ Capture active Content Engine, editor states, library states, confirmation dialo
 | 3.8-B | E1 editable/save/copy loop | Architecture review before E2 |
 | 3.8-C | E2 Content Library | Product walkthrough before U3/E3 |
 | 3.8-D | U2 one-page IA + U1 inventory | Steven approves IA before navigation/deletion |
-| 3.8-E | U3 navigation + approved U1 removals | Independent audit |
+| 3.8-E | U3 navigation + approved U1 removals | Architecture Review before 3.8-F |
 | 3.8-F | E3 revalidation and only proven gap fixes | Scope decision from evidence |
 | Release | Verification, independent audit, RC, production evidence | Explicit release approval |
 
 E1 and U2 documentation may proceed in parallel after Blueprint approval. U3 cannot run ahead of U2 approval. E2 must reuse the E1 resource contract. E3 cannot invent another editing/storage pattern.
+
+Architecture Review occurs at every slice boundary. Independent technical Audit occurs once, after all approved OS 3.8 slices (E1/E2/E3 and U1/U2/U3) are complete and before RC/release approval. A slice must not trigger a standalone Claude Audit.
 
 ## 16. Release and Rollback
 
