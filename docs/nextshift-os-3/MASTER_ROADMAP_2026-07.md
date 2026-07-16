@@ -1,9 +1,10 @@
 # NextShift OS Master Roadmap — 从 v3.7.0 到完整愿景
 
-Version: 1.1
+Version: 1.2
 Status: Approved by Steven — active governance baseline
 Date: 2026-07-15
 Author: ChatGPT Work (Architecture Governance), based on Claude's original roadmap
+v1.2 增补: Claude (Orchestration) — 产品条件全景五项 + 小白北极星 + 三断点地图,经 Steven 逐项确认（2026-07-15 会话）
 Baseline: `v3.7.0` at `28c077f`（Command Center + Business Memory + Business Twin v1；production health/version verification PASS）
 Source: [LAYER_ROADMAP_P0.md](LAYER_ROADMAP_P0.md)（15 层愿景 + Top 10 + AI Success Engine）
 
@@ -27,6 +28,14 @@ Source: [LAYER_ROADMAP_P0.md](LAYER_ROADMAP_P0.md)（15 层愿景 + Top 10 + AI 
 
 工程基线:`v3.7.0` production、5/68 模块按需 runtime 化、Business Memory/Twin/Command Center 上线、E2E 与 release audit 纪律持续执行。**当前最大空白不是继续增加功能，而是核心工作流尚未达到 Steven 可连续使用的标准。**
 
+### 0.1 一站式愿景链的三个断点（v1.2,决定"一站式"是否成立）
+
+愿景链:起号 → 文案+图 → 视频 → 7/30 天规划 → 广告 → 回报建议 → 漏斗/webinar → CRM → WhatsApp 成交。逐环盘点后,断的是三处——**接上这三处,一站式才成立;其余皆为增强**:
+
+1. **图像断点**:系统零图像能力,而 FB/IG/XHS 无图不能发——文案环因此实际断裂 → Stage B 修（B4）
+2. **Lead 进水管断点**:漏斗页→lead→CRM 的通道未接,CRM 是空水池 → Stage B 修（B3 前置）
+3. **广告回报断点**:广告生成有存量,投后成绩与建议为零 → Stage C 修（C0 桥接版,不依赖广告平台 API）
+
 ---
 
 ## 1. 总原则:从"造功能"切换到"结果闸门"
@@ -36,6 +45,26 @@ OS 3.3-3.5 的闸门是工程性的（测试绿、审计过）。从 Stage A 起
 > **Stage 结果闸门 = 先通过 Steven Dogfood，再有 N 个真实用户使用上一 Stage 核心能力，且留存/激活数据可查（PostHog 已接）。**
 
 理由:15 层愿景的每一层都假设"用户在用前一层产生的数据"。没有用户,Layer 1 的记忆、Layer 14 的教练、Success Engine 全是空转。这个项目现在最贵的不是代码,是真实使用。
+
+### 1.5 产品北极星:小白用户七条件（v1.2,所有 Stage 的验收滤镜）
+
+目标用户是**完全不会 social media marketing 的小白**(典型:直销伙伴,手机优先,中/马/英三语市场)。任何功能交付前用这七条过滤:
+
+1. **永远只有一个下一步**——打开系统只见"今天做这件事";功能随旅程解锁,绝不一次全摆(U2/U3 的北极星)
+2. **产出是成品不是素材**——文案+配图+hashtag+发布说明,按平台裁好,一键复制;小白没有组装能力
+3. **手机优先**——核心闭环必须拇指可完成;**列入 Dogfood 强制条件**(Steven 手机跑一周)
+4. **失败安全**——自动保存、可撤销、永远找得回;丢一次内容=永久流失一个用户
+5. **教练语气,不是数据面板**——每个数字配一句"所以呢,明天做什么"(Success Engine 的语气层现在就做)
+6. **合规护栏**——健康品类的疗效/收入声明是封号雷区;生成器内置声明安全规则+发布前检查。**既是护栏也是卖点,竞品皆无**
+7. **用量可见**——AI credits 用户端可见(服务端配额已有,Stage C 收费前必须补 UI)
+
+### 1.6 招募/零售隔离原则（v1.2,一等数据维度）
+
+招募与零售是两门生意,混合互杀(零售客户惧"拉人头",招募对象不吃产品话术)。隔离必须贯穿数据链,不是 UI 开关:
+
+- **立即执行的 schema 决定**:`mode`(retail/recruitment)成为一等字段——content/funnel/lead/mission/memory 事件入库即打标(越早定,数据越干净)
+- 贯穿七层:Twin 双画像、内容生成双 prompt 体系(招募侧收入声明护栏更严)、双内容日历(onboarding 增加"一号混发 80/20 或双号"策略题)、双漏斗模板、**CRM 双管道**(客户:lead→试用→成交→复购→转介绍;伙伴:好奇→说明→跟进→加入→带教)、双异议库、Business Score 双子分
+- **唯一不隔死的:毕业桥**——复购 N 次/主动转介绍的客户,AI 提示"适合聊事业",一键带完整历史升入伙伴管道。隔离为了话术不串,不是拆桥
 
 ---
 
@@ -71,14 +100,18 @@ OS 3.3-3.5 的闸门是工程性的（测试绿、审计过）。从 Stage A 起
 
 - **B1 Creative Studio 个性化**:content/video 生成注入 Twin + Memory 上下文（"按你的品牌声音和上周表现建议今天发什么"）,产出物回写 Content Memory
 - **B2 Growth 推荐化**:AI Funnel/Lead Magnet/Webinar Recommendation——decision-brain 已有的引擎接到这三个存量模块
-- **B3 Relationship 雏形**（Layer 11 借壳）:CRM 的 lead 数据 → Customer Memory 首版,推荐开始出现"该跟进谁"
+- **B3 Relationship 雏形**（Layer 11 借壳）:CRM 的 lead 数据 → Customer Memory 首版,推荐开始出现"该跟进谁"。**v1.2 增补**:B3 前置修 lead 进水管(漏斗页→lead→CRM 通道,断点 2);双管道按 §1.6 mode 隔离 + 毕业桥
+- **B4 配图模板**（v1.2,断点 1）:程序化模板图——品牌色+文案上图+用户照片框,按平台尺寸输出;先模板后 AI 生图(便宜、稳定、必然 on-brand)。无图则 FB/IG/XHS 内容环不成立
+- **B5 起号引导**（v1.2）:FB/IG/TikTok/XHS 四平台开号带截图勾选式教程,journey 引擎承载;低工程高价值,内容 AI 起草人工核对,可在 Dogfood 期并行制作
+- **B 全程**:B1 生成按 §1.6 双 prompt 体系 + §1.5-6 合规护栏首版(内容侧)
 - **⭐ 结果闸门 B**:用户经 AI 建议产出的内容/漏斗占比可测,≥N 用户为此续用
 
 ### Stage C — "Brain 开始成交"（OS 4.0,大版本）
 
 主题:Layer 7 WhatsApp Revenue Engine——对你的客群这是付费意愿最强的一层。
 
-- **C1 WhatsApp AI Reply**（走官方 Business API,human approval 默认开）
+- **C0 广告桥接**（v1.2,断点 3）:广告成绩**截图上传 → AI 读图给建议**——零平台 API 依赖(Meta Marketing API 审核重,不提前接),小白够用,马上能做。广告文案生成(存量 Ads Generator)同步接入合规护栏**硬闸**:疗效/收入声明检查不过不出稿
+- **C1 WhatsApp AI Reply**（走官方 Business API,human approval 默认开;话术库按 §1.6 mode 分双异议体系;人肉桥接版——"AI 写话术你来发"——可在 Stage B 先行验证价值）
 - **C2 AI Objection Handling + Conversation Summary**,回写 Customer Memory
 - **C3 计费闸门**:saas/billing 模块激活,这一层开始收钱——免费层到此为止
 - **⭐ 结果闸门 C**:首批付费用户;此时才值得谈规模化
@@ -107,6 +140,9 @@ OS 3.3-3.5 的闸门是工程性的（测试绿、审计过）。从 Stage A 起
 3. **安全/规模化闸门挂在结果闸门上**:用户 >50 → 备份演练 + RLS 审计;付费启动 → 渗透测试级 review;不提前做
 4. **AI 成本仪表**:router-advisor 的 costsByTenant 补全(T1 审计遗留),Stage C 前必须能看清每租户成本
 5. **每 Stage 收官保持现有纪律**:Blueprint → task → review → audit → RC → tag
+6. **合规护栏轨**（v1.2）:声明安全规则库(疗效/收入/前后对比)随每个生成面演进——Stage B 内容侧 warn,Stage C 广告/WhatsApp 侧硬闸;规则库本身是内容资产,AI 起草 Steven 核定
+7. **mode 一等字段**（v1.2,§1.6）:自本决定起,新增 content/funnel/lead/mission/memory 数据入库必须携带 retail/recruitment 标;存量回填随 B1/B3 迁移顺路做
+8. **教练语气层**（v1.2,§1.5-5）:所有用户可见数字必须配下一步建议;新增 UI 的验收项之一
 
 ---
 
@@ -119,6 +155,7 @@ OS 3.3-3.5 的闸门是工程性的（测试绿、审计过）。从 Stage A 起
 - 2 处 legacy `generateWithFallback` 调用点收编进 router(T1 审计遗留)
 
 ### 增加（愿景里没有但必需）
+- **v1.2 五件**（详见 §0.1/§1.5/§1.6 及各 Stage 增补行）:配图模板(B4)、起号引导(B5)、合规护栏(贯穿轨 6)、截图式广告分析(C0)、招募/零售 mode 一等隔离(贯穿轨 7)
 - **产品分析闭环**:PostHog 事件设计(激活/留存/推荐点击/讨论轮次)——结果闸门的度量地基,Stage A 第一个 task
 - **数据备份与恢复演练**:Supabase 生产库目前无演练过的恢复路径,用户 >0 后这是最大单点风险
 - **用户反馈进入循环**:admin/feedback 模块已在,接一条"反馈 → 每周 triage → task"的流程
