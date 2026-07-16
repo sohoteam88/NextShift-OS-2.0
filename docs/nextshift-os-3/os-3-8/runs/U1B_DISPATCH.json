@@ -1,0 +1,65 @@
+{
+  "schema": "nextshift.os3.8.task-dispatch",
+  "version": 1,
+  "task_id": "U1B",
+  "wave_id": "W3",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "task_verification_policy": "actual_checks_required",
+  "task_branch": "refactor/os-3.8-u1b-dead-code-removal",
+  "base_branch": "planning/os-3.8-product-usability",
+  "base_sha": "f229f7ef1ac233942572fb732283bd30d6574313",
+  "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/91",
+  "verified_head_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb",
+  "merge_sha": "549830dc11e371c3041a0afc9a7f88be110b2d35",
+  "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U1B_IMPLEMENTATION_REPORT.md",
+  "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U1B_DISPATCH.json",
+  "report_exists_at_exact_head": true,
+  "report_in_pr_diff": true,
+  "checks": "passed",
+  "github_actions_run_id": 29498824736,
+  "check_runs": [
+    {
+      "name": "Type Check + Lint + Build",
+      "job_id": 87622257404,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29498824736/job/87622257404"
+    },
+    {
+      "name": "Tests",
+      "job_id": 87623194951,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29498824736/job/87623194951"
+    },
+    {
+      "name": "E2E Secret Check",
+      "job_id": 87623461302,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29498824736/job/87623461302"
+    },
+    {
+      "name": "E2E Tests",
+      "job_id": 87623482715,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29498824736/job/87623482715"
+    }
+  ],
+  "architecture_review": {
+    "review_id": 4713877223,
+    "verdict": "PASS",
+    "reviewed_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb"
+  },
+  "execution_mode": "manual_codex_desktop",
+  "adoption_mode": "manual_governance_backfill",
+  "adoption_reason": "U1B completed through the approved classic Codex workflow; PR #91 was exact-head reviewed, passed all required checks, and was manually merged before governance evidence persistence.",
+  "github_merged_at": "2026-07-16T12:59:20Z",
+  "verified_at": "2026-07-16T13:12:33Z",
+  "adopted_at": "2026-07-16T13:12:33Z"
+}
