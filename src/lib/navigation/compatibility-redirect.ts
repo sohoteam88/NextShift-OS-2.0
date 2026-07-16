@@ -15,12 +15,13 @@ export function buildCompatibilityDestination(
 
   const [pathname, existingQuery = ''] = destination.split('?', 2);
   const query = new URLSearchParams(existingQuery);
+  const destinationOwnsViewState = query.has('view') || query.has('tab');
 
   for (const [key, rawValue] of Object.entries(searchParams)) {
     if (rawValue === undefined) continue;
     // A destination-owned key (for example `view=command`) is an authority
     // boundary and cannot be replaced by an untrusted source query.
-    if (query.has(key)) continue;
+    if (query.has(key) || (destinationOwnsViewState && (key === 'view' || key === 'tab'))) continue;
     query.delete(key);
     const values = Array.isArray(rawValue) ? rawValue : [rawValue];
     for (const value of values) query.append(key, value);

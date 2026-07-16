@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ElementType, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ElementType, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLocale } from 'next-intl';
@@ -49,6 +49,13 @@ export function MobileTabBar({ activationMode = false, className }: MobileTabBar
   const morePanelRef = useRef<HTMLDivElement>(null);
   void activationMode;
 
+  const closeMore = useCallback((restoreTriggerFocus: boolean) => {
+    setMoreOpen(false);
+    if (restoreTriggerFocus) {
+      requestAnimationFrame(() => moreButtonRef.current?.focus());
+    }
+  }, []);
+
   useEffect(() => {
     if (!moreOpen) return;
     const panel = morePanelRef.current;
@@ -56,14 +63,13 @@ export function MobileTabBar({ activationMode = false, className }: MobileTabBar
 
     function onPointerDown(event: MouseEvent) {
       if (panel?.contains(event.target as Node) || moreButtonRef.current?.contains(event.target as Node)) return;
-      setMoreOpen(false);
+      closeMore(true);
     }
 
     function onEscape(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
       event.preventDefault();
-      setMoreOpen(false);
-      moreButtonRef.current?.focus();
+      closeMore(true);
     }
 
     document.addEventListener('mousedown', onPointerDown);
@@ -72,7 +78,7 @@ export function MobileTabBar({ activationMode = false, className }: MobileTabBar
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onEscape);
     };
-  }, [moreOpen]);
+  }, [closeMore, moreOpen]);
 
   function trapMoreFocus(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (event.key !== 'Tab') return;
@@ -94,7 +100,13 @@ export function MobileTabBar({ activationMode = false, className }: MobileTabBar
   return (
     <>
       {moreOpen ? (
-        <div className="fixed inset-0 z-30 bg-slate-950/20 lg:hidden" aria-hidden="true" />
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label="Close more navigation"
+          onClick={() => closeMore(true)}
+          className="fixed inset-0 z-30 bg-slate-950/20 xl:hidden"
+        />
       ) : null}
       {moreOpen ? (
         <div
@@ -104,7 +116,7 @@ export function MobileTabBar({ activationMode = false, className }: MobileTabBar
           aria-modal="true"
           aria-label="More navigation"
           onKeyDown={trapMoreFocus}
-          className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 grid max-h-[min(70vh,28rem)] grid-cols-2 gap-2 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-3 shadow-[var(--shadow-lg)] lg:hidden"
+          className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 grid max-h-[min(70vh,28rem)] grid-cols-2 gap-2 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-3 shadow-[var(--shadow-lg)] xl:hidden"
         >
           {MEMBER_MORE_NAVIGATION.map((item) => {
             const Icon = ICONS[item.id];
@@ -114,7 +126,7 @@ export function MobileTabBar({ activationMode = false, className }: MobileTabBar
                 key={item.id}
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                onClick={() => setMoreOpen(false)}
+                onClick={() => closeMore(false)}
                 className={cn(
                   'flex min-h-12 items-center gap-3 rounded-[var(--radius-md)] px-3 text-sm font-semibold',
                   active ? 'bg-blue-50 text-[var(--color-primary)]' : 'text-[var(--color-text)] hover:bg-[var(--color-surface)]',
@@ -159,7 +171,10 @@ export function MobileTabBar({ activationMode = false, className }: MobileTabBar
           aria-haspopup="dialog"
           aria-expanded={moreOpen}
           aria-controls="member-more-navigation"
-          onClick={() => setMoreOpen((open) => !open)}
+          onClick={() => {
+            if (moreOpen) closeMore(true);
+            else setMoreOpen(true);
+          }}
           className={cn(
             'flex min-h-14 flex-col items-center justify-center gap-1 rounded-[var(--radius-md)] px-1 text-xs font-medium',
             moreOpen || moreActive ? 'text-[var(--color-primary)]' : 'text-[var(--color-text-muted)]',
