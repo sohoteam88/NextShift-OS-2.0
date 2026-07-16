@@ -394,8 +394,8 @@
     {
       "id": "W3",
       "title": "Convergence and Pattern Extension",
-      "status": "pending",
-      "start_sha": null,
+      "status": "running",
+      "start_sha": "f229f7ef1ac233942572fb732283bd30d6574313",
       "tasks": [
         {
           "id": "U1B",
@@ -405,9 +405,63 @@
           "contract": null,
           "execution_task": null,
           "depends_on": ["AR-W2", "STEVEN-IA"],
-          "status": "pending",
-          "verification": null,
-          "evidence": null
+          "status": "completed",
+          "verification": {
+            "status": "passed",
+            "task_id": "U1B",
+            "task_verification_policy": "actual_checks_required",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "refactor/os-3.8-u1b-dead-code-removal",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/91",
+            "verified_head_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U1B_IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U1B_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "passed",
+            "architecture_review": {
+              "review_id": 4713877223,
+              "verdict": "PASS",
+              "reviewed_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb"
+            },
+            "verified_at": "2026-07-16T13:12:33Z"
+          },
+          "evidence": {
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/91",
+            "merge_sha": "549830dc11e371c3041a0afc9a7f88be110b2d35",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U1B_IMPLEMENTATION_REPORT.md",
+            "verification": {
+              "status": "passed",
+              "task_id": "U1B",
+              "task_verification_policy": "actual_checks_required",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "base_branch": "planning/os-3.8-product-usability",
+              "task_branch": "refactor/os-3.8-u1b-dead-code-removal",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/91",
+              "verified_head_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U1B_IMPLEMENTATION_REPORT.md",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U1B_DISPATCH.json",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "checks": "passed",
+              "architecture_review": {
+                "review_id": 4713877223,
+                "verdict": "PASS",
+                "reviewed_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb"
+              },
+              "verified_at": "2026-07-16T13:12:33Z"
+            },
+            "validation": {
+              "checks": "passed",
+              "head_sha": "66ad54acda6bc03baa3e293eed85120ad7239efb"
+            },
+            "recovered": true,
+            "recovered_at": "2026-07-16T13:12:33Z",
+            "github_merged_at": "2026-07-16T12:59:20Z",
+            "execution_mode": "manual_codex_desktop",
+            "adoption_mode": "manual_governance_backfill"
+          }
         },
         {
           "id": "U3",
