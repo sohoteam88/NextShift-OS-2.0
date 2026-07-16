@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-export default function OnboardingCompletePage() {
-  redirect('/dashboard');
-}
+export default createCompatibilityRedirect('/dashboard');

@@ -1,9 +1,3 @@
-import { LeadDashboard } from '@/modules/lead-engine/components/LeadDashboard';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-export default function LeadEnginePage() {
-  return (
-    <div className="py-6">
-      <LeadDashboard />
-    </div>
-  );
-}
+export default createCompatibilityRedirect('/crm');

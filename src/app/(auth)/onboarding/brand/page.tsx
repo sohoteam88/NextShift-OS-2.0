@@ -1,7 +1,3 @@
-import { redirect } from 'next/navigation';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-// Brand-builder wizard replaced this onboarding step.
-// Redirect to the unified wizard entry point.
-export default function OnboardingBrandPage() {
-  redirect('/brand-builder');
-}
+export default createCompatibilityRedirect('/brand-builder');

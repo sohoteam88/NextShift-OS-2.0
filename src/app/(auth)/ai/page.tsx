@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-export default function AIPage() {
-  redirect('/content-engine');
-}
+export default createCompatibilityRedirect('/content-engine');

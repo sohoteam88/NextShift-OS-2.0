@@ -1,9 +1,3 @@
-import { SalesDashboard } from '@/modules/sales-engine/components/SalesDashboard';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-export default function SalesEnginePage() {
-  return (
-    <div className="py-6">
-      <SalesDashboard />
-    </div>
-  );
-}
+export default createCompatibilityRedirect('/crm');
