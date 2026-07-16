@@ -106,19 +106,34 @@ always rejected even if a future broad pattern could match them. Any existing
 check run—failed, pending, cancelled, skipped, neutral, or successful—routes to
 normal check verification and cannot use the exemption.
 
-The structured evidence binds the repository, PR URL, base branch and SHA,
-head SHA, workflow path and blob SHA, exact GitHub changed-file list, zero run
-count, policy decision, and verification timestamp. Metadata, diff, check runs,
-and workflow policy are fetched again before persistence to reject head or
-policy drift. Caller-provided changed-file lists and task outcomes cannot grant
-the exemption. Remediation PRs continue to require actual passed checks.
+Every Manifest task must declare exactly one verification policy. A missing or
+unknown policy is invalid and fails closed:
+
+| Task | Verification policy |
+| --- | --- |
+| E1, E2, U1B, U3, E3A, E3B | `actual_checks_required` |
+| U1A, U2 | `paths_ignored_zero_checks_allowed` |
+
+`actual_checks_required` accepts only `checks="passed"`.
+`paths_ignored_zero_checks_allowed` may still record actual passed checks, but
+it is the only policy that can authorize the strict zero-check decision.
+Remediation PRs always require actual passed checks regardless of task policy.
+
+The structured evidence binds the Manifest task ID and exact task verification
+policy in addition to the repository, PR URL, base branch and SHA, head SHA,
+workflow path and blob SHA, exact GitHub changed-file list, zero run count,
+policy decision, and verification timestamp. Metadata, task policy, diff, check
+runs, and workflow policy are fetched again before persistence, merge, and
+merged/running recovery. Caller input, environment variables, task outcomes,
+PR bodies, labels, and branch names cannot grant or transfer the exemption.
+Evidence for U1A cannot be reused for U2, or vice versa.
 
 An operator can evaluate the same contract read-only, without changing the
 Manifest, merging, committing, or pushing:
 
 ```bash
 scripts/os-pipeline/run-pipeline.sh \
-  --evaluate-pr-check-requirement PR_URL EXPECTED_HEAD_SHA EXPECTED_BASE_SHA
+  --evaluate-pr-check-requirement TASK_ID PR_URL EXPECTED_HEAD_SHA EXPECTED_BASE_SHA
 ```
 
 After those checks and before merge, a short state transaction writes the
@@ -439,11 +454,11 @@ Expected pipeline-specific coverage is:
   symlink rejection, and invalid/missing/out-of-PR implementation reports. The
   invalid-report fixture contains independent invalid, missing-at-head, and
   absent-from-diff subcases.
-- `tests/docs-only-ci-policy.sh`: **18 named docs-only CI policy fixtures**
-  covering each frozen ignored-path class, source/mixed/empty diff rejection,
-  workflow/repository/base/head drift, existing failed or pending checks,
-  untrusted caller file lists, path metacharacters, validator evidence
-  completeness/matching, and a PR #84-style exact docs-only artifact.
+- `tests/docs-only-ci-policy.sh`: **34 named docs-only CI policy fixtures**—the
+  original 18 exact-diff/check/workflow/validator cases plus 16 task-policy
+  cases covering U1A/U2 authorization, rejection for every actual-check task,
+  missing/unknown policies, forged/mismatched/cross-task evidence, caller
+  non-authority, recovery revalidation, and exact PR #84 U1A evidence.
 
 The real-Git fixtures use temporary bare remotes/worktrees plus fake GitHub and
 Codex commands. They do not contact GitHub, execute real E1/E2 product work,

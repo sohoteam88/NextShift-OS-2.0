@@ -29,9 +29,9 @@ Commands:
   --record-review-result ID PASS|CHANGES_REQUESTED
   --record-steven-ia APPROVER TIMESTAMP Record the W2 human IA decision.
   --record-final-audit PASS|FAIL PATH   Record an external final independent-audit result.
-  --evaluate-pr-check-requirement PR_URL EXPECTED_HEAD_SHA EXPECTED_BASE_SHA
+  --evaluate-pr-check-requirement TASK_ID PR_URL EXPECTED_HEAD_SHA EXPECTED_BASE_SHA
                                         Read-only exact-PR CI requirement evaluation.
-  --verify-pr PR_URL                    Run local gates and wait for required GitHub checks.
+  --verify-pr TASK_ID PR_URL            Run local gates and enforce the Manifest task policy.
   --merge-task-pr TASK_ID PR_URL        Verify and merge an eligible task PR (explicit opt-in).
   --recover-task TASK_ID                Resume one exact normal-task PR without redispatching Codex.
   --dispatch                            Explicitly dispatch the next eligible task (operator opt-in only).
@@ -199,7 +199,7 @@ transaction_complete_task() {
     die "task already has different completion evidence: $id"
   fi
   [[ "$status" == running ]] || die "task is no longer running: $id"
-  validate_task_completion_evidence "$evidence"
+  validate_task_completion_evidence "$id" "$evidence"
   validate_persisted_task_verification "$id" "$dispatch_relative" "$(jq -c '.verification' <<<"$evidence")"
   assert_merged_task_contract "$id" "$evidence"
   update_task_status "$id" running completed "$evidence"
@@ -229,7 +229,7 @@ transaction_record_task_verification() {
   [[ "$remote_head" == "$(jq -r '.verified_head_sha' <<<"$verification")" ]] || die "remote task head changed before verification persistence"
   ensure_exact_report_at_head "$REPO_DIR" "$(jq -r '.verified_head_sha' <<<"$verification")" "$(jq -r '.implementation_report' <<<"$verification")" "$(jq -r '.pr_url' <<<"$verification")"
   gh pr diff "$(jq -r '.pr_url' <<<"$verification")" --name-only | grep -Fqx -e "$(jq -r '.implementation_report' <<<"$verification")" || die "task report changed before verification persistence"
-  assert_task_check_contract "$verification"
+  assert_task_check_contract "$id" "$verification"
   jq --argjson verification "$verification" '.verification=$verification' "$artifact" >"${artifact}.tmp" && mv "${artifact}.tmp" "$artifact"
   jq --arg id "$id" --argjson verification "$verification" '
     .waves |= map(.tasks |= map(if .id == $id and .status == "running" then .verification=$verification else . end))
@@ -263,8 +263,9 @@ validate_evidence() {
 }
 
 validate_task_completion_evidence() {
-  local evidence="$1"
-  jq -e '
+  local id="$1" evidence="$2" policy
+  policy="$(task_verification_policy "$id")"
+  jq -e --arg id "$id" --arg policy "$policy" '
     . as $e |
     ($e | type == "object") and
     ($e.pr_url | type == "string" and test("^https://github\\.com/[^/]+/[^/]+/pull/[0-9]+$")) and
@@ -278,9 +279,11 @@ validate_task_completion_evidence() {
       .pr_url == $e.pr_url and .implementation_report == $e.implementation_report and
       .verified_head_sha == $e.validation.head_sha and .checks == $e.validation.checks and
       (if .checks == "passed" then
-        ((.checks_evidence? // null) == null) and (($e.validation.checks_evidence? // null) == null)
+       ((.checks_evidence? // null) == null) and (($e.validation.checks_evidence? // null) == null)
        else
-        (.checks_evidence | type == "object" and .decision == "not_required_paths_ignored") and
+        $policy == "paths_ignored_zero_checks_allowed" and
+        (.checks_evidence | type == "object" and .decision == "not_required_paths_ignored" and
+          .task_id == $id and .task_verification_policy == $policy) and
         .checks_evidence == $e.validation.checks_evidence
        end))
   ' <<<"$evidence" >/dev/null || die "task completion evidence does not preserve the exact verified PR contract"
@@ -342,8 +345,9 @@ ensure_exact_report_at_head() {
 }
 
 validate_task_verification() {
-  local id="$1" artifact="$2" verification="$3" repo base branch pr report head dispatch_relative
+  local id="$1" artifact="$2" verification="$3" repo base branch pr report head dispatch_relative policy
   repo="$(expected_repository)"; base="$(jq -r '.base_branch' "$MANIFEST_PATH")"
+  policy="$(task_verification_policy "$id")"
   branch="$(jq -r '.task_branch // empty' "$artifact")"; pr="$(jq -r '.pr_url // empty' "$artifact")"; report="$(jq -r '.implementation_report // empty' "$artifact")"
   head="$(jq -r '.verified_head_sha // empty' <<<"$verification")"; dispatch_relative="$(task_dispatch_relative "$id")"
   safe_relative_path "$report" || die "task dispatch report path is unsafe"
@@ -351,7 +355,7 @@ validate_task_verification() {
     .task_id == $id and .task_branch == $branch and .base_branch == $base and
     .pr_url == $pr and .implementation_report == $report
   ' "$artifact" >/dev/null || die "task dispatch artifact identity is inconsistent"
-  jq -e --arg repo "$repo" --arg base "$base" --arg branch "$branch" --arg pr "$pr" --arg report "$report" --arg dispatch "$dispatch_relative" --arg head "$head" '
+  jq -e --arg id "$id" --arg policy "$policy" --arg repo "$repo" --arg base "$base" --arg branch "$branch" --arg pr "$pr" --arg report "$report" --arg dispatch "$dispatch_relative" --arg head "$head" '
     . as $verification |
     .status == "passed" and .repository == $repo and .base_branch == $base and
     .task_branch == $branch and .pr_url == $pr and .implementation_report == $report and
@@ -360,10 +364,12 @@ validate_task_verification() {
     (.verified_head_sha | test("^[0-9a-f]{40}$")) and
     (.verified_at | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
     (if .checks == "passed" then
-      ((.checks_evidence? // null) == null)
+     ((.checks_evidence? // null) == null)
      else
+      $policy == "paths_ignored_zero_checks_allowed" and
       (.checks_evidence | type == "object" and
-       .decision == "not_required_paths_ignored" and .repository == $repo and
+       .decision == "not_required_paths_ignored" and .task_id == $id and
+       .task_verification_policy == $policy and .repository == $repo and
        .pr_url == $pr and .base_branch == $base and
        (.base_sha | test("^[0-9a-f]{40}$")) and .head_sha == $head and
        .workflow_path == ".github/workflows/ci.yml" and
@@ -395,7 +401,7 @@ assert_merged_task_contract() {
   metadata="$(github_pr_metadata "$pr")"
   validate_task_pr_metadata "$metadata" "$pr" "$branch" MERGED "$verified_head" || die "merged task PR identity is ambiguous: $id"
   [[ "$(jq -r '.mergeCommit.oid // empty' <<<"$metadata")" == "$merge_sha" && "$merge_sha" =~ ^[0-9a-f]{40}$ ]] || die "merged task PR merge SHA is inconsistent"
-  assert_task_check_contract "$verification"
+  assert_task_check_contract "$id" "$verification"
   gh pr diff "$pr" --name-only | grep -Fqx -e "$report" || die "implementation report is no longer in the exact PR diff"
   ensure_exact_report_at_head "$REPO_DIR" "$verified_head" "$report" "$pr"
   git -C "$REPO_DIR" merge-base --is-ancestor "$merge_sha" HEAD || die "task merge SHA is not on the authorized planning history"
@@ -500,6 +506,19 @@ expected_ci_paths_ignore_json() {
   printf '%s\n' '["docs/**","audit/**","**/*.md","platform/status.md"]'
 }
 
+task_verification_policy() {
+  local id="$1" count policy
+  [[ "$id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] || die "task ID is invalid for verification policy lookup: $id"
+  count="$(jq -r --arg id "$id" '[.waves[].tasks[] | select(.id == $id)] | length' "$MANIFEST_PATH")"
+  [[ "$count" == "1" ]] || die "task verification policy lookup must identify exactly one Manifest task: $id"
+  policy="$(jq -r --arg id "$id" '.waves[].tasks[] | select(.id == $id) | .verification_policy // empty' "$MANIFEST_PATH")"
+  case "$policy" in
+    actual_checks_required|paths_ignored_zero_checks_allowed) printf '%s\n' "$policy" ;;
+    "") die "task verification policy is missing: $id" ;;
+    *) die "task verification policy is unknown for $id: $policy" ;;
+  esac
+}
+
 ci_ignored_path() {
   local changed_file="$1"
   safe_relative_path "$changed_file" || return 1
@@ -570,7 +589,9 @@ github_check_runs_payload() {
 }
 
 evaluate_pr_check_requirement() {
-  local pr_url="$1" expected_head="$2" expected_base_sha="$3" expected_repo expected_base metadata refreshed files_payload changed_files check_runs policy_json workflow_blob_sha verified_at changed_file
+  local task_id="$1" pr_url="$2" expected_head="$3" expected_base_sha="$4" task_policy expected_repo expected_base metadata refreshed files_payload changed_files check_runs policy_json workflow_blob_sha verified_at changed_file
+  task_policy="$(task_verification_policy "$task_id")"
+  [[ "$task_policy" == "paths_ignored_zero_checks_allowed" ]] || return 1
   [[ "$expected_head" =~ ^[0-9a-f]{40}$ && "$expected_base_sha" =~ ^[0-9a-f]{40}$ ]] || return 1
   expected_repo="$(expected_repository "$REPO_DIR")"; expected_base="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   metadata="$(github_pr_metadata "$pr_url")" || return 1
@@ -601,12 +622,13 @@ evaluate_pr_check_requirement() {
   [[ "$(jq -r 'length' <<<"$check_runs")" == 0 ]] || return 1
 
   verified_at="$(date -u +%FT%TZ)"
-  jq -n --arg decision "not_required_paths_ignored" --arg repo "$expected_repo" --arg pr "$pr_url" \
+  jq -n --arg decision "not_required_paths_ignored" --arg task_id "$task_id" --arg task_policy "$task_policy" --arg repo "$expected_repo" --arg pr "$pr_url" \
     --arg base "$expected_base" --arg base_sha "$expected_base_sha" --arg head "$expected_head" \
     --arg workflow ".github/workflows/ci.yml" --arg workflow_blob "$workflow_blob_sha" \
     --argjson changed_files "$changed_files" --arg verified_at "$verified_at" '
     {
-      decision:$decision, repository:$repo, pr_url:$pr, base_branch:$base,
+      decision:$decision, task_id:$task_id, task_verification_policy:$task_policy,
+      repository:$repo, pr_url:$pr, base_branch:$base,
       base_sha:$base_sha, head_sha:$head, workflow_path:$workflow,
       workflow_blob_sha:$workflow_blob, changed_files:$changed_files,
       github_check_runs:0, ignored_paths_verified:true, verified_at:$verified_at
@@ -615,7 +637,8 @@ evaluate_pr_check_requirement() {
 }
 
 assert_task_check_contract() {
-  local verification="$1" decision pr head base_sha expected recomputed
+  local task_id="$1" verification="$2" task_policy decision pr head base_sha expected recomputed
+  task_policy="$(task_verification_policy "$task_id")"
   decision="$(jq -r '.checks // empty' <<<"$verification")"; pr="$(jq -r '.pr_url // empty' <<<"$verification")"
   case "$decision" in
     passed)
@@ -623,9 +646,11 @@ assert_task_check_contract() {
       gh pr checks "$pr" >/dev/null || die "task checks are not all passing"
       ;;
     not_required_paths_ignored)
+      [[ "$task_policy" == "paths_ignored_zero_checks_allowed" ]] || die "task policy forbids paths-ignore zero-check evidence: $task_id"
       expected="$(jq -c '.checks_evidence // null' <<<"$verification")"; [[ "$expected" != null ]] || die "docs-only task verification lacks structured checks evidence"
+      jq -e --arg task_id "$task_id" --arg policy "$task_policy" '.task_id == $task_id and .task_verification_policy == $policy' <<<"$expected" >/dev/null || die "docs-only checks evidence is bound to a different task or policy"
       head="$(jq -r '.verified_head_sha' <<<"$verification")"; base_sha="$(jq -r '.base_sha' <<<"$expected")"
-      recomputed="$(evaluate_pr_check_requirement "$pr" "$head" "$base_sha")" || die "docs-only zero-check evidence no longer satisfies the exact PR policy"
+      recomputed="$(evaluate_pr_check_requirement "$task_id" "$pr" "$head" "$base_sha")" || die "docs-only zero-check evidence no longer satisfies the exact task and PR policy"
       [[ "$(jq -Sc 'del(.verified_at)' <<<"$expected")" == "$(jq -Sc 'del(.verified_at)' <<<"$recomputed")" ]] || die "docs-only zero-check evidence changed"
       ;;
     *) die "invalid task checks decision: $decision" ;;
@@ -773,7 +798,7 @@ recover_running_task() {
       validate_persisted_task_verification "$task" "$dispatch_relative" "$verification"
       validate_task_pr_metadata "$metadata" "$pr" "$branch" MERGED "$(jq -r '.verified_head_sha' <<<"$verification")" || die "merged task PR differs from persisted verification; human recovery required"
       [[ "$(jq -r '.implementation_report' <<<"$verification")" == "$report" ]] || die "merged task report differs from persisted verification; human recovery required"
-      assert_task_check_contract "$verification"
+      assert_task_check_contract "$task" "$verification"
       gh pr diff "$pr" --name-only | grep -Fqx -e "$report" || die "merged task report is absent from the exact PR diff; human recovery required"
       ensure_exact_report_at_head "$state_repo" "$(jq -r '.verified_head_sha' <<<"$verification")" "$report" "$pr"
       merge_sha="$(jq -r '.mergeCommit.oid // empty' <<<"$metadata")"; [[ "$merge_sha" =~ ^[0-9a-f]{40}$ ]] || die "merged task has no valid merge SHA; human recovery required"
@@ -956,7 +981,7 @@ validate_open_remediation_identity() {
 
 record_remediation_verification() {
   local checkpoint="$1" run="$2" branch="$3" pr="$4" report="$5" task_dir="$6" state_repo="$7" metadata local_head remote_head
-  (REPO_DIR="$task_dir" MANIFEST_PATH="$task_dir/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" TASK_BRANCH="$branch" IMPLEMENTATION_REPORT="$report" PIPELINE_ALLOW_DETACHED_TASK_WORKTREE="${PIPELINE_ALLOW_DETACHED_TASK_WORKTREE:-0}" PIPELINE_REQUIRE_ACTUAL_CHECKS=1 verify_pr "$pr" "$branch")
+  (REPO_DIR="$task_dir" MANIFEST_PATH="$task_dir/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" TASK_BRANCH="$branch" IMPLEMENTATION_REPORT="$report" PIPELINE_ALLOW_DETACHED_TASK_WORKTREE="${PIPELINE_ALLOW_DETACHED_TASK_WORKTREE:-0}" PIPELINE_REQUIRE_ACTUAL_CHECKS=1 verify_pr "$pr" "$branch" "$checkpoint")
   git -C "$task_dir" fetch origin "$branch" || die "cannot refresh verified remediation branch"
   metadata="$(github_pr_metadata "$pr")"
   validate_remediation_pr_metadata "$metadata" "$pr" "$branch" OPEN || die "remediation PR metadata changed after verification"
@@ -1227,11 +1252,17 @@ EOF
 }
 
 verify_pr() {
-  local pr_url="$1" task_branch="${2:-${TASK_BRANCH:-}}" repo_json refreshed_json expected_repo expected_base local_head remote_head initial_head initial_base_sha checks_deadline checks_rc checks_output checks_decision checks_evidence recomputed report verified_at
+  local pr_url="$1" task_branch="${2:-${TASK_BRANCH:-}}" task_id="${3:-${PIPELINE_TASK_ID:-}}" task_policy repo_json refreshed_json expected_repo expected_base local_head remote_head initial_head initial_base_sha checks_deadline checks_rc checks_output checks_decision checks_evidence recomputed report verified_at
   command -v gh >/dev/null 2>&1 || die "gh is required for PR verification"
   [[ "$pr_url" == https://github.com/*/pull/* ]] || die "invalid PR URL"
   [[ -n "$task_branch" ]] || die "verification requires TASK_BRANCH"
+  [[ -n "$task_id" ]] || die "verification requires an explicit task ID"
   synchronization_gate "$task_branch" "$REPO_DIR" "${PIPELINE_ALLOW_DETACHED_TASK_WORKTREE:-0}"
+  if [[ "${PIPELINE_REQUIRE_ACTUAL_CHECKS:-0}" == "1" ]]; then
+    task_policy=actual_checks_required
+  else
+    task_policy="$(task_verification_policy "$task_id")"
+  fi
   expected_repo="$(expected_repository "$REPO_DIR")"
   expected_base="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   repo_json="$(github_pr_metadata "$pr_url")"
@@ -1257,7 +1288,7 @@ verify_pr() {
     set +e; checks_output="$(gh pr checks "$pr_url" --watch --fail-fast 2>&1)"; checks_rc=$?; set -e
     if [[ "$checks_rc" == 0 ]]; then checks_decision=passed; break; fi
     if grep -q 'no checks reported' <<<"$checks_output"; then
-      if checks_evidence="$(evaluate_pr_check_requirement "$pr_url" "$initial_head" "$initial_base_sha")"; then
+      if [[ "$task_policy" == "paths_ignored_zero_checks_allowed" ]] && checks_evidence="$(evaluate_pr_check_requirement "$task_id" "$pr_url" "$initial_head" "$initial_base_sha")"; then
         checks_decision=not_required_paths_ignored
         break
       fi
@@ -1267,6 +1298,7 @@ verify_pr() {
     die "GitHub checks failed"
   done
   [[ "$checks_decision" == passed || "$checks_decision" == not_required_paths_ignored ]] || die "timed out waiting for GitHub checks or exact paths-ignore evidence"
+  [[ "$task_policy" != "actual_checks_required" || "$checks_decision" == passed ]] || die "Manifest task policy requires actual passing GitHub checks: $task_id"
   [[ "${PIPELINE_REQUIRE_ACTUAL_CHECKS:-0}" != "1" || "$checks_decision" == passed ]] || die "this verification path requires actual passing GitHub checks"
   git -C "$REPO_DIR" fetch origin "$task_branch" >/dev/null || die "cannot refresh verified task branch"
   refreshed_json="$(github_pr_metadata "$pr_url")"
@@ -1282,16 +1314,16 @@ verify_pr() {
     gh pr checks "$pr_url" >/dev/null || die "task checks changed after verification"
     verified_at="$(date -u +%FT%TZ)"
   else
-    recomputed="$(evaluate_pr_check_requirement "$pr_url" "$initial_head" "$initial_base_sha")" || die "docs-only paths-ignore evidence changed after verification"
+    recomputed="$(evaluate_pr_check_requirement "$task_id" "$pr_url" "$initial_head" "$initial_base_sha")" || die "docs-only task policy or paths-ignore evidence changed after verification"
     [[ "$(jq -Sc 'del(.verified_at)' <<<"$checks_evidence")" == "$(jq -Sc 'del(.verified_at)' <<<"$recomputed")" ]] || die "docs-only PR diff or CI policy changed during verification"
     checks_evidence="$recomputed"
     verified_at="$(jq -r '.verified_at' <<<"$checks_evidence")"
   fi
   VERIFIED_PR_JSON="$(jq -n \
-    --arg repo "$expected_repo" --arg base "$expected_base" --arg branch "$task_branch" \
+    --arg task_id "$task_id" --arg task_policy "$task_policy" --arg repo "$expected_repo" --arg base "$expected_base" --arg branch "$task_branch" \
     --arg pr "$pr_url" --arg head "$initial_head" --arg report "$report" \
-    --arg dispatch "$(task_dispatch_relative "${PIPELINE_TASK_ID:-TASK}")" --arg checks "$checks_decision" --arg verified_at "$verified_at" --argjson checks_evidence "$checks_evidence" \
-    '{status:"passed",repository:$repo,base_branch:$base,task_branch:$branch,pr_url:$pr,verified_head_sha:$head,implementation_report:$report,dispatch_artifact:$dispatch,report_exists_at_exact_head:($report != ""),report_in_pr_diff:($report != ""),checks:$checks,verified_at:$verified_at} + (if $checks == "not_required_paths_ignored" then {checks_evidence:$checks_evidence} else {} end)')"
+    --arg dispatch "$(task_dispatch_relative "$task_id")" --arg checks "$checks_decision" --arg verified_at "$verified_at" --argjson checks_evidence "$checks_evidence" \
+    '{status:"passed",task_id:$task_id,task_verification_policy:$task_policy,repository:$repo,base_branch:$base,task_branch:$branch,pr_url:$pr,verified_head_sha:$head,implementation_report:$report,dispatch_artifact:$dispatch,report_exists_at_exact_head:($report != ""),report_in_pr_diff:($report != ""),checks:$checks,verified_at:$verified_at} + (if $checks == "not_required_paths_ignored" then {checks_evidence:$checks_evidence} else {} end)')"
   log "GitHub checks decision $checks_decision verified for exact head $initial_head"
 }
 
@@ -1300,7 +1332,7 @@ merge_task_pr() {
   [[ "${PIPELINE_ALLOW_PR_MERGE:-0}" == "1" ]] || die "merge requires PIPELINE_ALLOW_PR_MERGE=1"
   task_repo="$REPO_DIR"; task_manifest="$MANIFEST_PATH"
   PIPELINE_TASK_ID="$task"
-  verify_pr "$pr_url" "${TASK_BRANCH:?TASK_BRANCH required}"
+  verify_pr "$pr_url" "${TASK_BRANCH:?TASK_BRANCH required}" "$task"
   verification="$VERIFIED_PR_JSON"; report="${IMPLEMENTATION_REPORT:?IMPLEMENTATION_REPORT required}"
   dispatch_relative="$(task_dispatch_relative "$task")"
   state_repo="${STATE_REPO_DIR:?STATE_REPO_DIR must be a clean planning-branch checkout}"
@@ -1314,7 +1346,7 @@ merge_task_pr() {
   synchronization_gate "${TASK_BRANCH}" "$task_repo" "${PIPELINE_ALLOW_DETACHED_TASK_WORKTREE:-0}"
   metadata="$(github_pr_metadata "$pr_url")"; verified_head="$(jq -r '.verified_head_sha' <<<"$verification")"
   validate_task_pr_metadata "$metadata" "$pr_url" "${TASK_BRANCH}" OPEN "$verified_head" || die "task PR identity changed before merge"
-  assert_task_check_contract "$verification"
+  assert_task_check_contract "$task" "$verification"
   ensure_exact_report_at_head "$task_repo" "$verified_head" "$report" "$pr_url"
   gh pr diff "$pr_url" --name-only | grep -Fqx -e "$report" || die "implementation report changed before merge"
   gh pr merge "$pr_url" --squash --delete-branch --match-head-commit "$verified_head" || die "PR merge failed or verified head changed"
@@ -1326,7 +1358,7 @@ merge_task_pr() {
   reconcile_planning_state "$base_branch" "$state_repo"
   git -C "$state_repo" merge-base --is-ancestor "$merge_sha" HEAD || die "task merge SHA is not on authorized planning history"
   evidence="$(jq -n --arg pr "$pr_url" --arg merge_sha "$merge_sha" --arg report "$report" --arg head "$verified_head" --argjson verification "$verification" --arg merged_at "$(date -u +%FT%TZ)" '{pr_url:$pr,merge_sha:$merge_sha,implementation_report:$report,verification:$verification,validation:({checks:$verification.checks,head_sha:$head} + (if $verification.checks == "not_required_paths_ignored" then {checks_evidence:$verification.checks_evidence} else {} end)),merged_at:$merged_at,recovered:false}')"
-  validate_task_completion_evidence "$evidence"
+  validate_task_completion_evidence "$task" "$evidence"
   state_transaction "task-complete:$task" "chore(pipeline): record merged OS 3.8 task $task" transaction_complete_task "$task" "$evidence" "$dispatch_relative"
 }
 
@@ -1543,9 +1575,12 @@ case "$command" in
     record_final_audit_result "${2:?PASS or FAIL required}" "${3:?external audit result path required}"
     ;;
   --evaluate-pr-check-requirement)
-    evaluate_pr_check_requirement "${2:?PR URL required}" "${3:?expected head SHA required}" "${4:?expected base SHA required}" || die "PR does not satisfy the exact paths-ignore zero-check contract"
+    evaluate_pr_check_requirement "${2:?task ID required}" "${3:?PR URL required}" "${4:?expected head SHA required}" "${5:?expected base SHA required}" || die "PR does not satisfy the exact task-policy-bound paths-ignore zero-check contract"
     ;;
-  --verify-pr) verify_pr "${2:?PR URL required}" ;;
+  --verify-pr)
+    PIPELINE_TASK_ID="${2:?task ID required}"
+    verify_pr "${3:?PR URL required}" "${TASK_BRANCH:-}" "$PIPELINE_TASK_ID"
+    ;;
   --merge-task-pr) merge_task_pr "${2:?task ID required}" "${3:?PR URL required}" ;;
   --recover-task) recover_running_task "${2:?task ID required}" ;;
   --dispatch) dispatch_task ;;

@@ -55,7 +55,14 @@ endpoint="${!#}"
 case "$endpoint" in
   repos/*/pulls/84/files\?per_page=100) cat "${FIXTURE_FILES:?}" ;;
   repos/*/commits/*/check-runs\?per_page=100) cat "${FIXTURE_CHECKS:?}" ;;
-  repos/*/pulls/84) cat "${FIXTURE_META:?}" ;;
+  repos/*/pulls/84)
+    if [[ "${FIXTURE_MUTATE_POLICY_ON_METADATA:-0}" == "1" ]]; then
+      jq '(.waves[].tasks[] | select(.id == "U1A") | .verification_policy)="actual_checks_required"' \
+        "${FIXTURE_MANIFEST:?}" >"${FIXTURE_MANIFEST:?}.tmp"
+      mv "${FIXTURE_MANIFEST:?}.tmp" "${FIXTURE_MANIFEST:?}"
+    fi
+    cat "${FIXTURE_META:?}"
+    ;;
   *) echo "unsupported fake gh endpoint: $endpoint" >&2; exit 2 ;;
 esac
 EOF
@@ -87,10 +94,10 @@ reset_fixture() {
 }
 
 evaluate() {
-  local expected_head="${1:-$HEAD_SHA}" expected_base="${2:-$BASE_SHA}"
+  local task_id="${1:-U1A}" expected_head="${2:-$HEAD_SHA}" expected_base="${3:-$BASE_SHA}" manifest_path="${4:-$MANIFEST}"
   PATH="$BIN:$PATH" FIXTURE_META="$META" FIXTURE_FILES="$FILES" FIXTURE_CHECKS="$CHECKS" \
-    PIPELINE_EXPECTED_REPOSITORY="$EXPECTED_REPO" REPO_DIR="$REPO" MANIFEST_PATH="$MANIFEST" \
-    "$PIPELINE" --evaluate-pr-check-requirement "$PR_URL" "$expected_head" "$expected_base"
+    PIPELINE_EXPECTED_REPOSITORY="$EXPECTED_REPO" REPO_DIR="$REPO" MANIFEST_PATH="$manifest_path" \
+    "$PIPELINE" --evaluate-pr-check-requirement "$task_id" "$PR_URL" "$expected_head" "$expected_base"
 }
 
 expect_accept() {
@@ -98,10 +105,12 @@ expect_accept() {
   reset_fixture
   write_files "$files_json"
   write_meta "$EXPECTED_REPO" planning/os-3.8-product-usability "$BASE_SHA" "$HEAD_SHA" "$(jq -r 'length' <<<"$files_json")"
-  output="$(evaluate)" || fail "$name was rejected"
+  output="$(evaluate U1A)" || fail "$name was rejected"
   expected_blob="$(git -C "$REPO" rev-parse "$BASE_SHA:.github/workflows/ci.yml")"
   jq -e --arg repo "$EXPECTED_REPO" --arg pr "$PR_URL" --arg base "$BASE_SHA" --arg head "$HEAD_SHA" --arg blob "$expected_blob" --argjson files "$files_json" '
-    .decision == "not_required_paths_ignored" and .repository == $repo and .pr_url == $pr and
+    .decision == "not_required_paths_ignored" and .task_id == "U1A" and
+    .task_verification_policy == "paths_ignored_zero_checks_allowed" and
+    .repository == $repo and .pr_url == $pr and
     .base_branch == "planning/os-3.8-product-usability" and .base_sha == $base and .head_sha == $head and
     .workflow_path == ".github/workflows/ci.yml" and .workflow_blob_sha == $blob and
     .changed_files == $files and .github_check_runs == 0 and .ignored_paths_verified == true
@@ -111,7 +120,22 @@ expect_accept() {
 
 expect_reject() {
   local name="$1"
-  if evaluate >/dev/null 2>&1; then fail "$name was accepted"; fi
+  if evaluate U1A >/dev/null 2>&1; then fail "$name was accepted"; fi
+  pass_fixture "$name"
+}
+
+expect_task_accept() {
+  local name="$1" task_id="$2" output
+  reset_fixture
+  output="$(evaluate "$task_id")" || fail "$name was rejected"
+  jq -e --arg task_id "$task_id" '.task_id == $task_id and .task_verification_policy == "paths_ignored_zero_checks_allowed"' <<<"$output" >/dev/null || fail "$name evidence is not task-bound"
+  pass_fixture "$name"
+}
+
+expect_task_reject() {
+  local name="$1" task_id="$2"
+  reset_fixture
+  if evaluate "$task_id" >/dev/null 2>&1; then fail "$name was accepted"; fi
   pass_fixture "$name"
 }
 
@@ -137,7 +161,7 @@ git -C "$REPO" commit -qm policy-drift
 DRIFT_BASE="$(git -C "$REPO" rev-parse HEAD)"
 reset_fixture
 write_meta "$EXPECTED_REPO" planning/os-3.8-product-usability "$DRIFT_BASE" "$HEAD_SHA" 1
-if evaluate "$HEAD_SHA" "$DRIFT_BASE" >/dev/null 2>&1; then fail "zero_checks_workflow_policy_drift_rejected was accepted"; fi
+if evaluate U1A "$HEAD_SHA" "$DRIFT_BASE" >/dev/null 2>&1; then fail "zero_checks_workflow_policy_drift_rejected was accepted"; fi
 pass_fixture zero_checks_workflow_policy_drift_rejected
 
 reset_fixture
@@ -149,7 +173,7 @@ write_meta "$EXPECTED_REPO" main "$BASE_SHA" "$HEAD_SHA" 1
 expect_reject zero_checks_wrong_base_rejected
 
 reset_fixture
-if evaluate 0123456789012345678901234567890123456789 "$BASE_SHA" >/dev/null 2>&1; then fail "zero_checks_wrong_head_rejected was accepted"; fi
+if evaluate U1A 0123456789012345678901234567890123456789 "$BASE_SHA" >/dev/null 2>&1; then fail "zero_checks_wrong_head_rejected was accepted"; fi
 pass_fixture zero_checks_wrong_head_rejected
 
 reset_fixture
@@ -176,15 +200,16 @@ reset_fixture
 MARKER="$TMP_DIR/injection-marker"
 malicious="docs/\$(touch $MARKER);quote'proof.md"
 write_files "$(jq -cn --arg path "$malicious" '[$path]')"
-output="$(evaluate)" || fail "path_metacharacter_no_execution rejected safely quoted data"
+output="$(evaluate U1A)" || fail "path_metacharacter_no_execution rejected safely quoted data"
 [[ ! -e "$MARKER" ]] || fail "path_metacharacter_no_execution created a marker"
 jq -e --arg path "$malicious" '.changed_files == [$path]' <<<"$output" >/dev/null || fail "path_metacharacter_no_execution corrupted the path"
 pass_fixture path_metacharacter_no_execution
 
 reset_fixture
-VALID_EVIDENCE="$(evaluate)" || fail "cannot create validator fixture evidence"
+VALID_EVIDENCE="$(evaluate U1A)" || fail "cannot create validator fixture evidence"
 VALID_VERIFICATION="$(jq -n --argjson checks "$VALID_EVIDENCE" --arg repo "$EXPECTED_REPO" --arg pr "$PR_URL" --arg head "$HEAD_SHA" '{
-  status:"passed",repository:$repo,base_branch:"planning/os-3.8-product-usability",task_branch:"docs/u1a",pr_url:$pr,
+  status:"passed",task_id:"U1A",task_verification_policy:"paths_ignored_zero_checks_allowed",
+  repository:$repo,base_branch:"planning/os-3.8-product-usability",task_branch:"docs/u1a",pr_url:$pr,
   verified_head_sha:$head,implementation_report:"docs/report.md",dispatch_artifact:"docs/nextshift-os-3/os-3-8/runs/U1A_DISPATCH.json",
   report_exists_at_exact_head:true,report_in_pr_diff:true,checks:"not_required_paths_ignored",
   checks_evidence:$checks,verified_at:$checks.verified_at
@@ -212,5 +237,84 @@ pass_fixture validator_mismatched_verification_evidence_rejected
 
 expect_accept exact_PR84_style_docs_only_evidence_accepted '["docs/nextshift-os-3/os-3-8/3.8-C/IMPLEMENTATION_REPORT.md","docs/nextshift-os-3/os-3-8/3.8-C/U1A_DEAD_CODE_INVENTORY.md"]'
 
-[[ "$pass" == 18 ]] || fail "expected 18 named fixtures, got $pass"
-printf 'docs-only CI policy integration: %s/18 fixtures passed\n' "$pass"
+expect_task_accept u1a_docs_only_policy_accepted U1A
+expect_task_accept u2_docs_only_policy_accepted U2
+expect_task_reject e1_docs_only_policy_rejected E1
+expect_task_reject e2_docs_only_policy_rejected E2
+expect_task_reject u1b_docs_only_policy_rejected U1B
+expect_task_reject u3_docs_only_policy_rejected U3
+expect_task_reject e3a_docs_only_policy_rejected E3A
+expect_task_reject e3b_docs_only_policy_rejected E3B
+
+jq 'del(.waves[].tasks[] | select(.id == "U1A") | .verification_policy)' "$MANIFEST" >"$TMP_DIR/missing-policy-manifest.json"
+reset_fixture
+if evaluate U1A "$HEAD_SHA" "$BASE_SHA" "$TMP_DIR/missing-policy-manifest.json" >/dev/null 2>&1; then fail "missing_task_policy_rejected was accepted"; fi
+pass_fixture missing_task_policy_rejected
+
+jq '(.waves[].tasks[] | select(.id == "U1A") | .verification_policy)="docs_only"' "$MANIFEST" >"$TMP_DIR/unknown-policy-manifest.json"
+reset_fixture
+if evaluate U1A "$HEAD_SHA" "$BASE_SHA" "$TMP_DIR/unknown-policy-manifest.json" >/dev/null 2>&1; then fail "unknown_task_policy_rejected was accepted"; fi
+pass_fixture unknown_task_policy_rejected
+
+jq '
+  (.waves[].tasks[] | select(.id == "U1A") | .verification.checks_evidence.task_id)="U2" |
+  (.waves[].tasks[] | select(.id == "U1A") | .evidence.validation.checks_evidence.task_id)="U2"
+' "$TMP_DIR/valid-zero-check-manifest.json" >"$TMP_DIR/forged-task-id.json"
+if "$VALIDATOR" --manifest "$TMP_DIR/forged-task-id.json" >/dev/null 2>&1; then fail "forged_task_id_rejected was accepted"; fi
+pass_fixture forged_task_id_rejected
+
+jq '
+  (.waves[].tasks[] | select(.id == "U1A") | .verification.checks_evidence.task_verification_policy)="actual_checks_required" |
+  (.waves[].tasks[] | select(.id == "U1A") | .evidence.validation.checks_evidence.task_verification_policy)="actual_checks_required"
+' "$TMP_DIR/valid-zero-check-manifest.json" >"$TMP_DIR/mismatched-task-policy.json"
+if "$VALIDATOR" --manifest "$TMP_DIR/mismatched-task-policy.json" >/dev/null 2>&1; then fail "mismatched_task_policy_rejected was accepted"; fi
+pass_fixture mismatched_task_policy_rejected
+
+jq --argjson verification "$VALID_VERIFICATION" --argjson evidence "$VALID_COMPLETION" '
+  .waves |= map(if .id == "W2" then
+    .tasks |= map(if .id == "U2" then .status="completed" | .verification=$verification | .evidence=$evidence else . end)
+  else . end)
+' "$TMP_DIR/valid-zero-check-manifest.json" >"$TMP_DIR/cross-task-evidence.json"
+if "$VALIDATOR" --manifest "$TMP_DIR/cross-task-evidence.json" >/dev/null 2>&1; then fail "cross_task_evidence_rejected was accepted"; fi
+pass_fixture cross_task_evidence_rejected
+
+reset_fixture
+export PIPELINE_ALLOW_PATHS_IGNORED_ZERO_CHECKS=1
+if evaluate E1 >/dev/null 2>&1; then fail "caller_cannot_enable_exemption was accepted"; fi
+unset PIPELINE_ALLOW_PATHS_IGNORED_ZERO_CHECKS
+pass_fixture caller_cannot_enable_exemption
+
+RECOVERY_MANIFEST="$TMP_DIR/recovery-manifest.json"
+RECOVERY_DISPATCH="$REPO/docs/nextshift-os-3/os-3-8/runs/U1A_DISPATCH.json"
+mkdir -p "$(dirname "$RECOVERY_DISPATCH")"
+jq --argjson verification "$VALID_VERIFICATION" '
+  .waves |= map(if .id == "W2" then
+    .status="running" |
+    .tasks |= map(if .id == "U1A" then .status="running" | .verification=$verification | .evidence=null else . end)
+  else . end)
+' "$TMP_DIR/valid-zero-check-manifest.json" >"$RECOVERY_MANIFEST"
+jq -n --argjson verification "$VALID_VERIFICATION" --arg pr "$PR_URL" '{
+  task_id:"U1A",task_branch:"docs/u1a",base_branch:"planning/os-3.8-product-usability",
+  pr_url:$pr,implementation_report:"docs/report.md",verification:$verification
+}' >"$RECOVERY_DISPATCH"
+reset_fixture
+jq '.state="closed" | .merged=true | .merge_commit_sha="0123456789012345678901234567890123456789"' "$META" >"$META.tmp" && mv "$META.tmp" "$META"
+if PATH="$BIN:$PATH" FIXTURE_META="$META" FIXTURE_FILES="$FILES" FIXTURE_CHECKS="$CHECKS" \
+  FIXTURE_MUTATE_POLICY_ON_METADATA=1 FIXTURE_MANIFEST="$RECOVERY_MANIFEST" \
+  PIPELINE_EXPECTED_REPOSITORY="$EXPECTED_REPO" REPO_DIR="$REPO" MANIFEST_PATH="$RECOVERY_MANIFEST" \
+  "$PIPELINE" --recover-task U1A >/dev/null 2>&1; then
+  fail "recovery_revalidates_task_policy completed after policy changed"
+fi
+jq -e '.waves[].tasks[] | select(.id == "U1A") | .status == "running" and .evidence == null' "$RECOVERY_MANIFEST" >/dev/null || fail "recovery_revalidates_task_policy mutated completion state"
+pass_fixture recovery_revalidates_task_policy
+
+reset_fixture
+PR84_FILES='["docs/nextshift-os-3/os-3-8/3.8-C/IMPLEMENTATION_REPORT.md","docs/nextshift-os-3/os-3-8/3.8-C/U1A_DEAD_CODE_INVENTORY.md"]'
+write_files "$PR84_FILES"
+write_meta "$EXPECTED_REPO" planning/os-3.8-product-usability "$BASE_SHA" "$HEAD_SHA" 2
+PR84_EVIDENCE="$(evaluate U1A)" || fail "exact_PR84_U1A_evidence_accepted was rejected"
+jq -e --argjson files "$PR84_FILES" '.task_id == "U1A" and .task_verification_policy == "paths_ignored_zero_checks_allowed" and .changed_files == $files' <<<"$PR84_EVIDENCE" >/dev/null || fail "exact_PR84_U1A_evidence_accepted evidence mismatch"
+pass_fixture exact_PR84_U1A_evidence_accepted
+
+[[ "$pass" == 34 ]] || fail "expected 34 named fixtures, got $pass"
+printf 'docs-only CI policy integration: %s/34 fixtures passed\n' "$pass"

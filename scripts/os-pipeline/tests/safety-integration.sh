@@ -69,6 +69,7 @@ seed_checkpoint_ready() {
       ("docs/nextshift-os-3/os-3-8/runs/" + $id + "_DISPATCH.json") as $dispatch |
       {
         id:.id,
+        verification_policy:.verification_policy,
         title:.title,
         blueprint_section:.blueprint_section,
         contract:.contract,
@@ -335,7 +336,7 @@ run_verify() {
   IMPLEMENTATION_REPORT="$report" \
   REPO_DIR="$worktree" \
   MANIFEST_PATH="$worktree/$MANIFEST_REL" \
-  "$PIPELINE" --verify-pr "$PR_URL"
+  "$PIPELINE" --verify-pr E1 "$PR_URL"
 }
 
 lock_path() {

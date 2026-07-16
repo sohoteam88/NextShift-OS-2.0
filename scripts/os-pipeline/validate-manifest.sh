@@ -92,9 +92,11 @@ jq -e '
     ((startswith("src/") or startswith("tests/") or startswith("scripts/") or
      startswith("prisma/") or startswith(".github/workflows/")) | not) and
     (startswith("docs/") or startswith("audit/") or endswith(".md") or . == "platform/status.md");
-  def zero_check_evidence($verification):
+  def zero_check_evidence($verification; $id; $policy):
     type == "object" and
     .decision == "not_required_paths_ignored" and
+    .task_id == $id and .task_verification_policy == $policy and
+    $policy == "paths_ignored_zero_checks_allowed" and
     .repository == $verification.repository and .pr_url == $verification.pr_url and
     .base_branch == $verification.base_branch and (.base_sha | sha40) and
     .head_sha == $verification.verified_head_sha and
@@ -102,7 +104,7 @@ jq -e '
     (.changed_files | type == "array" and length > 0 and length == (unique | length) and
       all(.[]; (rel and ignored_ci_path))) and
     .github_check_runs == 0 and .ignored_paths_verified == true and (.verified_at | utc);
-  def task_verification($base; $id):
+  def task_verification($base; $id; $policy):
     . as $verification |
     type == "object" and .status == "passed" and
     (.checks | IN("passed", "not_required_paths_ignored")) and
@@ -115,17 +117,18 @@ jq -e '
     (if .checks == "passed" then
      ((.checks_evidence? // null) == null)
      else
-      (.checks_evidence | zero_check_evidence($verification)) and
+      $policy == "paths_ignored_zero_checks_allowed" and
+      (.checks_evidence | zero_check_evidence($verification; $id; $policy)) and
       .checks_evidence.verified_at == .verified_at
      end);
-  def task_evidence($base; $id):
+  def task_evidence($base; $id; $policy):
     type == "object" and
     (.pr_url | type == "string" and test("^https://github\\.com/sohoteam88/NextShift-OS-2\\.0/pull/[0-9]+$")) and
     (.merge_sha | sha40) and (.implementation_report | rel) and
     (.recovered | type == "boolean") and
     (.validation | type == "object" and
       (.checks | IN("passed", "not_required_paths_ignored")) and (.head_sha | sha40)) and
-    (.verification | task_verification($base; $id)) and
+    (.verification | task_verification($base; $id; $policy)) and
     .verification.pr_url == .pr_url and
     .verification.implementation_report == .implementation_report and
     .verification.verified_head_sha == .validation.head_sha and
@@ -164,10 +167,11 @@ jq -e '
   all(.waves[];
     all(.tasks[];
       . as $task |
+      (.verification_policy | IN("actual_checks_required", "paths_ignored_zero_checks_allowed")) and
       if .status == "completed" then
-        (.verification | task_verification($base; $task.id)) and (.evidence | task_evidence($base; $task.id)) and .verification == .evidence.verification
+        (.verification | task_verification($base; $task.id; $task.verification_policy)) and (.evidence | task_evidence($base; $task.id; $task.verification_policy)) and .verification == .evidence.verification
       elif .status == "running" then
-        ((.evidence? // null) == null) and (((.verification? // null) == null) or (.verification | task_verification($base; $task.id)))
+        ((.evidence? // null) == null) and (((.verification? // null) == null) or (.verification | task_verification($base; $task.id; $task.verification_policy)))
       else
         ((.evidence? // null) == null) and ((.verification? // null) == null)
       end

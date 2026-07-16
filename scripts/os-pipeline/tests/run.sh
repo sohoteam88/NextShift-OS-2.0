@@ -264,10 +264,10 @@ mkdir -p "$TMP_DIR/fake-bin"
 printf '%s\n' '#!/usr/bin/env bash' "printf '%s\\n' \"\${FAKE_PR_JSON:?}\"" >"$TMP_DIR/fake-bin/gh"
 chmod +x "$TMP_DIR/fake-bin/gh"
 bad_base='{"repository":{"nameWithOwner":"sohoteam88/NextShift-OS-2.0"},"baseRefName":"wrong-base","headRefName":"test-task","headRefOid":"deadbeef","url":"https://github.com/sohoteam88/NextShift-OS-2.0/pull/99"}'
-if PATH="$TMP_DIR/fake-bin:$PATH" FAKE_PR_JSON="$bad_base" TASK_BRANCH=test-task run --verify-pr https://github.com/sohoteam88/NextShift-OS-2.0/pull/99 >/dev/null 2>&1; then fail "wrong PR base accepted"; fi
+if PATH="$TMP_DIR/fake-bin:$PATH" FAKE_PR_JSON="$bad_base" TASK_BRANCH=test-task run --verify-pr E1 https://github.com/sohoteam88/NextShift-OS-2.0/pull/99 >/dev/null 2>&1; then fail "wrong PR base accepted"; fi
 pass=$((pass + 1))
 bad_head='{"repository":{"nameWithOwner":"sohoteam88/NextShift-OS-2.0"},"baseRefName":"planning/os-3.8-product-usability","headRefName":"test-task","headRefOid":"deadbeef","url":"https://github.com/sohoteam88/NextShift-OS-2.0/pull/99"}'
-if PATH="$TMP_DIR/fake-bin:$PATH" FAKE_PR_JSON="$bad_head" TASK_BRANCH=test-task run --verify-pr https://github.com/sohoteam88/NextShift-OS-2.0/pull/99 >/dev/null 2>&1; then fail "wrong PR head accepted"; fi
+if PATH="$TMP_DIR/fake-bin:$PATH" FAKE_PR_JSON="$bad_head" TASK_BRANCH=test-task run --verify-pr E1 https://github.com/sohoteam88/NextShift-OS-2.0/pull/99 >/dev/null 2>&1; then fail "wrong PR head accepted"; fi
 pass=$((pass + 1))
 
 echo "PASS: $pass pipeline state assertions"
