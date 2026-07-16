@@ -51,6 +51,7 @@ describe('contentEngineService.generatePlatformPost', () => {
       type: 'text_post',
       status: 'draft',
       createdAt: new Date('2026-07-15T01:02:03.000Z'),
+      updatedAt: new Date('2026-07-15T01:03:04.000Z'),
     });
   });
 
@@ -100,6 +101,7 @@ describe('contentEngineService.getLastPost', () => {
       type: 'text_post',
       status: 'draft',
       createdAt: new Date('2026-07-15T02:03:04.000Z'),
+      updatedAt: new Date('2026-07-15T03:04:05.000Z'),
     });
 
     const result = await contentEngineService.getLastPost('owner-1');
@@ -111,7 +113,7 @@ describe('contentEngineService.getLastPost', () => {
         platform: { in: [...CONTENT_COMMAND_CENTER_PLATFORMS] },
         status: { in: ['draft', 'generated', 'copied', 'published'] },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
     expect(result).toMatchObject({
       id: 'content-refresh-id',
@@ -121,6 +123,7 @@ describe('contentEngineService.getLastPost', () => {
       format: 'text_post',
       status: 'draft',
       createdAt: '2026-07-15T02:03:04.000Z',
+      updatedAt: '2026-07-15T03:04:05.000Z',
     });
   });
 
@@ -137,6 +140,7 @@ describe('contentEngineService.getLastPost', () => {
       body: 'Unsupported body',
       status: 'draft',
       createdAt: new Date('2026-07-15T02:03:04.000Z'),
+      updatedAt: new Date('2026-07-15T03:04:05.000Z'),
       ...incompatible,
     });
 

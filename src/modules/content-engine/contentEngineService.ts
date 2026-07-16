@@ -196,10 +196,7 @@ export const contentEngineService = {
       format,
       status: 'draft',
       createdAt: content.createdAt.toISOString(),
-      // Content has no separate persisted updatedAt field. This remains a
-      // server-derived timestamp until a future, separately approved schema
-      // change introduces one.
-      updatedAt: content.createdAt.toISOString(),
+      updatedAt: content.updatedAt.toISOString(),
     };
   },
 
@@ -214,7 +211,7 @@ export const contentEngineService = {
         platform: { in: [...CONTENT_COMMAND_CENTER_PLATFORMS] },
         status: { in: CONTENT_EDITOR_STATUSES },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
     if (
       !content ||
@@ -240,7 +237,7 @@ export const contentEngineService = {
       status: content.status,
       qualityScore: 75,
       createdAt: content.createdAt.toISOString(),
-      updatedAt: content.createdAt.toISOString(),
+      updatedAt: content.updatedAt.toISOString(),
     };
   },
 

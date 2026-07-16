@@ -25,6 +25,7 @@ type PersistedContent = {
   type: string;
   status: string;
   createdAt: string;
+  updatedAt: string;
 };
 
 export function toEditableContentDraft(post: GeneratedPost): EditableContentDraft {
@@ -43,7 +44,6 @@ export function toEditableContentDraft(post: GeneratedPost): EditableContentDraf
 export function applyPersistedContent(
   draft: EditableContentDraft,
   content: PersistedContent,
-  savedAt: string,
 ): EditableContentDraft {
   return {
     ...draft,
@@ -54,9 +54,7 @@ export function applyPersistedContent(
     format: isContentFormat(content.type) ? content.type : draft.format,
     status: isContentStatus(content.status) ? content.status : draft.status,
     createdAt: content.createdAt,
-    // The canonical model currently has no updatedAt column. Use the time the
-    // server confirmed this PATCH for the editor's visible saved state.
-    updatedAt: savedAt,
+    updatedAt: content.updatedAt,
   };
 }
 

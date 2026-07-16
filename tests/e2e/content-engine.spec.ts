@@ -167,6 +167,7 @@ test.describe('Content Engine', () => {
             type: 'text_post',
             status: 'draft',
             createdAt: '2026-07-15T00:00:00.000Z',
+            updatedAt: '2026-07-15T00:01:00.000Z',
           },
         }),
       });
@@ -222,6 +223,7 @@ test.describe('Content Engine', () => {
             type: 'text_post',
             status: 'draft',
             createdAt: post.createdAt,
+            updatedAt: '2026-07-15T00:01:00.000Z',
           },
         }),
       });
@@ -281,6 +283,7 @@ test.describe('Content Engine', () => {
             type: 'text_post',
             status: 'draft',
             createdAt: post.createdAt,
+            updatedAt: '2026-07-15T00:01:00.000Z',
           },
         }),
       });
