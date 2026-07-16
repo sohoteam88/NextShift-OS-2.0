@@ -1,15 +1,21 @@
 # OS 3.8 U2 — One-page Information Architecture
 
-Status: **PROPOSED — Steven approval required**
+Status: **APPROVED BY STEVEN — pending governance PR merge**
 
 Authorized baseline: `3a53527c9fe2096e14cce3849c275e6725883916`
+
+Approval planning base: `f2f77709596fc74099d57dfe54bc009183c70c03`
 
 Task: U2 only
 Decision authority after review: `src/config/canonical-routes.ts` remains the single code authority.
 
+Canonical IA authority: `docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md`. No other document may carry an independent OS 3.8 route map.
+
 ## Executive decision
 
 Adopt one shared member information architecture for Retail and Recruitment. The workspace changes labels, examples, metrics, and task emphasis—not route identity or navigation structure.
+
+Steven approved all five previously unresolved routes as Hide. `/automation`, `/blueprints`, `/franchise`, `/localization`, and `/saas` remain direct/deep-link accessible, receive no redirect or deletion authority, and may return to navigation only after separate product-positioning approval. This approval does not validate or expand their product capabilities.
 
 | Destination | Canonical entry | User job | Desktop and mobile rule |
 | --- | --- | --- | --- |
@@ -64,13 +70,13 @@ Measured coverage:
 
 No Merge or Redirect may weaken the source route’s role, tenant, or capability boundary. A destination must preserve or strengthen every source authorization requirement before consolidation is allowed.
 
-Every approved Merge or Redirect destination must resolve directly to a Keep route or a Steven Decision Required route. Query-preserving destinations are normalized to their route path for this check. A destination must not target another Merge or Redirect decision.
+Every approved Merge or Redirect destination must resolve directly to a Keep route. Query-preserving destinations are normalized to their route path for this check. A destination must not target another Merge or Redirect decision.
 
-Counts: **Keep 55 · Merge 9 · Hide 21 · Redirect 22 · Steven Decision Required 5 = 112 routes**.
+Counts: **Keep 55 · Merge 9 · Hide 26 · Redirect 22 · Steven Decision Required 0 = 112 routes**.
 
 ## Complete authenticated route map
 
-Retail and Recruitment use the same route identity. Separate applicability columns below make differences in emphasis or role scope explicit.
+Retail and Recruitment use the same route identity. Separate applicability columns below make differences in emphasis or role scope explicit. Shared route identity is a navigation-layer constraint only; it does not merge or weaken mode-specific data, semantics, pipelines, or transitions.
 
 | Canonical/current route | Page/module | User job | Current entry | Retail | Recruitment | Runtime authority | Decision | Destination | Deep-link strategy | Owner | Implementation slice | Dependency | Rationale / risk | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -104,9 +110,9 @@ Retail and Recruitment use the same route identity. Separate applicability colum
 | `/ai/workforce` | AI assistance | Get guided analysis or creation support | Contextual CTA | Yes | Yes | redirect page | **Redirect** | `/ai-workforce` | Preserve old URL with server redirect; query/path mapping must be tested. | AI | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
 | `/analytics` | Insights | Review performance and next actions | Workspace/context | Yes | Yes | authenticated page | **Merge** | `/analytics-center` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Insights | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | auth route + consumer search |
 | `/analytics-center` | Insights | Review performance and next actions | Workspace/context | Yes | Yes | authenticated page | **Keep** | `/analytics-center` | Retain route; primary placement follows the target IA and role gates. | Insights | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
-| `/automation` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/automation` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Hide from primary/mobile navigation; retain the current direct/deep link; no redirect, code/data deletion, or capability expansion is authorized. | Extended | U3 navigation only | AR-W2 + STEVEN-IA; separate product-positioning approval before navigation re-entry | Current capability is not validated or expanded by this approval. | auth route + consumer search |
 | `/billing` | Account & support | Manage account or recover from access issues | Utility/direct | Yes | Yes | authenticated page | **Keep** | `/billing` | Retain route; primary placement follows the target IA and role gates. | Account | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
-| `/blueprints` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/blueprints` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Hide from primary/mobile navigation; retain the current direct/deep link; no redirect, code/data deletion, or capability expansion is authorized. | Extended | U3 navigation only | AR-W2 + STEVEN-IA; separate product-positioning approval before navigation re-entry | Current capability is not validated or expanded by this approval. | auth route + consumer search |
 | `/brand-builder` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Keep** | `/brand-builder` | Retain route; primary placement follows the target IA and role gates. | Brand | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
 | `/brand-builder/calendar` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
 | `/brand-builder/guides` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
@@ -132,7 +138,7 @@ Retail and Recruitment use the same route identity. Separate applicability colum
 | `/crm/pipeline` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Relationships | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
 | `/customers` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | redirect page | **Redirect** | `/crm` | Preserve old URL with server redirect; query/path mapping must be tested. | Relationships | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
 | `/dashboard` | Today & Journey | Understand priority and execute the next mission | Primary/context | Yes | Yes | canonical registry + page | **Keep** | `/dashboard` | Retain route; primary placement follows the target IA and role gates. | Today | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
-| `/franchise` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/franchise` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Hide from primary/mobile navigation; retain the current direct/deep link; no redirect, code/data deletion, or capability expansion is authorized. | Extended | U3 navigation only | AR-W2 + STEVEN-IA; separate product-positioning approval before navigation re-entry | Current capability is not validated or expanded by this approval. | auth route + consumer search |
 | `/funnel` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | canonical registry + page | **Keep** | `/funnel` | Retain route; primary placement follows the target IA and role gates. | Growth | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
 | `/funnel-builder` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | redirect page | **Redirect** | `/funnel` | Preserve old URL with server redirect; query/path mapping must be tested. | Growth | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
 | `/funnel-context` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | authenticated page | **Merge** | `/funnel` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Growth | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | auth route + consumer search |
@@ -142,7 +148,7 @@ Retail and Recruitment use the same route identity. Separate applicability colum
 | `/journey` | Today & Journey | Understand priority and execute the next mission | Primary/context | Yes | Yes | canonical registry + page | **Keep** | `/journey` | Retain route; primary placement follows the target IA and role gates. | Today | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
 | `/lead-magnet` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | canonical registry + page | **Keep** | `/lead-magnet` | Retain route; primary placement follows the target IA and role gates. | Growth | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
 | `/leads` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | canonical registry + page | **Merge** | `/crm` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Relationships | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | canonical-routes + route page |
-| `/localization` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/localization` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Hide from primary/mobile navigation; retain the current direct/deep link; no redirect, code/data deletion, or capability expansion is authorized. | Extended | U3 navigation only | AR-W2 + STEVEN-IA; separate product-positioning approval before navigation re-entry | Current capability is not validated or expanded by this approval. | auth route + consumer search |
 | `/member` | Team | Coordinate human and AI execution | Team/context | Yes | Yes (emphasis) | authenticated page | **Keep** | `/member` | Retain route; primary placement follows the target IA and role gates. | Team | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
 | `/member/daily-actions` | Team | Coordinate human and AI execution | Team/context | Yes | Yes (emphasis) | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Team | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
 | `/member/voice` | Team | Coordinate human and AI execution | Team/context | Yes | Yes (emphasis) | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Team | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
@@ -169,7 +175,7 @@ Retail and Recruitment use the same route identity. Separate applicability colum
 | `/platform-admin/tenants` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | redirect page | **Redirect** | `/platform-admin?tab=tenants` | Preserve old URL with server redirect; query/path mapping must be tested. | Platform | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
 | `/platform-admin/users` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/users` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
 | `/revenue-drivers` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | authenticated page | **Keep** | `/revenue-drivers` | Retain route; primary placement follows the target IA and role gates. | Growth | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
-| `/saas` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/saas` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Hide from primary/mobile navigation; retain the current direct/deep link; no redirect, code/data deletion, or capability expansion is authorized. | Extended | U3 navigation only | AR-W2 + STEVEN-IA; separate product-positioning approval before navigation re-entry | Current capability is not validated or expanded by this approval. | auth route + consumer search |
 | `/sales` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | canonical registry + page | **Merge** | `/crm` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Relationships | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | canonical-routes + route page |
 | `/settings` | Account & support | Manage account or recover from access issues | Utility/direct | Yes | Yes | authenticated page | **Keep** | `/settings` | Retain route; primary placement follows the target IA and role gates. | Account | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
 | `/social-setup` | Brand & activation | Resume social-account setup | Journey/context | Yes | Yes | redirect page | **Redirect** | `/brand-builder` | Preserve social-setup intent through the guarded activation entry; U3 must not chain through a hidden step route. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; activation-flow check | Terminal destination is Keep; preserve the account-setup next step without a redirect chain. | `social-setup/page.tsx` + guarded `brand-builder/page.tsx` |
@@ -205,6 +211,34 @@ Mobile uses the same seven-destination tree, projected into five persistent slot
 
 “More” exposes Journey, Brand, Team, Settings, Billing, and Help. Activation may temporarily promote Journey and Brand tasks, but those links must resolve to the same canonical destinations. U3 must replace the current unrelated activation/growth arrays with one approved projection and test Retail and Recruitment variants.
 
+### Starting-account guidance and learning ownership
+
+The canonical navigation home for starting-account guidance and staged learning is **Journey — `/journey`**.
+
+- Starting-account guidance, staged learning, the next task, and progress resumption all belong to Journey.
+- Educational content in Brand, Content, and Growth is contextual guidance or a deep link, not a second learning center.
+- Do not create `/learn`, `/academy`, or another learning destination.
+- Journey owns the canonical order for “what should I do now?” and “what comes next?”.
+- Brand owns brand assets and configuration tasks.
+- Content owns generation, editing, saving, and reopening work.
+- Growth owns acquisition, funnel, traffic, Webinar, and related execution work.
+- On mobile, Journey remains under More; Today may elevate the current Journey next step as the single primary CTA.
+- U3 must ensure that users never see multiple competing “next steps”.
+
+This approval adopts only Roadmap v1.2 B5's navigation-ownership constraint. It does not approve any other Roadmap v1.2 Stage B or Stage C capability expansion.
+
+### Retail and Recruitment mode-data invariant
+
+Shared route identity is a navigation-layer constraint only.
+
+- Retail and Recruitment share route paths, the navigation tree, and destination identity.
+- Shared navigation must not merge or weaken mode data isolation; `mode` remains a first-class data field.
+- CRM and relationship pipelines retain distinct Retail and Recruitment business semantics and data boundaries. Sharing `/crm` must not turn the dual pipelines into one mixed pipeline.
+- Content, calendars, funnels, objection libraries, and Business Score continue to expose the correct mode-specific semantics and data isolation.
+- The graduation bridge remains an explicit, auditable state transition; shared route identity must never move data across modes implicitly.
+- U3 may unify navigation only. It may not refactor or merge the mode data model as a side effect.
+- If current code cannot prove this isolation, U3 must fail closed and create a separate architecture task rather than guessing an implementation.
+
 ### Landing, naming, and direct access
 
 - Authenticated members land on `/dashboard`; operators land on `/admin`; platform admins land on `/platform-admin`.
@@ -214,15 +248,16 @@ Mobile uses the same seven-destination tree, projected into five persistent slot
 - Redirects preserve practical bookmarks and relevant query/path parameters, avoid redirect chains, and are covered by explicit compatibility tests before U3 closes.
 - Content Library remains a discoverable mode inside the Content area at `/content-engine`, alongside Content Engine generation/editor work.
 
-## Steven approval checklist
+## Steven approval record
 
-A single approval must explicitly accept or revise every group below.
+Steven's approval explicitly accepts every group below, subject to the authorization boundaries in `STEVEN_IA_APPROVAL.md`.
 
 ### Target primary navigation
 
 - Seven desktop destinations: Today, Journey, Brand, Content, Growth, Relationships, Team.
 - Five-slot mobile projection: Today, Content, Growth, Relationships, More; More contains Journey, Brand, Team, and account utilities.
-- Retail and Recruitment share route identity; only presentation and emphasis differ.
+- Retail and Recruitment share route identity only at the navigation layer; `mode`, dual pipelines, and the auditable graduation bridge remain isolated.
+- Journey `/journey` owns starting-account guidance, staged learning, the canonical next task, and progress resumption; no `/learn`, `/academy`, or second learning center is approved.
 - Tenant Admin and Founder Console remain separate role-scoped navigation systems.
 - Member Team means `/ai-workforce`; privileged human-team administration remains `/team` and `/team/members`; tenant team command remains `/admin/team`; Founder/platform operations remain `/admin-command` and `/platform-admin`.
 
@@ -238,13 +273,14 @@ A single approval must explicitly accept or revise every group below.
 - `/sales` → `/crm`
 - `/video-production` → `/video`
 
-### Hide decisions (21)
+### Hide decisions (26)
 
 - Brand context: `/brand-builder/calendar`, `/brand-builder/guides`, `/brand-builder/insights`, `/brand-builder/intelligence`, `/brand-builder/step/accounts`, `/brand-builder/step/complete`, `/brand-builder/step/guides`, `/brand-builder/step/interview`, `/brand-builder/step/profile`.
 - Relationship detail: `/crm/[id]`, `/crm/customers`, `/crm/pipeline`.
 - Funnel detail: `/funnel/[id]/analytics`, `/funnel/[id]/edit`.
 - Context/support: `/help`, `/member/daily-actions`, `/member/voice`, `/mission/[missionId]`, `/unauthorized`.
 - Video detail: `/video/[id]`, `/video/new`.
+- Extended direct-access capabilities: `/automation`, `/blueprints`, `/franchise`, `/localization`, `/saas`. Hide each from primary/mobile navigation, preserve its current direct/deep link, create no redirect, and grant no deletion or capability-expansion authority. Re-entry into navigation requires separate product-positioning approval.
 
 ### Redirect decisions (22)
 
@@ -255,19 +291,15 @@ A single approval must explicitly accept or revise every group below.
 - Onboarding aliases: `/onboarding/brand`, `/onboarding/goals`, and `/onboarding/profile` → `/brand-builder`; `/onboarding/complete` → `/dashboard`; `/onboarding/first-content` → `/content-engine`; `/onboarding/first-funnel` → `/funnel`.
 - Founder compatibility: `/platform-admin/tenants` → `/platform-admin?tab=tenants`.
 
-### Steven Decision Required (5)
+### Steven Decision Required (0)
 
-1. `/automation`: member, admin, or future-only?
-2. `/blueprints`: owning product area and member discoverability?
-3. `/franchise`: target persona and relationship to Recruitment/Team?
-4. `/localization`: workspace capability or internal configuration?
-5. `/saas`: supported member route or legacy/future scope?
+Steven resolved all five items as Hide: `/automation`, `/blueprints`, `/franchise`, `/localization`, and `/saas`. This resolution affects navigation visibility only and does not validate capability, authorize redirect/deletion, or approve future navigation placement.
 
 ### Policies and implementation boundary
 
 - Approve the deep-link/redirect policy and the rule that Hide never means deletion.
 - Approve the role-boundary invariant: no Merge or Redirect may weaken source role, tenant, or capability requirements.
-- Approve the terminal-destination invariant: every Merge/Redirect resolves directly to Keep or Steven Decision Required after query normalization.
+- Approve the terminal-destination invariant: every Merge/Redirect resolves directly to Keep after query normalization; no destination may target another Merge or Redirect.
 - Approve Content Engine + Content Library as one Content product area.
 - Approve U1B remaining blocked by AR-W2 plus STEVEN-IA; U2 does not authorize removal.
 - Approve U3 as the later implementation slice for navigation projection, naming, redirects, and tests. No U3 code is authorized by merely opening this Draft PR.
@@ -284,30 +316,22 @@ A single approval must explicitly accept or revise every group below.
 7. Admin and Founder navigation stay role-gated and do not consume member mobile slots.
 8. Existing `Sidebar.tsx` is not a runtime navigation authority unless U3 deliberately remounts it; its entries are evidence of historical intent only.
 9. No Merge or Redirect may weaken the source route’s role, tenant, or capability boundary; the destination must preserve or strengthen it.
-10. Every Merge or Redirect destination must normalize directly to a Keep or Steven Decision Required route. It cannot target another Merge or Redirect.
+10. Every Merge or Redirect destination must normalize directly to a Keep route. It cannot target another Merge or Redirect.
 11. `/team`, `/team/members`, and `/team/growth` remain operator/platform-admin human-team administration; `/ai-workforce` remains the separate member-facing AI workforce destination.
 12. `/admin-command` remains Founder/platform-admin-only and never enters Tenant Admin navigation; any merge requires platform-command capability parity.
 
-## Steven decision required
+## Final Steven decision summary
 
-Approve or revise these five items before U3:
-
-1. `/automation`: confirm whether it is a supported member capability, an admin capability, or future-only.
-2. `/blueprints`: confirm the owning product area and whether members should discover it.
-3. `/franchise`: confirm target persona and relationship to Recruitment/Team.
-4. `/localization`: confirm whether this is a user-facing workspace capability or an internal configuration surface.
-5. `/saas`: confirm whether this remains a supported member route or is legacy/future scope.
-
-Approval should explicitly cover the seven member destinations, the complete 112-route map, the five uncertain decisions, and the rule that Retail/Recruitment share route identity.
+Steven approved the seven desktop destinations, five-slot mobile projection, complete 112-route map, and all governance invariants in this document. The five formerly unresolved routes are Hide, leaving zero Steven Decision Required routes. This approval also fixes B5 learning ownership at Journey `/journey`, limits shared Retail/Recruitment route identity to the navigation layer, and preserves mode as a first-class field, dual pipelines, and the explicit graduation bridge.
 
 ## Deferred governance and U1A cross-reference
 
 - U1A’s inactive Content dashboards remain inventory evidence only. U2 does not authorize deletion.
 - `ContentEngineDashboard` is not promoted to runtime authority; the current `/content-engine` composition is authoritative.
 - PR #87 is archival Draft input only. No commit was merged or cherry-picked.
-- Roadmap v1.2 and UI Constitution require independent approval and are not silently adopted here.
-- U2 PASS, if granted, does not approve Stage B/C expansion in the preserved roadmap proposal.
+- Roadmap v1.2 B5 is adopted only for Journey navigation ownership, and §1.6 is adopted only as the mode-data isolation invariant stated above. The remaining Roadmap v1.2 and UI Constitution proposals require independent approval.
+- This approval does not approve any other Stage B/C capability expansion in the preserved roadmap proposal.
 
 ## Explicit non-actions
 
-No product code, route, navigation, redirect, test, Prisma, Pipeline, Manifest, AR-W2, STEVEN-IA, U1B, U3, deployment, tag, release, or production state was changed. This document is a decision proposal, not implementation authorization.
+This governance revision changes only the approved IA documentation, STEVEN-IA artifact, and Manifest gate status. It changes no product code, route, navigation implementation, redirect, test, Prisma, Pipeline, U1B/U3 task state, deployment, tag, release, or production state. Approval unlocks only later controlled W3 task selection after this governance PR is reviewed and merged.
