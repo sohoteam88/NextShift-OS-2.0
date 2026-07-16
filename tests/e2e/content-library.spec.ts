@@ -23,6 +23,22 @@ const initialContent = (): StoredContent => ({
   updatedAt: '2026-07-15T01:00:00.000Z',
 });
 
+const createSecondContent = (): StoredContent => ({
+  ...initialContent(),
+  id: 'content-library-e2e-2',
+  title: 'Second saved draft',
+  body: 'Second saved body',
+  updatedAt: '2026-07-15T01:01:00.000Z',
+});
+
+function deferredSignal() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 async function mockContentEngineShell(page: Page) {
   await page.route('**/api/v1/brand-builder/profile', (route) => route.fulfill({
     contentType: 'application/json',
@@ -64,6 +80,55 @@ function editorDialog(page: Page) {
   return page.getByRole('dialog').filter({
     has: page.getByRole('button', { name: '保存同一草稿' }),
   });
+}
+
+async function mockDeferredPatch(page: Page, outcome: 'success' | 'error') {
+  let first = initialContent();
+  const second = createSecondContent();
+  const patchStarted = deferredSignal();
+  const releasePatch = deferredSignal();
+  let listRequests = 0;
+
+  await page.route(/\/api\/v1\/ai\/content(?:\?.*)?$/, async (route) => {
+    listRequests += 1;
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: [listItem(second), listItem(first)],
+        meta: { page: 1, limit: 10, total: 2, totalPages: 1 },
+      }),
+    });
+  });
+  await page.route(/\/api\/v1\/ai\/content\/content-library-e2e-[12]$/, async (route) => {
+    const isFirst = route.request().url().endsWith(first.id);
+    if (route.request().method() === 'PATCH') {
+      patchStarted.resolve();
+      await releasePatch.promise;
+      if (outcome === 'error') {
+        await fulfillError(route, 503, 'Deferred save failure for A');
+        return;
+      }
+      const input = route.request().postDataJSON() as { title: string; content: string };
+      first = {
+        ...first,
+        title: input.title,
+        body: input.content,
+        updatedAt: '2026-07-15T03:00:00.000Z',
+      };
+    }
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ data: isFirst ? first : second }),
+    });
+  });
+
+  return {
+    first: () => first,
+    second,
+    patchStarted,
+    releasePatch,
+    listRequests: () => listRequests,
+  };
 }
 
 test.describe('Content Library mocked browser evidence', () => {
@@ -143,6 +208,122 @@ test.describe('Content Library mocked browser evidence', () => {
     await page.getByRole('button', { name: '删除', exact: true }).click();
     await page.getByRole('button', { name: '确认删除' }).click();
     await expect(page.getByText('还没有保存的内容')).toBeVisible();
+  });
+
+  test('keeps dialog focus stable through sequential typing, traps focus, and restores the opener', async ({ page }) => {
+    const content = initialContent();
+    await page.route(/\/api\/v1\/ai\/content(?:\?.*)?$/, (route) => route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [listItem(content)], meta: { page: 1, limit: 10, total: 1, totalPages: 1 } }),
+    }));
+    await page.route('**/api/v1/ai/content/content-library-e2e-1', (route) => route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ data: content }),
+    }));
+
+    await page.goto('/content-engine');
+    const opener = page.getByRole('button', { name: '打开 E1 saved draft' });
+    await opener.click();
+    const dialog = editorDialog(page);
+    const closeButton = dialog.getByRole('button', { name: '关闭对话框' });
+    const copyButton = dialog.getByRole('button', { name: '复制正文' });
+    await expect(closeButton).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(copyButton).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(closeButton).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(opener).toBeFocused();
+
+    await opener.click();
+    const title = editorDialog(page).getByRole('textbox', { name: '标题' });
+    await title.selectText();
+    await title.pressSequentially('Stable ');
+    await expect(title).toBeFocused();
+    await title.pressSequentially('title focus');
+    await expect(title).toBeFocused();
+    await expect(title).toHaveValue('Stable title focus');
+
+    const body = editorDialog(page).getByRole('textbox', { name: '正文' });
+    await body.selectText();
+    await body.pressSequentially('Every ');
+    await expect(body).toBeFocused();
+    await body.pressSequentially('character remains intact');
+    await expect(body).toBeFocused();
+    await expect(body).toHaveValue('Every character remains intact');
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: '舍弃未保存的修改？' })).toBeVisible();
+    await page.getByRole('button', { name: '舍弃并继续' }).click();
+    await expect(opener).toBeFocused();
+  });
+
+  test('isolates a deferred PATCH success from the next editor session and refreshes A', async ({ page }) => {
+    const deferred = await mockDeferredPatch(page, 'success');
+    await page.goto('/content-engine');
+    await page.getByRole('button', { name: '打开 E1 saved draft' }).click();
+    await editorDialog(page).getByRole('textbox', { name: '标题' }).fill('Persisted A title');
+    await editorDialog(page).getByRole('textbox', { name: '正文' }).fill('Persisted A body');
+    await page.getByRole('button', { name: '保存同一草稿' }).click();
+    await deferred.patchStarted.promise;
+
+    await page.getByLabel('切换到其他内容').selectOption(deferred.second.id);
+    await page.getByRole('button', { name: '舍弃并继续' }).click();
+    const secondBody = editorDialog(page).getByRole('textbox', { name: '正文' });
+    await expect(secondBody).toHaveValue('Second saved body');
+    await secondBody.focus();
+    await expect(secondBody).toBeFocused();
+
+    const listRequestsBeforeResolution = deferred.listRequests();
+    const patchResponse = page.waitForResponse((response) =>
+      response.url().endsWith(deferred.first().id) && response.request().method() === 'PATCH');
+    deferred.releasePatch.resolve();
+    await patchResponse;
+    await expect.poll(deferred.listRequests).toBeGreaterThan(listRequestsBeforeResolution);
+
+    await expect(editorDialog(page).getByRole('textbox', { name: '标题' })).toHaveValue('Second saved draft');
+    await expect(secondBody).toHaveValue('Second saved body');
+    await expect(secondBody).toBeFocused();
+    await expect(editorDialog(page).getByText('有未保存的修改')).toBeHidden();
+    await expect(editorDialog(page).getByText('已保存', { exact: true })).toBeHidden();
+    await expect(editorDialog(page).getByText(/Deferred save failure/)).toBeHidden();
+    await expect(editorDialog(page).getByRole('button', { name: '保存同一草稿' })).toBeDisabled();
+
+    await page.getByLabel('切换到其他内容').selectOption(deferred.first().id);
+    await expect(editorDialog(page).getByRole('textbox', { name: '标题' })).toHaveValue('Persisted A title');
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('Persisted A body');
+  });
+
+  test('does not leak a deferred PATCH failure into a newly opened record', async ({ page }) => {
+    const deferred = await mockDeferredPatch(page, 'error');
+    await page.goto('/content-engine');
+    await page.getByRole('button', { name: '打开 E1 saved draft' }).click();
+    await editorDialog(page).getByRole('textbox', { name: '正文' }).fill('A body that will fail');
+    await page.getByRole('button', { name: '保存同一草稿' }).click();
+    await deferred.patchStarted.promise;
+
+    await page.getByLabel('切换到其他内容').selectOption(deferred.second.id);
+    await page.getByRole('button', { name: '舍弃并继续' }).click();
+    const secondBody = editorDialog(page).getByRole('textbox', { name: '正文' });
+    await expect(secondBody).toHaveValue('Second saved body');
+    await secondBody.focus();
+
+    const patchResponse = page.waitForResponse((response) =>
+      response.url().endsWith(deferred.first().id) && response.request().method() === 'PATCH');
+    deferred.releasePatch.resolve();
+    await patchResponse;
+    await page.waitForTimeout(100);
+
+    await expect(editorDialog(page).getByRole('textbox', { name: '标题' })).toHaveValue('Second saved draft');
+    await expect(secondBody).toHaveValue('Second saved body');
+    await expect(secondBody).toBeFocused();
+    await expect(editorDialog(page).getByText('有未保存的修改')).toBeHidden();
+    await expect(editorDialog(page).getByText(/Deferred save failure for A/)).toBeHidden();
+    await expect(editorDialog(page).getByRole('button', { name: '保存同一草稿' })).toBeDisabled();
+
+    await page.getByLabel('切换到其他内容').selectOption(deferred.first().id);
+    await expect(editorDialog(page).getByRole('textbox', { name: '正文' })).toHaveValue('E1 saved body');
   });
 
   test('shows a true empty state and distinct list/item failures', async ({ page }) => {
@@ -247,13 +428,7 @@ test.describe('Content Library mocked browser evidence', () => {
 
   test('guards dirty close and remains usable at a narrow viewport', async ({ page }) => {
     const content = initialContent();
-    const secondContent = {
-      ...initialContent(),
-      id: 'content-library-e2e-2',
-      title: 'Second saved draft',
-      body: 'Second saved body',
-      updatedAt: '2026-07-15T01:01:00.000Z',
-    };
+    const secondContent = createSecondContent();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.route(/\/api\/v1\/ai\/content(?:\?.*)?$/, (route) => route.fulfill({
       contentType: 'application/json',

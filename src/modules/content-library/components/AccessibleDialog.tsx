@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 type AccessibleDialogProps = {
@@ -32,6 +32,15 @@ export function AccessibleDialog({
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onRequestCloseRef = useRef(onRequestClose);
+
+  useEffect(() => {
+    onRequestCloseRef.current = onRequestClose;
+  }, [onRequestClose]);
+
+  const requestClose = useCallback(() => {
+    onRequestCloseRef.current();
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -45,7 +54,7 @@ export function AccessibleDialog({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault();
-        onRequestClose();
+        requestClose();
         return;
       }
       if (event.key !== 'Tab' || !dialog) return;
@@ -72,7 +81,7 @@ export function AccessibleDialog({
       document.removeEventListener('keydown', handleKeyDown);
       previousFocus?.focus();
     };
-  }, [onRequestClose, open]);
+  }, [open, requestClose]);
 
   if (!open) return null;
 
@@ -80,7 +89,7 @@ export function AccessibleDialog({
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onRequestClose();
+        if (event.target === event.currentTarget) requestClose();
       }}
     >
       <div
@@ -105,7 +114,7 @@ export function AccessibleDialog({
           </div>
           <button
             type="button"
-            onClick={onRequestClose}
+            onClick={requestClose}
             aria-label="关闭对话框"
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           >

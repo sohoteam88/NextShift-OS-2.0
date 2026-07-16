@@ -36,16 +36,27 @@ import {
 import {
   contentLibraryPatchPayload,
   isContentLibraryDraftDirty,
+  ownsContentLibraryEditorSession,
   reconcileContentLibrarySave,
   resolveContentLibraryViewState,
   toContentLibraryDraft,
   type ContentLibraryDraft,
+  type ContentLibraryEditorSession,
 } from '../contentLibraryState';
 import { AccessibleDialog } from './AccessibleDialog';
 
 type ListResponse = { data: ContentLibraryListItem[]; meta: ContentLibraryListMeta };
 type ItemResponse = { data: ContentLibraryItem };
 type PendingGuardAction = { kind: 'close' } | { kind: 'switch'; id: string };
+type SaveRequest = {
+  session: ContentLibraryEditorSession;
+  submitted: ContentLibraryDraft;
+};
+type SaveFeedback = {
+  sessionToken: number;
+  kind: 'success' | 'error';
+  message?: string;
+};
 
 class ContentLibraryRequestError extends Error {
   constructor(message: string, readonly status: number) {
@@ -102,6 +113,11 @@ export function ContentLibrary() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
   const [copyError, setCopyError] = useState<string | null>(null);
+  const [editorSession, setEditorSession] = useState<ContentLibraryEditorSession | null>(null);
+  const [pendingSaveSessions, setPendingSaveSessions] = useState<Set<number>>(() => new Set());
+  const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
+  const editorSessionRef = useRef<ContentLibraryEditorSession | null>(null);
+  const editorSessionCounterRef = useRef(0);
   const hydratedItemRef = useRef<string | null>(null);
   const reopenedRef = useRef<string | null>(null);
   const savedInLibraryRef = useRef<string | null>(null);
@@ -135,10 +151,38 @@ export function ContentLibrary() {
   });
 
   const isDirty = isContentLibraryDraftDirty(editorDraft, savedDraft);
+  const currentSavePending = editorSession
+    ? pendingSaveSessions.has(editorSession.token)
+    : false;
+  const currentSaveFeedback = editorSession?.token === saveFeedback?.sessionToken
+    ? saveFeedback
+    : null;
+
+  const beginEditorSession = useCallback((contentId: string) => {
+    const session = { token: ++editorSessionCounterRef.current, contentId };
+    editorSessionRef.current = session;
+    setEditorSession(session);
+    setSaveFeedback(null);
+    return session;
+  }, []);
+
+  const clearEditorSession = useCallback(() => {
+    editorSessionCounterRef.current += 1;
+    editorSessionRef.current = null;
+    setEditorSession(null);
+    setSaveFeedback(null);
+  }, []);
 
   useEffect(() => {
     const item = itemQuery.data?.data;
-    if (!item || hydratedItemRef.current === item.id) return;
+    const session = editorSessionRef.current;
+    if (
+      !item ||
+      item.id !== selectedId ||
+      !session ||
+      session.contentId !== item.id ||
+      hydratedItemRef.current === item.id
+    ) return;
     const draft = toContentLibraryDraft(item);
     setEditorDraft(draft);
     setSavedDraft(draft);
@@ -151,16 +195,23 @@ export function ContentLibrary() {
       reopenedRef.current = item.id;
       trackContentReopened(telemetryUserQuery.data, telemetryProperties(item));
     }
-  }, [itemQuery.data, telemetryUserQuery.data]);
+  }, [itemQuery.data, selectedId, telemetryUserQuery.data]);
 
   useEffect(() => {
     const item = itemQuery.data?.data;
-    if (!item || reopenedRef.current === item.id || !telemetryUserQuery.data) return;
+    if (
+      !item ||
+      item.id !== selectedId ||
+      editorSessionRef.current?.contentId !== item.id ||
+      reopenedRef.current === item.id ||
+      !telemetryUserQuery.data
+    ) return;
     reopenedRef.current = item.id;
     trackContentReopened(telemetryUserQuery.data, telemetryProperties(item));
-  }, [itemQuery.data, telemetryUserQuery.data]);
+  }, [itemQuery.data, selectedId, telemetryUserQuery.data]);
 
   const resetEditor = useCallback(() => {
+    clearEditorSession();
     setSelectedId(null);
     setEditorDraft(null);
     setSavedDraft(null);
@@ -170,7 +221,7 @@ export function ContentLibrary() {
     hydratedItemRef.current = null;
     reopenedRef.current = null;
     savedInLibraryRef.current = null;
-  }, []);
+  }, [clearEditorSession]);
 
   function openRecord(id: string) {
     if (selectedId === id) return;
@@ -180,6 +231,10 @@ export function ContentLibrary() {
     }
     hydratedItemRef.current = null;
     reopenedRef.current = null;
+    savedInLibraryRef.current = null;
+    setCopyState('idle');
+    setCopyError(null);
+    beginEditorSession(id);
     setEditorDraft(null);
     setSavedDraft(null);
     setSelectedId(id);
@@ -203,13 +258,17 @@ export function ContentLibrary() {
     }
     hydratedItemRef.current = null;
     reopenedRef.current = null;
+    savedInLibraryRef.current = null;
+    setCopyState('idle');
+    setCopyError(null);
+    beginEditorSession(action.id);
     setEditorDraft(null);
     setSavedDraft(null);
     setSelectedId(action.id);
   }
 
   const saveMutation = useMutation({
-    mutationFn: async (submitted: ContentLibraryDraft) => {
+    mutationFn: async ({ submitted }: SaveRequest) => {
       const response = await fetchJson<ItemResponse>(`/api/v1/ai/content/${submitted.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -217,19 +276,45 @@ export function ContentLibrary() {
       });
       return { submitted, persisted: toContentLibraryDraft(response.data) };
     },
-    onSuccess: ({ submitted, persisted }) => {
-      setSavedDraft(persisted);
-      setEditorDraft((current) => reconcileContentLibrarySave(current, submitted, persisted));
+    onMutate: ({ session }) => {
+      setPendingSaveSessions((current) => new Set(current).add(session.token));
+      if (ownsContentLibraryEditorSession(editorSessionRef.current, session)) {
+        setSaveFeedback(null);
+      }
+    },
+    onSuccess: ({ submitted, persisted }, { session }) => {
       queryClient.setQueryData<ItemResponse>(
         ['content-library-item', persisted.id],
         { data: persisted },
       );
-      savedInLibraryRef.current = persisted.id;
-      setCopyState('idle');
+      if (ownsContentLibraryEditorSession(editorSessionRef.current, session)) {
+        setSavedDraft(persisted);
+        setEditorDraft((current) => reconcileContentLibrarySave(current, submitted, persisted));
+        savedInLibraryRef.current = persisted.id;
+        setCopyState('idle');
+        setCopyError(null);
+        setSaveFeedback({ sessionToken: session.token, kind: 'success' });
+      }
       const userId = telemetryUserQuery.data;
       if (userId) trackContentSaved(userId, telemetryProperties(persisted));
       void queryClient.invalidateQueries({ queryKey: ['content-library'] });
       void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
+    },
+    onError: (error, { session }) => {
+      if (ownsContentLibraryEditorSession(editorSessionRef.current, session)) {
+        setSaveFeedback({
+          sessionToken: session.token,
+          kind: 'error',
+          message: error instanceof Error ? error.message : '保存失败，请重试。',
+        });
+      }
+    },
+    onSettled: (_data, _error, { session }) => {
+      setPendingSaveSessions((current) => {
+        const next = new Set(current);
+        next.delete(session.token);
+        return next;
+      });
     },
   });
 
@@ -252,23 +337,30 @@ export function ContentLibrary() {
   });
 
   async function copyCurrentBody() {
-    if (!editorDraft?.body.trim()) return;
+    const session = editorSessionRef.current;
+    const draft = editorDraft;
+    if (!session || !draft?.body.trim()) return;
+    const completesLoop = savedInLibraryRef.current === draft.id && !isDirty;
     try {
       if (!navigator.clipboard?.writeText) throw new Error('此浏览器不支持复制。');
-      await navigator.clipboard.writeText(editorDraft.body);
-      setCopyState('success');
-      setCopyError(null);
+      await navigator.clipboard.writeText(draft.body);
+      if (ownsContentLibraryEditorSession(editorSessionRef.current, session)) {
+        setCopyState('success');
+        setCopyError(null);
+      }
       const userId = telemetryUserQuery.data;
       if (userId) {
-        const properties = telemetryProperties(editorDraft);
+        const properties = telemetryProperties(draft);
         trackContentCopied(userId, properties);
-        if (savedInLibraryRef.current === editorDraft.id && !isDirty) {
+        if (completesLoop) {
           trackContentLoopCompleted(userId, properties);
         }
       }
     } catch (error) {
-      setCopyState('error');
-      setCopyError(error instanceof Error ? error.message : '复制失败，请重试。');
+      if (ownsContentLibraryEditorSession(editorSessionRef.current, session)) {
+        setCopyState('error');
+        setCopyError(error instanceof Error ? error.message : '复制失败，请重试。');
+      }
     }
   }
 
@@ -494,8 +586,8 @@ export function ContentLibrary() {
 
             <div aria-live="polite" className="min-h-6 text-sm">
               {isDirty ? <span className="font-medium text-amber-700">有未保存的修改</span> : null}
-              {saveMutation.isSuccess && !isDirty ? <span className="font-medium text-emerald-700">已保存</span> : null}
-              {saveMutation.isError ? <span className="text-red-700">{saveMutation.error.message} 你的编辑仍保留，可重试。</span> : null}
+              {currentSaveFeedback?.kind === 'success' && !isDirty ? <span className="font-medium text-emerald-700">已保存</span> : null}
+              {currentSaveFeedback?.kind === 'error' ? <span className="text-red-700">{currentSaveFeedback.message} 你的编辑仍保留，可重试。</span> : null}
               {copyState === 'success' ? <span className="font-medium text-emerald-700">已复制当前正文</span> : null}
               {copyState === 'error' ? <span className="text-red-700">{copyError}</span> : null}
             </div>
@@ -519,13 +611,17 @@ export function ContentLibrary() {
                 </Button>
                 <Button
                   icon={<Save className="h-4 w-4" />}
-                  loading={saveMutation.isPending}
+                  loading={currentSavePending}
                   disabled={
                     !isDirty ||
                     (editorDraft.title !== null && !editorDraft.title.trim()) ||
                     !editorDraft.body.trim()
                   }
-                  onClick={() => saveMutation.mutate(editorDraft)}
+                  onClick={() => {
+                    if (editorSession) {
+                      saveMutation.mutate({ session: editorSession, submitted: editorDraft });
+                    }
+                  }}
                 >
                   保存同一草稿
                 </Button>

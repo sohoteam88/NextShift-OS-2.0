@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   contentLibraryPatchPayload,
   isContentLibraryDraftDirty,
+  ownsContentLibraryEditorSession,
   reconcileContentLibrarySave,
   resolveContentLibraryViewState,
   toContentLibraryDraft,
@@ -45,6 +46,15 @@ describe('Content Library editor state', () => {
     const persisted = { ...submitted, updatedAt: '2026-07-15T02:00:00.000Z' };
 
     expect(reconcileContentLibrarySave(submitted, submitted, persisted)).toEqual(persisted);
+  });
+
+  it('owns async editor results only when both the session token and canonical ID match', () => {
+    const current = { token: 3, contentId: 'content-b' };
+
+    expect(ownsContentLibraryEditorSession(current, current)).toBe(true);
+    expect(ownsContentLibraryEditorSession(current, { token: 2, contentId: 'content-b' })).toBe(false);
+    expect(ownsContentLibraryEditorSession(current, { token: 3, contentId: 'content-a' })).toBe(false);
+    expect(ownsContentLibraryEditorSession(null, current)).toBe(false);
   });
 
   it.each([

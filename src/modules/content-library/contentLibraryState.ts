@@ -12,6 +12,18 @@ export type ContentLibraryViewState =
   | 'empty'
   | 'ready';
 
+export type ContentLibraryEditorSession = {
+  token: number;
+  contentId: string;
+};
+
+export function ownsContentLibraryEditorSession(
+  current: ContentLibraryEditorSession | null,
+  expected: ContentLibraryEditorSession,
+) {
+  return current?.token === expected.token && current.contentId === expected.contentId;
+}
+
 export function toContentLibraryDraft(item: ContentLibraryItem): ContentLibraryDraft {
   return { ...item };
 }

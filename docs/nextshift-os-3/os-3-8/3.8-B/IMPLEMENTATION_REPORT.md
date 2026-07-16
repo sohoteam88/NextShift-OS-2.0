@@ -28,8 +28,8 @@ The exact baseline-to-head diff contains 31 files. No Pipeline, Manifest, naviga
 
 1. `/content-engine` now composes the active `ContentCommandCenter` with a standalone `ContentLibrary`; no route or navigation authority changed.
 2. The Library lists safe previews with status/platform filters, bounded pagination, deterministic fallback titles, and `updatedAt DESC, id DESC` ordering.
-3. Opening a row fetches the safe full item DTO, permits title/body edits, saves the same canonical ID, protects in-flight newer edits, copies current text, and deletes only after an accessible confirmation.
-4. Loading, empty, permission, list/item error, save/copy/delete failure, pending, success, retry, dirty, and narrow-viewport states are explicit.
+3. Opening a row fetches the safe full item DTO, permits title/body edits, saves the same canonical ID, protects in-flight newer edits, isolates async results by canonical ID plus editor-session token, copies current text, and deletes only after an accessible confirmation.
+4. Loading, empty, permission, list/item error, session-owned save/copy/delete failure, pending, success, retry, dirty, and narrow-viewport states are explicit.
 5. E1 generation/save invalidates the Library query, and E1 generation/refresh/PATCH now use persisted database `updatedAt` values.
 6. Privacy-safe Library events cover reopen, save, copy, delete, and save-then-copy loop completion without content text, prompts, tenant identity, or clipboard contents.
 
@@ -64,14 +64,14 @@ Migration: `prisma/migrations/20260715220949_add_content_updated_at/migration.sq
 | Existing-row migration fixture | PASS; 1 row retained, backfill equality true, original body retained. |
 | Prisma PATCH fixture | PASS; same ID retained and persisted `updatedAt` advanced. |
 | Real local service isolation fixture | PASS; member saw only its owner row, operator saw two same-tenant rows, cross-tenant read/delete returned not-found, cross-tenant row remained, same-ID update passed. |
-| Focused Vitest | PASS: 9 files / 71 tests. |
+| Focused Vitest | PASS: 9 files / 72 tests. |
 | `pnpm type-check` | PASS. |
 | `pnpm lint` | PASS with 0 errors and 425 existing repository warnings. |
 | `pnpm lint:boundaries:check` | PASS after mechanically regenerating the module inventory. |
-| `pnpm test` | PASS: 98 files / 535 tests; 7 files / 44 tests skipped by the repository. |
+| `pnpm test` | PASS: 98 files / 536 tests; 7 files / 44 tests skipped by the repository. |
 | `pnpm build` | PASS; existing lint warnings and missing-local-`DATABASE_URL` static probes remained non-fatal. |
 | `git diff --check` | PASS. |
-| E1 + E2 Playwright discovery | PASS: 11 tests discovered across 2 files (E1 6, E2 5). |
+| E1 + E2 Playwright discovery | PASS: 14 tests discovered across 2 files (E1 6, E2 8). |
 | Targeted local Playwright runtime | Not claimed: this clean worktree has no `.env.local`/`.env.e2e`, E2E credentials, or configured application server. GitHub E2E is the runtime acceptance environment. |
 | Markdown link validator | Blocked by pre-existing `docs/nextshift-os-3/os-3-8/WAVE_EXECUTION_CONTRACT.md:13`, whose `../../OS_3_8_BLUEPRINT.md` target does not exist. E2 did not modify that governance file. |
 
@@ -79,7 +79,11 @@ The first GitHub E2E run on PR #82 exposed two test/runtime issues without weake
 
 The second GitHub E2E run reduced the failures from five to one and exposed a real reopen regression: PATCH updated the visible draft and list, but the exact item query cache still held the pre-save body. Save success now atomically updates that canonical item cache, so closing and reopening the same ID hydrates the server-confirmed snapshot.
 
-The E2 Playwright cases cover the save/reopen/copy/delete flow, true empty and request failures, save/delete retry, filter pagination reset, dirty switch/close protection, accessible delete cancellation/confirmation, and a 390×844 viewport. Because their Content API calls are intercepted, they are explicitly mocked browser evidence.
+Architecture Review `4709123442` identified two UI state-machine Majors at reviewed SHA `fce153ee666e0fe26ec9fec7ecaab10f23c3c730`. The remediation keeps the latest close callback in a ref while running dialog focus setup/restoration only for a real open/close transition. A sequential-keyboard regression asserts stable input/textarea focus across every React rerender, Tab/Shift+Tab trapping, latest-callback Escape handling, and opener restoration.
+
+PATCH, save feedback, pending state, and asynchronous copy feedback now carry explicit `{ session token, canonical content ID }` ownership. A late response for A always preserves the safe exact-A query-cache update and Library invalidation on success, but it cannot change B's draft, saved baseline, dirty state, focus, success/error feedback, copy state, or save button. Separate deferred-success and deferred-failure browser regressions switch from A to B before resolving A and verify both session isolation and A's eventual success/failure cache state. The pre-existing same-record save-race regression remains green: the server snapshot becomes `savedDraft`, while text typed during the PATCH remains the dirty `editorDraft`.
+
+The eight E2 Playwright cases cover the save/reopen/copy/delete flow, true empty and request failures, save/delete retry, filter pagination reset, dirty switch/close protection, stable sequential keyboard focus, deferred PATCH success/error isolation, accessible delete cancellation/confirmation, and a 390×844 viewport. Because their Content API calls are intercepted, they are explicitly mocked browser evidence. The remediation exact-head GitHub runtime result is recorded in PR #82 after its checks settle, so this committed report does not pre-claim a future CI outcome.
 
 ## E2E evidence boundary
 
