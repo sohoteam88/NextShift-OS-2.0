@@ -17,8 +17,8 @@
     {
       "id": "W1",
       "title": "Core Content Working Loop",
-      "status": "pending",
-      "start_sha": null,
+      "status": "running",
+      "start_sha": "76b573cdbf2f1bec31fe5770c080941469479d25",
       "tasks": [
         {
           "id": "E1",
@@ -27,9 +27,48 @@
           "contract": "docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md",
           "execution_task": "docs/nextshift-os-3/os-3-8/3.8-A/EXECUTION_TASK.md",
           "depends_on": [],
-          "status": "pending",
-          "verification": null,
-          "evidence": null
+          "status": "completed",
+          "verification": {
+            "status": "passed",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "chore/os-3.8-e1-20260715120105",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/81",
+            "verified_head_sha": "4a997384e6b6c64f87e120d10a8dae59075e7f31",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/E1_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "passed",
+            "verified_at": "2026-07-16T01:20:06Z"
+          },
+          "evidence": {
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/81",
+            "merge_sha": "448ddb477fc1287ccc1fa4620477ffa802d49d58",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_REPORT.md",
+            "verification": {
+              "status": "passed",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "base_branch": "planning/os-3.8-product-usability",
+              "task_branch": "chore/os-3.8-e1-20260715120105",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/81",
+              "verified_head_sha": "4a997384e6b6c64f87e120d10a8dae59075e7f31",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_REPORT.md",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/E1_DISPATCH.json",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "checks": "passed",
+              "verified_at": "2026-07-16T01:20:06Z"
+            },
+            "validation": {
+              "checks": "passed",
+              "head_sha": "4a997384e6b6c64f87e120d10a8dae59075e7f31"
+            },
+            "recovered": true,
+            "recovered_at": "2026-07-16T01:20:06Z",
+            "github_merged_at": "2026-07-15T13:45:25Z",
+            "execution_mode": "manual_codex_desktop"
+          }
         },
         {
           "id": "E2",
@@ -38,19 +77,62 @@
           "contract": null,
           "execution_task": null,
           "depends_on": ["E1"],
-          "status": "pending",
-          "verification": null,
-          "evidence": null
+          "status": "completed",
+          "verification": {
+            "status": "passed",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "feature/os-3.8-e2-content-library",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/82",
+            "verified_head_sha": "f8cbb051c1b9161b019e4307752788bb7656ee41",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-B/IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/E2_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "passed",
+            "verified_at": "2026-07-16T01:20:06Z"
+          },
+          "evidence": {
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/82",
+            "merge_sha": "354452612c1802335ba0a05b7bf7ad5102e9c301",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-B/IMPLEMENTATION_REPORT.md",
+            "verification": {
+              "status": "passed",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "base_branch": "planning/os-3.8-product-usability",
+              "task_branch": "feature/os-3.8-e2-content-library",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/82",
+              "verified_head_sha": "f8cbb051c1b9161b019e4307752788bb7656ee41",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-B/IMPLEMENTATION_REPORT.md",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/E2_DISPATCH.json",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "checks": "passed",
+              "verified_at": "2026-07-16T01:20:06Z"
+            },
+            "validation": {
+              "checks": "passed",
+              "head_sha": "f8cbb051c1b9161b019e4307752788bb7656ee41"
+            },
+            "recovered": true,
+            "recovered_at": "2026-07-16T01:20:06Z",
+            "github_merged_at": "2026-07-16T00:49:03Z",
+            "execution_mode": "manual_codex_desktop"
+          }
         }
       ],
       "checkpoint": {
         "id": "AR-W1",
-        "status": "pending",
+        "status": "awaiting_review",
         "review_mode": "cumulative_diff",
         "reviewer": "ChatGPT Work Chief Product Architect",
         "request_artifact": "docs/nextshift-os-3/os-3-8/reviews/W1_ARCHITECTURE_REVIEW_REQUEST.md",
         "result_artifact": "docs/nextshift-os-3/os-3-8/reviews/W1_ARCHITECTURE_REVIEW_RESULT.md",
-        "reviewed_sha": null
+        "requested_end_sha": "354452612c1802335ba0a05b7bf7ad5102e9c301",
+        "reviewed_sha": null,
+        "remediation_attempts": 0,
+        "active_remediation": null,
+        "remediation_block": null
       },
       "human_gate": null
     },
