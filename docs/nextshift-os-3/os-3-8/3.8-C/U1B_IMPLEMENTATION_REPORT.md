@@ -111,7 +111,7 @@ Added this report only. No replacement product implementation was added.
 
 - `pnpm exec playwright test tests/e2e/content-engine.spec.ts tests/e2e/content-library.spec.ts --list`: **PASS**, 14 tests discovered across 2 files.
 - Local execution was attempted against a local development server. It stopped at the shared login helper because this checkout has neither `.env.local` nor `.env.e2e`; the default placeholder account did not authenticate. The observed failures occurred before `/content-engine` loaded and are recorded as an environment limitation, not as passing browser evidence.
-- The Draft PR uses `actual_checks_required`; GitHub Type Check/Lint/Build, Tests, E2E Secret Check, and E2E Tests must all run and pass at the exact PR head. They are pending until the Draft PR is created and are authoritative for executable E2E validation.
+- GitHub checks ran against product implementation commit `075b3deec4651b9f067f7831092f8475f99c4b1e`: Type Check + Lint + Build **PASS** (4m11s), Tests **PASS** (1m17s), E2E Secret Check **PASS** (4s), and E2E Tests **PASS** (9m43s; Playwright 46 passed, 1 skipped). The only later change is this report recording those results; the report-only exact head must rerun the same `actual_checks_required` gates before handoff. Final exact-head status is recorded in the Draft PR and handoff.
 
 ## Governance boundary
 
