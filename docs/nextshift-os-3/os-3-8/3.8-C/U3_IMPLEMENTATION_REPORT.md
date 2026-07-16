@@ -7,7 +7,7 @@
 - Branch: `feature/os-3.8-u3-navigation-convergence`
 - Architecture Review: `4718251129`
 - Reviewed implementation head: `5ded0f14f07f610c4890e31b2c1f920be1e6ce56`
-- Review disposition: `CHANGES_REQUESTED` — one Blocker and three Majors, all addressed in this remediation
+- Review disposition: `CHANGES_REQUESTED` — two Blockers and three Majors, all addressed in this remediation
 - Verification policy: `actual_checks_required`
 - Approved IA: `docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md`
 - Steven approval: `docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md`
