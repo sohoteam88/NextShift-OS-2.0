@@ -373,13 +373,13 @@
       ],
       "checkpoint": {
         "id": "AR-W2",
-        "status": "awaiting_review",
+        "status": "passed",
         "review_mode": "cumulative_diff",
         "reviewer": "ChatGPT Work Chief Product Architect",
         "request_artifact": "docs/nextshift-os-3/os-3-8/reviews/W2_ARCHITECTURE_REVIEW_REQUEST.md",
         "result_artifact": "docs/nextshift-os-3/os-3-8/reviews/W2_ARCHITECTURE_REVIEW_RESULT.md",
         "requested_end_sha": "2e22f478bc092ee729d66e65b490565e3ac1723f",
-        "reviewed_sha": null
+        "reviewed_sha": "2e22f478bc092ee729d66e65b490565e3ac1723f"
       },
       "human_gate": {
         "id": "STEVEN-IA",
