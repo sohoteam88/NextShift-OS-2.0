@@ -93,8 +93,48 @@ git diff --check
 It then waits up to 30 minutes for required GitHub checks, retrying every 30
 seconds only while checks have not registered. A failed check, forbidden path,
 repository/base/head mismatch, missing report at the exact PR head, or report
-absent from the PR diff fails closed. Product-task verification has no
-docs-only bypass.
+absent from the PR diff fails closed.
+
+The only zero-check outcome is the strict
+`not_required_paths_ignored` contract. It is neither PASS nor a generic
+`skipped`/`not_triggered` state. The runner derives it from GitHub's exact PR
+metadata and file list only when the diff is non-empty, every file matches the
+frozen `.github/workflows/ci.yml` `pull_request.paths-ignore` policy
+(`docs/**`, `audit/**`, `**/*.md`, or `platform/status.md`), and the exact PR
+head has zero check runs. Source, tests, scripts, Prisma, and workflow paths are
+always rejected even if a future broad pattern could match them. Any existing
+check run—failed, pending, cancelled, skipped, neutral, or successful—routes to
+normal check verification and cannot use the exemption.
+
+Every Manifest task must declare exactly one verification policy. A missing or
+unknown policy is invalid and fails closed:
+
+| Task | Verification policy |
+| --- | --- |
+| E1, E2, U1B, U3, E3A, E3B | `actual_checks_required` |
+| U1A, U2 | `paths_ignored_zero_checks_allowed` |
+
+`actual_checks_required` accepts only `checks="passed"`.
+`paths_ignored_zero_checks_allowed` may still record actual passed checks, but
+it is the only policy that can authorize the strict zero-check decision.
+Remediation PRs always require actual passed checks regardless of task policy.
+
+The structured evidence binds the Manifest task ID and exact task verification
+policy in addition to the repository, PR URL, base branch and SHA, head SHA,
+workflow path and blob SHA, exact GitHub changed-file list, zero run count,
+policy decision, and verification timestamp. Metadata, task policy, diff, check
+runs, and workflow policy are fetched again before persistence, merge, and
+merged/running recovery. Caller input, environment variables, task outcomes,
+PR bodies, labels, and branch names cannot grant or transfer the exemption.
+Evidence for U1A cannot be reused for U2, or vice versa.
+
+An operator can evaluate the same contract read-only, without changing the
+Manifest, merging, committing, or pushing:
+
+```bash
+scripts/os-pipeline/run-pipeline.sh \
+  --evaluate-pr-check-requirement TASK_ID PR_URL EXPECTED_HEAD_SHA EXPECTED_BASE_SHA
+```
 
 After those checks and before merge, a short state transaction writes the
 exact repository, base, task branch, PR URL, verified head SHA, implementation
@@ -377,6 +417,7 @@ scripts/os-pipeline/tests/git-integration.sh
 scripts/os-pipeline/tests/remediation-integration.sh
 scripts/os-pipeline/tests/governance-integration.sh
 scripts/os-pipeline/tests/safety-integration.sh
+scripts/os-pipeline/tests/docs-only-ci-policy.sh
 
 git diff --check
 pnpm type-check
@@ -387,7 +428,7 @@ pnpm build
 
 Expected pipeline-specific coverage is:
 
-- Bash syntax and ShellCheck: **8 Pipeline/test shell files**, with zero
+- Bash syntax and ShellCheck: **9 Pipeline/test shell files**, with zero
   ShellCheck issues.
 - `tests/run.sh`: **40 state-machine/Manifest assertions**.
 - `tests/git-integration.sh`: a real temporary bare-Git
@@ -413,6 +454,11 @@ Expected pipeline-specific coverage is:
   symlink rejection, and invalid/missing/out-of-PR implementation reports. The
   invalid-report fixture contains independent invalid, missing-at-head, and
   absent-from-diff subcases.
+- `tests/docs-only-ci-policy.sh`: **34 named docs-only CI policy fixtures**—the
+  original 18 exact-diff/check/workflow/validator cases plus 16 task-policy
+  cases covering U1A/U2 authorization, rejection for every actual-check task,
+  missing/unknown policies, forged/mismatched/cross-task evidence, caller
+  non-authority, recovery revalidation, and exact PR #84 U1A evidence.
 
 The real-Git fixtures use temporary bare remotes/worktrees plus fake GitHub and
 Codex commands. They do not contact GitHub, execute real E1/E2 product work,

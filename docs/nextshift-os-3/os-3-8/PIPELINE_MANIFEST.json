@@ -22,6 +22,7 @@
       "tasks": [
         {
           "id": "E1",
+          "verification_policy": "actual_checks_required",
           "title": "Editable Content Output",
           "blueprint_section": "6",
           "contract": "docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md",
@@ -72,6 +73,7 @@
         },
         {
           "id": "E2",
+          "verification_policy": "actual_checks_required",
           "title": "Content Library",
           "blueprint_section": "7",
           "contract": null,
@@ -144,6 +146,7 @@
       "tasks": [
         {
           "id": "U1A",
+          "verification_policy": "paths_ignored_zero_checks_allowed",
           "title": "Dead-code Inventory Only",
           "blueprint_section": "9",
           "contract": null,
@@ -155,6 +158,7 @@
         },
         {
           "id": "U2",
+          "verification_policy": "paths_ignored_zero_checks_allowed",
           "title": "One-page Information Architecture",
           "blueprint_section": "8",
           "contract": null,
@@ -191,6 +195,7 @@
       "tasks": [
         {
           "id": "U1B",
+          "verification_policy": "actual_checks_required",
           "title": "Approved Dead-code Removal",
           "blueprint_section": "9",
           "contract": null,
@@ -202,6 +207,7 @@
         },
         {
           "id": "U3",
+          "verification_policy": "actual_checks_required",
           "title": "Navigation Convergence",
           "blueprint_section": "10",
           "contract": null,
@@ -213,6 +219,7 @@
         },
         {
           "id": "E3A",
+          "verification_policy": "actual_checks_required",
           "title": "Video Lead Magnet Webinar Capability Revalidation",
           "blueprint_section": "11",
           "contract": null,
@@ -224,6 +231,7 @@
         },
         {
           "id": "E3B",
+          "verification_policy": "actual_checks_required",
           "title": "Fix Only Proven Pattern Gaps",
           "blueprint_section": "11",
           "contract": null,

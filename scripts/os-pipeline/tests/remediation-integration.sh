@@ -64,12 +64,15 @@ case "$command_name" in
       rm -f "$FIXTURE_API_FAIL_ONCE_FILE"
       exit 87
     fi
-    jq '
+    base_sha="$(git --git-dir="${FIXTURE_REMOTE:?}" rev-parse refs/heads/planning)"
+    jq --arg base_sha "$base_sha" '
       {
         merged: (.state == "MERGED"),
         state: (if .state == "OPEN" then "open" else "closed" end),
+        changed_files: 1,
         base: {
           ref: .baseRefName,
+          sha: $base_sha,
           repo: {full_name: .repository.nameWithOwner}
         },
         head: {

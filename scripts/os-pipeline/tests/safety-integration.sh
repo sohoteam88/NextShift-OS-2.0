@@ -69,6 +69,7 @@ seed_checkpoint_ready() {
       ("docs/nextshift-os-3/os-3-8/runs/" + $id + "_DISPATCH.json") as $dispatch |
       {
         id:.id,
+        verification_policy:.verification_policy,
         title:.title,
         blueprint_section:.blueprint_section,
         contract:.contract,
@@ -142,11 +143,13 @@ shift 2 || true
 case "$command_name" in
   api:*)
     [[ -f "${FIXTURE_PR_FILE:?}" ]] || exit 1
-    jq '
+    base_sha="$(git --git-dir="${FIXTURE_REMOTE:?}" rev-parse refs/heads/planning)"
+    jq --arg base_sha "$base_sha" '
       {
         merged:(.state == "MERGED"),
         state:(if .state == "OPEN" then "open" else "closed" end),
-        base:{ref:.baseRefName,repo:{full_name:.repository}},
+        changed_files:(.changed_files | length),
+        base:{ref:.baseRefName,sha:$base_sha,repo:{full_name:.repository}},
         head:{ref:.headRefName,sha:.headRefOid,repo:{full_name:.repository}},
         merge_commit_sha:(if .mergeCommit.oid == "" then null else .mergeCommit.oid end),
         html_url:.url,
@@ -333,7 +336,7 @@ run_verify() {
   IMPLEMENTATION_REPORT="$report" \
   REPO_DIR="$worktree" \
   MANIFEST_PATH="$worktree/$MANIFEST_REL" \
-  "$PIPELINE" --verify-pr "$PR_URL"
+  "$PIPELINE" --verify-pr E1 "$PR_URL"
 }
 
 lock_path() {
