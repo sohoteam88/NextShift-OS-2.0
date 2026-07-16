@@ -1,0 +1,313 @@
+# OS 3.8 U2 — One-page Information Architecture
+
+Status: **PROPOSED — Steven approval required**
+
+Authorized baseline: `3a53527c9fe2096e14cce3849c275e6725883916`
+
+Task: U2 only
+Decision authority after review: `src/config/canonical-routes.ts` remains the single code authority.
+
+## Executive decision
+
+Adopt one shared member information architecture for Retail and Recruitment. The workspace changes labels, examples, metrics, and task emphasis—not route identity or navigation structure.
+
+| Destination | Canonical entry | User job | Desktop and mobile rule |
+| --- | --- | --- | --- |
+| Today | `/dashboard` | See the highest-leverage action and current operating state | Always first |
+| Journey | `/journey` | Understand progress and resume the next mission | Shared route; workspace-specific copy |
+| Brand | `/brand-builder/profile` | Build and maintain the business identity used by AI | Wizard steps stay contextual |
+| Content | `/content-engine` | Generate, edit, save, and reopen canonical Content | Content Engine and Content Library stay in this same product area |
+| Growth | `/revenue-drivers` | Choose and operate lead magnet, funnel, traffic, webinar, and conversion work | Child engines stay deep-linkable |
+| Relationships | `/crm` | Manage leads/customers, pipeline, follow-up, and sales outcomes | Retail says customers; Recruitment says prospects/candidates |
+| Team | `/ai-workforce` | Coordinate member-facing AI workforce execution | Recruitment emphasis; Retail remains compatible |
+
+`/settings`, `/billing`, and `/help` are utilities, not primary destinations. Tenant administration (`/admin`) and Founder Console (`/platform-admin`) remain role-scoped experiences outside the seven member destinations.
+
+“Team” is not one authorization domain. The member destination `/ai-workforce` is the AI workforce/execution surface. Privileged human-team administration stays at `/team` and `/team/members` for operator/platform-admin users; tenant-admin team command stays at `/admin/team`; Founder/platform operations stay at `/admin-command` and `/platform-admin`. U2 does not merge those four capability or privilege domains.
+
+This corrects, but does not adopt, the preserved PR #87 hypothesis. In particular, the repository has no current authenticated pages at `/content`, `/library`, `/tools`, or `/learn`; U2 therefore does not create a second registry or approve speculative routes. The preserved `U2_IA_ONE_PAGER.md`, roadmap v1.2, and UI Constitution remain non-authoritative design inputs.
+
+## Evidence and method
+
+The inventory was generated from the exact baseline with reproducible searches:
+
+```bash
+find 'src/app/(auth)' -name page.tsx -print
+rg -n "redirect\\(|href:|route:" 'src/app/(auth)' src/components/layouts src/modules/workspace src/modules/mission next.config.mjs
+rg -n "CANONICAL_ROUTES|canonical-routes" src tests docs
+rg -n "MobileTabBar|WorkspaceTopNavigation|AdminSidebar|Sidebar" src
+rg -n "/content-engine|ContentCommandCenter|ContentLibrary" src tests docs
+```
+
+Measured coverage:
+
+- 112 authenticated `page.tsx` routes.
+- 18 entries in `CANONICAL_ROUTES`; all 18 resolve to real authenticated pages.
+- 94 authenticated pages are not registered in `CANONICAL_ROUTES`.
+- 0 registry entries lack a page.
+- 59 routes are referenced by a currently mounted navigation surface or an active workspace navigation model.
+- 35 non-alias routes are deep-link/context-only rather than navigation-visible.
+- 6 dynamic authenticated routes.
+- 23 routes are runtime redirects or compatibility aliases; the decision matrix assigns Redirect to 22 of them and keeps `/brand-builder` as the guarded activation entry because its destination depends on onboarding state.
+- 0 routes remain unconfirmed.
+- Current runtime member navigation is split: `WorkspaceTopNavigation` renders at most five filtered workspace entries on desktop; `MobileTabBar` renders five activation or growth tabs; the large legacy `Sidebar` is not mounted by `AppShell`.
+- Founder Console has its own `AdminSidebar`.
+- `/content-engine` mounts both `ContentCommandCenter` and `ContentLibrary`; no separate Library route is required.
+
+## Decision semantics
+
+- **Keep**: keep the route and capability. It may be primary, utility, admin, or contextual.
+- **Merge**: consolidate the user job under the stated destination only after parity is proven; preserve the old deep link.
+- **Hide**: remove only from future navigation. Do not delete code or data; direct/contextual access remains.
+- **Redirect**: retain backward compatibility through an explicit, tested redirect.
+- **Steven Decision Required**: no implementation until Steven resolves the listed product-authority question.
+
+No Merge or Redirect may weaken the source route’s role, tenant, or capability boundary. A destination must preserve or strengthen every source authorization requirement before consolidation is allowed.
+
+Every approved Merge or Redirect destination must resolve directly to a Keep route or a Steven Decision Required route. Query-preserving destinations are normalized to their route path for this check. A destination must not target another Merge or Redirect decision.
+
+Counts: **Keep 55 · Merge 9 · Hide 21 · Redirect 22 · Steven Decision Required 5 = 112 routes**.
+
+## Complete authenticated route map
+
+Retail and Recruitment use the same route identity. Separate applicability columns below make differences in emphasis or role scope explicit.
+
+| Canonical/current route | Page/module | User job | Current entry | Retail | Recruitment | Runtime authority | Decision | Destination | Deep-link strategy | Owner | Implementation slice | Dependency | Rationale / risk | Evidence |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `/admin` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin-command` | Founder Console / Platform Operations | Operate the platform command dashboard | Founder direct/context | Founder-only | Founder-only | platform-admin role gate + `AdminCommandDashboard` | **Merge** | `/platform-admin` | Preserve the bookmark only after Founder Console exposes equivalent platform-command capability. | Platform / Founder Console | U3 IA consolidation | AR-W2 + STEVEN-IA; capability-parity and role-boundary check | Both routes are platform-admin privilege domain; never place this capability in Tenant Admin navigation or lose platform operations parity. | `admin-command/page.tsx` role guard + dashboard import |
+| `/admin/ai-templates` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | redirect page | **Redirect** | `/admin/templates` | Preserve old URL with server redirect; query/path mapping must be tested. | Admin | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/admin/approvals` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/approvals` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/beta` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/beta` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/billing` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/billing` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/content` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/content` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/daily-actions` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/daily-actions` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/feedback` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/feedback` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/funnels` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/funnels` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/journey` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/journey` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/launch-readiness` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/launch-readiness` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/members` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/members` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/operations` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/operations` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/plan` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/plan` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/settings` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/settings` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/team` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/team` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/templates` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/templates` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/training` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/training` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/admin/users` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | role-gated admin page | **Keep** | `/admin/users` | Retain route; primary placement follows the target IA and role gates. | Admin | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + role guard |
+| `/ai` | AI assistance | Get guided analysis or creation support | Contextual CTA | Yes | Yes | redirect page | **Redirect** | `/content-engine` | Preserve old URL with server redirect; query/path mapping must be tested. | AI | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/ai-workforce` | Member AI Workforce | Coordinate member-facing AI workforce execution | Primary Team destination | Yes | Yes (emphasis) | `WorkforceDashboard`; no equivalent operator/platform-admin gate | **Keep** | `/ai-workforce` | Retain the member-facing route; do not treat it as privileged human-team administration. | AI Workforce / Member Execution | U3 navigation only | AR-W2 + STEVEN-IA | Keep capability and authorization separate from `/team`, `/team/members`, and `/admin/team`. | canonical route + `ai-workforce/page.tsx` |
+| `/ai/brand-builder` | AI assistance | Get guided analysis or creation support | Contextual CTA | Yes | Yes | redirect page | **Redirect** | `/brand-builder` | Preserve old URL with server redirect; query/path mapping must be tested. | AI | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/ai/coach` | AI assistance | Get guided analysis or creation support | Contextual CTA | Yes | Yes | authenticated page | **Keep** | `/ai/coach` | Retain route; primary placement follows the target IA and role gates. | AI | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/ai/content-plan` | Content | Create, edit, and reuse canonical content | Content context | Yes | Yes | redirect page | **Redirect** | `/content-engine` | Preserve old URL with server redirect; query/path mapping must be tested. | Content | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/ai/funnel-builder` | AI assistance | Get guided analysis or creation support | Contextual CTA | Yes | Yes | redirect page | **Redirect** | `/funnel` | Preserve old URL with server redirect; query/path mapping must be tested. | AI | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/ai/image` | AI assistance | Get guided analysis or creation support | Contextual CTA | Yes | Yes | authenticated page | **Keep** | `/ai/image` | Retain route; primary placement follows the target IA and role gates. | AI | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/ai/workforce` | AI assistance | Get guided analysis or creation support | Contextual CTA | Yes | Yes | redirect page | **Redirect** | `/ai-workforce` | Preserve old URL with server redirect; query/path mapping must be tested. | AI | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/analytics` | Insights | Review performance and next actions | Workspace/context | Yes | Yes | authenticated page | **Merge** | `/analytics-center` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Insights | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | auth route + consumer search |
+| `/analytics-center` | Insights | Review performance and next actions | Workspace/context | Yes | Yes | authenticated page | **Keep** | `/analytics-center` | Retain route; primary placement follows the target IA and role gates. | Insights | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/automation` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/billing` | Account & support | Manage account or recover from access issues | Utility/direct | Yes | Yes | authenticated page | **Keep** | `/billing` | Retain route; primary placement follows the target IA and role gates. | Account | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/blueprints` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/brand-builder` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Keep** | `/brand-builder` | Retain route; primary placement follows the target IA and role gates. | Brand | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/brand-builder/calendar` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/brand-builder/guides` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/brand-builder/insights` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/brand-builder/intelligence` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/brand-builder/profile` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | canonical registry + page | **Keep** | `/brand-builder/profile` | Retain route; primary placement follows the target IA and role gates. | Brand | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/brand-builder/step/accounts` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/brand-builder/step/calendar` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/content-engine` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/brand-builder/step/complete` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/brand-builder/step/guides` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/brand-builder/step/interview` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | canonical registry + page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | canonical-routes + route page |
+| `/brand-builder/step/profile` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | canonical registry + page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Brand | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | canonical-routes + route page |
+| `/brand-builder/step/strategy` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/content-engine` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/brand-builder/video-script` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/video` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/brand-discovery` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Merge** | `/brand-builder/profile` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Brand | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | auth route + consumer search |
+| `/brand-dna` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Merge** | `/brand-builder/profile` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Brand | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | auth route + consumer search |
+| `/ceo-mode` | AI assistance | Get guided analysis or creation support | Contextual CTA | Yes | Yes | canonical registry + page | **Keep** | `/ceo-mode` | Retain route; primary placement follows the target IA and role gates. | AI | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/content-engine` | Content | Create, edit, and reuse canonical content | Content context | Yes | Yes | canonical registry + page | **Keep** | `/content-engine` | Retain route; primary placement follows the target IA and role gates. | Content | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/crm` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | canonical registry + page | **Keep** | `/crm` | Retain route; primary placement follows the target IA and role gates. | Relationships | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/crm-center` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | authenticated page | **Merge** | `/crm` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Relationships | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | auth route + consumer search |
+| `/crm/[id]` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | dynamic page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Relationships | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/crm/customers` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Relationships | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/crm/pipeline` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Relationships | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/customers` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | redirect page | **Redirect** | `/crm` | Preserve old URL with server redirect; query/path mapping must be tested. | Relationships | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/dashboard` | Today & Journey | Understand priority and execute the next mission | Primary/context | Yes | Yes | canonical registry + page | **Keep** | `/dashboard` | Retain route; primary placement follows the target IA and role gates. | Today | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/franchise` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/funnel` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | canonical registry + page | **Keep** | `/funnel` | Retain route; primary placement follows the target IA and role gates. | Growth | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/funnel-builder` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | redirect page | **Redirect** | `/funnel` | Preserve old URL with server redirect; query/path mapping must be tested. | Growth | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/funnel-context` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | authenticated page | **Merge** | `/funnel` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Growth | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | auth route + consumer search |
+| `/funnel/[id]/analytics` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | dynamic page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Growth | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/funnel/[id]/edit` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | dynamic page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Growth | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/help` | Account & support | Manage account or recover from access issues | Utility/direct | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Account | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/journey` | Today & Journey | Understand priority and execute the next mission | Primary/context | Yes | Yes | canonical registry + page | **Keep** | `/journey` | Retain route; primary placement follows the target IA and role gates. | Today | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/lead-magnet` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | canonical registry + page | **Keep** | `/lead-magnet` | Retain route; primary placement follows the target IA and role gates. | Growth | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/leads` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | canonical registry + page | **Merge** | `/crm` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Relationships | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | canonical-routes + route page |
+| `/localization` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/member` | Team | Coordinate human and AI execution | Team/context | Yes | Yes (emphasis) | authenticated page | **Keep** | `/member` | Retain route; primary placement follows the target IA and role gates. | Team | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/member/daily-actions` | Team | Coordinate human and AI execution | Team/context | Yes | Yes (emphasis) | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Team | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/member/voice` | Team | Coordinate human and AI execution | Team/context | Yes | Yes (emphasis) | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Team | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/mission/[missionId]` | Today & Journey | Understand priority and execute the next mission | Primary/context | Yes | Yes | dynamic page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Today | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/onboarding` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | authenticated page | **Keep** | `/onboarding` | Retain route; primary placement follows the target IA and role gates. | Brand | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/onboarding/brand` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/brand-builder` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/onboarding/complete` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/dashboard` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/onboarding/first-content` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/content-engine` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/onboarding/first-funnel` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/funnel` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/onboarding/goals` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/brand-builder` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/onboarding/profile` | Brand & activation | Build or maintain business identity | Journey/context | Yes | Yes | redirect page | **Redirect** | `/brand-builder` | Preserve old URL with server redirect; query/path mapping must be tested. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/platform-admin` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/ai-profitability` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/ai-profitability` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/ai-usage` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/ai-usage` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/audit-logs` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/audit-logs` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/beta` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/beta` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/billing` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/billing` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/founder` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/founder` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/funnels` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/funnels` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/growth` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/growth` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/health` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/health` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/revenue` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/revenue` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/tenant-health` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/tenant-health` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/platform-admin/tenants` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | redirect page | **Redirect** | `/platform-admin?tab=tenants` | Preserve old URL with server redirect; query/path mapping must be tested. | Platform | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/platform-admin/users` | Founder Console | Operate the platform across tenants | Founder nav | Founder-only | Founder-only | platform-admin page | **Keep** | `/platform-admin/users` | Retain route; primary placement follows the target IA and role gates. | Platform | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | AdminSidebar + route page |
+| `/revenue-drivers` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | authenticated page | **Keep** | `/revenue-drivers` | Retain route; primary placement follows the target IA and role gates. | Growth | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/saas` | Extended capability | Use a specialized business capability | Direct/legacy | Yes | Yes | authenticated page | **Steven Decision Required** | `Steven decision required` | Keep reachable and unchanged until product authority confirms audience, ownership, and replacement. | Extended | Decision before U3 | Steven approval | No implementation until ownership is decided. | auth route + consumer search |
+| `/sales` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | canonical registry + page | **Merge** | `/crm` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Relationships | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | canonical-routes + route page |
+| `/settings` | Account & support | Manage account or recover from access issues | Utility/direct | Yes | Yes | authenticated page | **Keep** | `/settings` | Retain route; primary placement follows the target IA and role gates. | Account | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/social-setup` | Brand & activation | Resume social-account setup | Journey/context | Yes | Yes | redirect page | **Redirect** | `/brand-builder` | Preserve social-setup intent through the guarded activation entry; U3 must not chain through a hidden step route. | Brand | U3 redirect verification | AR-W2 + STEVEN-IA; activation-flow check | Terminal destination is Keep; preserve the account-setup next step without a redirect chain. | `social-setup/page.tsx` + guarded `brand-builder/page.tsx` |
+| `/team` | Human Team Administration | Manage the human-team hierarchy and member details | Privileged direct/context | Operator/platform-admin only | Operator/platform-admin only | role-gated `TeamOverviewDashboard` tree view | **Keep** | `/team` | Retain the privileged route and its member-to-dashboard denial. | Tenant Admin / Team Administration | U3 navigation/role-boundary only | AR-W2 + STEVEN-IA | Must not merge into member-facing `/ai-workforce`; preserve operator/platform-admin authorization. | `team/page.tsx` role guard + tree view |
+| `/team/growth` | Human Team Administration alias | Enter privileged human-team administration through the legacy growth URL | Privileged compatibility alias | Operator/platform-admin only | Operator/platform-admin only | redirect to role-gated `/team` | **Redirect** | `/team` | Keep a single hop to terminal Keep route `/team`; the destination enforces the operator/platform-admin boundary. | Tenant Admin / Team Administration | U3 redirect verification | AR-W2 + STEVEN-IA; role-boundary check | Member access must still terminate at `/dashboard`; the redirect cannot confer access to `TeamOverviewDashboard`. | `team/growth/page.tsx` + `team/page.tsx` role guard |
+| `/team/members` | Human Team Administration | Manage the human-team member list and selected member details | Privileged direct/context | Operator/platform-admin only | Operator/platform-admin only | role-gated `TeamOverviewDashboard` list view | **Keep** | `/team/members` | Retain the privileged list route and its member-to-dashboard denial. | Tenant Admin / Team Administration | U3 navigation/role-boundary only | AR-W2 + STEVEN-IA | Must not merge into member-facing `/ai-workforce`; preserve operator/platform-admin authorization. | `team/members/page.tsx` role guard + list view |
+| `/traffic-engine` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | canonical registry + page | **Keep** | `/traffic-engine` | Retain route; primary placement follows the target IA and role gates. | Growth | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/unauthorized` | Account & support | Manage account or recover from access issues | Utility/direct | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Account | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/video` | Content | Create, edit, and reuse canonical content | Content context | Yes | Yes | authenticated page | **Keep** | `/video` | Retain route; primary placement follows the target IA and role gates. | Content | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | auth route + consumer search |
+| `/video-production` | Content | Create, edit, and reuse canonical content | Content context | Yes | Yes | authenticated page | **Merge** | `/video` | Preserve bookmark with redirect or stable sub-route after destination reaches parity. | Content | U3 IA consolidation | AR-W2 + STEVEN-IA; parity check | Destination must preserve capability and permissions. | auth route + consumer search |
+| `/video/[id]` | Content | Create, edit, and reuse canonical content | Content context | Yes | Yes | dynamic page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Content | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/video/new` | Content | Create, edit, and reuse canonical content | Content context | Yes | Yes | authenticated page | **Hide** | `Contextual/deep-link only` | Remove from future primary nav only; retain direct URL and back/forward behavior. | Content | U3 navigation only | AR-W2 + STEVEN-IA; parity check | Do not confuse hide with deletion. | auth route + consumer search |
+| `/webinar-center` | Growth | Build and operate acquisition paths | Growth/context | Yes | Yes | canonical registry + page | **Keep** | `/webinar-center` | Retain route; primary placement follows the target IA and role gates. | Growth | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/whatsapp-ai` | Relationships | Capture, follow up, and convert relationships | Growth/context | Yes | Yes | canonical registry + page | **Keep** | `/whatsapp-ai` | Retain route; primary placement follows the target IA and role gates. | Relationships | U3 navigation only | AR-W2 + STEVEN-IA | Avoid duplicate nav entries. | canonical-routes + route page |
+| `/workspace` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | redirect page | **Redirect** | `/admin` | Preserve old URL with server redirect; query/path mapping must be tested. | Admin | U3 redirect verification | AR-W2 + STEVEN-IA; parity check | Avoid chains and preserve parameters. | route page/next redirect |
+| `/workspace/[...path]` | Tenant administration | Operate members, content, billing, and launch | Admin context | Role-scoped | Role-scoped | redirect page | **Redirect** | `/admin` | Resolve each legacy suffix only to a verified terminal Keep admin route; otherwise use `/admin`. | Admin | U3 redirect verification | AR-W2 + STEVEN-IA; suffix and role-boundary check | Matrix destination is terminal Keep; preserve a suffix only when the exact target is also Keep and role-equivalent. | route page/next redirect |
+
+## Navigation model
+
+### Desktop
+
+Desktop member navigation exposes the seven approved destinations in order: Today, Journey, Brand, Content, Growth, Relationships, Team. Workspace presentation changes labels and job emphasis only. Account utilities remain in the profile/settings affordance. Operator and platform-admin users continue to land in their role-specific consoles.
+
+### Mobile
+
+Mobile uses the same seven-destination tree, projected into five persistent slots rather than a competing IA:
+
+1. Today
+2. Content
+3. Growth
+4. Relationships
+5. More
+
+“More” exposes Journey, Brand, Team, Settings, Billing, and Help. Activation may temporarily promote Journey and Brand tasks, but those links must resolve to the same canonical destinations. U3 must replace the current unrelated activation/growth arrays with one approved projection and test Retail and Recruitment variants.
+
+### Landing, naming, and direct access
+
+- Authenticated members land on `/dashboard`; operators land on `/admin`; platform admins land on `/platform-admin`.
+- A valid contextual deep link remains valid after login and must not be replaced by a generic landing unless role or tenant policy forbids access.
+- Page titles and navigation labels use the destination names above. Workspace-specific wording may qualify a label (for example, Customer Relationships versus Opportunity Relationships) without changing its route identity.
+- Hidden routes stay direct-access/contextual routes. They are not listed in primary navigation, but breadcrumbs, in-product CTAs, refresh, and browser history remain supported.
+- Redirects preserve practical bookmarks and relevant query/path parameters, avoid redirect chains, and are covered by explicit compatibility tests before U3 closes.
+- Content Library remains a discoverable mode inside the Content area at `/content-engine`, alongside Content Engine generation/editor work.
+
+## Steven approval checklist
+
+A single approval must explicitly accept or revise every group below.
+
+### Target primary navigation
+
+- Seven desktop destinations: Today, Journey, Brand, Content, Growth, Relationships, Team.
+- Five-slot mobile projection: Today, Content, Growth, Relationships, More; More contains Journey, Brand, Team, and account utilities.
+- Retail and Recruitment share route identity; only presentation and emphasis differ.
+- Tenant Admin and Founder Console remain separate role-scoped navigation systems.
+- Member Team means `/ai-workforce`; privileged human-team administration remains `/team` and `/team/members`; tenant team command remains `/admin/team`; Founder/platform operations remain `/admin-command` and `/platform-admin`.
+
+### Merge decisions (9)
+
+- `/admin-command` → `/platform-admin`, only after platform-admin role and `AdminCommandDashboard` capability parity are verified
+- `/analytics` → `/analytics-center`
+- `/brand-discovery` → `/brand-builder/profile`
+- `/brand-dna` → `/brand-builder/profile`
+- `/crm-center` → `/crm`
+- `/funnel-context` → `/funnel`
+- `/leads` → `/crm`
+- `/sales` → `/crm`
+- `/video-production` → `/video`
+
+### Hide decisions (21)
+
+- Brand context: `/brand-builder/calendar`, `/brand-builder/guides`, `/brand-builder/insights`, `/brand-builder/intelligence`, `/brand-builder/step/accounts`, `/brand-builder/step/complete`, `/brand-builder/step/guides`, `/brand-builder/step/interview`, `/brand-builder/step/profile`.
+- Relationship detail: `/crm/[id]`, `/crm/customers`, `/crm/pipeline`.
+- Funnel detail: `/funnel/[id]/analytics`, `/funnel/[id]/edit`.
+- Context/support: `/help`, `/member/daily-actions`, `/member/voice`, `/mission/[missionId]`, `/unauthorized`.
+- Video detail: `/video/[id]`, `/video/new`.
+
+### Redirect decisions (22)
+
+- Admin compatibility: `/admin/ai-templates` → `/admin/templates`; `/workspace` → `/admin`; `/workspace/[...path]` → terminal `/admin` or an exact role-equivalent Keep child.
+- AI aliases: `/ai` → `/content-engine`; `/ai/brand-builder` → `/brand-builder`; `/ai/content-plan` → `/content-engine`; `/ai/funnel-builder` → `/funnel`; `/ai/workforce` → `/ai-workforce`.
+- Brand aliases: `/brand-builder/step/calendar` and `/brand-builder/step/strategy` → `/content-engine`; `/brand-builder/video-script` → `/video`; `/social-setup` → guarded terminal `/brand-builder`.
+- Growth/relationship aliases: `/customers` → `/crm`; `/funnel-builder` → `/funnel`; `/team/growth` → privileged terminal Keep route `/team`.
+- Onboarding aliases: `/onboarding/brand`, `/onboarding/goals`, and `/onboarding/profile` → `/brand-builder`; `/onboarding/complete` → `/dashboard`; `/onboarding/first-content` → `/content-engine`; `/onboarding/first-funnel` → `/funnel`.
+- Founder compatibility: `/platform-admin/tenants` → `/platform-admin?tab=tenants`.
+
+### Steven Decision Required (5)
+
+1. `/automation`: member, admin, or future-only?
+2. `/blueprints`: owning product area and member discoverability?
+3. `/franchise`: target persona and relationship to Recruitment/Team?
+4. `/localization`: workspace capability or internal configuration?
+5. `/saas`: supported member route or legacy/future scope?
+
+### Policies and implementation boundary
+
+- Approve the deep-link/redirect policy and the rule that Hide never means deletion.
+- Approve the role-boundary invariant: no Merge or Redirect may weaken source role, tenant, or capability requirements.
+- Approve the terminal-destination invariant: every Merge/Redirect resolves directly to Keep or Steven Decision Required after query normalization.
+- Approve Content Engine + Content Library as one Content product area.
+- Approve U1B remaining blocked by AR-W2 plus STEVEN-IA; U2 does not authorize removal.
+- Approve U3 as the later implementation slice for navigation projection, naming, redirects, and tests. No U3 code is authorized by merely opening this Draft PR.
+
+
+## Navigation convergence rules for U3
+
+1. Desktop and mobile must consume one approved IA projection. Do not maintain unrelated hard-coded destination sets.
+2. `CANONICAL_ROUTES` remains the code authority; any registry expansion is a reviewed U3 code change, not a second registry.
+3. Workspace configuration may change labels and ordering emphasis, but must point to the same route identities.
+4. Content Engine and Content Library remain discoverable together at `/content-engine`.
+5. Every Merge or Redirect keeps the old URL until deep-link, query, bookmark, role, and back-button tests pass.
+6. Hide never authorizes deletion. U1A `ORPHAN_CANDIDATE` and `UNCERTAIN` findings remain subject to separate U1B authority.
+7. Admin and Founder navigation stay role-gated and do not consume member mobile slots.
+8. Existing `Sidebar.tsx` is not a runtime navigation authority unless U3 deliberately remounts it; its entries are evidence of historical intent only.
+9. No Merge or Redirect may weaken the source route’s role, tenant, or capability boundary; the destination must preserve or strengthen it.
+10. Every Merge or Redirect destination must normalize directly to a Keep or Steven Decision Required route. It cannot target another Merge or Redirect.
+11. `/team`, `/team/members`, and `/team/growth` remain operator/platform-admin human-team administration; `/ai-workforce` remains the separate member-facing AI workforce destination.
+12. `/admin-command` remains Founder/platform-admin-only and never enters Tenant Admin navigation; any merge requires platform-command capability parity.
+
+## Steven decision required
+
+Approve or revise these five items before U3:
+
+1. `/automation`: confirm whether it is a supported member capability, an admin capability, or future-only.
+2. `/blueprints`: confirm the owning product area and whether members should discover it.
+3. `/franchise`: confirm target persona and relationship to Recruitment/Team.
+4. `/localization`: confirm whether this is a user-facing workspace capability or an internal configuration surface.
+5. `/saas`: confirm whether this remains a supported member route or is legacy/future scope.
+
+Approval should explicitly cover the seven member destinations, the complete 112-route map, the five uncertain decisions, and the rule that Retail/Recruitment share route identity.
+
+## Deferred governance and U1A cross-reference
+
+- U1A’s inactive Content dashboards remain inventory evidence only. U2 does not authorize deletion.
+- `ContentEngineDashboard` is not promoted to runtime authority; the current `/content-engine` composition is authoritative.
+- PR #87 is archival Draft input only. No commit was merged or cherry-picked.
+- Roadmap v1.2 and UI Constitution require independent approval and are not silently adopted here.
+- U2 PASS, if granted, does not approve Stage B/C expansion in the preserved roadmap proposal.
+
+## Explicit non-actions
+
+No product code, route, navigation, redirect, test, Prisma, Pipeline, Manifest, AR-W2, STEVEN-IA, U1B, U3, deployment, tag, release, or production state was changed. This document is a decision proposal, not implementation authorization.
