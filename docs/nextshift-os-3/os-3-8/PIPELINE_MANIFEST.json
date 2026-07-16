@@ -265,18 +265,120 @@
           "contract": null,
           "execution_task": null,
           "depends_on": ["U1A"],
-          "status": "pending",
-          "verification": null,
-          "evidence": null
+          "status": "completed",
+          "verification": {
+            "status": "passed",
+            "task_id": "U2",
+            "task_verification_policy": "paths_ignored_zero_checks_allowed",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "docs/os-3.8-u2-information-architecture",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+            "verified_head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U2_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "not_required_paths_ignored",
+            "checks_evidence": {
+              "decision": "not_required_paths_ignored",
+              "task_id": "U2",
+              "task_verification_policy": "paths_ignored_zero_checks_allowed",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+              "base_branch": "planning/os-3.8-product-usability",
+              "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
+              "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+              "workflow_path": ".github/workflows/ci.yml",
+              "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+              "changed_files": [
+                "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+                "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
+              ],
+              "github_check_runs": 0,
+              "ignored_paths_verified": true,
+              "verified_at": "2026-07-16T09:37:14Z"
+            },
+            "verified_at": "2026-07-16T09:37:14Z"
+          },
+          "evidence": {
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+            "merge_sha": "2e22f478bc092ee729d66e65b490565e3ac1723f",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+            "verification": {
+            "status": "passed",
+            "task_id": "U2",
+            "task_verification_policy": "paths_ignored_zero_checks_allowed",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "docs/os-3.8-u2-information-architecture",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+            "verified_head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U2_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "not_required_paths_ignored",
+            "checks_evidence": {
+              "decision": "not_required_paths_ignored",
+              "task_id": "U2",
+              "task_verification_policy": "paths_ignored_zero_checks_allowed",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+              "base_branch": "planning/os-3.8-product-usability",
+              "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
+              "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+              "workflow_path": ".github/workflows/ci.yml",
+              "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+              "changed_files": [
+                "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+                "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
+              ],
+              "github_check_runs": 0,
+              "ignored_paths_verified": true,
+              "verified_at": "2026-07-16T09:37:14Z"
+            },
+            "verified_at": "2026-07-16T09:37:14Z"
+          },
+            "validation": {
+              "checks": "not_required_paths_ignored",
+              "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+              "checks_evidence": {
+              "decision": "not_required_paths_ignored",
+              "task_id": "U2",
+              "task_verification_policy": "paths_ignored_zero_checks_allowed",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+              "base_branch": "planning/os-3.8-product-usability",
+              "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
+              "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+              "workflow_path": ".github/workflows/ci.yml",
+              "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+              "changed_files": [
+                "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+                "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
+              ],
+              "github_check_runs": 0,
+              "ignored_paths_verified": true,
+              "verified_at": "2026-07-16T09:37:14Z"
+            }
+            },
+            "recovered": true,
+            "recovered_at": "2026-07-16T09:38:11Z",
+            "github_merged_at": "2026-07-16T09:19:52Z",
+            "execution_mode": "manual_codex_desktop",
+            "adoption_mode": "manual_governance_backfill"
+          }
         }
       ],
       "checkpoint": {
         "id": "AR-W2",
-        "status": "pending",
+        "status": "awaiting_review",
         "review_mode": "cumulative_diff",
         "reviewer": "ChatGPT Work Chief Product Architect",
         "request_artifact": "docs/nextshift-os-3/os-3-8/reviews/W2_ARCHITECTURE_REVIEW_REQUEST.md",
         "result_artifact": "docs/nextshift-os-3/os-3-8/reviews/W2_ARCHITECTURE_REVIEW_RESULT.md",
+        "requested_end_sha": "2e22f478bc092ee729d66e65b490565e3ac1723f",
         "reviewed_sha": null
       },
       "human_gate": {
