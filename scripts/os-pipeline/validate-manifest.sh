@@ -88,24 +88,53 @@ jq -e '
     (test("[\\x00-\\x1f\\x7f]") | not);
   def uint: type == "number" and . >= 0 and floor == .;
   def ghpr: type == "string" and test("^https://github\\.com/[^/]+/[^/]+/pull/[0-9]+$");
+  def ignored_ci_path:
+    ((startswith("src/") or startswith("tests/") or startswith("scripts/") or
+     startswith("prisma/") or startswith(".github/workflows/")) | not) and
+    (startswith("docs/") or startswith("audit/") or endswith(".md") or . == "platform/status.md");
+  def zero_check_evidence($verification):
+    type == "object" and
+    .decision == "not_required_paths_ignored" and
+    .repository == $verification.repository and .pr_url == $verification.pr_url and
+    .base_branch == $verification.base_branch and (.base_sha | sha40) and
+    .head_sha == $verification.verified_head_sha and
+    .workflow_path == ".github/workflows/ci.yml" and (.workflow_blob_sha | sha40) and
+    (.changed_files | type == "array" and length > 0 and length == (unique | length) and
+      all(.[]; (rel and ignored_ci_path))) and
+    .github_check_runs == 0 and .ignored_paths_verified == true and (.verified_at | utc);
   def task_verification($base; $id):
-    type == "object" and .status == "passed" and .checks == "passed" and
+    . as $verification |
+    type == "object" and .status == "passed" and
+    (.checks | IN("passed", "not_required_paths_ignored")) and
     (.repository | type == "string" and length > 0) and .base_branch == $base and
     (.task_branch | type == "string" and length > 0) and (.pr_url | ghpr) and
     (.verified_head_sha | sha40) and (.implementation_report | rel) and
     .dispatch_artifact == ("docs/nextshift-os-3/os-3-8/runs/" + $id + "_DISPATCH.json") and
     (.dispatch_artifact | rel) and .report_exists_at_exact_head == true and
-    .report_in_pr_diff == true and (.verified_at | utc);
+    .report_in_pr_diff == true and (.verified_at | utc) and
+    (if .checks == "passed" then
+     ((.checks_evidence? // null) == null)
+     else
+      (.checks_evidence | zero_check_evidence($verification)) and
+      .checks_evidence.verified_at == .verified_at
+     end);
   def task_evidence($base; $id):
     type == "object" and
     (.pr_url | type == "string" and test("^https://github\\.com/sohoteam88/NextShift-OS-2\\.0/pull/[0-9]+$")) and
     (.merge_sha | sha40) and (.implementation_report | rel) and
     (.recovered | type == "boolean") and
-    (.validation | type == "object" and .checks == "passed" and (.head_sha | sha40)) and
+    (.validation | type == "object" and
+      (.checks | IN("passed", "not_required_paths_ignored")) and (.head_sha | sha40)) and
     (.verification | task_verification($base; $id)) and
     .verification.pr_url == .pr_url and
     .verification.implementation_report == .implementation_report and
     .verification.verified_head_sha == .validation.head_sha and
+    .verification.checks == .validation.checks and
+    (if .verification.checks == "passed" then
+      ((.validation.checks_evidence? // null) == null)
+     else
+      .validation.checks_evidence == .verification.checks_evidence
+     end) and
     (if .recovered then
       ((.merged_at? // null) == null) and (.recovered_at | utc)
      else

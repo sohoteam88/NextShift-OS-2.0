@@ -11,7 +11,30 @@ pass=0
 fail() { echo "FAIL: $*" >&2; exit 1; }
 assert_eq() { [[ "$1" == "$2" ]] || fail "$3 (expected $2, got $1)"; pass=$((pass + 1)); }
 fresh() {
-  cp "$SOURCE_MANIFEST" "$TMP_DIR/manifest.json"
+  jq '
+    .waves |= map(
+      .status="pending" | .start_sha=null |
+      .tasks |= map(.status="pending" | .verification=null | .evidence=null) |
+      .checkpoint.status="pending" |
+      .checkpoint.requested_end_sha=null |
+      .checkpoint.reviewed_sha=null |
+      .checkpoint.remediation_attempts=0 |
+      .checkpoint.active_remediation=null |
+      .checkpoint.remediation_block=null |
+      if .human_gate then
+        .human_gate.status="pending" |
+        .human_gate.approved_by=null |
+        .human_gate.approved_at=null |
+        .human_gate.approved_reviewed_sha=null
+      else . end
+    ) |
+    .final_audit.status="pending" |
+    .final_audit.requested_product_sha=null |
+    .final_audit.requested_at=null |
+    .final_audit.reviewed_sha=null |
+    .final_audit.completed_at=null |
+    .release_gate.status="blocked"
+  ' "$SOURCE_MANIFEST" >"$TMP_DIR/manifest.json"
   rm -f "$TMP_DIR"/*ARCHITECTURE_REVIEW_*.md "$TMP_DIR"/STEVEN_IA_APPROVAL.md "$TMP_DIR"/OS38_FINAL_CODE_REVIEW_REQUEST.md "$TMP_DIR"/OS38_FINAL_CODE_REVIEW_REPORT.md
 }
 run() { PIPELINE_TEST_MODE=1 "$PIPELINE_DIR/run-pipeline.sh" --manifest "$TMP_DIR/manifest.json" "$@"; }
