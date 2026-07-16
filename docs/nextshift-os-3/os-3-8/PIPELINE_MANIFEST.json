@@ -141,7 +141,7 @@
     {
       "id": "W2",
       "title": "Information Architecture Decision",
-      "status": "running",
+      "status": "completed",
       "start_sha": "46001c987629df1ac9a602588ee6ee429aa473e3",
       "tasks": [
         {
@@ -383,11 +383,12 @@
       },
       "human_gate": {
         "id": "STEVEN-IA",
-        "status": "pending",
+        "status": "approved",
         "description": "Steven approves the complete U2 Keep/Merge/Hide/Redirect map before U3 or deletion.",
         "approval_artifact": "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
-        "approved_by": null,
-        "approved_at": null
+        "approved_by": "Steven",
+        "approved_at": "2026-07-16T11:03:03Z",
+        "approved_reviewed_sha": "2e22f478bc092ee729d66e65b490565e3ac1723f"
       }
     },
     {
