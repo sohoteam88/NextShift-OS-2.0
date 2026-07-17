@@ -70,6 +70,8 @@ The validator additionally freezes complete 112-page and 209-API-route path-cens
 
 Every privileged page and API source is bound to its exact baseline Git blob. All code/test direct route and API callers discovered from quoted route literals must be present in the relevant item. Dynamic template-literal ID segments are explicitly normalized to `:id`; executable fixtures prove discovery for member approval and admin user edit/delete callers. Indirect mounted consumers remain explicitly recorded as additional evidence.
 
+Every frozen blob is verified directly against the authorized baseline commit. The default Vitest bridge first proves that exact commit object is available; a shallow checkout fetches only SHA `76636360d8c1a643c86bb26eb8923c6271241679` from `origin`, then verifies the object before invoking the contract suite. A missing object, failed fetch, wrong SHA, or blob mismatch fails closed; the validator never substitutes the current checkout for baseline evidence.
+
 ## Page and redirect findings
 
 - The 39 sources are fully classified into team admin, superadmin, or reviewed capability split.
