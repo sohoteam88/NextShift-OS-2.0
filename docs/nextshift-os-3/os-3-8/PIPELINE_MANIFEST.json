@@ -78,7 +78,9 @@
           "blueprint_section": "7",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["E1"],
+          "depends_on": [
+            "E1"
+          ],
           "status": "completed",
           "verification": {
             "status": "passed",
@@ -151,7 +153,9 @@
           "blueprint_section": "9",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["AR-W1"],
+          "depends_on": [
+            "AR-W1"
+          ],
           "status": "completed",
           "verification": {
             "status": "passed",
@@ -264,7 +268,9 @@
           "blueprint_section": "8",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["U1A"],
+          "depends_on": [
+            "U1A"
+          ],
           "status": "completed",
           "verification": {
             "status": "passed",
@@ -306,62 +312,62 @@
             "merge_sha": "2e22f478bc092ee729d66e65b490565e3ac1723f",
             "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
             "verification": {
-            "status": "passed",
-            "task_id": "U2",
-            "task_verification_policy": "paths_ignored_zero_checks_allowed",
-            "repository": "sohoteam88/NextShift-OS-2.0",
-            "base_branch": "planning/os-3.8-product-usability",
-            "task_branch": "docs/os-3.8-u2-information-architecture",
-            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
-            "verified_head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
-            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
-            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U2_DISPATCH.json",
-            "report_exists_at_exact_head": true,
-            "report_in_pr_diff": true,
-            "checks": "not_required_paths_ignored",
-            "checks_evidence": {
-              "decision": "not_required_paths_ignored",
+              "status": "passed",
               "task_id": "U2",
               "task_verification_policy": "paths_ignored_zero_checks_allowed",
               "repository": "sohoteam88/NextShift-OS-2.0",
-              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
               "base_branch": "planning/os-3.8-product-usability",
-              "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
-              "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
-              "workflow_path": ".github/workflows/ci.yml",
-              "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
-              "changed_files": [
-                "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
-                "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
-              ],
-              "github_check_runs": 0,
-              "ignored_paths_verified": true,
+              "task_branch": "docs/os-3.8-u2-information-architecture",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+              "verified_head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U2_DISPATCH.json",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "checks": "not_required_paths_ignored",
+              "checks_evidence": {
+                "decision": "not_required_paths_ignored",
+                "task_id": "U2",
+                "task_verification_policy": "paths_ignored_zero_checks_allowed",
+                "repository": "sohoteam88/NextShift-OS-2.0",
+                "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+                "base_branch": "planning/os-3.8-product-usability",
+                "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
+                "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+                "workflow_path": ".github/workflows/ci.yml",
+                "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+                "changed_files": [
+                  "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+                  "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
+                ],
+                "github_check_runs": 0,
+                "ignored_paths_verified": true,
+                "verified_at": "2026-07-16T09:37:14Z"
+              },
               "verified_at": "2026-07-16T09:37:14Z"
             },
-            "verified_at": "2026-07-16T09:37:14Z"
-          },
             "validation": {
               "checks": "not_required_paths_ignored",
               "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
               "checks_evidence": {
-              "decision": "not_required_paths_ignored",
-              "task_id": "U2",
-              "task_verification_policy": "paths_ignored_zero_checks_allowed",
-              "repository": "sohoteam88/NextShift-OS-2.0",
-              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
-              "base_branch": "planning/os-3.8-product-usability",
-              "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
-              "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
-              "workflow_path": ".github/workflows/ci.yml",
-              "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
-              "changed_files": [
-                "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
-                "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
-              ],
-              "github_check_runs": 0,
-              "ignored_paths_verified": true,
-              "verified_at": "2026-07-16T09:37:14Z"
-            }
+                "decision": "not_required_paths_ignored",
+                "task_id": "U2",
+                "task_verification_policy": "paths_ignored_zero_checks_allowed",
+                "repository": "sohoteam88/NextShift-OS-2.0",
+                "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+                "base_branch": "planning/os-3.8-product-usability",
+                "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
+                "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+                "workflow_path": ".github/workflows/ci.yml",
+                "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+                "changed_files": [
+                  "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+                  "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
+                ],
+                "github_check_runs": 0,
+                "ignored_paths_verified": true,
+                "verified_at": "2026-07-16T09:37:14Z"
+              }
             },
             "recovered": true,
             "recovered_at": "2026-07-16T09:38:11Z",
@@ -404,7 +410,10 @@
           "blueprint_section": "9",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["AR-W2", "STEVEN-IA"],
+          "depends_on": [
+            "AR-W2",
+            "STEVEN-IA"
+          ],
           "status": "completed",
           "verification": {
             "status": "passed",
@@ -470,7 +479,9 @@
           "blueprint_section": "10",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["U1B"],
+          "depends_on": [
+            "U1B"
+          ],
           "status": "completed",
           "verification": {
             "status": "passed",
@@ -536,7 +547,9 @@
           "blueprint_section": "10.1",
           "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
           "execution_task": null,
-          "depends_on": ["U3"],
+          "depends_on": [
+            "U3"
+          ],
           "status": "completed",
           "verification": {
             "status": "passed",
@@ -602,10 +615,51 @@
           "blueprint_section": "10.1",
           "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
           "execution_task": null,
-          "depends_on": ["U3A"],
-          "status": "pending",
-          "verification": null,
-          "evidence": null,
+          "depends_on": [
+            "U3A"
+          ],
+          "status": "completed",
+          "verification": {
+            "base_branch": "planning/os-3.8-product-usability",
+            "checks": "passed",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3ADR_DISPATCH.json",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/96",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "status": "passed",
+            "task_branch": "chore/os-3.8-three-space-ia-amendment",
+            "verified_at": "2026-07-17T12:57:03Z",
+            "verified_head_sha": "5ab3aead887f6c2c9cc29a0b4b5196a0f8e122f8"
+          },
+          "evidence": {
+            "adoption_provenance": "exact_head_governance_review",
+            "governance_gate_digest": "3f8f16939fab2a200fde4b909a657762e49607522f8c8e64d31bc1df81ec0b2e",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
+            "merge_sha": "76636360d8c1a643c86bb26eb8923c6271241679",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/96",
+            "recovered": true,
+            "recovered_at": "2026-07-17T12:57:03Z",
+            "validation": {
+              "checks": "passed",
+              "head_sha": "5ab3aead887f6c2c9cc29a0b4b5196a0f8e122f8"
+            },
+            "verification": {
+              "base_branch": "planning/os-3.8-product-usability",
+              "checks": "passed",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3ADR_DISPATCH.json",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/96",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "status": "passed",
+              "task_branch": "chore/os-3.8-three-space-ia-amendment",
+              "verified_at": "2026-07-17T12:57:03Z",
+              "verified_head_sha": "5ab3aead887f6c2c9cc29a0b4b5196a0f8e122f8"
+            }
+          },
           "governance_gate": {
             "gate_id": "U3-AUDITLOG-ADR",
             "artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
@@ -695,8 +749,10 @@
           "blueprint_section": "10.1",
           "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
           "execution_task": null,
-          "depends_on": ["U3ADR"],
-          "status": "blocked",
+          "depends_on": [
+            "U3ADR"
+          ],
+          "status": "pending",
           "verification": null,
           "evidence": null,
           "dispatch_gate": {
@@ -718,7 +774,9 @@
           "blueprint_section": "11",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["U3B"],
+          "depends_on": [
+            "U3B"
+          ],
           "status": "pending",
           "verification": null,
           "evidence": null
@@ -730,7 +788,9 @@
           "blueprint_section": "11",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["E3A"],
+          "depends_on": [
+            "E3A"
+          ],
           "status": "pending",
           "verification": null,
           "evidence": null
@@ -762,7 +822,10 @@
   },
   "release_gate": {
     "status": "blocked",
-    "requires": ["AUDIT-OS3.8:PASS", "Steven release approval"],
+    "requires": [
+      "AUDIT-OS3.8:PASS",
+      "Steven release approval"
+    ],
     "auto_tag": false,
     "auto_deploy": false
   }
