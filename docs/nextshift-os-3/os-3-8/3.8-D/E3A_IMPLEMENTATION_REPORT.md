@@ -26,34 +26,35 @@ No product source, Prisma schema/migration, Pipeline, Manifest, workflow, deploy
 - Inspected tenant/user predicates for list, exact read, mutation, and delete operations.
 - Inspected client state for loading, empty, error, current-value editing, save/reload, copy, delete, and confirmation behavior.
 - Compared Retail and Recruitment behavior and checked whether each capability uses the E1/E2 canonical `Content` model.
+- Reproduced the mounted Lead Magnet `Promise.all` persistence race with a two-read barrier so both track writes deterministically derive from one metadata snapshot.
 - Searched existing unit/integration/E2E coverage before adding focused executable evidence.
 - Applied the strict PASS/GAP/NOT_APPLICABLE contract independently to all 18 cells.
 
 ## Result summary
 
-- **PASS:** 3
-- **GAP:** 15
+- **PASS:** 1
+- **GAP:** 17
 - **NOT_APPLICABLE:** 0
-- **Stable GAP IDs:** 10
+- **Stable GAP IDs:** 11
 - **Owning models:** Prisma `VideoProject`; `User.metadata.lead_magnet` / `lead_magnet_tracks`; `User.metadata.webinar`
 
 The authoritative detail is [E3A_CAPABILITY_REVALIDATION.md](./E3A_CAPABILITY_REVALIDATION.md).
 
 ## Added tests
 
-- Focused Vitest: **8 tests** in one file.
+- Focused Vitest: **9 tests** in one file.
 - Related Playwright: **1 test** covering three authenticated mounted surfaces at narrow width with keyboard focus.
 
-The service tests prove positive Lead Magnet/Video contracts and deterministically reproduce the Webinar identity gap plus Video owner-boundary gaps. They do not modify or hide the gaps.
+The service tests prove positive single-record/Video contracts and deterministically reproduce the Lead Magnet concurrent lost update, Webinar identity gap, and Video owner-boundary gaps. They do not modify or hide the gaps.
 
 ## Validation results
 
 | Validation | Result |
 |---|---|
-| Focused E3A Vitest | PASS — 1 file / 8 tests |
+| Focused E3A Vitest | PASS — 1 file / 9 tests |
 | Playwright discovery | PASS — 1 E3A test discovered |
 | Related E3A Playwright | LOCAL ENVIRONMENT-LIMITED — no `.env.e2e`/`.env.local`, credentials, or local test server; exact-head GitHub E2E required |
-| Full Vitest | PASS — 102 files passed, 7 skipped; 562 tests passed, 44 skipped |
+| Full Vitest | PASS — 102 files passed, 7 skipped; 563 tests passed, 44 skipped |
 | TypeScript | PASS |
 | ESLint | PASS — 0 errors, 419 existing warnings |
 | Boundary check | PASS — generated boundary config in sync |
@@ -69,13 +70,11 @@ The exact-head GitHub results will be added to the Draft PR body after all requi
 
 ## E3B proposed scope
 
-E3B should be restricted to the proven gaps:
+E3B should be restricted by owning model:
 
-1. Video exact-project tenant + owner authorization across all reads/mutations.
-2. Stable Webinar canonical identity.
-3. Same-record Edit/Save flows with failure and race protection.
-4. Current-value Copy with accessible feedback.
-5. Exact-record/track Delete with confirmation and isolation.
+1. **Video:** repair exact-project tenant + owner authorization, then prove its existing regeneration/save/reopen path; add only current master-script/scene copy, clipboard failure feedback, and the missing confirmed delete UI.
+2. **Lead Magnet:** make concurrent per-track persistence atomic without metadata clobber, then add its missing editor/save, copy, and confirmed track deletion.
+3. **Webinar:** add stable identity, visible non-destructive generation error/retry with existing-package preservation, then its missing editor/save, copy, and confirmed deletion.
 
 No unrelated Stage B, CRM, marketplace, billing, WhatsApp, navigation, or new capability work is derived from E3A.
 

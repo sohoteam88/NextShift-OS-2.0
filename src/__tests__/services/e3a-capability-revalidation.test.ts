@@ -95,7 +95,7 @@ describe('E3A capability revalidation', () => {
       expect(generated.status).toBe('generated');
     });
 
-    it('saves and reopens the exact Retail and Recruitment records for the current user', async () => {
+    it('saves and reopens exact Retail and Recruitment records when writes are sequential', async () => {
       const retail = { ...generateLeadMagnet(brandContext as never, 'guide'), track: 'retail' as const };
       const recruitment = { ...generateLeadMagnet(brandContext as never, 'checklist'), track: 'recruitment' as const };
 
@@ -110,6 +110,39 @@ describe('E3A capability revalidation', () => {
         select: { metadata: true },
       });
       expect(prismaMocks.user.update).toHaveBeenCalledTimes(2);
+    });
+
+    it('reproduces the mounted concurrent two-track lost update from a shared metadata snapshot', async () => {
+      userMetadata = {
+        unrelated_preference: { locale: 'zh-MY' },
+        lead_magnet_tracks: {},
+      };
+      const pendingReads: Array<() => void> = [];
+      prismaMocks.user.findUnique.mockImplementation(({ where }: { where: { id: string } }) => (
+        new Promise((resolve) => {
+          expect(where.id).toBe(user.id);
+          pendingReads.push(() => resolve({ metadata: structuredClone(userMetadata) }));
+          if (pendingReads.length === 2) {
+            queueMicrotask(() => pendingReads.splice(0).forEach((release) => release()));
+          }
+        })
+      ));
+      const retail = { ...generateLeadMagnet(brandContext as never, 'guide'), track: 'retail' as const };
+      const recruitment = { ...generateLeadMagnet(brandContext as never, 'checklist'), track: 'recruitment' as const };
+
+      await Promise.all([
+        leadMagnetService.saveTrack(user.id, 'retail', retail),
+        leadMagnetService.saveTrack(user.id, 'recruitment', recruitment),
+      ]);
+      prismaMocks.user.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => (
+        where.id === user.id ? { metadata: userMetadata } : null
+      ));
+      const reopened = await leadMagnetService.getTracks(user.id);
+
+      expect(prismaMocks.user.update).toHaveBeenCalledTimes(2);
+      expect(reopened.retail).toBeNull();
+      expect(reopened.recruitment?.id).toBe(recruitment.id);
+      expect(userMetadata.unrelated_preference).toEqual({ locale: 'zh-MY' });
     });
   });
 
