@@ -752,7 +752,7 @@
           "depends_on": [
             "U3ADR"
           ],
-          "status": "pending",
+          "status": "running",
           "verification": null,
           "evidence": null,
           "dispatch_gate": {
