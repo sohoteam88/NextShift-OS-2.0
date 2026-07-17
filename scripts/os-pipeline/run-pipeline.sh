@@ -15,6 +15,7 @@ AUTO_DEPLOY="${AUTO_DEPLOY:-0}"
 STATE_EXPECTED_HEAD=""
 STATE_LOCK_OWNER=""
 STATE_TRANSACTION_NOOP=0
+DISPATCH_GATE_AUTHORIZED_DIGEST=""
 declare -a STATE_STAGE_PATHS=()
 
 usage() {
@@ -29,6 +30,8 @@ Commands:
   --record-review-result ID PASS|CHANGES_REQUESTED
   --record-steven-ia APPROVER TIMESTAMP Record the W2 human IA decision.
   --record-final-audit PASS|FAIL PATH   Record an external final independent-audit result.
+  --adopt-governance-gate GATE_TASK BLOCKED_TASK SOURCE PR_URL
+                                        Atomically adopt an exact-head reviewed gate and unblock its consumer.
   --evaluate-pr-check-requirement TASK_ID PR_URL EXPECTED_HEAD_SHA EXPECTED_BASE_SHA
                                         Read-only exact-PR CI requirement evaluation.
   --verify-pr TASK_ID PR_URL            Run local gates and enforce the Manifest task policy.
@@ -178,9 +181,15 @@ state_transaction() {
 }
 
 transaction_start_task() {
-  local id="$1" artifact_source="$2" artifact_target="$3" expected_digest="$4" canonical_source actual_digest
+  local id="$1" artifact_source="$2" artifact_target="$3" expected_digest="$4" expected_gate_digest="${5:-}" canonical_source actual_digest actual_gate_digest
   require_selected_task "$id"
   [[ "$(jq -r --arg id "$id" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")" == pending ]] || die "task changed before transaction: $id"
+  if task_has_dispatch_gate "$id"; then
+    [[ -n "$expected_gate_digest" ]] || die "locked task start has no authorized gate digest"
+    validate_governance_dispatch_gate "$id" pending
+    actual_gate_digest="$(governance_gate_digest "$id")"
+    [[ "$actual_gate_digest" == "$expected_gate_digest" ]] || die "governance gate changed before locked task start"
+  fi
   canonical_source="$(external_source_path "$artifact_source" || true)"
   [[ "$canonical_source" == "$artifact_source" ]] || die "task dispatch control artifact must be a regular file outside the repository"
   actual_digest="$(shasum -a 256 "$canonical_source" | awk '{print $1}')"
@@ -188,6 +197,17 @@ transaction_start_task() {
   cp "$canonical_source" "$artifact_target"
   start_task "$id"
   transaction_stage_path "$artifact_target"
+}
+
+# shellcheck disable=SC2329
+transaction_authorize_task_dispatch() {
+  local id="$1" expected_digest="$2" actual_digest
+  require_selected_task "$id"
+  validate_governance_dispatch_gate "$id" pending
+  actual_digest="$(governance_gate_digest "$id")"
+  [[ "$actual_digest" == "$expected_digest" ]] || die "governance gate changed between selection and locked authorization"
+  DISPATCH_GATE_AUTHORIZED_DIGEST="$actual_digest"
+  STATE_TRANSACTION_NOOP=1
 }
 
 transaction_complete_task() {
@@ -318,6 +338,264 @@ safe_relative_path() {
   [[ ! "$path" =~ (^|/)\.\.?(/|$) ]] || return 1
   [[ ! "$path" =~ (^|/)\.git(/|$) ]] || return 1
   [[ ! "$path" =~ [[:cntrl:]] ]] || return 1
+}
+
+task_manifest_json() {
+  jq -c --arg id "$1" '[.waves[] | .tasks[] | select(.id == $id)] | if length == 1 then .[0] else null end' "$MANIFEST_PATH"
+}
+
+task_has_dispatch_gate() {
+  [[ "$(jq -r --arg id "$1" '[.waves[] | .tasks[] | select(.id == $id) | has("dispatch_gate")] | if length == 1 then .[0] else false end' "$MANIFEST_PATH")" == true ]]
+}
+
+governance_gate_digest() {
+  local task_id="$1" task gate_task_id dependency artifact_relative artifact decision_sha head
+  task="$(task_manifest_json "$task_id")"; [[ "$task" != null ]] || die "unknown gated task: $task_id"
+  gate_task_id="$(jq -r '.dispatch_gate.task_id // empty' <<<"$task")"; [[ -n "$gate_task_id" ]] || die "task has no dispatch gate: $task_id"
+  dependency="$(task_manifest_json "$gate_task_id")"; [[ "$dependency" != null ]] || die "dispatch gate references an unknown task: $gate_task_id"
+  artifact_relative="$(jq -r '.dispatch_gate.artifact // empty' <<<"$task")"
+  artifact="$(artifact_path "$artifact_relative")"; [[ -f "$artifact" && ! -L "$artifact" ]] || die "governance gate artifact is missing or unsafe: $artifact_relative"
+  decision_sha="$(jq -r '.decision_sha // empty' "$artifact")"; head="$(git -C "$REPO_DIR" rev-parse HEAD)"
+  jq -Scn \
+    --arg task_id "$task_id" --arg head "$head" --arg decision_sha "$decision_sha" \
+    --arg artifact_digest "$(shasum -a 256 "$artifact" | awk '{print $1}')" \
+    --argjson dispatch_gate "$(jq -c '.dispatch_gate' <<<"$task")" \
+    --argjson governance_gate "$(jq -c '.governance_gate' <<<"$dependency")" \
+    --argjson verification "$(jq -c '.verification' <<<"$dependency")" \
+    --argjson evidence "$(jq -c '.evidence' <<<"$dependency")" \
+    '{task_id:$task_id,planning_head:$head,decision_sha:$decision_sha,artifact_digest:$artifact_digest,dispatch_gate:$dispatch_gate,governance_gate:$governance_gate,verification:$verification,evidence:$evidence}' |
+    shasum -a 256 | awk '{print $1}'
+}
+
+# Validate a generic governance dispatch gate against the exact synchronized
+# planning checkout. No caller/environment flag is accepted as gate authority.
+validate_governance_dispatch_gate() {
+  local task_id="$1" expected_status="${2:-pending}" task gate_task_id dependency artifact_relative artifact
+  local decision_sha reviewed_sha reviewed_pr review_id review review_body proof proof_digest decision_artifact selected_option current_blob file_blob protected evidence_digest
+  local -a protected_paths=()
+  task="$(task_manifest_json "$task_id")"; [[ "$task" != null ]] || die "unknown gated task: $task_id"
+  task_has_dispatch_gate "$task_id" || return 0
+  [[ "$(jq -r '.status' <<<"$task")" == "$expected_status" ]] || die "gated task $task_id must be $expected_status"
+  gate_task_id="$(jq -r '.dispatch_gate.task_id // empty' <<<"$task")"
+  dependency="$(task_manifest_json "$gate_task_id")"; [[ "$dependency" != null ]] || die "dispatch gate dependency is missing: $gate_task_id"
+  jq -e --arg gate_task "$gate_task_id" '
+    (.depends_on | type == "array" and index($gate_task) != null) and
+    (.dispatch_gate | type == "object") and
+    (.dispatch_gate.gate_id | type == "string" and length > 0) and
+    (.dispatch_gate.artifact | type == "string") and
+    .dispatch_gate.required_status == "approved" and
+    .dispatch_gate.required_verdict == "PASS" and
+    .dispatch_gate.reviewed_sha_must_equal_decision_sha == true and
+    .dispatch_gate.required_freshness_state == "fresh" and
+    .dispatch_gate.option_c_proof_required == true
+  ' <<<"$task" >/dev/null || die "dispatch gate contract is malformed for $task_id"
+  [[ "$(jq -r '.status' <<<"$dependency")" == completed ]] || die "governance dependency is not completed: $gate_task_id"
+  jq -e '
+    (.governance_gate | type == "object") and
+    (.governance_gate.gate_id | type == "string" and length > 0) and
+    .governance_gate.required_status == "approved" and
+    .governance_gate.required_verdict == "PASS" and
+    .governance_gate.reviewed_sha_must_equal_decision_sha == true and
+    .governance_gate.required_freshness_state == "fresh" and
+    .governance_gate.option_c_proof_required == true and
+    (.verification | type == "object" and .status == "passed") and
+    (.evidence | type == "object") and .verification == .evidence.verification
+  ' <<<"$dependency" >/dev/null || die "governance dependency evidence is incomplete: $gate_task_id"
+  validate_task_completion_evidence "$gate_task_id" "$(jq -c '.evidence' <<<"$dependency")"
+  artifact_relative="$(jq -r '.dispatch_gate.artifact' <<<"$task")"
+  [[ "$artifact_relative" == "$(jq -r '.governance_gate.artifact' <<<"$dependency")" ]] || die "governance and dispatch gate artifacts differ"
+  [[ "$(jq -r '.dispatch_gate.gate_id' <<<"$task")" == "$(jq -r '.governance_gate.gate_id' <<<"$dependency")" ]] || die "governance and dispatch gate IDs differ"
+  safe_relative_path "$artifact_relative" || die "governance gate artifact path is unsafe"
+  artifact="$(artifact_path "$artifact_relative")"; [[ -f "$artifact" && ! -L "$artifact" ]] || die "governance gate artifact is missing or unsafe"
+  git -C "$REPO_DIR" cat-file -e "HEAD:$artifact_relative" 2>/dev/null || die "governance gate artifact is absent from planning HEAD"
+  current_blob="$(shasum -a 256 "$artifact" | awk '{print $1}')"
+  file_blob="$(git -C "$REPO_DIR" show "HEAD:$artifact_relative" | shasum -a 256 | awk '{print $1}')"
+  [[ "$current_blob" == "$file_blob" ]] || die "governance gate artifact differs from planning HEAD"
+  jq -e --arg gate_task "$gate_task_id" --arg expected_gate_id "$(jq -r '.dispatch_gate.gate_id' <<<"$task")" '
+    . as $gate |
+    .schema_version == 1 and .gate_id == $expected_gate_id and
+    .task_id == $gate_task and .status == "approved" and (.decision_artifact | type == "string" and length > 0) and
+    (.selected_option | type == "string") and
+    (.completion_contract.allowed_selected_options | type == "array" and length > 0 and index($gate.selected_option) != null) and
+    .approval_state == "approved" and .architecture_review.verdict == "PASS" and
+    (.architecture_review.review_id | type == "number" and . > 0 and floor == .) and
+    (.decision_sha | type == "string" and test("^[0-9a-f]{40}$")) and
+    .architecture_review.reviewed_sha == .decision_sha and
+    .freshness.state == "fresh" and .freshness.verified_against_planning_sha == .decision_sha and
+    (.freshness.protected_paths | type == "array" and length > 0 and length == (unique | length)) and
+    .u3b_dispatch_authorized == true and
+    .completion_contract.required_status == "approved" and
+    .completion_contract.required_review_verdict == "PASS" and
+    .completion_contract.reviewed_sha_must_equal_decision_sha == true and
+    .completion_contract.required_approval_state == "approved" and
+    .completion_contract.required_freshness_state == "fresh" and
+    .completion_contract.option_c_requires_proof_artifact_at_reviewed_sha == true and
+    .completion_contract.u3b_dispatch_authorized_must_be_true == true
+  ' "$artifact" >/dev/null || die "governance gate artifact is malformed, incomplete, or unauthorized"
+  decision_sha="$(jq -r '.decision_sha' "$artifact")"; reviewed_sha="$(jq -r '.architecture_review.reviewed_sha' "$artifact")"
+  evidence_digest="$(jq -r '.evidence.governance_gate_digest // empty' <<<"$dependency")"
+  [[ "$evidence_digest" == "$current_blob" ]] || die "governance gate artifact digest differs from adopted dependency evidence"
+  [[ "$(jq -r '.verification.verified_head_sha' <<<"$dependency")" == "$decision_sha" ]] || die "dependency verified head does not match gate decision SHA"
+  [[ "$(jq -r '.evidence.verification.verified_head_sha' <<<"$dependency")" == "$decision_sha" ]] || die "dependency evidence does not match gate decision SHA"
+  [[ "$reviewed_sha" == "$decision_sha" ]] || die "reviewed and decision SHA differ"
+  git -C "$REPO_DIR" merge-base --is-ancestor "$decision_sha" HEAD || die "reviewed gate decision is not on authorized planning history"
+  while IFS= read -r protected; do
+    safe_relative_path "$protected" || die "governance gate protected path is unsafe"
+    [[ "$protected" == "$artifact_relative" ]] || protected_paths+=("$protected")
+  done < <(jq -r '.freshness.protected_paths[]' "$artifact")
+  if (( ${#protected_paths[@]} > 0 )); then
+    git -C "$REPO_DIR" diff --quiet "$decision_sha..HEAD" -- "${protected_paths[@]}" || die "governance gate is stale after a protected-path change"
+  fi
+  decision_artifact="$(jq -r '.decision_artifact' "$artifact")"; safe_relative_path "$decision_artifact" || die "governance decision artifact path is unsafe"
+  [[ "$(jq -r '.verification.implementation_report' <<<"$dependency")" == "$decision_artifact" ]] || die "dependency verification is not bound to the decision artifact"
+  git -C "$REPO_DIR" cat-file -e "$decision_sha:$decision_artifact" 2>/dev/null || die "decision artifact is absent from reviewed decision SHA"
+  reviewed_pr="$(jq -r '.verification.pr_url' <<<"$dependency")"
+  gh pr diff "$reviewed_pr" --name-only | grep -Fqx -e "$decision_artifact" || die "decision artifact is absent from the reviewed PR diff"
+  review_id="$(jq -r '.architecture_review.review_id' "$artifact")"
+  review="$(governance_review_payload "$reviewed_pr" "$review_id")"; review_body="$(jq -r '.body // empty' <<<"$review")"
+  [[ "$(jq -r '.commit_id // empty' <<<"$review")" == "$decision_sha" ]] || die "Architecture Review is not anchored to the gate decision SHA"
+  [[ "$(grep -Ec '^VERDICT[=:][[:space:]]*PASS[[:space:]]*$' <<<"$review_body")" == 1 && "$(grep -Ec '^VERDICT[=:]' <<<"$review_body")" == 1 ]] || die "Architecture Review must contain exactly one PASS verdict"
+  [[ "$(grep -Ec "^REVIEWED_SHA[=:][[:space:]]*${decision_sha}[[:space:]]*$" <<<"$review_body")" == 1 && "$(grep -Ec '^REVIEWED_SHA[=:]' <<<"$review_body")" == 1 ]] || die "Architecture Review reviewed SHA does not match the decision"
+  selected_option="$(jq -r '.selected_option' "$artifact")"
+  if [[ "$selected_option" == C_NO_PLATFORM_GLOBAL_MUTATIONS ]]; then
+    proof="$(jq -r '.option_c_proof_artifact // empty' "$artifact")"; safe_relative_path "$proof" || die "option C proof artifact path is unsafe"
+    proof_digest="$(jq -r '.option_c_proof_sha256 // empty' "$artifact")"; [[ "$proof_digest" =~ ^[0-9a-f]{64}$ ]] || die "option C proof digest is missing or invalid"
+    git -C "$REPO_DIR" cat-file -e "$decision_sha:$proof" 2>/dev/null || die "option C proof is absent from reviewed decision SHA"
+    [[ "$(git -C "$REPO_DIR" show "$decision_sha:$proof" | shasum -a 256 | awk '{print $1}')" == "$proof_digest" ]] || die "option C proof digest does not match the reviewed decision tree"
+    gh pr diff "$reviewed_pr" --name-only | grep -Fqx -e "$proof" || die "option C proof is absent from the reviewed PR diff"
+  fi
+}
+
+governance_review_payload() {
+  local pr_url="$1" review_id="$2" owner repo number
+  [[ "$pr_url" =~ ^https://github\.com/([^/]+)/([^/]+)/pull/([0-9]+)$ ]] || die "invalid governance PR URL"
+  owner="${BASH_REMATCH[1]}"; repo="${BASH_REMATCH[2]}"; number="${BASH_REMATCH[3]}"
+  gh api "repos/$owner/$repo/pulls/$number/reviews/$review_id" || die "cannot read governance Architecture Review"
+}
+
+build_governance_adoption_bundle() {
+  local gate_task_id="$1" blocked_task_id="$2" source="$3" pr_url="$4" gate_task blocked_task artifact_relative
+  local metadata decision_sha review_id review review_body merge_sha policy checks checks_evidence verified_at expected_repo base base_sha branch source_digest verification evidence selected_option proof proof_digest decision_artifact protected
+  local -a protected_paths=()
+  gate_task="$(task_manifest_json "$gate_task_id")"; blocked_task="$(task_manifest_json "$blocked_task_id")"
+  [[ "$gate_task" != null && "$blocked_task" != null ]] || die "governance adoption task identity is unknown"
+  [[ "$(jq -r '.dispatch_gate.task_id // empty' <<<"$blocked_task")" == "$gate_task_id" ]] || die "blocked task is not bound to the governance task"
+  [[ "$(jq -r '.dispatch_gate.gate_id // empty' <<<"$blocked_task")" == "$(jq -r '.governance_gate.gate_id // empty' <<<"$gate_task")" ]] || die "governance adoption gate ID differs"
+  artifact_relative="$(jq -r '.governance_gate.artifact // empty' <<<"$gate_task")"
+  [[ "$artifact_relative" == "$(jq -r '.dispatch_gate.artifact // empty' <<<"$blocked_task")" ]] || die "governance adoption artifact contract differs"
+  safe_relative_path "$artifact_relative" || die "governance adoption artifact path is unsafe"
+  [[ -f "$source" && ! -L "$source" ]] || die "governance adoption source is missing or unsafe"
+  jq empty "$source" || die "governance adoption source is not JSON"
+  decision_sha="$(jq -r '.decision_sha // empty' "$source")"; review_id="$(jq -r '.architecture_review.review_id // empty' "$source")"
+  [[ "$decision_sha" =~ ^[0-9a-f]{40}$ && "$review_id" =~ ^[1-9][0-9]*$ ]] || die "governance adoption source lacks exact decision/review identity"
+  jq -e --arg expected_gate_id "$(jq -r '.governance_gate.gate_id' <<<"$gate_task")" '
+    . as $gate |
+    .schema_version == 1 and .gate_id == $expected_gate_id and (.decision_artifact | type == "string" and length > 0) and
+    .status == "approved" and (.selected_option | type == "string") and
+    (.completion_contract.allowed_selected_options | type == "array" and length > 0 and index($gate.selected_option) != null) and
+    .approval_state == "approved" and .architecture_review.verdict == "PASS" and
+    (.architecture_review.review_id | type == "number" and . > 0 and floor == .) and
+    .architecture_review.reviewed_sha == .decision_sha and
+    .freshness.state == "fresh" and .freshness.verified_against_planning_sha == .decision_sha and
+    (.freshness.protected_paths | type == "array" and length > 0 and length == (unique | length)) and
+    .u3b_dispatch_authorized == true and
+    .completion_contract.required_status == "approved" and
+    .completion_contract.required_review_verdict == "PASS" and
+    .completion_contract.reviewed_sha_must_equal_decision_sha == true and
+    .completion_contract.required_approval_state == "approved" and
+    .completion_contract.required_freshness_state == "fresh" and
+    .completion_contract.option_c_requires_proof_artifact_at_reviewed_sha == true and
+    .completion_contract.u3b_dispatch_authorized_must_be_true == true
+  ' "$source" >/dev/null || die "governance adoption source is incomplete or unauthorized"
+  metadata="$(github_pr_metadata "$pr_url")"; expected_repo="$(expected_repository)"; base="$(jq -r '.base_branch' "$MANIFEST_PATH")"
+  jq -e --arg repo "$expected_repo" --arg base "$base" --arg pr "$pr_url" --arg head "$decision_sha" '
+    .state == "MERGED" and .repository.nameWithOwner == $repo and .headRepository.nameWithOwner == $repo and
+    .baseRefName == $base and .headRefOid == $head and .url == $pr and
+    (.baseRefOid | test("^[0-9a-f]{40}$")) and (.mergeCommit.oid | test("^[0-9a-f]{40}$"))
+  ' <<<"$metadata" >/dev/null || die "governance PR repository/base/head/merge identity is invalid"
+  merge_sha="$(jq -r '.mergeCommit.oid' <<<"$metadata")"; base_sha="$(jq -r '.baseRefOid' <<<"$metadata")"; branch="$(jq -r '.headRefName' <<<"$metadata")"
+  git -C "$REPO_DIR" merge-base --is-ancestor "$decision_sha" HEAD || die "governance decision SHA is not in planning history"
+  git -C "$REPO_DIR" merge-base --is-ancestor "$merge_sha" HEAD || die "governance merge SHA is not in planning history"
+  while IFS= read -r protected; do
+    safe_relative_path "$protected" || die "governance adoption protected path is unsafe"
+    [[ "$protected" == "$artifact_relative" ]] || protected_paths+=("$protected")
+  done < <(jq -r '.freshness.protected_paths[]' "$source")
+  if (( ${#protected_paths[@]} > 0 )); then
+    git -C "$REPO_DIR" diff --quiet "$decision_sha..HEAD" -- "${protected_paths[@]}" || die "governance adoption is stale after a protected-path change"
+  fi
+  decision_artifact="$(jq -r '.decision_artifact' "$source")"; safe_relative_path "$decision_artifact" || die "governance decision artifact path is unsafe"
+  git -C "$REPO_DIR" cat-file -e "$decision_sha:$decision_artifact" 2>/dev/null || die "decision artifact is absent from reviewed decision SHA"
+  gh pr diff "$pr_url" --name-only | grep -Fqx -e "$decision_artifact" || die "decision artifact is absent from reviewed PR diff"
+  source_digest="$(shasum -a 256 "$source" | awk '{print $1}')"
+  review="$(governance_review_payload "$pr_url" "$review_id")"; review_body="$(jq -r '.body // empty' <<<"$review")"
+  [[ "$(jq -r '.commit_id // empty' <<<"$review")" == "$decision_sha" ]] || die "Architecture Review is not anchored to the gate decision SHA"
+  [[ "$(grep -Ec '^VERDICT[=:][[:space:]]*PASS[[:space:]]*$' <<<"$review_body")" == 1 && "$(grep -Ec '^VERDICT[=:]' <<<"$review_body")" == 1 ]] || die "Architecture Review must contain exactly one PASS verdict"
+  [[ "$(grep -Ec "^REVIEWED_SHA[=:][[:space:]]*${decision_sha}[[:space:]]*$" <<<"$review_body")" == 1 && "$(grep -Ec '^REVIEWED_SHA[=:]' <<<"$review_body")" == 1 ]] || die "Architecture Review reviewed SHA does not match the decision"
+  selected_option="$(jq -r '.selected_option' "$source")"
+  if [[ "$selected_option" == C_NO_PLATFORM_GLOBAL_MUTATIONS ]]; then
+    proof="$(jq -r '.option_c_proof_artifact // empty' "$source")"; safe_relative_path "$proof" || die "option C proof artifact path is unsafe"
+    proof_digest="$(jq -r '.option_c_proof_sha256 // empty' "$source")"; [[ "$proof_digest" =~ ^[0-9a-f]{64}$ ]] || die "option C proof digest is missing or invalid"
+    git -C "$REPO_DIR" cat-file -e "$decision_sha:$proof" 2>/dev/null || die "option C proof is absent from reviewed decision SHA"
+    [[ "$(git -C "$REPO_DIR" show "$decision_sha:$proof" | shasum -a 256 | awk '{print $1}')" == "$proof_digest" ]] || die "option C proof digest does not match the reviewed decision tree"
+    gh pr diff "$pr_url" --name-only | grep -Fqx -e "$proof" || die "option C proof is absent from reviewed PR diff"
+  fi
+  policy="$(task_verification_policy "$gate_task_id")"; checks_evidence=null
+  if gh pr checks "$pr_url" >/dev/null 2>&1; then
+    checks=passed; verified_at="$(date -u +%FT%TZ)"
+  else
+    [[ "$policy" == paths_ignored_zero_checks_allowed ]] || die "governance task requires passing GitHub checks"
+    checks_evidence="$(evaluate_pr_check_requirement "$gate_task_id" "$pr_url" "$decision_sha" "$base_sha")" || die "governance PR has neither passing checks nor an authorized zero-check decision"
+    checks=not_required_paths_ignored; verified_at="$(jq -r '.verified_at' <<<"$checks_evidence")"
+  fi
+  verification="$(jq -cn --arg repo "$expected_repo" --arg base "$base" --arg branch "$branch" --arg pr "$pr_url" --arg head "$decision_sha" --arg report "$decision_artifact" --arg dispatch "$(task_dispatch_relative "$gate_task_id")" --arg checks "$checks" --arg verified_at "$verified_at" --argjson checks_evidence "$checks_evidence" '
+    {status:"passed",repository:$repo,base_branch:$base,task_branch:$branch,pr_url:$pr,verified_head_sha:$head,
+     implementation_report:$report,dispatch_artifact:$dispatch,report_exists_at_exact_head:true,report_in_pr_diff:true,
+     checks:$checks,verified_at:$verified_at} + (if $checks_evidence == null then {} else {checks_evidence:$checks_evidence} end)')"
+  evidence="$(jq -cn --arg pr "$pr_url" --arg merge "$merge_sha" --arg report "$decision_artifact" --arg checks "$checks" --arg head "$decision_sha" --arg recovered_at "$verified_at" --arg gate_digest "$source_digest" --argjson verification "$verification" --argjson checks_evidence "$checks_evidence" '
+    {pr_url:$pr,merge_sha:$merge,implementation_report:$report,verification:$verification,
+     validation:({checks:$checks,head_sha:$head} + (if $checks_evidence == null then {} else {checks_evidence:$checks_evidence} end)),
+     recovered:true,recovered_at:$recovered_at,adoption_provenance:"exact_head_governance_review",governance_gate_digest:$gate_digest}')"
+  validate_task_completion_evidence "$gate_task_id" "$evidence"
+  jq -cn --argjson verification "$verification" --argjson evidence "$evidence" --arg artifact "$artifact_relative" --arg source_digest "$source_digest" '{verification:$verification,evidence:$evidence,artifact:$artifact,source_digest:$source_digest}'
+}
+
+# shellcheck disable=SC2329
+transaction_adopt_governance_gate() {
+  local gate_task_id="$GOVERNANCE_ADOPT_GATE_TASK" blocked_task_id="$GOVERNANCE_ADOPT_BLOCKED_TASK" source="$GOVERNANCE_ADOPT_SOURCE" pr_url="$GOVERNANCE_ADOPT_PR"
+  local gate_status blocked_status canonical_source source_digest bundle target existing_digest
+  canonical_source="$(external_source_path "$source" || true)"; [[ "$canonical_source" == "$source" ]] || die "governance gate source must remain outside the repository"
+  source_digest="$(shasum -a 256 "$canonical_source" | awk '{print $1}')"; [[ "$source_digest" == "$GOVERNANCE_ADOPT_SOURCE_DIGEST" ]] || die "governance gate source changed before locked adoption"
+  gate_status="$(jq -r --arg id "$gate_task_id" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")"
+  blocked_status="$(jq -r --arg id "$blocked_task_id" '.waves[] | .tasks[] | select(.id == $id) | .status' "$MANIFEST_PATH")"
+  target="$(artifact_path "$(jq -r --arg id "$gate_task_id" '.waves[] | .tasks[] | select(.id == $id) | .governance_gate.artifact' "$MANIFEST_PATH")")"
+  if [[ "$gate_status" == completed && "$blocked_status" == pending && -f "$target" ]]; then
+    existing_digest="$(shasum -a 256 "$target" | awk '{print $1}')"
+    [[ "$existing_digest" == "$source_digest" ]] || die "different governance gate adoption already exists"
+    validate_governance_dispatch_gate "$blocked_task_id" pending
+    STATE_TRANSACTION_NOOP=1
+    return
+  fi
+  [[ "$gate_status" == pending && "$blocked_status" == blocked ]] || die "governance adoption state changed before locked transition"
+  bundle="$(build_governance_adoption_bundle "$gate_task_id" "$blocked_task_id" "$canonical_source" "$pr_url")"
+  [[ "$(jq -r '.source_digest' <<<"$bundle")" == "$source_digest" ]] || die "locked governance evidence differs from preflight source"
+  mkdir -p "$(dirname "$target")"; [[ ! -L "$target" ]] || die "canonical governance gate target is a symlink"
+  cp "$canonical_source" "$target"
+  jq --arg gate "$gate_task_id" --arg blocked "$blocked_task_id" --argjson verification "$(jq -c '.verification' <<<"$bundle")" --argjson evidence "$(jq -c '.evidence' <<<"$bundle")" '
+    .waves |= map(.tasks |= map(
+      if .id == $gate and .status == "pending" then .status="completed" | .verification=$verification | .evidence=$evidence
+      elif .id == $blocked and .status == "blocked" then .status="pending"
+      else . end))
+  ' "$MANIFEST_PATH" | write_manifest
+  transaction_stage_path "$target"
+}
+
+adopt_governance_gate() {
+  local gate_task_id="$1" blocked_task_id="$2" source="$3" pr_url="$4" base canonical_source bundle
+  base="$(jq -r '.base_branch' "$MANIFEST_PATH")"; synchronization_gate "$base"
+  canonical_source="$(external_source_path "$source" || true)"; [[ -n "$canonical_source" ]] || die "governance gate source must be a regular file outside the repository"
+  bundle="$(build_governance_adoption_bundle "$gate_task_id" "$blocked_task_id" "$canonical_source" "$pr_url")"
+  GOVERNANCE_ADOPT_GATE_TASK="$gate_task_id" GOVERNANCE_ADOPT_BLOCKED_TASK="$blocked_task_id" GOVERNANCE_ADOPT_SOURCE="$canonical_source" GOVERNANCE_ADOPT_PR="$pr_url" GOVERNANCE_ADOPT_SOURCE_DIGEST="$(jq -r '.source_digest' <<<"$bundle")" \
+    state_transaction "governance-adoption:$gate_task_id" "chore(pipeline): adopt governance gate $gate_task_id" transaction_adopt_governance_gate
 }
 
 validate_task_pr_metadata() {
@@ -759,7 +1037,11 @@ select_action() {
       [[ -z "$task" ]] && continue
       deps_ok=1
       while IFS= read -r dep; do dependency_satisfied "$dep" || deps_ok=0; done < <(jq -r --arg id "$task" '.waves[] | .tasks[] | select(.id == $id) | .depends_on[]?' "$MANIFEST_PATH")
-      if (( deps_ok )); then jq -n --arg wave "$wave" --arg task "$task" '{action:"task", wave:$wave, task:$task}'; return; fi
+      if (( deps_ok )); then
+        validate_governance_dispatch_gate "$task" pending
+        jq -n --arg wave "$wave" --arg task "$task" '{action:"task", wave:$wave, task:$task}'
+        return
+      fi
     done < <(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .tasks[] | select(.status == "pending") | .id' "$MANIFEST_PATH")
 
     if [[ "$(jq -r --arg wave "$wave" '[.waves[] | select(.id == $wave) | .tasks[].status] | all(. == "completed" or . == "superseded")' "$MANIFEST_PATH")" == "true" ]]; then
@@ -1170,6 +1452,7 @@ create_checkpoint() {
 }
 
 # shellcheck disable=SC2329
+# shellcheck disable=SC2153
 transaction_review_result() {
   local id="$REVIEW_ID" result="$REVIEW_VERDICT" source="$REVIEW_SOURCE" wave requested_sha result_sha target attempts max existing
   [[ "$(jq -r --arg id "$id" '.waves[] | select(.checkpoint.id == $id) | .checkpoint.status // empty' "$MANIFEST_PATH")" == awaiting_review ]] || die "checkpoint is no longer awaiting review"
@@ -1194,12 +1477,20 @@ dispatch_task() {
   [[ "${PIPELINE_ALLOW_PRODUCT_DISPATCH:-0}" == "1" ]] || die "dispatch requires PIPELINE_ALLOW_PRODUCT_DISPATCH=1"
   [[ -n "${CODEX_CMD:-}" ]] || die "dispatch requires an explicit CODEX_CMD; no unsafe default is provided"
   [[ ! -e "$STOP_FILE" ]] || die "STOP file exists: $STOP_FILE"
-  local base_branch action task task_branch task_dir control_dir brief outcome log_file contract execution_task dispatch_artifact control_artifact control_digest title section deps
+  local base_branch action task task_branch task_dir control_dir brief outcome log_file contract execution_task dispatch_artifact control_artifact control_digest title section deps gate_digest
   base_branch="$(jq -r '.base_branch' "$MANIFEST_PATH")"
   synchronization_gate "$base_branch"
   action="$(select_action)"; [[ "$(jq -r '.action' <<<"$action")" == "task" ]] || die "no eligible product task to dispatch"
   task="$(jq -r '.task' <<<"$action")"
   require_selected_task "$task"
+  gate_digest=""
+  if task_has_dispatch_gate "$task"; then
+    gate_digest="$(governance_gate_digest "$task")"
+    DISPATCH_GATE_AUTHORIZED_DIGEST=""
+    state_transaction "task-gate-authorize:$task" "chore(pipeline): authorize gated OS 3.8 task $task" transaction_authorize_task_dispatch "$task" "$gate_digest"
+    [[ -n "$DISPATCH_GATE_AUTHORIZED_DIGEST" ]] || die "locked governance gate authorization produced no digest"
+    gate_digest="$DISPATCH_GATE_AUTHORIZED_DIGEST"
+  fi
   task_branch="chore/os-3.8-$(printf '%s' "$task" | tr '[:upper:]' '[:lower:]')-$(date -u +%Y%m%d%H%M%S)"
   task_dir="$(mktemp -d "${TMPDIR:-/tmp}/os38-${task}.XXXXXX")"
   mkdir -p "$CONTROL_ROOT"; control_dir="$(mktemp -d "$CONTROL_ROOT/${task}.XXXXXX")"
@@ -1243,7 +1534,7 @@ EOF
   control_artifact="$(external_source_path "$control_artifact")" || die "cannot canonicalize task dispatch control artifact"
   control_digest="$(shasum -a 256 "$control_artifact" | awk '{print $1}')"
   mkdir -p "$(dirname "$dispatch_artifact")"
-  state_transaction "task-start:$task" "chore(pipeline): start OS 3.8 task $task" transaction_start_task "$task" "$control_artifact" "$dispatch_artifact" "$control_digest"
+  state_transaction "task-start:$task" "chore(pipeline): start OS 3.8 task $task" transaction_start_task "$task" "$control_artifact" "$dispatch_artifact" "$control_digest" "$gate_digest"
   if [[ "${PIPELINE_AUTOMATE_TASK_CYCLE:-0}" == "1" ]]; then
     local state_repo="$REPO_DIR"
     (REPO_DIR="$task_dir" MANIFEST_PATH="$task_dir/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" STATE_REPO_DIR="$state_repo" TASK_BRANCH="$task_branch" IMPLEMENTATION_REPORT="$(jq -r '.implementation_report' "$outcome")" PIPELINE_ALLOW_PR_MERGE="${PIPELINE_ALLOW_PR_MERGE:-0}" merge_task_pr "$task" "$(jq -r '.pr_url' "$outcome")")
@@ -1573,6 +1864,9 @@ case "$command" in
     ;;
   --record-final-audit)
     record_final_audit_result "${2:?PASS or FAIL required}" "${3:?external audit result path required}"
+    ;;
+  --adopt-governance-gate)
+    adopt_governance_gate "${2:?governance gate task ID required}" "${3:?blocked consumer task ID required}" "${4:?external gate source required}" "${5:?reviewed PR URL required}"
     ;;
   --evaluate-pr-check-requirement)
     evaluate_pr_check_requirement "${2:?task ID required}" "${3:?PR URL required}" "${4:?expected head SHA required}" "${5:?expected base SHA required}" || die "PR does not satisfy the exact task-policy-bound paths-ignore zero-check contract"

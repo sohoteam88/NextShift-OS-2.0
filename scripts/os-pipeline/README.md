@@ -265,6 +265,55 @@ Operator recovery procedure:
 Temporary worktrees and external control directories are diagnostic evidence.
 Remove them only after their PR and Manifest state have been reconciled.
 
+## Governance dispatch gates
+
+A task with `dispatch_gate` is never eligible from `depends_on` alone. Its
+dependency must be a completed task with a matching `governance_gate`, exact
+verification/evidence, and a canonical gate artifact. The production runner
+validates the gate at three independent boundaries:
+
+1. `select_action()` validates before returning the gated task;
+2. a short state transaction synchronizes planning, acquires the common-dir
+   lock, reloads the Manifest, and authorizes the exact gate digest before any
+   branch or Codex work; and
+3. the final locked task-start transaction revalidates the gate and the same
+   digest before `pending → running` and dispatch-artifact persistence.
+
+The gate binds a reviewed `decision_artifact`, decision SHA, one exact PASS
+Architecture Review and positive review ID, selected allowed option, approval
+state, freshness baseline, protected paths, dependency verification, and the
+adopted gate SHA-256. The decision SHA must be in current planning history.
+Changes to protected paths after that decision make the gate stale. The
+canonical gate path itself is protected by its adopted SHA-256, avoiding an
+impossible commit-self-SHA contract. Option C additionally requires a safe
+proof artifact at the reviewed decision SHA, included in that reviewed PR's
+diff, with its exact blob SHA-256 recorded in the gate. The reviewed Git tree
+plus that digest binds the proof without an impossible commit-SHA
+self-reference.
+
+Missing, partial, unknown, stale, symlinked, SHA-mismatched, or manually
+toggled evidence fails closed. Environment variables, task outcomes, PR body,
+labels, and `u3b_dispatch_authorized` by itself are never authority. A failure
+occurring before locked authorization creates no task branch, PR, dispatch
+artifact, task transition, or Codex invocation.
+
+Adopt an independently reviewed and already merged gate from a regular JSON
+source outside the repository:
+
+```bash
+scripts/os-pipeline/run-pipeline.sh \
+  --adopt-governance-gate U3ADR U3B /path/outside/repository/gate-result.json \
+  https://github.com/OWNER/REPOSITORY/pull/NUMBER
+```
+
+The command verifies the exact repository/base/head/merge, review body and
+commit anchor, decision artifact, GitHub checks policy, planning ancestry,
+freshness, and option-C proof outside the lock. It then redoes those checks
+inside `state_transaction` and atomically persists the canonical gate,
+completed dependency evidence, and `blocked → pending`. An identical adoption
+is a clean stop; a different or stale adoption is rejected. There is no
+production test shortcut for manufacturing a gate PASS.
+
 ## Architecture Review checkpoints
 
 When every task in a wave is `completed` or `superseded`, `--cycle` (or
@@ -418,6 +467,7 @@ scripts/os-pipeline/tests/remediation-integration.sh
 scripts/os-pipeline/tests/governance-integration.sh
 scripts/os-pipeline/tests/safety-integration.sh
 scripts/os-pipeline/tests/docs-only-ci-policy.sh
+scripts/os-pipeline/tests/governance-dispatch-gate.sh
 
 git diff --check
 pnpm type-check
@@ -428,7 +478,7 @@ pnpm build
 
 Expected pipeline-specific coverage is:
 
-- Bash syntax and ShellCheck: **9 Pipeline/test shell files**, with zero
+- Bash syntax and ShellCheck: **10 Pipeline/test shell files**, with zero
   ShellCheck issues.
 - `tests/run.sh`: **40 state-machine/Manifest assertions**.
 - `tests/git-integration.sh`: a real temporary bare-Git
@@ -459,6 +509,12 @@ Expected pipeline-specific coverage is:
   cases covering U1A/U2 authorization, rejection for every actual-check task,
   missing/unknown policies, forged/mismatched/cross-task evidence, caller
   non-authority, recovery revalidation, and exact PR #84 U1A evidence.
+- `tests/governance-dispatch-gate.sh`: **18 named real-Git production-path
+  fixtures** covering pending/missing/non-PASS/mismatched/stale/unknown/manual
+  gate rejection, gate-ID/partial-schema rejection, option-C proof, dependency evidence, valid exact-PASS
+  dispatch, selection-to-lock and planning-head TOCTOU, duplicate/stale
+  adoption, atomic valid adoption, and zero Codex/branch/PR/dispatch/state side
+  effects for rejected gates.
 
 The real-Git fixtures use temporary bare remotes/worktrees plus fake GitHub and
 Codex commands. They do not contact GitHub, execute real E1/E2 product work,
