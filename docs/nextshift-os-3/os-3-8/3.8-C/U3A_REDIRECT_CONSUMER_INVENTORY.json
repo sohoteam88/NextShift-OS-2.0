@@ -1,0 +1,2711 @@
+{
+  "schema_version": "u3a.redirect-consumer-inventory.v1",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "baseline_sha": "76636360d8c1a643c86bb26eb8923c6271241679",
+  "authoritative_contract": {
+    "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+    "sha256": "b12de777450763ad0d9e56357d5173eae61cb19a5c563133e74e90859afd1e2b"
+  },
+  "expected_counts": {
+    "legacy_page_redirects": 22,
+    "literal_consumer_rows": 241,
+    "literal_consumer_files": 85,
+    "literal_consumer_occurrences": 521
+  },
+  "baseline_redirect_authority": {
+    "path": "src/lib/navigation/compatibility-redirect.ts",
+    "sha256": "94ed8f5a3a3175233a195c8b7e1b1a74efca15a85f01f1ad2df0c2fda2d5bcad",
+    "current_status": "GAP",
+    "gaps": [
+      "next/navigation redirect() is temporary rather than explicit 301",
+      "query keys and values are broadly forwarded instead of allowlisted",
+      "/admin-command, /platform-admin/tenants, and /team/growth form redirect chains",
+      "workspace unknown suffix currently falls back to /admin",
+      "team/workspace compatibility currently permits platform_admin"
+    ]
+  },
+  "invariants": {
+    "page_get_compatibility": "single-hop terminal 301 after exact source authorization",
+    "query_policy": "only entry allowlist; consume route selectors; drop every unknown key",
+    "mutation_policy": "never 301/302; old mutation fails closed unless separately approved expiring 308 parity",
+    "member_frontend": "zero /admin, /superadmin, /platform-admin, /admin-command, /team, /team/members, or /workspace backend links",
+    "space_isolation": "/admin and /superadmin never weaken or inherit each other's role authority"
+  },
+  "redirect_entries": [
+    {
+      "stable_id": "REDIRECT-PAGE-ADMIN-002",
+      "source_page_id": "PAGE-ADMIN-002",
+      "source_route": "/admin/ai-templates",
+      "source_file": "src/app/(auth)/admin/ai-templates/page.tsx",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "target_routes": [
+        "/admin/templates"
+      ],
+      "target_roles": [
+        "operator"
+      ],
+      "target_space": "admin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-ADMIN-002",
+        "U3B-REDIRECT-PAGE-ADMIN-002-STATUS",
+        "U3B-REDIRECT-PAGE-ADMIN-002-NOCHAIN",
+        "U3B-REDIRECT-PAGE-ADMIN-002-QUERY",
+        "U3B-REDIRECT-PAGE-ADMIN-002-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-ADMIN-011",
+      "source_page_id": "PAGE-ADMIN-011",
+      "source_route": "/admin/launch-readiness",
+      "source_file": "src/app/(auth)/admin/launch-readiness/page.tsx",
+      "current_guard": "AdminLayout + nested platform_admin layout",
+      "target_routes": [
+        "/superadmin/launch-readiness"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-ADMIN-011",
+        "U3B-REDIRECT-PAGE-ADMIN-011-STATUS",
+        "U3B-REDIRECT-PAGE-ADMIN-011-NOCHAIN",
+        "U3B-REDIRECT-PAGE-ADMIN-011-QUERY",
+        "U3B-REDIRECT-PAGE-ADMIN-011-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-020",
+      "source_page_id": "PAGE-SUPER-020",
+      "source_route": "/platform-admin",
+      "source_file": "src/app/(auth)/platform-admin/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "view",
+          "allowed_values": [
+            "command"
+          ]
+        },
+        {
+          "key": "tab",
+          "allowed_values": [
+            "tenants"
+          ]
+        },
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "AMB-PAGE-002 requires reviewed selector-to-terminal mapping.",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-020",
+        "U3B-REDIRECT-PAGE-SUPER-020-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-020-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-020-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-020-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-021",
+      "source_page_id": "PAGE-SUPER-021",
+      "source_route": "/platform-admin/ai-profitability",
+      "source_file": "src/app/(auth)/platform-admin/ai-profitability/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/ai-profitability"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-021",
+        "U3B-REDIRECT-PAGE-SUPER-021-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-021-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-021-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-021-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-022",
+      "source_page_id": "PAGE-SUPER-022",
+      "source_route": "/platform-admin/ai-usage",
+      "source_file": "src/app/(auth)/platform-admin/ai-usage/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/ai-usage"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-022",
+        "U3B-REDIRECT-PAGE-SUPER-022-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-022-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-022-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-022-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-023",
+      "source_page_id": "PAGE-SUPER-023",
+      "source_route": "/platform-admin/audit-logs",
+      "source_file": "src/app/(auth)/platform-admin/audit-logs/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/audit-logs"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-023",
+        "U3B-REDIRECT-PAGE-SUPER-023-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-023-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-023-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-023-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-024",
+      "source_page_id": "PAGE-SUPER-024",
+      "source_route": "/platform-admin/beta",
+      "source_file": "src/app/(auth)/platform-admin/beta/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/beta"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-024",
+        "U3B-REDIRECT-PAGE-SUPER-024-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-024-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-024-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-024-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-025",
+      "source_page_id": "PAGE-SUPER-025",
+      "source_route": "/platform-admin/billing",
+      "source_file": "src/app/(auth)/platform-admin/billing/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/billing"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-025",
+        "U3B-REDIRECT-PAGE-SUPER-025-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-025-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-025-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-025-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-026",
+      "source_page_id": "PAGE-SUPER-026",
+      "source_route": "/platform-admin/founder",
+      "source_file": "src/app/(auth)/platform-admin/founder/page.tsx",
+      "current_guard": "authenticated layout only; NO page-level platform role guard",
+      "target_routes": [
+        "/superadmin/founder"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-026",
+        "U3B-REDIRECT-PAGE-SUPER-026-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-026-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-026-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-026-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-027",
+      "source_page_id": "PAGE-SUPER-027",
+      "source_route": "/platform-admin/funnels",
+      "source_file": "src/app/(auth)/platform-admin/funnels/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/funnels"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-027",
+        "U3B-REDIRECT-PAGE-SUPER-027-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-027-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-027-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-027-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-028",
+      "source_page_id": "PAGE-SUPER-028",
+      "source_route": "/platform-admin/growth",
+      "source_file": "src/app/(auth)/platform-admin/growth/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/growth"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-028",
+        "U3B-REDIRECT-PAGE-SUPER-028-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-028-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-028-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-028-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-029",
+      "source_page_id": "PAGE-SUPER-029",
+      "source_route": "/platform-admin/health",
+      "source_file": "src/app/(auth)/platform-admin/health/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/health"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-029",
+        "U3B-REDIRECT-PAGE-SUPER-029-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-029-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-029-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-029-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-030",
+      "source_page_id": "PAGE-SUPER-030",
+      "source_route": "/platform-admin/revenue",
+      "source_file": "src/app/(auth)/platform-admin/revenue/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/revenue"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-030",
+        "U3B-REDIRECT-PAGE-SUPER-030-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-030-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-030-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-030-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-031",
+      "source_page_id": "PAGE-SUPER-031",
+      "source_route": "/platform-admin/tenant-health",
+      "source_file": "src/app/(auth)/platform-admin/tenant-health/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/tenant-health"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-031",
+        "U3B-REDIRECT-PAGE-SUPER-031-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-031-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-031-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-031-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-032",
+      "source_page_id": "PAGE-SUPER-032",
+      "source_route": "/platform-admin/tenants",
+      "source_file": "src/app/(auth)/platform-admin/tenants/page.tsx",
+      "current_guard": "NO source page guard; destination currently guards platform_admin",
+      "target_routes": [
+        "/superadmin/tenants"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "Replace current chain with direct terminal.",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-032",
+        "U3B-REDIRECT-PAGE-SUPER-032-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-032-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-032-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-032-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-033",
+      "source_page_id": "PAGE-SUPER-033",
+      "source_route": "/platform-admin/users",
+      "source_file": "src/app/(auth)/platform-admin/users/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/users"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-033",
+        "U3B-REDIRECT-PAGE-SUPER-033-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-033-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-033-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-033-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-SUPER-034",
+      "source_page_id": "PAGE-SUPER-034",
+      "source_route": "/admin-command",
+      "source_file": "src/app/(auth)/admin-command/page.tsx",
+      "current_guard": "page requires exact platform_admin",
+      "target_routes": [
+        "/superadmin/command"
+      ],
+      "target_roles": [
+        "platform_admin"
+      ],
+      "target_space": "superadmin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "Replace current chain with direct terminal.",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-SUPER-034",
+        "U3B-REDIRECT-PAGE-SUPER-034-STATUS",
+        "U3B-REDIRECT-PAGE-SUPER-034-NOCHAIN",
+        "U3B-REDIRECT-PAGE-SUPER-034-QUERY",
+        "U3B-REDIRECT-PAGE-SUPER-034-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-LEGACY-035",
+      "source_page_id": "PAGE-LEGACY-035",
+      "source_route": "/team",
+      "source_file": "src/app/(auth)/team/page.tsx",
+      "current_guard": "denies member only; currently admits leader|operator|platform_admin",
+      "target_routes": [
+        "/admin/team"
+      ],
+      "target_roles": [
+        "leader",
+        "operator"
+      ],
+      "target_space": "admin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "member",
+          "format": "uuid",
+          "authorization": "id plus session tenant/sub-team"
+        },
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-LEGACY-035",
+        "U3B-REDIRECT-PAGE-LEGACY-035-STATUS",
+        "U3B-REDIRECT-PAGE-LEGACY-035-NOCHAIN",
+        "U3B-REDIRECT-PAGE-LEGACY-035-QUERY",
+        "U3B-REDIRECT-PAGE-LEGACY-035-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-LEGACY-036",
+      "source_page_id": "PAGE-LEGACY-036",
+      "source_route": "/team/members",
+      "source_file": "src/app/(auth)/team/members/page.tsx",
+      "current_guard": "denies member only; currently admits leader|operator|platform_admin",
+      "target_routes": [
+        "/admin/team/members"
+      ],
+      "target_roles": [
+        "leader",
+        "operator"
+      ],
+      "target_space": "admin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "member",
+          "format": "uuid",
+          "authorization": "id plus session tenant/sub-team"
+        },
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-LEGACY-036",
+        "U3B-REDIRECT-PAGE-LEGACY-036-STATUS",
+        "U3B-REDIRECT-PAGE-LEGACY-036-NOCHAIN",
+        "U3B-REDIRECT-PAGE-LEGACY-036-QUERY",
+        "U3B-REDIRECT-PAGE-LEGACY-036-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-LEGACY-037",
+      "source_page_id": "PAGE-LEGACY-037",
+      "source_route": "/team/growth",
+      "source_file": "src/app/(auth)/team/growth/page.tsx",
+      "current_guard": "page operator|platform_admin",
+      "target_routes": [
+        "/admin/team"
+      ],
+      "target_roles": [
+        "operator"
+      ],
+      "target_space": "admin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "Member-facing product CTA consumers are separately remapped to /ai-workforce; replace current chain.",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-LEGACY-037",
+        "U3B-REDIRECT-PAGE-LEGACY-037-STATUS",
+        "U3B-REDIRECT-PAGE-LEGACY-037-NOCHAIN",
+        "U3B-REDIRECT-PAGE-LEGACY-037-QUERY",
+        "U3B-REDIRECT-PAGE-LEGACY-037-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-LEGACY-038",
+      "source_page_id": "PAGE-LEGACY-038",
+      "source_route": "/workspace",
+      "source_file": "src/app/(auth)/workspace/page.tsx",
+      "current_guard": "page operator|platform_admin",
+      "target_routes": [
+        "/admin"
+      ],
+      "target_roles": [
+        "operator"
+      ],
+      "target_space": "admin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-LEGACY-038",
+        "U3B-REDIRECT-PAGE-LEGACY-038-STATUS",
+        "U3B-REDIRECT-PAGE-LEGACY-038-NOCHAIN",
+        "U3B-REDIRECT-PAGE-LEGACY-038-QUERY",
+        "U3B-REDIRECT-PAGE-LEGACY-038-ROLE"
+      ]
+    },
+    {
+      "stable_id": "REDIRECT-PAGE-LEGACY-039",
+      "source_page_id": "PAGE-LEGACY-039",
+      "source_route": "/workspace/[...path]",
+      "source_file": "src/app/(auth)/workspace/[...path]/page.tsx",
+      "current_guard": "page operator|platform_admin",
+      "target_routes": [
+        "/admin/approvals",
+        "/admin/beta",
+        "/admin/billing",
+        "/admin/content",
+        "/admin/daily-actions",
+        "/admin/feedback",
+        "/admin/funnels",
+        "/admin/journey",
+        "/admin/members",
+        "/admin/operations",
+        "/admin/plan",
+        "/admin/settings",
+        "/admin/team",
+        "/admin/templates",
+        "/admin/training",
+        "/admin/users"
+      ],
+      "target_roles": [
+        "operator"
+      ],
+      "target_space": "admin",
+      "method": "GET",
+      "required_status": 301,
+      "terminal": true,
+      "query_allowlist": [
+        {
+          "key": "source",
+          "allowed_values": [
+            "bookmark"
+          ]
+        }
+      ],
+      "unknown_query": "DROP",
+      "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+      "notes": "The sixteen frozen suffixes resolve directly to terminal /admin routes. /workspace/launch-readiness and every unknown or nested suffix fail closed with 404; they never cross into /superadmin or form a chain.",
+      "required_test_ids": [
+        "U3A-REDIRECT-PAGE-LEGACY-039",
+        "U3A-REDIRECT-WORKSPACE-SUFFIX-TERMINAL",
+        "U3B-REDIRECT-PAGE-LEGACY-039-NOCHAIN",
+        "U3B-REDIRECT-PAGE-LEGACY-039-QUERY",
+        "U3B-REDIRECT-PAGE-LEGACY-039-ROLE",
+        "U3B-REDIRECT-PAGE-LEGACY-039-STATUS",
+        "U3B-REDIRECT-WORKSPACE-LAUNCH-READINESS-DENY"
+      ]
+    }
+  ],
+  "resolution_groups": [
+    {
+      "id": "CONSUMER-PLATFORM-LEGACY",
+      "scope": "runtime literals beginning /platform-admin",
+      "target": "corresponding direct /superadmin terminal",
+      "disposition": "MIGRATE_AND_VERIFY_PLATFORM_ONLY",
+      "required_test_ids": [
+        "U3B-CONSUMER-PLATFORM",
+        "U3B-REDIRECT-PLATFORM-NOCHAIN"
+      ]
+    },
+    {
+      "id": "CONSUMER-ADMIN-COMMAND",
+      "scope": "runtime /admin-command literal",
+      "target": "/superadmin/command",
+      "disposition": "MIGRATE_OR_PRESERVE_GUARDED_301",
+      "required_test_ids": [
+        "U3B-CONSUMER-ADMIN-COMMAND"
+      ]
+    },
+    {
+      "id": "CONSUMER-TEAM-COMPAT",
+      "scope": "legacy /team source page",
+      "target": "/admin/team",
+      "disposition": "LEADER_OPERATOR_COMPATIBILITY; ARCHITECTURE_REVIEW_REQUIRED_FOR_CAPABILITY_SPLIT",
+      "required_test_ids": [
+        "U3B-CONSUMER-TEAM-COMPAT"
+      ]
+    },
+    {
+      "id": "CONSUMER-TEAM-MEMBERS-COMPAT",
+      "scope": "legacy /team/members source page",
+      "target": "/admin/team/members",
+      "disposition": "LEADER_OPERATOR_COMPATIBILITY",
+      "required_test_ids": [
+        "U3B-CONSUMER-TEAM-MEMBERS-COMPAT"
+      ]
+    },
+    {
+      "id": "CONSUMER-TEAM-GROWTH-COMPAT",
+      "scope": "legacy operator team/growth source page",
+      "target": "/admin/team",
+      "disposition": "OPERATOR_ONLY_COMPATIBILITY",
+      "required_test_ids": [
+        "U3B-CONSUMER-TEAM-GROWTH-COMPAT"
+      ]
+    },
+    {
+      "id": "CONSUMER-TEAM-MEMBER-PRODUCT",
+      "scope": "member-facing mission, growth, referral, AI, and workspace CTAs using /team or /team/growth",
+      "target": "/ai-workforce",
+      "disposition": "MIGRATE_MEMBER_PRODUCT_CTA; NEVER_POINT_MEMBER_TO_ADMIN",
+      "required_test_ids": [
+        "U3B-CONSUMER-TEAM-MEMBER-PRODUCT"
+      ]
+    },
+    {
+      "id": "CONSUMER-TEAM-MIXED",
+      "scope": "direct /team or /team/members consumer requiring owner-context classification",
+      "target": "member-facing -> /ai-workforce; privileged human-team -> /admin/team or /admin/team/members",
+      "disposition": "PER_CONSUMER_CLASSIFICATION_REQUIRED; FAIL_CLOSED_IF_OWNER_UNKNOWN",
+      "required_test_ids": [
+        "U3B-CONSUMER-TEAM-MIXED"
+      ]
+    },
+    {
+      "id": "CONSUMER-WORKSPACE-COMPAT",
+      "scope": "operator compatibility page/test/runtime literal",
+      "target": "direct terminal /admin or frozen /admin suffix",
+      "disposition": "OPERATOR_ONLY_COMPATIBILITY; PLATFORM_DENIED",
+      "required_test_ids": [
+        "U3B-CONSUMER-WORKSPACE-COMPAT"
+      ]
+    },
+    {
+      "id": "CONSUMER-WORKSPACE-MEMBER-CONFIG",
+      "scope": "dormant member workspace primaryWorkspaceRoute",
+      "target": "/dashboard",
+      "disposition": "REPLACE_DORMANT_BACKEND_ROUTE_BEFORE_ANY_NEW_CONSUMER",
+      "required_test_ids": [
+        "U3B-CONSUMER-WORKSPACE-CONFIG"
+      ]
+    },
+    {
+      "id": "CONSUMER-HISTORICAL-SIDEBAR",
+      "scope": "unmounted Sidebar literals",
+      "target": "historical evidence only",
+      "disposition": "MUST_REMAIN_UNMOUNTED_OR_BE_REMOVED_UNDER_SEPARATE_AUTHORITY",
+      "required_test_ids": [
+        "U3B-CONSUMER-SIDEBAR-UNMOUNTED"
+      ]
+    },
+    {
+      "id": "CONSUMER-TESTS",
+      "scope": "test route literals",
+      "target": "update expected direct terminals and negative role behavior",
+      "disposition": "MIGRATE_WITH_IMPLEMENTATION",
+      "required_test_ids": [
+        "U3B-CONSUMER-TESTS"
+      ]
+    },
+    {
+      "id": "CONSUMER-DOCS",
+      "scope": "documentation route literals",
+      "target": "historical docs remain historical; current authorities must update",
+      "disposition": "CLASSIFY_AUTHORITY_VS_HISTORY_BEFORE_EDIT",
+      "required_test_ids": [
+        "U3B-CONSUMER-DOCS"
+      ]
+    },
+    {
+      "id": "CONSUMER-ARCHIVE",
+      "scope": "tracked archive/** route literals",
+      "target": "historical evidence only",
+      "disposition": "PRESERVE_AS_NON_RUNTIME_HISTORY; EXCLUDE_FROM_CALLER_MIGRATION",
+      "required_test_ids": [
+        "U3A-CONSUMER-ARCHIVE-CLASSIFIED"
+      ]
+    },
+    {
+      "id": "CONSUMER-TOOLING",
+      "scope": "tracked scripts/** route literals",
+      "target": "review each operational tool against final terminal route and role",
+      "disposition": "MIGRATE_WITH_U3B_OR_FAIL_CLOSED_IF_OWNER_UNKNOWN",
+      "required_test_ids": [
+        "U3B-CONSUMER-TOOLING"
+      ]
+    }
+  ],
+  "member_navigation_authorities": [
+    {
+      "path": "src/components/layouts/AppShell.tsx",
+      "role": "mounted shell authority",
+      "current_result": "member navigation does not expose backend routes",
+      "baseline_blob": "a8eee4690769475515e690402fe0988a0b2824a5"
+    },
+    {
+      "path": "src/components/layouts/TopBar.tsx",
+      "role": "mounted desktop member navigation",
+      "current_result": "uses approved member navigation; zero backend links",
+      "baseline_blob": "52c10c5e6faa4d37a589534d1334cdecf7138026"
+    },
+    {
+      "path": "src/components/layouts/MobileTabBar.tsx",
+      "role": "mounted mobile navigation and More",
+      "current_result": "uses approved five-slot projection; zero backend links",
+      "baseline_blob": "15622934665b0805ce8ec3f79cb8a92eb405b897"
+    },
+    {
+      "path": "src/modules/workspace/components/WorkspaceTopNavigation.tsx",
+      "role": "mounted workspace member navigation",
+      "current_result": "uses member navigation authority; zero backend links",
+      "baseline_blob": "c503629805bf3b2199e66e4011006b89929b8488"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "role": "historical unmounted sidebar",
+      "current_result": "contains legacy links but has no import/mount authority",
+      "baseline_blob": "fbb270d959f2b2626c7868e057ddffcff7e218e1"
+    }
+  ],
+  "consumer_snapshot": [
+    {
+      "path": "archive/audit-history/admin-dashboard-usage-report.md",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/admin-dashboard-v3-prd.md",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/admin-dashboard-v3-prd.md",
+      "literal": "/platform-admin/ai-profitability",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/admin-dashboard-v3-prd.md",
+      "literal": "/platform-admin/audit-logs",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/admin-dashboard-v3-prd.md",
+      "literal": "/platform-admin/growth",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/admin-dashboard-v3-prd.md",
+      "literal": "/platform-admin/health",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/admin-dashboard-v3-prd.md",
+      "literal": "/platform-admin/revenue",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/admin-dashboard-v3-prd.md",
+      "literal": "/platform-admin/tenant-health",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/COO-002_READINESS_ARCHITECTURE_AUDIT_2026-06-22.md",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/COO-002_READINESS_GATE_CHECKLIST.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/COO-002_READINESS_REAUDIT_2026-06-22.md",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/DASH-003_AI_COO_MISSION_ENGINE_PRD.md",
+      "literal": "/team",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/DASHBOARD_ZERO_AI_COO_AUDIT_2026-06-21.md",
+      "literal": "/team",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/DASHBOARD_ZERO_AI_COO_AUDIT_2026-06-21.md",
+      "literal": "/team/growth",
+      "count": 3,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/journey-v3-simplification.md",
+      "literal": "/team",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/LEGACY_BRIDGE_FINAL_AUDIT.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/LEGACY_SURFACE_RETIREMENT_PLAN.md",
+      "literal": "/admin-command",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/LEGACY_SURFACE_RETIREMENT_PLAN.md",
+      "literal": "/team",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/LEGACY_SURFACE_RETIREMENT_PLAN.md",
+      "literal": "/team/growth",
+      "count": 11,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/LEGACY_SURFACE_RETIREMENT_PLAN.md",
+      "literal": "/workspace",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/LEGACY_USAGE_AUDIT.md",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/phase10f-navigation-integration.md",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/phase7-beta-launch.md",
+      "literal": "/platform-admin/founder",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/PROJECTION_FALLBACK_AUDIT.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/admin-command",
+      "count": 7,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin",
+      "count": 7,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin?tab=tenants",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/*",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/ai-profitability",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/ai-usage",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/audit-logs",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/beta",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/billing",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/founder",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/funnels",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/growth",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/health",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/revenue",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/tenant-health",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/tenants",
+      "count": 7,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/platform-admin/users",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/team",
+      "count": 10,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/team/growth",
+      "count": 9,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/team/members",
+      "count": 4,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/workspace",
+      "count": 7,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/ROUTE_AUTHORITY_AUDIT.md",
+      "literal": "/workspace/[...path]",
+      "count": 7,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/TEAM_DEPENDENCY_AUDIT.md",
+      "literal": "/team",
+      "count": 4,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/TEAM_DEPENDENCY_AUDIT.md",
+      "literal": "/team/growth",
+      "count": 4,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/UI_ALIGNMENT_AUDIT_2026-06-22.md",
+      "literal": "/team",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/v5-integration-audit.md",
+      "literal": "/team/growth",
+      "count": 4,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/v5-reality-audit.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_1_PR11B_TEAM_ENGINE_MIGRATION_REPORT.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_1_PR5_EVOLUTION_CONSUMER_INVENTORY.md",
+      "literal": "/team",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3B_NAVIGATION_AUTHORITY_CONSOLIDATION.md",
+      "literal": "/admin-command",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3B_NAVIGATION_AUTHORITY_CONSOLIDATION.md",
+      "literal": "/platform-admin/tenants",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3B_NAVIGATION_AUTHORITY_CONSOLIDATION.md",
+      "literal": "/team",
+      "count": 3,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3B_NAVIGATION_AUTHORITY_CONSOLIDATION.md",
+      "literal": "/team/growth",
+      "count": 4,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3B_NAVIGATION_AUTHORITY_CONSOLIDATION.md",
+      "literal": "/workspace",
+      "count": 4,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3B_NAVIGATION_AUTHORITY_CONSOLIDATION.md",
+      "literal": "/workspace/[...path]",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3C_REDIRECT_USAGE_AUDIT.md",
+      "literal": "/admin-command",
+      "count": 13,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3C_REDIRECT_USAGE_AUDIT.md",
+      "literal": "/team/growth",
+      "count": 14,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3C_REDIRECT_USAGE_AUDIT.md",
+      "literal": "/workspace",
+      "count": 14,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3D_AI_ROUTE_CANONICALIZATION.md",
+      "literal": "/team",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3D_AI_ROUTE_CANONICALIZATION.md",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3F_LEGACY_SURFACE_REDIRECT_REPORT.md",
+      "literal": "/team",
+      "count": 3,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_3F_LEGACY_SURFACE_REDIRECT_REPORT.md",
+      "literal": "/team/growth",
+      "count": 5,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_4I_BRAND_ADVISOR_PROJECTION_REPORT.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_EVOLUTION_TRUTH_REPORT.md",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_TEAM_TRUTH_REPORT.md",
+      "literal": "/team",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_TEAM_TRUTH_REPORT.md",
+      "literal": "/team/dashboard",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_TEAM_TRUTH_REPORT.md",
+      "literal": "/team/growth",
+      "count": 4,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_TEAM_TRUTH_REPORT.md",
+      "literal": "/team/leaders",
+      "count": 1,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "archive/audit-history/V6_TEAM_TRUTH_REPORT.md",
+      "literal": "/team/members",
+      "count": 2,
+      "kind": "ARCHIVE_REFERENCE",
+      "resolution_group_id": "CONSUMER-ARCHIVE"
+    },
+    {
+      "path": "docs/ai-coo/COO-001A_STATE_REQUIREMENTS_MATRIX.md",
+      "literal": "/team",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/ai-coo/COO-001A_STATE_REQUIREMENTS_MATRIX.md",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/ai-coo/DASH-003_ROUTE_CONTRACT.md",
+      "literal": "/team",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/ai-coo/DASH-003_ROUTE_CONTRACT.md",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/architecture/ARC_005_RELEASE_NOTES.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/audit/ARC_005_CODEX_IMPLEMENTATION_REPORT.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/E2E_CI_SETUP.md",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/admin-command",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/platform-admin/ai-usage",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/platform-admin/audit-logs",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/platform-admin/billing",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/platform-admin/health",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/platform-admin/tenants",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/platform-admin/users",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/team",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/navigation-audit.md",
+      "literal": "/team/members",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+      "literal": "/admin-command",
+      "count": 4,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+      "literal": "/team",
+      "count": 6,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+      "literal": "/team/growth",
+      "count": 3,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+      "literal": "/team/members",
+      "count": 4,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+      "literal": "/workspace/[...path]",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/admin-command",
+      "count": 6,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin",
+      "count": 8,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin?tab=tenants",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/*",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/ai-profitability",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/ai-usage",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/audit-logs",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/beta",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/billing",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/founder",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/funnels",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/growth",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/health",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/revenue",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/tenant-health",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/tenants",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/platform-admin/users",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/team",
+      "count": 11,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/team/growth",
+      "count": 4,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/team/members",
+      "count": 7,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/workspace",
+      "count": 3,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+      "literal": "/workspace/[...path]",
+      "count": 3,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/admin-command",
+      "count": 4,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin",
+      "count": 5,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/ai-profitability",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/ai-usage",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/audit-logs",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/beta",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/billing",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/founder",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/funnels",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/growth",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/health",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/revenue",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/tenant-health",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/tenants",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/platform-admin/users",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/team",
+      "count": 5,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/team/growth",
+      "count": 3,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/team/members",
+      "count": 4,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/workspace",
+      "count": 3,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+      "literal": "/workspace/[...path]",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+      "literal": "/admin-command",
+      "count": 4,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+      "literal": "/platform-admin?tab=tenants",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+      "literal": "/platform-admin?view=command",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+      "literal": "/platform-admin/tenants",
+      "count": 3,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+      "literal": "/team",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
+      "literal": "/admin-command",
+      "count": 2,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
+      "literal": "/platform-admin/*",
+      "count": 1,
+      "kind": "DOCUMENTATION_REFERENCE",
+      "resolution_group_id": "CONSUMER-DOCS"
+    },
+    {
+      "path": "scripts/lighthouse-audit.sh",
+      "literal": "/team",
+      "count": 1,
+      "kind": "TOOLING_REFERENCE",
+      "resolution_group_id": "CONSUMER-TOOLING"
+    },
+    {
+      "path": "src/__tests__/api/admin-api.test.ts",
+      "literal": "/team/dashboard",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/__tests__/responsive/pages.spec.ts",
+      "literal": "/team",
+      "count": 2,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/__tests__/services/agent-workforce-orchestrator.test.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/__tests__/services/customer-health-engine.test.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/__tests__/services/dashboard-projection-adapter.test.ts",
+      "literal": "/team/growth",
+      "count": 4,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/__tests__/services/priority-engine.test.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/app/(auth)/admin-command/page.tsx",
+      "literal": "/platform-admin?view=command",
+      "count": 1,
+      "kind": "PAGE_OR_REDIRECT_AUTHORITY",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/app/(auth)/platform-admin/ai-usage/page.tsx",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "PAGE_OR_REDIRECT_AUTHORITY",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/app/(auth)/platform-admin/ai-usage/page.tsx",
+      "literal": "/platform-admin?tab=tenants",
+      "count": 1,
+      "kind": "PAGE_OR_REDIRECT_AUTHORITY",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/app/(auth)/platform-admin/ai-usage/page.tsx",
+      "literal": "/platform-admin/health",
+      "count": 1,
+      "kind": "PAGE_OR_REDIRECT_AUTHORITY",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/app/(auth)/platform-admin/billing/page.tsx",
+      "literal": "/platform-admin/ai-usage",
+      "count": 1,
+      "kind": "PAGE_OR_REDIRECT_AUTHORITY",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/app/(auth)/platform-admin/tenants/page.tsx",
+      "literal": "/platform-admin?tab=tenants",
+      "count": 1,
+      "kind": "PAGE_OR_REDIRECT_AUTHORITY",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/app/(auth)/team/growth/page.tsx",
+      "literal": "/team",
+      "count": 1,
+      "kind": "PAGE_OR_REDIRECT_AUTHORITY",
+      "resolution_group_id": "CONSUMER-TEAM-COMPAT"
+    },
+    {
+      "path": "src/app/api/v1/ai-workforce/route.ts",
+      "literal": "/team",
+      "count": 2,
+      "kind": "API_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MIXED"
+    },
+    {
+      "path": "src/app/api/v1/platform-admin/usage/route.ts",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "API_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/ai-profitability",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/audit-logs",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/beta",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/billing",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/funnels",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/growth",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/health",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/revenue",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/tenant-health",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/tenants",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AdminSidebar.tsx",
+      "literal": "/platform-admin/users",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AppShell.tsx",
+      "literal": "/platform-admin",
+      "count": 5,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/components/layouts/AppShell.tsx",
+      "literal": "/workspace",
+      "count": 1,
+      "kind": "MOUNTED_NAVIGATION_OR_SHELL",
+      "resolution_group_id": "CONSUMER-WORKSPACE-COMPAT"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin",
+      "count": 2,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/ai-profitability",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/audit-logs",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/beta",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/billing",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/funnels",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/growth",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/health",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/revenue",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/tenant-health",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/tenants",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/platform-admin/users",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/team",
+      "count": 1,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/components/layouts/Sidebar.tsx",
+      "literal": "/team/members",
+      "count": 2,
+      "kind": "HISTORICAL_UNMOUNTED",
+      "resolution_group_id": "CONSUMER-HISTORICAL-SIDEBAR"
+    },
+    {
+      "path": "src/config/canonical-routes.test.ts",
+      "literal": "/admin-command",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/config/canonical-routes.test.ts",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/config/canonical-routes.test.ts",
+      "literal": "/team",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/config/canonical-routes.test.ts",
+      "literal": "/team/members",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/config/canonical-routes.ts",
+      "literal": "/team",
+      "count": 1,
+      "kind": "ROUTE_OR_BOOKMARK_CONFIG",
+      "resolution_group_id": "CONSUMER-TEAM-MIXED"
+    },
+    {
+      "path": "src/config/canonical-routes.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "ROUTE_OR_BOOKMARK_CONFIG",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/lib/navigation/compatibility-redirect.test.ts",
+      "literal": "/platform-admin?tab=tenants",
+      "count": 3,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/lib/navigation/compatibility-redirect.test.ts",
+      "literal": "/platform-admin?view=command",
+      "count": 2,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/lib/navigation/compatibility-redirect.test.ts",
+      "literal": "/platform-admin?view=command&from=legacy",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/lib/navigation/compatibility-redirect.test.ts",
+      "literal": "/team",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "src/modules/admin/components/overview/OverviewSection.tsx",
+      "literal": "/platform-admin",
+      "count": 2,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+      "literal": "/platform-admin/ai-profitability",
+      "count": 3,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+      "literal": "/platform-admin/billing",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+      "literal": "/platform-admin/health",
+      "count": 3,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+      "literal": "/platform-admin/revenue",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+      "literal": "/platform-admin/tenant-health",
+      "count": 4,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/services/system-monitoring.ts",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/services/system-monitoring.ts",
+      "literal": "/platform-admin/ai-profitability",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/services/system-monitoring.ts",
+      "literal": "/platform-admin/revenue",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/admin/services/system-monitoring.ts",
+      "literal": "/platform-admin/tenant-health",
+      "count": 2,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/ai-coo/adapters/BusinessStateProjectionAdapter.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/auth/services/auth-routing.ts",
+      "literal": "/platform-admin",
+      "count": 2,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-PLATFORM-LEGACY"
+    },
+    {
+      "path": "src/modules/expansion/services/growth-lever-engine.ts",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/growth-loop/adapters/ExpansionSignalAdapter.ts",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/growth-loop/adapters/ReferralSignalAdapter.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/growth-loop/services/growth-projection.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/growth-roadmap/services/roadmap-service.ts",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/journey-engine/journey-state-machine.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/mission-engine/services/mission-service.ts",
+      "literal": "/team/growth",
+      "count": 3,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/mission-engine/services/MissionEngineAuthorityService.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/mission/constants/execution-roadmap.ts",
+      "literal": "/team",
+      "count": 1,
+      "kind": "ROUTE_OR_BOOKMARK_CONFIG",
+      "resolution_group_id": "CONSUMER-TEAM-MIXED"
+    },
+    {
+      "path": "src/modules/mission/constants/execution-roadmap.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "ROUTE_OR_BOOKMARK_CONFIG",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/mission/constants/sidebar-config.ts",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "ROUTE_OR_BOOKMARK_CONFIG",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/referral/services/advocacy-detector.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/referral/services/referral-opportunity-engine.ts",
+      "literal": "/team/growth",
+      "count": 7,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/team-engine/components/TeamDashboard.tsx",
+      "literal": "/team",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MIXED"
+    },
+    {
+      "path": "src/modules/team-engine/components/TeamDashboard.tsx",
+      "literal": "/team/members",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MIXED"
+    },
+    {
+      "path": "src/modules/team/components/TeamAlerts.tsx",
+      "literal": "/team/members?member=${alert.member.id}",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MIXED"
+    },
+    {
+      "path": "src/modules/team/components/TeamOverviewDashboard.tsx",
+      "literal": "/team/members",
+      "count": 1,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MIXED"
+    },
+    {
+      "path": "src/modules/team/components/TeamPerformanceTable.tsx",
+      "literal": "/team/members?member=${member.id}",
+      "count": 4,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MIXED"
+    },
+    {
+      "path": "src/modules/value/services/milestone-engine.ts",
+      "literal": "/team/growth",
+      "count": 2,
+      "kind": "PRODUCT_CTA_OR_RUNTIME_CONSUMER",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/workspace/workspace-config.ts",
+      "literal": "/team/growth",
+      "count": 5,
+      "kind": "ROUTE_OR_BOOKMARK_CONFIG",
+      "resolution_group_id": "CONSUMER-TEAM-MEMBER-PRODUCT"
+    },
+    {
+      "path": "src/modules/workspace/workspace-config.ts",
+      "literal": "/workspace",
+      "count": 2,
+      "kind": "ROUTE_OR_BOOKMARK_CONFIG",
+      "resolution_group_id": "CONSUMER-WORKSPACE-MEMBER-CONFIG"
+    },
+    {
+      "path": "tests/e2e/admin.spec.ts",
+      "literal": "/admin-command",
+      "count": 3,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "tests/e2e/helpers/auth.ts",
+      "literal": "/platform-admin",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "tests/e2e/navigation-convergence.spec.ts",
+      "literal": "/admin-command",
+      "count": 2,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "tests/e2e/navigation-convergence.spec.ts",
+      "literal": "/platform-admin/tenants",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "tests/e2e/navigation-convergence.spec.ts",
+      "literal": "/platform-admin/tenants?source=bookmark",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    },
+    {
+      "path": "tests/e2e/navigation-convergence.spec.ts",
+      "literal": "/team/growth",
+      "count": 1,
+      "kind": "TEST_REFERENCE",
+      "resolution_group_id": "CONSUMER-TESTS"
+    }
+  ],
+  "ambiguities": [
+    {
+      "id": "AMB-CONSUMER-001",
+      "status": "REQUIRES_ARCHITECTURE_REVIEW",
+      "subject": "Member-facing /team and /team/growth product CTAs",
+      "fail_closed_handling": "Classify member-facing mission/growth/referral/AI/workspace CTAs to /ai-workforce; never bulk-replace them with /admin/team."
+    },
+    {
+      "id": "AMB-CONSUMER-002",
+      "status": "REQUIRES_ARCHITECTURE_REVIEW",
+      "subject": "Dormant primaryWorkspaceRoute=/workspace",
+      "fail_closed_handling": "Freeze replacement candidate /dashboard and prohibit any new runtime consumer until reviewed."
+    }
+  ]
+}
