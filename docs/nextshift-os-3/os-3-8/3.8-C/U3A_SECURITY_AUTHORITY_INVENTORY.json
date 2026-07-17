@@ -1,0 +1,462 @@
+{
+  "schema_version": "u3a.security-authority-inventory.v1",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "baseline_sha": "76636360d8c1a643c86bb26eb8923c6271241679",
+  "authoritative_contract": {
+    "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+    "sha256": "b12de777450763ad0d9e56357d5173eae61cb19a5c563133e74e90859afd1e2b"
+  },
+  "reviewed_governance": {
+    "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/96",
+    "reviewed_head_sha": "5ab3aead887f6c2c9cc29a0b4b5196a0f8e122f8",
+    "review_id": 4721441810,
+    "verdict": "PASS",
+    "merge_sha": "76636360d8c1a643c86bb26eb8923c6271241679",
+    "u3adr_adoption_status": "PENDING",
+    "u3b_dispatch_status": "BLOCKED"
+  },
+  "role_space_matrix": [
+    {
+      "role": "member",
+      "member_frontend": "ALLOW",
+      "admin": "DENY",
+      "superadmin": "DENY"
+    },
+    {
+      "role": "leader",
+      "member_frontend": "ALLOW",
+      "admin": "ALLOW_ENDPOINT_ALLOWLIST",
+      "superadmin": "DENY"
+    },
+    {
+      "role": "operator",
+      "member_frontend": "EXPLICIT_PRODUCT_FLOWS_ONLY",
+      "admin": "ALLOW_ENDPOINT_ALLOWLIST",
+      "superadmin": "DENY"
+    },
+    {
+      "role": "platform_admin",
+      "member_frontend": "EXPLICIT_PRODUCT_FLOWS_ONLY",
+      "admin": "DENY",
+      "superadmin": "ALLOW"
+    }
+  ],
+  "role_invariants": [
+    {
+      "id": "SEC-ROLE-001",
+      "statement": "/admin/* uses exact leader/operator allowlists; individual routes may be narrower; platform_admin is explicitly denied.",
+      "forbidden_authority": "numeric hierarchy or requireTenantApi platform bypass",
+      "required_test_ids": [
+        "U3B-ROLE-ADMIN-MEMBER-DENY",
+        "U3B-ROLE-ADMIN-PLATFORM-DENY",
+        "U3B-ROLE-ADMIN-ENDPOINT-ALLOWLIST"
+      ]
+    },
+    {
+      "id": "SEC-ROLE-002",
+      "statement": "/superadmin/* and /api/v1/superadmin/* require exact platform_admin.",
+      "forbidden_authority": "target tenant, branch name, query/body tenant, or ordinary authenticated session as permission",
+      "required_test_ids": [
+        "U3B-ROLE-SUPER-MEMBER-DENY",
+        "U3B-ROLE-SUPER-LEADER-DENY",
+        "U3B-ROLE-SUPER-OPERATOR-DENY"
+      ]
+    },
+    {
+      "id": "SEC-ROLE-003",
+      "statement": "Member desktop/mobile/workspace navigation has zero backend links.",
+      "forbidden_prefixes": [
+        "/admin",
+        "/superadmin",
+        "/platform-admin",
+        "/admin-command",
+        "/team",
+        "/workspace"
+      ],
+      "required_test_ids": [
+        "U3B-MEMBER-NAV-ZERO-BACKEND",
+        "U3B-MOBILE-NAV-ZERO-BACKEND"
+      ]
+    }
+  ],
+  "tenant_authorities": [
+    {
+      "id": "TENANT-ADMIN-PAGE",
+      "context": "team-admin page/service",
+      "allowed_source": "getAuthUser().tenantId from authenticated session",
+      "forbidden_sources": [
+        "query",
+        "path",
+        "form/body",
+        "header",
+        "local storage"
+      ],
+      "enforcement": "every data predicate includes tenantId"
+    },
+    {
+      "id": "TENANT-ADMIN-API",
+      "context": "team-admin API",
+      "allowed_source": "requireAuthApi(request).tenantId from authenticated session",
+      "forbidden_sources": [
+        "query",
+        "path",
+        "JSON body",
+        "custom tenant header",
+        "platform bypass"
+      ],
+      "enforcement": "authorize before target-data parsing; ID lookup uses id plus tenantId"
+    },
+    {
+      "id": "TENANT-ADMIN-STORAGE",
+      "context": "team-admin storage key",
+      "allowed_source": "server-derived session tenant",
+      "forbidden_sources": [
+        "browser-provided tenantId",
+        "client-held tenantId"
+      ],
+      "enforcement": "authorized server-issued storage path"
+    },
+    {
+      "id": "TENANT-SUPER-TARGET",
+      "context": "superadmin tenant-targeted action",
+      "allowed_source": "explicit target resource only after exact platform guard and resource validation",
+      "forbidden_sources": [
+        "target ID as proof of permission",
+        "actor tenant fallback"
+      ],
+      "enforcement": "audit exact target tenant"
+    },
+    {
+      "id": "TENANT-SUPER-GLOBAL",
+      "context": "superadmin platform-global action",
+      "allowed_source": "none; AuditScope PLATFORM with tenantId null after U3ADR adoption",
+      "forbidden_sources": [
+        "placeholder tenant",
+        "actor tenant",
+        "default tenant"
+      ],
+      "enforcement": "U3B remains blocked until exact reviewed gate adoption"
+    }
+  ],
+  "authority_entries": [
+    {
+      "stable_id": "AUTH-GOVERNANCE",
+      "authority_class": "GOVERNANCE_POLICY",
+      "source_paths": [
+        "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
+        "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+        "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+        "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md"
+      ],
+      "current_state": "reviewed policy exists; U3ADR adoption pending",
+      "required_enforcement": "exact-sha review, freshness, policy/decision/proof digests, and fail-closed U3B dispatch",
+      "required_test_ids": [
+        "U3A-GOVERNANCE-DIGESTS",
+        "U3B-GATE-FAIL-CLOSED"
+      ]
+    },
+    {
+      "stable_id": "AUTH-AUDIT-DB",
+      "authority_class": "AUDIT_DATABASE",
+      "source_paths": [
+        "prisma/schema.prisma",
+        "prisma/migrations",
+        "src/lib/audit-delete-guard.ts"
+      ],
+      "current_state": "AuditLog lacks reviewed scope/idempotency/outbox schema",
+      "required_enforcement": "U3B reviewed SQL migration and real PostgreSQL tests; no U3A schema change",
+      "required_test_ids": [
+        "U3A-AUDIT-BASELINE",
+        "U3B-AUDIT-DATABASE"
+      ]
+    },
+    {
+      "stable_id": "AUTH-SESSION",
+      "authority_class": "AUTH_SESSION",
+      "source_paths": [
+        "src/lib/supabase",
+        "src/middleware.ts",
+        "src/app/(auth)/layout.tsx",
+        "src/modules/auth",
+        "src/app/api/v1/auth"
+      ],
+      "current_state": "PARTIAL: user/auth status checked; Tenant.status=deleted is not re-read on every request",
+      "required_enforcement": "deny existing sessions on next request after deletion",
+      "required_test_ids": [
+        "U3A-AUTH-AUTHORITY",
+        "U3B-DELETED-SESSION-NEXT-REQUEST"
+      ]
+    },
+    {
+      "stable_id": "AUTH-TENANT-RESOLUTION",
+      "authority_class": "TENANT_RESOLUTION",
+      "source_paths": [
+        "src/modules/tenant",
+        "src/app/api/v1/tenant",
+        "src/app/setup-workspace",
+        "src/app/(public)"
+      ],
+      "current_state": "PARTIAL: retained tenant resolves without terminal deleted enforcement",
+      "required_enforcement": "deleted tenant unavailable to product/public context; platform forensic read only",
+      "required_test_ids": [
+        "U3A-TENANT-RESOLUTION",
+        "U3B-DELETED-PUBLIC-DENY"
+      ]
+    },
+    {
+      "stable_id": "AUTH-ADMIN",
+      "authority_class": "ADMIN_AND_PLATFORM_ADMIN",
+      "source_paths": [
+        "src/modules/admin/services",
+        "src/app/api/v1/admin",
+        "src/app/api/v1/platform-admin",
+        "src/app/api/v1/superadmin",
+        "src/app/api/v1/admin-command",
+        "src/app/api/v1/team",
+        "src/app/api/v1/member"
+      ],
+      "current_state": "PARTIAL: numeric hierarchy/platform branches and tenant gaps documented by page/API inventories",
+      "required_enforcement": "exact /admin role sets and session tenant; exact /superadmin platform role and explicit target",
+      "required_test_ids": [
+        "U3A-ADMIN-GUARDS",
+        "U3B-ADMIN-SPACE-ISOLATION"
+      ]
+    },
+    {
+      "stable_id": "AUTH-AI",
+      "authority_class": "AI_EXECUTION",
+      "source_paths": [
+        "src/modules/ai",
+        "src/modules/ai-coo",
+        "src/app/api/v1/ai",
+        "src/app/api/v1/ai-coo",
+        "src/app/api/v1/ai-workforce"
+      ],
+      "current_state": "MISSING terminal deleted-tenant claim/pre-provider checks",
+      "required_enforcement": "no provider call or billable AI after deletion",
+      "required_test_ids": [
+        "U3A-AI-AUTHORITY",
+        "U3B-DELETED-AI-SUPPRESS"
+      ]
+    },
+    {
+      "stable_id": "AUTH-AUTONOMOUS",
+      "authority_class": "AUTONOMOUS_AGENT_WORKFORCE",
+      "source_paths": [
+        "src/modules/autonomous-execution",
+        "src/modules/agent-runtime",
+        "src/modules/agent-workforce",
+        "src/app/api/v1/executions",
+        "src/app/api/v1/mission",
+        "src/app/api/v1/workforce"
+      ],
+      "current_state": "MISSING terminal deleted-tenant claim/pre-side-effect checks",
+      "required_enforcement": "cancel/skip queued work and suppress side effects",
+      "required_test_ids": [
+        "U3A-WORKER-AUTHORITY",
+        "U3B-DELETED-WORKER-CLAIM",
+        "U3B-DELETED-PRE-SIDE-EFFECT"
+      ]
+    },
+    {
+      "stable_id": "AUTH-AUTOMATION",
+      "authority_class": "AUTOMATION",
+      "source_paths": [
+        "src/modules/automation",
+        "src/app/api/v1/automation"
+      ],
+      "current_state": "MISSING terminal deleted-tenant claim/pre-side-effect checks",
+      "required_enforcement": "skip lead/activity automation and follow-on work",
+      "required_test_ids": [
+        "U3A-AUTOMATION-AUTHORITY",
+        "U3B-DELETED-AUTOMATION-SUPPRESS"
+      ]
+    },
+    {
+      "stable_id": "AUTH-PUBLISHING",
+      "authority_class": "PUBLISHING_AND_SCHEDULED",
+      "source_paths": [
+        "src/modules/content-publishing",
+        "src/modules/mission-workspace",
+        "src/app/api/v1/funnel",
+        "src/app/api/v1/lead-magnet/publish/route.ts",
+        "src/app/api/v1/video/projects/[id]/publish/route.ts",
+        "src/app/api/v1/funnel-builder/publish-landing-page/route.ts"
+      ],
+      "current_state": "PARTIAL: content, lead-magnet, video, and funnel-builder publish entrypoints use auth but do not uniformly enforce deleted-tenant status; no production ScheduledMessage executor exists",
+      "required_enforcement": "claim and pre-provider status checks; future scheduled executor inherits contract",
+      "required_test_ids": [
+        "U3A-PUBLISH-AUTHORITY",
+        "U3B-DELETED-PUBLISH-SUPPRESS"
+      ]
+    },
+    {
+      "stable_id": "AUTH-PAYMENT",
+      "authority_class": "PAYMENT_AND_WEBHOOK",
+      "source_paths": [
+        "src/modules/payments",
+        "src/app/api/payments"
+      ],
+      "current_state": "CRITICAL GAP: paid webhook can set tenant status active",
+      "required_enforcement": "durable suppression evidence; deleted tenant never reactivated",
+      "required_test_ids": [
+        "U3A-PAYMENT-AUTHORITY",
+        "U3B-DELETED-WEBHOOK-NO-REACTIVATE"
+      ]
+    },
+    {
+      "stable_id": "AUTH-CRM",
+      "authority_class": "CRM_ADMIN_CONFIGURATION",
+      "source_paths": [
+        "src/app/api/v1/crm"
+      ],
+      "current_state": "PARTIAL: privileged config writes split from shared product reads; ID predicates incomplete",
+      "required_enforcement": "moved writes require exact role and id plus session tenant",
+      "required_test_ids": [
+        "U3A-CRM-AUTHORITY",
+        "U3B-CRM-TENANT-PREDICATES"
+      ]
+    }
+  ],
+  "deleted_tenant_contract": {
+    "state": "deleted",
+    "terminal": true,
+    "stable_denial_code": "TENANT_DELETED",
+    "restore_policy": "PROHIBITED_IN_OS_3_8; separate reviewed endpoint/ADR/task required",
+    "request_checks": [
+      "server-side tenant status reread on every authenticated request",
+      "public tenant resolution denies deleted"
+    ],
+    "worker_checks": [
+      "when work is claimed",
+      "immediately before each external, billable, or irreversible side effect"
+    ],
+    "suppressed_effects": [
+      "tenant mutation",
+      "message send",
+      "provider call",
+      "billable AI",
+      "publish",
+      "automation",
+      "follow-on work",
+      "webhook reactivation"
+    ],
+    "repeated_delete": "one conditional transition; same-key retry reuses original result; independent/concurrent loser is terminal auditable no-op",
+    "required_test_ids": [
+      "U3B-DELETED-SESSION-NEXT-REQUEST",
+      "U3B-DELETED-MEMBER-DENY",
+      "U3B-DELETED-LEADER-DENY",
+      "U3B-DELETED-OPERATOR-DENY",
+      "U3B-DELETED-PUBLIC-DENY",
+      "U3B-DELETED-WORKER-CLAIM",
+      "U3B-DELETED-PRE-SIDE-EFFECT",
+      "U3B-DELETED-AI-SUPPRESS",
+      "U3B-DELETED-AUTOMATION-SUPPRESS",
+      "U3B-DELETED-PUBLISH-SUPPRESS",
+      "U3B-DELETED-WEBHOOK-NO-REACTIVATE",
+      "U3B-DELETED-PATCH-RESTORE-DENY",
+      "U3B-DELETED-REPEAT",
+      "U3B-DELETED-CONCURRENT"
+    ]
+  },
+  "auditlog_outbox_boundary": {
+    "selected_option": "A_OPTIONAL_TENANT_WITH_SCOPE",
+    "immutable_policy_version": "2026-07-17.pr96-round5-v3",
+    "immutable_policy_sha256": "ac3ea1acb9770bfca02cc6daed245dd245400e51d0ea68a7ff61f7f3e5da9bfb",
+    "protected_paths_sha256": "b0560d71feb2177f769448b84ef16432714b518d8545dd801eafce637ae40dbf",
+    "decision_artifact_sha256": "e8eef7412d33385cfbd43b7e9a09240becfb82b477a8ab517874fc5a35d49ebc",
+    "required_decisions": [
+      "platform_global_storage",
+      "target_id_uuid_and_global_target_mapping",
+      "failure_event_durability_after_business_rollback",
+      "tenant_deletion_audit_retention",
+      "deleted_tenant_terminal_operational_state",
+      "auditlog_idempotency_authority"
+    ],
+    "current_state": {
+      "auditlog_tenant_id": "required UUID Tenant FK with cascade",
+      "audit_scope_column": false,
+      "idempotency_key_column": false,
+      "payload_digest_column": false,
+      "audit_event_outbox": false,
+      "direct_auditlog_create_files": 23
+    },
+    "required_database_contract": [
+      "AuditScope TENANT/PLATFORM and tenantId nullability CHECK",
+      "deterministic legacy TENANT backfill; no fabricated platform scope",
+      "tenant and platform partial indexes",
+      "logical tenant deletion with retained PLATFORM lifecycle event",
+      "append-only AuditEventOutbox after isolated audit failure",
+      "shared RFC 8785 canonical idempotency key and redacted payload digest",
+      "partial unique idempotency-key index and null-pair/64-hex CHECK",
+      "same key and different digest fails closed and alerts/dead-letters",
+      "real PostgreSQL replay/replay and direct/replay races produce exactly one row"
+    ],
+    "superadmin_write_requirement": "10/10 success and failure AuditLog evidence",
+    "team_admin_scope": "preserve existing 5/23 audit behavior; no silent expansion",
+    "required_test_ids": [
+      "U3B-AUDIT-SCOPE-CHECK",
+      "U3B-AUDIT-LEGACY-BACKFILL",
+      "U3B-AUDIT-PARTIAL-INDEXES",
+      "U3B-AUDIT-TENANT-DELETE-RETENTION",
+      "U3B-AUDIT-OUTBOX-ROLLBACK",
+      "U3B-AUDIT-IDEMPOTENCY-REPLAY-RACE",
+      "U3B-AUDIT-IDEMPOTENCY-DIRECT-REPLAY-RACE",
+      "U3B-AUDIT-IDEMPOTENCY-CONFLICT",
+      "U3B-AUDIT-UNAVAILABLE-503"
+    ]
+  },
+  "immutable_policy_protected_paths": [
+    "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
+    "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+    "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+    "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
+    "prisma/schema.prisma",
+    "prisma/migrations",
+    "src/lib/audit-delete-guard.ts",
+    "src/lib/supabase",
+    "src/middleware.ts",
+    "src/app/(auth)/layout.tsx",
+    "src/app/(public)",
+    "src/app/setup-workspace",
+    "src/modules/auth",
+    "src/modules/tenant",
+    "src/modules/admin/services",
+    "src/modules/ai",
+    "src/modules/ai-coo",
+    "src/modules/autonomous-execution",
+    "src/modules/agent-runtime",
+    "src/modules/agent-workforce",
+    "src/modules/automation",
+    "src/modules/content-publishing",
+    "src/modules/mission-workspace",
+    "src/modules/payments",
+    "src/app/api/payments",
+    "src/app/api/v1/admin",
+    "src/app/api/v1/platform-admin",
+    "src/app/api/v1/superadmin",
+    "src/app/api/v1/admin-command",
+    "src/app/api/v1/team",
+    "src/app/api/v1/member",
+    "src/app/api/v1/auth",
+    "src/app/api/v1/tenant",
+    "src/app/api/v1/ai",
+    "src/app/api/v1/ai-coo",
+    "src/app/api/v1/ai-workforce",
+    "src/app/api/v1/automation",
+    "src/app/api/v1/executions",
+    "src/app/api/v1/mission",
+    "src/app/api/v1/workforce",
+    "src/app/api/v1/crm",
+    "src/app/api/v1/funnel"
+  ],
+  "invariants": {
+    "protected_path_coverage": "every immutable policy protected path is covered by at least one authority entry",
+    "authority_source_paths_sha256": "9f9cfdedeb8deb7431b12722069cf2e9308e06b61e295a687dcdc8daf7bba991",
+    "no_product_implementation": "U3A records current gaps and U3B acceptance only",
+    "u3adr_pending": true,
+    "u3b_blocked": true,
+    "e3_pending": true
+  },
+  "ambiguities": []
+}

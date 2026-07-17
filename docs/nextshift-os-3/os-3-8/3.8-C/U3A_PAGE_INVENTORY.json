@@ -1,0 +1,2504 @@
+{
+  "schema_version": "u3a.page-inventory.v1",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "baseline_sha": "76636360d8c1a643c86bb26eb8923c6271241679",
+  "authoritative_contract": {
+    "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+    "sha256": "b12de777450763ad0d9e56357d5173eae61cb19a5c563133e74e90859afd1e2b",
+    "git_blob": "ba10f0b4c5f0429c5ae7e2e8ffbd920daa6ffd3f"
+  },
+  "expected_counts": {
+    "authenticated_page_sources": 112,
+    "privileged_page_sources": 39,
+    "admin_prefix_sources": 19,
+    "platform_admin_prefix_sources": 14,
+    "admin_command_sources": 1,
+    "outside_prefix_sources": 5,
+    "retained_terminal_sources": 17,
+    "compatibility_or_migration_sources": 22
+  },
+  "discovery": {
+    "full_authenticated_page_census": {
+      "count": 112,
+      "path_sha256": "4cc78475f23571ff932e4b7dc89fc9bce24ebba551eb56c1a6a46052b9c84902",
+      "policy": "Any added, removed, or renamed authenticated page fails closed until this reviewed inventory is regenerated."
+    },
+    "roots": [
+      "src/app/(auth)"
+    ],
+    "source_glob": "**/page.tsx",
+    "privileged_prefixes": [
+      "/admin",
+      "/platform-admin",
+      "/admin-command"
+    ],
+    "outside_prefix_sources": [
+      "/team",
+      "/team/members",
+      "/team/growth",
+      "/workspace",
+      "/workspace/[...path]"
+    ],
+    "signals": [
+      "explicit leader/operator/platform_admin page guard",
+      "privileged redirect destination",
+      "admin/team-admin/platform-admin component or service mount",
+      "ancestor layout role guard"
+    ],
+    "classified_non_sources": [
+      {
+        "stable_id": "PAGE-EXCLUSION-ANALYTICS-CENTER",
+        "source_route": "/analytics-center",
+        "source_file": "src/app/(auth)/analytics-center/page.tsx",
+        "baseline_blob": "1d2d641c3ea1f7a3d5bbecfec29d77d91ee39cc9",
+        "classification": "ROLE_SPECIALIZED_PRODUCT_PROJECTION",
+        "reason": "Role-specific analytics projection; it does not mount configuration or administration capability."
+      },
+      {
+        "stable_id": "PAGE-EXCLUSION-DASHBOARD",
+        "source_route": "/dashboard",
+        "source_file": "src/app/(auth)/dashboard/page.tsx",
+        "baseline_blob": "317ccd8e527f399d04620c8ebd4dc154999ebee9",
+        "classification": "ROLE_ENTRY_ROUTER",
+        "reason": "Product entry/router consumer; the platform_admin legacy redirect is a consumer migration, not an administration page source."
+      }
+    ]
+  },
+  "ambiguities": [
+    {
+      "id": "AMB-PAGE-001",
+      "status": "REQUIRES_ARCHITECTURE_REVIEW",
+      "subject": "/admin/team target role boundary",
+      "evidence": "The /admin/team contract row is operator-only, while /team compatibility requires leader and operator at the same terminal route.",
+      "fail_closed_handling": "Freeze two capabilities at one terminal: operator-only command-center content and leader/operator human-team content. U3B cannot implement the route until Architecture Review confirms this capability split.",
+      "recommended_resolution": "Allow the /admin/team shell to leader and operator, enforce operator-only command-center capability separately, and preserve leader/operator human-team capability with session-tenant predicates."
+    },
+    {
+      "id": "AMB-PAGE-002",
+      "status": "REQUIRES_ARCHITECTURE_REVIEW",
+      "subject": "/platform-admin root query canonicalization",
+      "evidence": "The contract names both query-driven root views and dedicated /superadmin/command and /superadmin/tenants terminal routes.",
+      "fail_closed_handling": "Inventory freezes direct terminal candidates and forbids a redirect chain; U3B cannot ship until Architecture Review selects the canonical mapping.",
+      "recommended_resolution": "Map view=command directly to /superadmin/command and tab=tenants directly to /superadmin/tenants; default maps to /superadmin."
+    },
+    {
+      "id": "AMB-PAGE-003",
+      "status": "REQUIRES_ARCHITECTURE_REVIEW",
+      "subject": "Exact compatibility query allowlist",
+      "evidence": "Current helper forwards arbitrary query data; the contract requires an allowlist but only identifies minimum examples.",
+      "fail_closed_handling": "Only source=bookmark and the explicitly consumed member UUID/root selector values below are candidates; all unknown keys are frozen as DROP. U3B cannot add another key without reviewed inventory remediation.",
+      "recommended_resolution": "Consume tab=tenants and view=command as route selectors, preserve source=bookmark, preserve a validated member UUID only on team detail routes, and drop every other key."
+    }
+  ],
+  "entries": [
+    {
+      "stable_id": "PAGE-ADMIN-001",
+      "source_route": "/admin",
+      "source_file": "src/app/(auth)/admin/page.tsx",
+      "baseline_blob": "a71066b65c3b477a82a3603f8d0477ffe9fe895a",
+      "current_guard": "AdminLayout leader|operator|platform_admin; page operator|platform_admin",
+      "current_responsibility": "AdminOverview + workspaceHealthService command data",
+      "targets": [
+        {
+          "route": "/admin",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "team administration overview",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/workspace-health",
+      "consumers": [
+        "src/app/(auth)/admin/plan/page.tsx",
+        "src/app/(auth)/dashboard/page.tsx",
+        "src/app/(auth)/workspace/page.tsx",
+        "src/components/layouts/AppShell.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "src/lib/navigation/compatibility-redirect.test.ts",
+        "src/lib/navigation/compatibility-redirect.ts",
+        "src/modules/admin/components/overview/MembersSection.tsx",
+        "src/modules/auth/services/auth-routing.ts",
+        "tests/e2e/admin.spec.ts"
+      ],
+      "implementation_risk": "HIGH: remove platform role without breaking operator landing",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-001-SOURCE",
+        "U3A-PAGE-ADMIN-001-AUTHORITY",
+        "U3B-PAGE-ADMIN-001-ACCESS",
+        "U3B-PAGE-ADMIN-001-TENANT",
+        "U3B-PAGE-ADMIN-001-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-002",
+      "source_route": "/admin/ai-templates",
+      "source_file": "src/app/(auth)/admin/ai-templates/page.tsx",
+      "baseline_blob": "af67c005e813eb157a94d0668ec2c16a0d24c327",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "Compatibility alias to /admin/templates",
+      "targets": [
+        {
+          "route": "/admin/templates",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "AI template administration",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "lib/navigation + modules/admin/templates",
+      "consumers": [],
+      "implementation_risk": "MEDIUM: current temporary redirect and broad query forwarding",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-002-SOURCE",
+        "U3A-PAGE-ADMIN-002-AUTHORITY",
+        "U3B-PAGE-ADMIN-002-ACCESS",
+        "U3B-PAGE-ADMIN-002-TENANT",
+        "U3B-PAGE-ADMIN-002-CONSUMER"
+      ],
+      "disposition": "LEGACY_301_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-003",
+      "source_route": "/admin/approvals",
+      "source_file": "src/app/(auth)/admin/approvals/page.tsx",
+      "baseline_blob": "ef640d2ca058896ac38a28bbd06b4efe6fe22296",
+      "current_guard": "AdminLayout; page leader|operator|platform_admin",
+      "current_responsibility": "MemberApprovalQueue",
+      "targets": [
+        {
+          "route": "/admin/approvals",
+          "namespace": "admin",
+          "roles": [
+            "leader",
+            "operator"
+          ],
+          "tenant_authority": "session tenant plus approved sub-team policy",
+          "capability": "member approval",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/member/approvals",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/AdminCommandDashboard.tsx",
+        "src/modules/admin/components/OperatorDashboard.tsx",
+        "src/modules/admin/services/workspaceHealthService.ts",
+        "src/modules/team/components/TeamAlerts.tsx",
+        "src/modules/team/components/TeamOverviewDashboard.tsx",
+        "tests/e2e/admin.spec.ts"
+      ],
+      "implementation_risk": "HIGH: platform exclusion and sub-team boundary",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-003-SOURCE",
+        "U3A-PAGE-ADMIN-003-AUTHORITY",
+        "U3B-PAGE-ADMIN-003-ACCESS",
+        "U3B-PAGE-ADMIN-003-TENANT",
+        "U3B-PAGE-ADMIN-003-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-004",
+      "source_route": "/admin/beta",
+      "source_file": "src/app/(auth)/admin/beta/page.tsx",
+      "baseline_blob": "e2f03713125f134d1cb39246ce31a2de9dd79325",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "BetaCommandCenter tenant report",
+      "targets": [
+        {
+          "route": "/admin/beta",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "tenant beta operations",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/beta",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/OperatorDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-004-SOURCE",
+        "U3A-PAGE-ADMIN-004-AUTHORITY",
+        "U3B-PAGE-ADMIN-004-ACCESS",
+        "U3B-PAGE-ADMIN-004-TENANT",
+        "U3B-PAGE-ADMIN-004-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-005",
+      "source_route": "/admin/billing",
+      "source_file": "src/app/(auth)/admin/billing/page.tsx",
+      "baseline_blob": "236b9c08b286b9ce0af87b9123443cba79e563a8",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "AdminBillingCenter",
+      "targets": [
+        {
+          "route": "/admin/billing",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "tenant billing view",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/billing",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/services/workspaceHealthService.ts"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-005-SOURCE",
+        "U3A-PAGE-ADMIN-005-AUTHORITY",
+        "U3B-PAGE-ADMIN-005-ACCESS",
+        "U3B-PAGE-ADMIN-005-TENANT",
+        "U3B-PAGE-ADMIN-005-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-006",
+      "source_route": "/admin/content",
+      "source_file": "src/app/(auth)/admin/content/page.tsx",
+      "baseline_blob": "aaaf0d1444bebdda74be520d7014ae40d7211a94",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "AdminContentCenter",
+      "targets": [
+        {
+          "route": "/admin/content",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "tenant content administration",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/content",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/overview/OverviewSection.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-006-SOURCE",
+        "U3A-PAGE-ADMIN-006-AUTHORITY",
+        "U3B-PAGE-ADMIN-006-ACCESS",
+        "U3B-PAGE-ADMIN-006-TENANT",
+        "U3B-PAGE-ADMIN-006-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-007",
+      "source_route": "/admin/daily-actions",
+      "source_file": "src/app/(auth)/admin/daily-actions/page.tsx",
+      "baseline_blob": "b9a74e4fec988b1b78e3930aa6bed6600de09b14",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "DailyActionsConfig",
+      "targets": [
+        {
+          "route": "/admin/daily-actions",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "daily-action defaults",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/daily-actions",
+      "consumers": [
+        "src/modules/admin/components/AdminCommandDashboard.tsx",
+        "src/modules/admin/components/AdminSettingsPanel.tsx",
+        "src/modules/admin/components/OperatorDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-007-SOURCE",
+        "U3A-PAGE-ADMIN-007-AUTHORITY",
+        "U3B-PAGE-ADMIN-007-ACCESS",
+        "U3B-PAGE-ADMIN-007-TENANT",
+        "U3B-PAGE-ADMIN-007-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-008",
+      "source_route": "/admin/feedback",
+      "source_file": "src/app/(auth)/admin/feedback/page.tsx",
+      "baseline_blob": "fa5ab2eb1febbbb7f96b47f262666a7907ba733a",
+      "current_guard": "AdminLayout + feedback layout operator|platform_admin",
+      "current_responsibility": "Feedback inbox using cross-tenant GET/PATCH baseline",
+      "targets": [
+        {
+          "route": "/admin/feedback",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "session tenant; PATCH by id plus tenant",
+          "capability": "tenant feedback inbox",
+          "terminal": true
+        },
+        {
+          "route": "/superadmin/feedback",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform feedback portfolio",
+          "terminal": true
+        }
+      ],
+      "space": "split",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN / PLATFORM",
+      "owner_module": "modules/admin/feedback",
+      "consumers": [
+        "tests/e2e/admin.spec.ts"
+      ],
+      "implementation_risk": "CRITICAL: current tenant predicate missing and capability must split",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-008-SOURCE",
+        "U3A-PAGE-ADMIN-008-AUTHORITY",
+        "U3B-PAGE-ADMIN-008-ACCESS",
+        "U3B-PAGE-ADMIN-008-TENANT",
+        "U3B-PAGE-ADMIN-008-CONSUMER"
+      ],
+      "disposition": "KEEP_AND_SPLIT_CAPABILITY",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-009",
+      "source_route": "/admin/funnels",
+      "source_file": "src/app/(auth)/admin/funnels/page.tsx",
+      "baseline_blob": "a8b04c03a99827bff86f8207cc5c4c24b5b459e3",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "AdminFunnelsCenter",
+      "targets": [
+        {
+          "route": "/admin/funnels",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "tenant funnel administration",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/funnels",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/overview/OperationsSection.tsx",
+        "src/modules/admin/components/overview/OverviewSection.tsx",
+        "src/modules/admin/services/workspaceHealthService.ts"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-009-SOURCE",
+        "U3A-PAGE-ADMIN-009-AUTHORITY",
+        "U3B-PAGE-ADMIN-009-ACCESS",
+        "U3B-PAGE-ADMIN-009-TENANT",
+        "U3B-PAGE-ADMIN-009-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-010",
+      "source_route": "/admin/journey",
+      "source_file": "src/app/(auth)/admin/journey/page.tsx",
+      "baseline_blob": "c72bce1ae11425a862521e092d935751455c6bcf",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "AdminJourneyCenter",
+      "targets": [
+        {
+          "route": "/admin/journey",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "tenant journey administration",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/journey",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/services/workspaceHealthService.ts"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-010-SOURCE",
+        "U3A-PAGE-ADMIN-010-AUTHORITY",
+        "U3B-PAGE-ADMIN-010-ACCESS",
+        "U3B-PAGE-ADMIN-010-TENANT",
+        "U3B-PAGE-ADMIN-010-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-011",
+      "source_route": "/admin/launch-readiness",
+      "source_file": "src/app/(auth)/admin/launch-readiness/page.tsx",
+      "baseline_blob": "b58127715d6fd6b154a4b1df965f6d129dc5557a",
+      "current_guard": "AdminLayout + nested platform_admin layout",
+      "current_responsibility": "Launch readiness client using /api/v1/admin/system-health",
+      "targets": [
+        {
+          "route": "/superadmin/launch-readiness",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform launch readiness",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform operations/readiness",
+      "consumers": [
+        "tests/e2e/admin.spec.ts"
+      ],
+      "implementation_risk": "HIGH: namespace and API authority migration",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-011-SOURCE",
+        "U3A-PAGE-ADMIN-011-AUTHORITY",
+        "U3B-PAGE-ADMIN-011-ACCESS",
+        "U3B-PAGE-ADMIN-011-TENANT",
+        "U3B-PAGE-ADMIN-011-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-012",
+      "source_route": "/admin/members",
+      "source_file": "src/app/(auth)/admin/members/page.tsx",
+      "baseline_blob": "f6d44d5328d41136ea5db26e5938522b272107aa",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "AdminMembersCenter",
+      "targets": [
+        {
+          "route": "/admin/members",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "session tenant; every member id lookup includes tenant",
+          "capability": "tenant member administration",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/member-management",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/lib/navigation/compatibility-redirect.test.ts",
+        "src/modules/admin/components/UserManagementPanel.tsx",
+        "src/modules/admin/components/overview/OperationsSection.tsx",
+        "src/modules/admin/components/overview/OverviewSection.tsx",
+        "src/modules/admin/services/workspaceHealthService.ts"
+      ],
+      "implementation_risk": "HIGH: platform exclusion and tenant predicates",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-012-SOURCE",
+        "U3A-PAGE-ADMIN-012-AUTHORITY",
+        "U3B-PAGE-ADMIN-012-ACCESS",
+        "U3B-PAGE-ADMIN-012-TENANT",
+        "U3B-PAGE-ADMIN-012-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-013",
+      "source_route": "/admin/operations",
+      "source_file": "src/app/(auth)/admin/operations/page.tsx",
+      "baseline_blob": "938570e9823496423bfe602403ee491dbf8da7f3",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "AdminOperationsCenter",
+      "targets": [
+        {
+          "route": "/admin/operations",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "tenant operations",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/operations",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/overview/OverviewSection.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-013-SOURCE",
+        "U3A-PAGE-ADMIN-013-AUTHORITY",
+        "U3B-PAGE-ADMIN-013-ACCESS",
+        "U3B-PAGE-ADMIN-013-TENANT",
+        "U3B-PAGE-ADMIN-013-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-014",
+      "source_route": "/admin/plan",
+      "source_file": "src/app/(auth)/admin/plan/page.tsx",
+      "baseline_blob": "1ec7c7f76ed75edb9886e757cb74f4253710d506",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "Tenant plan and usage",
+      "targets": [
+        {
+          "route": "/admin/plan",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "tenant plan administration",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/tenant/plan",
+      "consumers": [],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-014-SOURCE",
+        "U3A-PAGE-ADMIN-014-AUTHORITY",
+        "U3B-PAGE-ADMIN-014-ACCESS",
+        "U3B-PAGE-ADMIN-014-TENANT",
+        "U3B-PAGE-ADMIN-014-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-015",
+      "source_route": "/admin/settings",
+      "source_file": "src/app/(auth)/admin/settings/page.tsx",
+      "baseline_blob": "2a13b08a969cc55f3718cdb82d3172da7c69eb52",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "AdminSettingsPanel",
+      "targets": [
+        {
+          "route": "/admin/settings",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "tenant settings",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/settings",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/AdminCommandDashboard.tsx",
+        "src/modules/admin/components/OperatorDashboard.tsx"
+      ],
+      "implementation_risk": "HIGH: mutation and storage tenant authority",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-015-SOURCE",
+        "U3A-PAGE-ADMIN-015-AUTHORITY",
+        "U3B-PAGE-ADMIN-015-ACCESS",
+        "U3B-PAGE-ADMIN-015-TENANT",
+        "U3B-PAGE-ADMIN-015-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-016",
+      "source_route": "/admin/team",
+      "source_file": "src/app/(auth)/admin/team/page.tsx",
+      "baseline_blob": "5e5335eb6f1619aa31815ddcd7f9310259815793",
+      "current_guard": "AdminLayout; current page operator|platform_admin",
+      "current_responsibility": "AdminTeamCenter; future terminal also receives legacy human-team capability",
+      "targets": [
+        {
+          "route": "/admin/team",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "team command center",
+          "terminal": true
+        },
+        {
+          "route": "/admin/team",
+          "namespace": "admin",
+          "roles": [
+            "leader",
+            "operator"
+          ],
+          "tenant_authority": "session tenant plus approved sub-team policy",
+          "capability": "human-team hierarchy",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/team + modules/team",
+      "consumers": [
+        "src/app/(auth)/team/growth/page.tsx",
+        "src/app/(auth)/team/page.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "src/config/canonical-routes.test.ts"
+      ],
+      "implementation_risk": "CRITICAL: AMB-PAGE-001 capability-role split",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-016-SOURCE",
+        "U3A-PAGE-ADMIN-016-AUTHORITY",
+        "U3B-PAGE-ADMIN-016-ACCESS",
+        "U3B-PAGE-ADMIN-016-TENANT",
+        "U3B-PAGE-ADMIN-016-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL_REQUIRES_ARCH_REVIEW",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": [
+        "AMB-PAGE-001"
+      ]
+    },
+    {
+      "stable_id": "PAGE-ADMIN-017",
+      "source_route": "/admin/templates",
+      "source_file": "src/app/(auth)/admin/templates/page.tsx",
+      "baseline_blob": "c4045cf7cf88e223852c26b11ddab244938976ce",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "TemplatesPanel",
+      "targets": [
+        {
+          "route": "/admin/templates",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "template administration",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/templates",
+      "consumers": [
+        "src/app/(auth)/admin/ai-templates/page.tsx",
+        "src/lib/navigation/compatibility-redirect.test.ts",
+        "src/modules/admin/components/AdminCommandDashboard.tsx",
+        "src/modules/admin/components/OperatorDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-017-SOURCE",
+        "U3A-PAGE-ADMIN-017-AUTHORITY",
+        "U3B-PAGE-ADMIN-017-ACCESS",
+        "U3B-PAGE-ADMIN-017-TENANT",
+        "U3B-PAGE-ADMIN-017-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-018",
+      "source_route": "/admin/training",
+      "source_file": "src/app/(auth)/admin/training/page.tsx",
+      "baseline_blob": "44f45406a8f1a03425ecb4f5e6ac6c9f6268b831",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "TrainingModulesConfig",
+      "targets": [
+        {
+          "route": "/admin/training",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "training defaults",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/admin/training",
+      "consumers": [
+        "src/modules/admin/components/AdminCommandDashboard.tsx",
+        "src/modules/admin/components/AdminSettingsPanel.tsx",
+        "src/modules/admin/components/OperatorDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-018-SOURCE",
+        "U3A-PAGE-ADMIN-018-AUTHORITY",
+        "U3B-PAGE-ADMIN-018-ACCESS",
+        "U3B-PAGE-ADMIN-018-TENANT",
+        "U3B-PAGE-ADMIN-018-CONSUMER"
+      ],
+      "disposition": "KEEP_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-ADMIN-019",
+      "source_route": "/admin/users",
+      "source_file": "src/app/(auth)/admin/users/page.tsx",
+      "baseline_blob": "69a839ef5a17a8882345c58cba5eb17510ee471e",
+      "current_guard": "AdminLayout; page operator|platform_admin",
+      "current_responsibility": "UserManagementPanel with cross-tenant platform branch",
+      "targets": [
+        {
+          "route": "/admin/users",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "session tenant; every id lookup includes tenant",
+          "capability": "tenant user administration",
+          "terminal": true
+        },
+        {
+          "route": "/superadmin/users",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform user portfolio",
+          "terminal": true
+        }
+      ],
+      "space": "split",
+      "redirect": {
+        "mode": "NONE",
+        "terminal": true,
+        "query_allowlist": [],
+        "unknown_query": "DROP"
+      },
+      "shell_identity": "ADMIN / PLATFORM",
+      "owner_module": "modules/admin/user-management",
+      "consumers": [
+        "src/modules/admin/components/AdminCommandDashboard.tsx",
+        "src/modules/admin/components/OperatorDashboard.tsx",
+        "src/modules/admin/components/overview/OverviewSection.tsx"
+      ],
+      "implementation_risk": "CRITICAL: split cross-tenant branch and forbid platform role assignment from admin",
+      "required_test_ids": [
+        "U3A-PAGE-ADMIN-019-SOURCE",
+        "U3A-PAGE-ADMIN-019-AUTHORITY",
+        "U3B-PAGE-ADMIN-019-ACCESS",
+        "U3B-PAGE-ADMIN-019-TENANT",
+        "U3B-PAGE-ADMIN-019-CONSUMER"
+      ],
+      "disposition": "KEEP_AND_SPLIT_CAPABILITY",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-SUPER-020",
+      "source_route": "/platform-admin",
+      "source_file": "src/app/(auth)/platform-admin/page.tsx",
+      "baseline_blob": "0dc703d23927f46a2c239c6a129c4153227cb95e",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "CeoDashboard plus query-driven command/tenant views",
+      "targets": [
+        {
+          "route": "/superadmin",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform root",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "view",
+            "allowed_values": [
+              "command"
+            ]
+          },
+          {
+            "key": "tab",
+            "allowed_values": [
+              "tenants"
+            ]
+          },
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": "AMB-PAGE-002 requires reviewed selector-to-terminal mapping."
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform root",
+      "consumers": [
+        "src/app/(auth)/admin-command/page.tsx",
+        "src/app/(auth)/platform-admin/ai-usage/page.tsx",
+        "src/app/(auth)/platform-admin/tenants/page.tsx",
+        "src/app/api/v1/platform-admin/usage/route.ts",
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/AppShell.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "src/config/canonical-routes.test.ts",
+        "src/lib/navigation/compatibility-redirect.test.ts",
+        "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+        "src/modules/admin/components/overview/OverviewSection.tsx",
+        "src/modules/admin/services/system-monitoring.ts",
+        "src/modules/auth/services/auth-routing.ts",
+        "tests/e2e/helpers/auth.ts"
+      ],
+      "implementation_risk": "CRITICAL: polymorphic root and AMB-PAGE-002",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-020-SOURCE",
+        "U3A-PAGE-SUPER-020-AUTHORITY",
+        "U3B-PAGE-SUPER-020-ACCESS",
+        "U3B-PAGE-SUPER-020-TENANT",
+        "U3B-PAGE-SUPER-020-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": [
+        "AMB-PAGE-002",
+        "AMB-PAGE-003"
+      ]
+    },
+    {
+      "stable_id": "PAGE-SUPER-021",
+      "source_route": "/platform-admin/ai-profitability",
+      "source_file": "src/app/(auth)/platform-admin/ai-profitability/page.tsx",
+      "baseline_blob": "d1a70acc6bd1bb3880ead5610c0fa7b1924e5097",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "AiProfitabilityDashboard",
+      "targets": [
+        {
+          "route": "/superadmin/ai-profitability",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform AI economics",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform AI economics",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+        "src/modules/admin/services/system-monitoring.ts"
+      ],
+      "implementation_risk": "HIGH",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-021-SOURCE",
+        "U3A-PAGE-SUPER-021-AUTHORITY",
+        "U3B-PAGE-SUPER-021-ACCESS",
+        "U3B-PAGE-SUPER-021-TENANT",
+        "U3B-PAGE-SUPER-021-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-022",
+      "source_route": "/platform-admin/ai-usage",
+      "source_file": "src/app/(auth)/platform-admin/ai-usage/page.tsx",
+      "baseline_blob": "6e198c7918fb02c0476228389ed3acace32bdef7",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "AI usage server view",
+      "targets": [
+        {
+          "route": "/superadmin/ai-usage",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform AI usage",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform AI usage",
+      "consumers": [
+        "src/app/(auth)/platform-admin/billing/page.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-022-SOURCE",
+        "U3A-PAGE-SUPER-022-AUTHORITY",
+        "U3B-PAGE-SUPER-022-ACCESS",
+        "U3B-PAGE-SUPER-022-TENANT",
+        "U3B-PAGE-SUPER-022-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-023",
+      "source_route": "/platform-admin/audit-logs",
+      "source_file": "src/app/(auth)/platform-admin/audit-logs/page.tsx",
+      "baseline_blob": "40ea872b2c4de2b6c638e24f6d9741beaeaede9b",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "Audit log server view",
+      "targets": [
+        {
+          "route": "/superadmin/audit-logs",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform audit governance",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform audit governance",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx"
+      ],
+      "implementation_risk": "CRITICAL: sensitive global evidence",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-023-SOURCE",
+        "U3A-PAGE-SUPER-023-AUTHORITY",
+        "U3B-PAGE-SUPER-023-ACCESS",
+        "U3B-PAGE-SUPER-023-TENANT",
+        "U3B-PAGE-SUPER-023-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-024",
+      "source_route": "/platform-admin/beta",
+      "source_file": "src/app/(auth)/platform-admin/beta/page.tsx",
+      "baseline_blob": "322797ec834d24c542f19717cfa0313760400ee7",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "Platform BetaCommandCenter",
+      "targets": [
+        {
+          "route": "/superadmin/beta",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform beta operations",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform beta operations",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-024-SOURCE",
+        "U3A-PAGE-SUPER-024-AUTHORITY",
+        "U3B-PAGE-SUPER-024-ACCESS",
+        "U3B-PAGE-SUPER-024-TENANT",
+        "U3B-PAGE-SUPER-024-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-025",
+      "source_route": "/platform-admin/billing",
+      "source_file": "src/app/(auth)/platform-admin/billing/page.tsx",
+      "baseline_blob": "b5aa9f0aedf5b3fc2277c5127fe4664b5355dd33",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "Platform billing server view",
+      "targets": [
+        {
+          "route": "/superadmin/billing",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform billing",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform billing",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/PlatformOperatingDashboard.tsx"
+      ],
+      "implementation_risk": "CRITICAL: billing and target tenants",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-025-SOURCE",
+        "U3A-PAGE-SUPER-025-AUTHORITY",
+        "U3B-PAGE-SUPER-025-ACCESS",
+        "U3B-PAGE-SUPER-025-TENANT",
+        "U3B-PAGE-SUPER-025-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-026",
+      "source_route": "/platform-admin/founder",
+      "source_file": "src/app/(auth)/platform-admin/founder/page.tsx",
+      "baseline_blob": "dc14eb2992eee901d649285737ad608132c31527",
+      "current_guard": "authenticated layout only; NO page-level platform role guard",
+      "current_responsibility": "Founder dashboard with no page guard",
+      "targets": [
+        {
+          "route": "/superadmin/founder",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "Founder Console",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "Founder Console",
+      "consumers": [],
+      "implementation_risk": "CRITICAL: cross-tenant reads occur before a page guard",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-026-SOURCE",
+        "U3A-PAGE-SUPER-026-AUTHORITY",
+        "U3B-PAGE-SUPER-026-ACCESS",
+        "U3B-PAGE-SUPER-026-TENANT",
+        "U3B-PAGE-SUPER-026-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-027",
+      "source_route": "/platform-admin/funnels",
+      "source_file": "src/app/(auth)/platform-admin/funnels/page.tsx",
+      "baseline_blob": "58ec6588b5259cc801796c58de6e99a618772a89",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "PlatformFunnelsDashboard",
+      "targets": [
+        {
+          "route": "/superadmin/funnels",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform funnel operations",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform funnel operations",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-027-SOURCE",
+        "U3A-PAGE-SUPER-027-AUTHORITY",
+        "U3B-PAGE-SUPER-027-ACCESS",
+        "U3B-PAGE-SUPER-027-TENANT",
+        "U3B-PAGE-SUPER-027-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-028",
+      "source_route": "/platform-admin/growth",
+      "source_file": "src/app/(auth)/platform-admin/growth/page.tsx",
+      "baseline_blob": "19b1e6092d796ca975b03ee82a4f5f732a81f90f",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "GrowthDashboard",
+      "targets": [
+        {
+          "route": "/superadmin/growth",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform growth",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform growth",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-028-SOURCE",
+        "U3A-PAGE-SUPER-028-AUTHORITY",
+        "U3B-PAGE-SUPER-028-ACCESS",
+        "U3B-PAGE-SUPER-028-TENANT",
+        "U3B-PAGE-SUPER-028-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-029",
+      "source_route": "/platform-admin/health",
+      "source_file": "src/app/(auth)/platform-admin/health/page.tsx",
+      "baseline_blob": "ce1d961c7bdfe7eb4b3189d812141b1a80004468",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "Platform health direct Prisma reads",
+      "targets": [
+        {
+          "route": "/superadmin/health",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform health",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform health",
+      "consumers": [
+        "src/app/(auth)/platform-admin/ai-usage/page.tsx",
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/PlatformOperatingDashboard.tsx"
+      ],
+      "implementation_risk": "CRITICAL: direct global database read",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-029-SOURCE",
+        "U3A-PAGE-SUPER-029-AUTHORITY",
+        "U3B-PAGE-SUPER-029-ACCESS",
+        "U3B-PAGE-SUPER-029-TENANT",
+        "U3B-PAGE-SUPER-029-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-030",
+      "source_route": "/platform-admin/revenue",
+      "source_file": "src/app/(auth)/platform-admin/revenue/page.tsx",
+      "baseline_blob": "c804473be9f170e2b40fbdd41d784bf3a01e8b68",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "RevenueDashboard",
+      "targets": [
+        {
+          "route": "/superadmin/revenue",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform revenue",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform revenue",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+        "src/modules/admin/services/system-monitoring.ts"
+      ],
+      "implementation_risk": "HIGH",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-030-SOURCE",
+        "U3A-PAGE-SUPER-030-AUTHORITY",
+        "U3B-PAGE-SUPER-030-ACCESS",
+        "U3B-PAGE-SUPER-030-TENANT",
+        "U3B-PAGE-SUPER-030-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-031",
+      "source_route": "/platform-admin/tenant-health",
+      "source_file": "src/app/(auth)/platform-admin/tenant-health/page.tsx",
+      "baseline_blob": "1c15582a247884bbe3e5d995b0cc894e635545b2",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "TenantHealthCenter",
+      "targets": [
+        {
+          "route": "/superadmin/tenant-health",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform tenant health",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform tenant health",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/admin/components/PlatformOperatingDashboard.tsx",
+        "src/modules/admin/services/system-monitoring.ts"
+      ],
+      "implementation_risk": "CRITICAL: cross-tenant status",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-031-SOURCE",
+        "U3A-PAGE-SUPER-031-AUTHORITY",
+        "U3B-PAGE-SUPER-031-ACCESS",
+        "U3B-PAGE-SUPER-031-TENANT",
+        "U3B-PAGE-SUPER-031-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-032",
+      "source_route": "/platform-admin/tenants",
+      "source_file": "src/app/(auth)/platform-admin/tenants/page.tsx",
+      "baseline_blob": "199f49b3d4b6bfc9b96b83da003c08c2c43f625f",
+      "current_guard": "NO source page guard; destination currently guards platform_admin",
+      "current_responsibility": "Unguarded redirect chain to platform root",
+      "targets": [
+        {
+          "route": "/superadmin/tenants",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform tenant administration",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": "Replace current chain with direct terminal."
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform tenant administration",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx",
+        "tests/e2e/navigation-convergence.spec.ts"
+      ],
+      "implementation_risk": "CRITICAL: current chain and source guard gap",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-032-SOURCE",
+        "U3A-PAGE-SUPER-032-AUTHORITY",
+        "U3B-PAGE-SUPER-032-ACCESS",
+        "U3B-PAGE-SUPER-032-TENANT",
+        "U3B-PAGE-SUPER-032-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": [
+        "AMB-PAGE-003"
+      ]
+    },
+    {
+      "stable_id": "PAGE-SUPER-033",
+      "source_route": "/platform-admin/users",
+      "source_file": "src/app/(auth)/platform-admin/users/page.tsx",
+      "baseline_blob": "852dd4bada475dc964ce35774c67563de30cb559",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "Cross-tenant user portfolio",
+      "targets": [
+        {
+          "route": "/superadmin/users",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "platform user administration",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "platform user administration",
+      "consumers": [
+        "src/components/layouts/AdminSidebar.tsx",
+        "src/components/layouts/Sidebar.tsx"
+      ],
+      "implementation_risk": "CRITICAL: cross-tenant user data",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-033-SOURCE",
+        "U3A-PAGE-SUPER-033-AUTHORITY",
+        "U3B-PAGE-SUPER-033-ACCESS",
+        "U3B-PAGE-SUPER-033-TENANT",
+        "U3B-PAGE-SUPER-033-CONSUMER"
+      ],
+      "disposition": "MIGRATE_LEGACY_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": []
+    },
+    {
+      "stable_id": "PAGE-SUPER-034",
+      "source_route": "/admin-command",
+      "source_file": "src/app/(auth)/admin-command/page.tsx",
+      "baseline_blob": "def07dc92ccd1612b01dec9f9bc852aa205e916a",
+      "current_guard": "page requires exact platform_admin",
+      "current_responsibility": "Compatibility redirect to /platform-admin?view=command",
+      "targets": [
+        {
+          "route": "/superadmin/command",
+          "namespace": "superadmin",
+          "roles": [
+            "platform_admin"
+          ],
+          "tenant_authority": "platform guard first; explicit validated target tenant when tenant-targeted; no placeholder tenant for global scope",
+          "capability": "Founder Console platform command",
+          "terminal": true
+        }
+      ],
+      "space": "superadmin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": "Replace current chain with direct terminal."
+      },
+      "shell_identity": "PLATFORM",
+      "owner_module": "Founder Console/platform-command",
+      "consumers": [
+        "src/config/canonical-routes.test.ts",
+        "tests/e2e/admin.spec.ts",
+        "tests/e2e/navigation-convergence.spec.ts"
+      ],
+      "implementation_risk": "CRITICAL: current redirect chain",
+      "required_test_ids": [
+        "U3A-PAGE-SUPER-034-SOURCE",
+        "U3A-PAGE-SUPER-034-AUTHORITY",
+        "U3B-PAGE-SUPER-034-ACCESS",
+        "U3B-PAGE-SUPER-034-TENANT",
+        "U3B-PAGE-SUPER-034-CONSUMER"
+      ],
+      "disposition": "REPLACE_CHAIN_WITH_GUARDED_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      }
+    },
+    {
+      "stable_id": "PAGE-LEGACY-035",
+      "source_route": "/team",
+      "source_file": "src/app/(auth)/team/page.tsx",
+      "baseline_blob": "b9cf48eaef42199f7538c7db33a4e5a756fe3871",
+      "current_guard": "denies member only; currently admits leader|operator|platform_admin",
+      "current_responsibility": "TeamOverviewDashboard tree",
+      "targets": [
+        {
+          "route": "/admin/team",
+          "namespace": "admin",
+          "roles": [
+            "leader",
+            "operator"
+          ],
+          "tenant_authority": "session tenant plus approved sub-team policy",
+          "capability": "human-team hierarchy",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "member",
+            "format": "uuid",
+            "authorization": "id plus session tenant/sub-team"
+          },
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/team",
+      "consumers": [
+        "src/__tests__/responsive/pages.spec.ts",
+        "src/app/(auth)/team/growth/page.tsx",
+        "src/app/api/v1/ai-workforce/route.ts",
+        "src/components/layouts/Sidebar.tsx",
+        "src/config/canonical-routes.test.ts",
+        "src/config/canonical-routes.ts",
+        "src/lib/navigation/compatibility-redirect.test.ts",
+        "src/modules/mission/constants/execution-roadmap.ts",
+        "src/modules/team-engine/components/TeamDashboard.tsx"
+      ],
+      "implementation_risk": "CRITICAL: platform exclusion and AMB-PAGE-001",
+      "required_test_ids": [
+        "U3A-PAGE-LEGACY-035-SOURCE",
+        "U3A-PAGE-LEGACY-035-AUTHORITY",
+        "U3B-PAGE-LEGACY-035-ACCESS",
+        "U3B-PAGE-LEGACY-035-TENANT",
+        "U3B-PAGE-LEGACY-035-CONSUMER"
+      ],
+      "disposition": "LEGACY_301_TERMINAL_REQUIRES_ARCH_REVIEW",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": [
+        "AMB-PAGE-001",
+        "AMB-PAGE-003"
+      ]
+    },
+    {
+      "stable_id": "PAGE-LEGACY-036",
+      "source_route": "/team/members",
+      "source_file": "src/app/(auth)/team/members/page.tsx",
+      "baseline_blob": "77039bc61e15419180f764033ca2e0e7f65ac07f",
+      "current_guard": "denies member only; currently admits leader|operator|platform_admin",
+      "current_responsibility": "TeamOverviewDashboard list",
+      "targets": [
+        {
+          "route": "/admin/team/members",
+          "namespace": "admin",
+          "roles": [
+            "leader",
+            "operator"
+          ],
+          "tenant_authority": "session tenant plus approved sub-team policy; member id plus tenant",
+          "capability": "human-team member list/detail",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "member",
+            "format": "uuid",
+            "authorization": "id plus session tenant/sub-team"
+          },
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/team",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/config/canonical-routes.test.ts",
+        "src/modules/team-engine/components/TeamDashboard.tsx",
+        "src/modules/team/components/TeamAlerts.tsx",
+        "src/modules/team/components/TeamOverviewDashboard.tsx",
+        "src/modules/team/components/TeamPerformanceTable.tsx"
+      ],
+      "implementation_risk": "CRITICAL: target route absent and platform currently allowed",
+      "required_test_ids": [
+        "U3A-PAGE-LEGACY-036-SOURCE",
+        "U3A-PAGE-LEGACY-036-AUTHORITY",
+        "U3B-PAGE-LEGACY-036-ACCESS",
+        "U3B-PAGE-LEGACY-036-TENANT",
+        "U3B-PAGE-LEGACY-036-CONSUMER"
+      ],
+      "disposition": "LEGACY_301_TO_NEW_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": [
+        "AMB-PAGE-003"
+      ]
+    },
+    {
+      "stable_id": "PAGE-LEGACY-037",
+      "source_route": "/team/growth",
+      "source_file": "src/app/(auth)/team/growth/page.tsx",
+      "baseline_blob": "75cf13c0cb13c47779b636ff06599bc9e22389cb",
+      "current_guard": "page operator|platform_admin",
+      "current_responsibility": "Compatibility chain to /team",
+      "targets": [
+        {
+          "route": "/admin/team",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "operator team-growth administration",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": "Member-facing product CTA consumers are separately remapped to /ai-workforce; replace current chain."
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "modules/team/growth-compatibility",
+      "consumers": [
+        "src/__tests__/services/agent-workforce-orchestrator.test.ts",
+        "src/__tests__/services/customer-health-engine.test.ts",
+        "src/__tests__/services/dashboard-projection-adapter.test.ts",
+        "src/__tests__/services/priority-engine.test.ts",
+        "src/config/canonical-routes.ts",
+        "src/modules/ai-coo/adapters/BusinessStateProjectionAdapter.ts",
+        "src/modules/expansion/services/growth-lever-engine.ts",
+        "src/modules/growth-loop/adapters/ExpansionSignalAdapter.ts",
+        "src/modules/growth-loop/adapters/ReferralSignalAdapter.ts",
+        "src/modules/growth-loop/services/growth-projection.ts",
+        "src/modules/growth-roadmap/services/roadmap-service.ts",
+        "src/modules/journey-engine/journey-state-machine.ts",
+        "src/modules/mission-engine/services/MissionEngineAuthorityService.ts",
+        "src/modules/mission-engine/services/mission-service.ts",
+        "src/modules/mission/constants/execution-roadmap.ts",
+        "src/modules/mission/constants/sidebar-config.ts",
+        "src/modules/referral/services/advocacy-detector.ts",
+        "src/modules/referral/services/referral-opportunity-engine.ts",
+        "src/modules/value/services/milestone-engine.ts",
+        "src/modules/workspace/workspace-config.ts",
+        "tests/e2e/navigation-convergence.spec.ts"
+      ],
+      "implementation_risk": "CRITICAL: current chain, platform access, and member/product consumers",
+      "required_test_ids": [
+        "U3A-PAGE-LEGACY-037-SOURCE",
+        "U3A-PAGE-LEGACY-037-AUTHORITY",
+        "U3B-PAGE-LEGACY-037-ACCESS",
+        "U3B-PAGE-LEGACY-037-TENANT",
+        "U3B-PAGE-LEGACY-037-CONSUMER"
+      ],
+      "disposition": "REPLACE_CHAIN_WITH_GUARDED_301",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": [
+        "AMB-PAGE-003"
+      ]
+    },
+    {
+      "stable_id": "PAGE-LEGACY-038",
+      "source_route": "/workspace",
+      "source_file": "src/app/(auth)/workspace/page.tsx",
+      "baseline_blob": "4df182ce96dff883f20b2d19e52428e3234b5381",
+      "current_guard": "page operator|platform_admin",
+      "current_responsibility": "Compatibility redirect to /admin",
+      "targets": [
+        {
+          "route": "/admin",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "operator admin landing",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": ""
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "lib/navigation/workspace-compatibility",
+      "consumers": [
+        "src/components/layouts/AppShell.tsx",
+        "src/modules/workspace/workspace-config.ts",
+        "tests/e2e/auth.spec.ts"
+      ],
+      "implementation_risk": "HIGH: current platform access and member configuration consumer",
+      "required_test_ids": [
+        "U3A-PAGE-LEGACY-038-SOURCE",
+        "U3A-PAGE-LEGACY-038-AUTHORITY",
+        "U3B-PAGE-LEGACY-038-ACCESS",
+        "U3B-PAGE-LEGACY-038-TENANT",
+        "U3B-PAGE-LEGACY-038-CONSUMER"
+      ],
+      "disposition": "LEGACY_301_TERMINAL",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "ambiguity_ids": [
+        "AMB-PAGE-003"
+      ]
+    },
+    {
+      "stable_id": "PAGE-LEGACY-039",
+      "source_route": "/workspace/[...path]",
+      "source_file": "src/app/(auth)/workspace/[...path]/page.tsx",
+      "baseline_blob": "f48538982b33bd38fc54f13e5bd698e15f1b6a72",
+      "current_guard": "page operator|platform_admin",
+      "current_responsibility": "Wildcard one-segment compatibility resolver",
+      "targets": [
+        {
+          "route": "/admin/approvals",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: approvals",
+          "terminal": true
+        },
+        {
+          "route": "/admin/beta",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: beta",
+          "terminal": true
+        },
+        {
+          "route": "/admin/billing",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: billing",
+          "terminal": true
+        },
+        {
+          "route": "/admin/content",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: content",
+          "terminal": true
+        },
+        {
+          "route": "/admin/daily-actions",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: daily-actions",
+          "terminal": true
+        },
+        {
+          "route": "/admin/feedback",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: feedback",
+          "terminal": true
+        },
+        {
+          "route": "/admin/funnels",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: funnels",
+          "terminal": true
+        },
+        {
+          "route": "/admin/journey",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: journey",
+          "terminal": true
+        },
+        {
+          "route": "/admin/members",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: members",
+          "terminal": true
+        },
+        {
+          "route": "/admin/operations",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: operations",
+          "terminal": true
+        },
+        {
+          "route": "/admin/plan",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: plan",
+          "terminal": true
+        },
+        {
+          "route": "/admin/settings",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: settings",
+          "terminal": true
+        },
+        {
+          "route": "/admin/team",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: team",
+          "terminal": true
+        },
+        {
+          "route": "/admin/templates",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: templates",
+          "terminal": true
+        },
+        {
+          "route": "/admin/training",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: training",
+          "terminal": true
+        },
+        {
+          "route": "/admin/users",
+          "namespace": "admin",
+          "roles": [
+            "operator"
+          ],
+          "tenant_authority": "authenticated session tenant only; never query/body/header/local storage",
+          "capability": "frozen workspace compatibility suffix: users",
+          "terminal": true
+        }
+      ],
+      "space": "admin",
+      "redirect": {
+        "mode": "LEGACY_GET_301",
+        "method": "GET",
+        "status": 301,
+        "terminal": true,
+        "query_allowlist": [
+          {
+            "key": "source",
+            "allowed_values": [
+              "bookmark"
+            ]
+          }
+        ],
+        "unknown_query": "DROP",
+        "non_get_policy": "FAIL_CLOSED_UNLESS_SEPARATELY_APPROVED_EXPIRING_308_PARITY",
+        "notes": "Allowed suffixes resolve directly to terminal /admin routes. /workspace/launch-readiness and every unknown or nested suffix fail closed with 404; they never cross into /superadmin or form a chain."
+      },
+      "shell_identity": "ADMIN",
+      "owner_module": "lib/navigation/workspace-compatibility",
+      "consumers": [
+        "src/lib/navigation/compatibility-redirect.test.ts",
+        "src/lib/navigation/compatibility-redirect.ts"
+      ],
+      "implementation_risk": "CRITICAL: catch-all, platform access, unknown fallback",
+      "required_test_ids": [
+        "U3A-PAGE-LEGACY-039-AUTHORITY",
+        "U3A-PAGE-LEGACY-039-SOURCE",
+        "U3A-PAGE-LEGACY-039-SUFFIX-TERMINAL",
+        "U3B-PAGE-LEGACY-039-ACCESS",
+        "U3B-PAGE-LEGACY-039-CONSUMER",
+        "U3B-PAGE-LEGACY-039-LAUNCH-READINESS-DENY",
+        "U3B-PAGE-LEGACY-039-TENANT"
+      ],
+      "disposition": "LEGACY_301_FROZEN_RESOLVER",
+      "evidence": {
+        "contract_section": "3",
+        "source_exists_at_baseline": true,
+        "runtime_reachability": "SOURCE_AND_CONSUMER_SEARCH_VERIFIED"
+      },
+      "frozen_suffixes": [
+        "approvals",
+        "beta",
+        "billing",
+        "content",
+        "daily-actions",
+        "feedback",
+        "funnels",
+        "journey",
+        "members",
+        "operations",
+        "plan",
+        "settings",
+        "team",
+        "templates",
+        "training",
+        "users"
+      ],
+      "unknown_suffix_policy": "FAIL_CLOSED_404",
+      "ambiguity_ids": [
+        "AMB-PAGE-003"
+      ]
+    }
+  ]
+}
