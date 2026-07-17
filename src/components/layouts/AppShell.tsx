@@ -11,8 +11,8 @@ import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { OnboardingState } from '@/modules/member/types';
 import { TenantBranding } from '@/modules/tenant/components/TenantBranding';
 import { PLAN_TIERS, type PlanTier } from '@/modules/tenant/constants/plans';
-import { ExecutionRoadmapRail } from '@/modules/mission/components/ExecutionRoadmapRail';
 import { MissionListener } from '@/modules/mission/components/MissionListener';
+import { isMemberFacingRole } from './navigation-access';
 
 type AppShellProps = {
   children: ReactNode;
@@ -53,7 +53,6 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   const isWizardPath = pathname.startsWith('/brand-builder/step');
   const isAdminRole = ['operator', 'platform_admin'].includes(user.role);
   const isAdminExperience = isAdminRole || pathname.startsWith('/admin') || pathname.startsWith('/workspace');
-  const showMemberRoadmap = user.role === 'member' && onboarding.completed && !isAdminExperience;
   const adminHomeHref = user.role === 'platform_admin' ? '/platform-admin' : '/admin';
   const branding = extractBranding(tenant);
 
@@ -83,18 +82,16 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
         userRole={user.role as 'member' | 'leader' | 'operator' | 'platform_admin'}
         tenantName={tenant?.name}
         tenantLogoUrl={branding?.logoUrl}
-        showExecutionRoadmap={showMemberRoadmap}
         showWorkspaceNavigation={!isAdminExperience}
         homeHref={isAdminExperience ? adminHomeHref : '/dashboard'}
       />
-      {showMemberRoadmap ? <ExecutionRoadmapRail /> : null}
-      <main className="mx-auto min-w-0 max-w-[1440px] p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:p-6 lg:pb-6">
+      <main className="mx-auto min-w-0 max-w-[1440px] p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:p-6 xl:pb-6">
         {children}
       </main>
-      {user.role === 'member' ? (
+      {isMemberFacingRole(user.role) ? (
         <MobileTabBar
           activationMode={!onboarding.completed}
-          className="lg:hidden"
+          className="xl:hidden"
         />
       ) : null}
       <MissionListener />

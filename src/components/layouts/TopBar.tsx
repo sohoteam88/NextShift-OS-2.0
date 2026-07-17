@@ -3,19 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/cn';
-import {
-  EXECUTION_ROADMAP_STEPS,
-  getExecutionRoadmapLabel,
-  isExecutionRoadmapStepActive,
-} from '@/modules/mission/constants/execution-roadmap';
 import { WorkspaceSwitcher } from '@/modules/workspace/components/WorkspaceSwitcher';
 import { WorkspaceTopNavigation } from '@/modules/workspace/components/WorkspaceTopNavigation';
 
@@ -27,7 +22,6 @@ type TopBarProps = {
   userRole?: Role;
   tenantName?: string;
   tenantLogoUrl?: string | null;
-  showExecutionRoadmap?: boolean;
   showWorkspaceNavigation?: boolean;
   homeHref?: string;
 };
@@ -107,16 +101,12 @@ export function TopBar({
   userRole = 'member',
   tenantName = 'NextShift',
   tenantLogoUrl,
-  showExecutionRoadmap = true,
   showWorkspaceNavigation = true,
   homeHref = '/dashboard',
 }: TopBarProps) {
   const nav = useTranslations('nav');
-  const locale = useLocale();
   const router = useRouter();
-  const pathname = usePathname();
   void userRole;
-  const topNav = EXECUTION_ROADMAP_STEPS;
 
   return (
     <header
@@ -143,28 +133,6 @@ export function TopBar({
       <WorkspaceSwitcher />
 
       {showWorkspaceNavigation ? <WorkspaceTopNavigation /> : null}
-
-      {showExecutionRoadmap ? (
-        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto 2xl:flex" aria-label="Execution roadmap">
-          {topNav.map((item) => {
-            const active = isExecutionRoadmapStepActive(item, pathname);
-            return (
-              <Link
-                key={item.id}
-                href={item.route}
-                className={cn(
-                  'inline-flex h-10 shrink-0 items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold transition-colors',
-                  active
-                    ? 'bg-blue-50 text-[var(--color-primary)]'
-                    : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
-                )}
-              >
-                {getExecutionRoadmapLabel(item, locale, true)}
-              </Link>
-            );
-          })}
-        </nav>
-      ) : null}
 
       <div className="ml-auto flex items-center gap-2">
         <LanguageSwitcher />
