@@ -23,6 +23,12 @@ pass_fixture() { pass=$((pass + 1)); printf 'PASS: %s\n' "$1"; }
 
 mkdir -p "$REPO/.github/workflows" "$REPO/docs/nextshift-os-3/os-3-8" "$BIN"
 cp "$SOURCE_MANIFEST" "$MANIFEST"
+jq '
+  .waves |= map(if .id == "W3" then
+    .tasks |= map(select(.id != "U3A" and .id != "U3ADR" and .id != "U3B")) |
+    .tasks |= map(if .id == "E3A" then .depends_on = ["U3"] else . end)
+  else . end)
+' "$MANIFEST" >"$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
 cat >"$REPO/.github/workflows/ci.yml" <<'EOF'
 name: CI
 on:

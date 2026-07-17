@@ -67,10 +67,10 @@ CODEX
 
 policy_json() {
   jq -cn '{
-    schema_version:1,gate_id:"U3-AUDITLOG-ADR",gate_task_id:"U3ADR",consumer_task_id:"U3B",policy_version:"2026-07-17.v1",
+    schema_version:1,gate_id:"U3-AUDITLOG-ADR",gate_task_id:"U3ADR",consumer_task_id:"U3B",policy_version:"2026-07-17.v3",
     decision_artifact:"docs/governance/U3ADR_DECISION.json",
     allowed_selected_options:["A_OPTIONAL_TENANT_WITH_SCOPE","B_PLATFORM_AUDIT_LOG","C_NO_PLATFORM_GLOBAL_MUTATIONS"],
-    required_decisions:["platform_global_storage","failure_audit_durability"],
+    required_decisions:["platform_global_storage","target_mapping","failure_audit_durability","tenant_deletion_audit_retention","deleted_tenant_terminal_operational_state","auditlog_idempotency_authority"],
     protected_paths:["docs/governance/U3ADR_DECISION.json","docs/governance/U3ADR_OPTION_C_PROOF.md","docs/gates/U3_GATE.json","src/protected.txt"],
     review:{required_verdict:"PASS",reviewed_sha_must_equal_decision_sha:true},freshness:{reject_protected_path_changes_after_review:true},
     option_c:{selected_option:"C_NO_PLATFORM_GLOBAL_MUTATIONS",proof_required:true,proof_artifact:"docs/governance/U3ADR_OPTION_C_PROOF.md"}
@@ -122,8 +122,15 @@ write_decision() {
   protected_digest="$(jq -Sc '.protected_paths|sort' <<<"$policy" | shasum -a 256 | awk '{print $1}')"; proof_digest="$(sha_file "$PROOF")"
   jq -cn --arg option "$option" --arg pd "$policy_digest" --arg pp "$protected_digest" --arg proof "$proof_digest" '{
     schema_version:1,gate_id:"U3-AUDITLOG-ADR",task_id:"U3ADR",consumer_task_id:"U3B",decision_status:"approved",selected_option:$option,
-    policy_version:"2026-07-17.v1",policy_sha256:$pd,protected_paths_sha256:$pp,
-    required_decisions:[{id:"platform_global_storage",status:"resolved",decision:"tenant nullable scope"},{id:"failure_audit_durability",status:"resolved",decision:"out-of-transaction audit sink"}],
+    policy_version:"2026-07-17.v3",policy_sha256:$pd,protected_paths_sha256:$pp,
+    required_decisions:[
+      {id:"platform_global_storage",status:"resolved",decision:"tenant nullable scope with database invariant"},
+      {id:"target_mapping",status:"resolved",decision:"real UUID or redacted stable key"},
+      {id:"failure_audit_durability",status:"resolved",decision:"append-only durable outbox outside rollback"},
+      {id:"tenant_deletion_audit_retention",status:"resolved",decision:"platform tombstone survives delete lifecycle"},
+      {id:"deleted_tenant_terminal_operational_state",status:"resolved",decision:"deleted tenant is terminal across auth and workers"},
+      {id:"auditlog_idempotency_authority",status:"resolved",decision:"dedicated unique key and payload digest enforce final-event identity"}
+    ],
     option_c_proof:(if $option=="C_NO_PLATFORM_GLOBAL_MUTATIONS" then {path:"docs/governance/U3ADR_OPTION_C_PROOF.md",sha256:$proof} else null end)
   }' >"$DECISION"
 }
@@ -245,7 +252,10 @@ setup_case removed_path; jq '.protected_paths=["docs/governance/U3ADR_DECISION.j
 setup_case replaced_paths; jq '.protected_paths=["docs/harmless.md"]' "$ENVELOPE" >"$ENVELOPE.tmp" && mv "$ENVELOPE.tmp" "$ENVELOPE"; expect_adoption_rejected protected_path_set_replaced_rejected adopt_cmd
 setup_case option_mismatch; jq '.selected_option="B_PLATFORM_AUDIT_LOG"' "$ENVELOPE" >"$ENVELOPE.tmp" && mv "$ENVELOPE.tmp" "$ENVELOPE"; expect_adoption_rejected reviewed_artifact_option_a_envelope_option_b_rejected adopt_cmd
 setup_case policy_mismatch; jq '.policy_sha256="1111111111111111111111111111111111111111111111111111111111111111"' "$DECISION" >"$DECISION.tmp" && mv "$DECISION.tmp" "$DECISION"; git -C "$STATE" add "$DECISION"; git -C "$STATE" commit -m mismatch >/dev/null; DECISION_SHA="$(git -C "$STATE" rev-parse HEAD)"; write_envelope; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_adoption_rejected reviewed_policy_digest_mismatch_rejected adopt_cmd
-setup_case missing_decision; jq '.required_decisions = [.required_decisions[0]]' "$DECISION" >"$DECISION.tmp" && mv "$DECISION.tmp" "$DECISION"; git -C "$STATE" add "$DECISION"; git -C "$STATE" commit -m missing >/dev/null; DECISION_SHA="$(git -C "$STATE" rev-parse HEAD)"; write_envelope; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_adoption_rejected required_adr_decision_missing_rejected adopt_cmd
+setup_case legacy_without_tenant_delete; jq '.required_decisions |= map(select(.id != "tenant_deletion_audit_retention"))' "$DECISION" >"$DECISION.tmp" && mv "$DECISION.tmp" "$DECISION"; git -C "$STATE" add "$DECISION"; git -C "$STATE" commit -m legacy-decision >/dev/null; DECISION_SHA="$(git -C "$STATE" rev-parse HEAD)"; write_envelope; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_adoption_rejected legacy_decision_without_tenant_deletion_rejected adopt_cmd
+setup_case legacy_without_terminal_state; jq '.required_decisions |= map(select(.id != "deleted_tenant_terminal_operational_state"))' "$DECISION" >"$DECISION.tmp" && mv "$DECISION.tmp" "$DECISION"; git -C "$STATE" add "$DECISION"; git -C "$STATE" commit -m legacy-terminal-decision >/dev/null; DECISION_SHA="$(git -C "$STATE" rev-parse HEAD)"; write_envelope; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_adoption_rejected legacy_decision_without_deleted_tenant_terminal_state_rejected adopt_cmd
+setup_case legacy_without_auditlog_idempotency; jq '.required_decisions |= map(select(.id != "auditlog_idempotency_authority"))' "$DECISION" >"$DECISION.tmp" && mv "$DECISION.tmp" "$DECISION"; git -C "$STATE" add "$DECISION"; git -C "$STATE" commit -m legacy-auditlog-idempotency-decision >/dev/null; DECISION_SHA="$(git -C "$STATE" rev-parse HEAD)"; write_envelope; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_adoption_rejected legacy_decision_without_auditlog_idempotency_authority_rejected adopt_cmd
+setup_case auditlog_idempotency_mismatch; jq '(.required_decisions[] | select(.id == "auditlog_idempotency_authority") | .id) = "auditlog_idempotency_authority_v0"' "$DECISION" >"$DECISION.tmp" && mv "$DECISION.tmp" "$DECISION"; git -C "$STATE" add "$DECISION"; git -C "$STATE" commit -m mismatched-auditlog-idempotency-decision >/dev/null; DECISION_SHA="$(git -C "$STATE" rev-parse HEAD)"; write_envelope; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_adoption_rejected auditlog_idempotency_decision_id_mismatch_rejected adopt_cmd
 setup_case missing_artifact; git -C "$STATE" rm "$DECISION" >/dev/null; git -C "$STATE" commit -m missing >/dev/null; DECISION_SHA="$(git -C "$STATE" rev-parse HEAD)"; jq --arg sha "$DECISION_SHA" '.decision_sha=$sha' "$ENVELOPE" >"$ENVELOPE.tmp" && mv "$ENVELOPE.tmp" "$ENVELOPE"; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_adoption_rejected reviewed_decision_artifact_missing_rejected adopt_cmd
 setup_case digest_mismatch; jq '.decision_artifact_sha256="2222222222222222222222222222222222222222222222222222222222222222"' "$ENVELOPE" >"$ENVELOPE.tmp" && mv "$ENVELOPE.tmp" "$ENVELOPE"; expect_adoption_rejected reviewed_decision_artifact_digest_mismatch_rejected adopt_cmd
 setup_case freshness; printf 'stale\n' >>"$STATE/src/protected.txt"; git -C "$STATE" add src/protected.txt; git -C "$STATE" commit -m stale >/dev/null; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; jq '.freshness="fresh"' "$ENVELOPE" >"$ENVELOPE.tmp" && mv "$ENVELOPE.tmp" "$ENVELOPE"; expect_adoption_rejected external_freshness_claim_ignored adopt_cmd

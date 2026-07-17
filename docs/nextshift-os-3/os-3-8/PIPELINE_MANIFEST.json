@@ -530,13 +530,141 @@
           }
         },
         {
+          "id": "U3A",
+          "verification_policy": "paths_ignored_zero_checks_allowed",
+          "title": "Admin Space Inventory and Security Contract",
+          "blueprint_section": "10.1",
+          "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+          "execution_task": null,
+          "depends_on": ["U3"],
+          "status": "pending",
+          "verification": null,
+          "evidence": null
+        },
+        {
+          "id": "U3ADR",
+          "verification_policy": "paths_ignored_zero_checks_allowed",
+          "title": "Platform-global AuditLog Architecture Decision Gate",
+          "blueprint_section": "10.1",
+          "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+          "execution_task": null,
+          "depends_on": ["U3A"],
+          "status": "pending",
+          "verification": null,
+          "evidence": null,
+          "governance_gate": {
+            "gate_id": "U3-AUDITLOG-ADR",
+            "artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+            "policy": {
+              "schema_version": 1,
+              "gate_id": "U3-AUDITLOG-ADR",
+              "gate_task_id": "U3ADR",
+              "consumer_task_id": "U3B",
+              "policy_version": "2026-07-17.pr96-round5-v3",
+              "decision_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
+              "allowed_selected_options": [
+                "A_OPTIONAL_TENANT_WITH_SCOPE",
+                "B_PLATFORM_AUDIT_LOG",
+                "C_NO_PLATFORM_GLOBAL_MUTATIONS"
+              ],
+              "required_decisions": [
+                "platform_global_storage",
+                "target_id_uuid_and_global_target_mapping",
+                "failure_event_durability_after_business_rollback",
+                "tenant_deletion_audit_retention",
+                "deleted_tenant_terminal_operational_state",
+                "auditlog_idempotency_authority"
+              ],
+              "protected_paths": [
+                "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
+                "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+                "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+                "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
+                "prisma/schema.prisma",
+                "prisma/migrations",
+                "src/lib/audit-delete-guard.ts",
+                "src/lib/supabase",
+                "src/middleware.ts",
+                "src/app/(auth)/layout.tsx",
+                "src/app/(public)",
+                "src/app/setup-workspace",
+                "src/modules/auth",
+                "src/modules/tenant",
+                "src/modules/admin/services",
+                "src/modules/ai",
+                "src/modules/ai-coo",
+                "src/modules/autonomous-execution",
+                "src/modules/agent-runtime",
+                "src/modules/agent-workforce",
+                "src/modules/automation",
+                "src/modules/content-publishing",
+                "src/modules/mission-workspace",
+                "src/modules/payments",
+                "src/app/api/payments",
+                "src/app/api/v1/admin",
+                "src/app/api/v1/platform-admin",
+                "src/app/api/v1/superadmin",
+                "src/app/api/v1/admin-command",
+                "src/app/api/v1/team",
+                "src/app/api/v1/member",
+                "src/app/api/v1/auth",
+                "src/app/api/v1/tenant",
+                "src/app/api/v1/ai",
+                "src/app/api/v1/ai-coo",
+                "src/app/api/v1/ai-workforce",
+                "src/app/api/v1/automation",
+                "src/app/api/v1/executions",
+                "src/app/api/v1/mission",
+                "src/app/api/v1/workforce",
+                "src/app/api/v1/crm",
+                "src/app/api/v1/funnel"
+              ],
+              "review": {
+                "required_verdict": "PASS",
+                "reviewed_sha_must_equal_decision_sha": true
+              },
+              "freshness": {
+                "reject_protected_path_changes_after_review": true
+              },
+              "option_c": {
+                "selected_option": "C_NO_PLATFORM_GLOBAL_MUTATIONS",
+                "proof_required": true,
+                "proof_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_OPTION_C_NO_GLOBAL_MUTATIONS_PROOF.md"
+              }
+            }
+          }
+        },
+        {
+          "id": "U3B",
+          "verification_policy": "actual_checks_required",
+          "title": "Three-Space Admin Migration",
+          "blueprint_section": "10.1",
+          "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+          "execution_task": null,
+          "depends_on": ["U3ADR"],
+          "status": "blocked",
+          "verification": null,
+          "evidence": null,
+          "dispatch_gate": {
+            "gate_id": "U3-AUDITLOG-ADR",
+            "task_id": "U3ADR",
+            "artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+            "required_status": "approved",
+            "required_verdict": "PASS",
+            "reviewed_sha_must_equal_decision_sha": true,
+            "required_freshness_state": "fresh",
+            "option_c_proof_required": true,
+            "blocked_reason": "AuditLog ADR is unresolved; a separate exact-head PASS governance adoption must unblock U3B"
+          }
+        },
+        {
           "id": "E3A",
           "verification_policy": "actual_checks_required",
           "title": "Video Lead Magnet Webinar Capability Revalidation",
           "blueprint_section": "11",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["U3"],
+          "depends_on": ["U3B"],
           "status": "pending",
           "verification": null,
           "evidence": null

@@ -298,6 +298,16 @@ stale. Option C additionally requires its policy-designated proof at the same
 reviewed SHA and PR diff, with the decision artifact recording the exact proof
 SHA-256.
 
+The current U3ADR policy requires six exact decision IDs. In addition to audit
+scope/storage, target mapping, failure durability, and tenant-deletion
+retention, it requires (1) terminal deleted-tenant enforcement across the
+shared auth/session, tenant-resolution, webhook, automation, publishing,
+AI/workforce, and queued-execution authorities and (2) a dedicated database
+idempotency key plus payload digest for the final `AuditLog` row. Those current
+and future authority roots are protected paths. Removing either decision,
+renaming it, changing the policy digest, or changing an authority after review
+causes adoption and U3B dispatch to fail closed.
+
 Missing, partial, unknown, stale, symlinked, SHA-mismatched, or manually
 toggled evidence fails closed. Environment variables, task outcomes, PR body,
 labels, and `u3b_dispatch_authorized` by itself are never authority. A failure
@@ -522,10 +532,13 @@ Expected pipeline-specific coverage is:
   cases covering U1A/U2 authorization, rejection for every actual-check task,
   missing/unknown policies, forged/mismatched/cross-task evidence, caller
   non-authority, recovery revalidation, and exact PR #84 U1A evidence.
-- `tests/governance-dispatch-gate.sh`: **36 named real-Git production-path
-  fixtures**. Eighteen policy/candidate/rollback fixtures prove immutable
+- `tests/governance-dispatch-gate.sh`: **39 named real-Git production-path
+  fixtures**. Twenty-one policy/candidate/rollback fixtures prove immutable
   option and protected-path policy, reviewed decision/digest binding, required
-  ADR completeness, transport-envelope non-authority, candidate-before-write,
+  ADR completeness (including separate rejection of decisions that predate
+  tenant-deletion retention, terminal operational deactivation, or final-row
+  idempotency, plus an explicit idempotency-decision identity mismatch),
+  transport-envelope non-authority, candidate-before-write,
   locked drift rejection, byte-identical post-write/push rollback, atomic
   adoption, and duplicate clean stop. Eighteen retained dispatch-gate fixtures
   cover pending/missing/non-PASS/mismatched/stale/unknown/manual gates,
