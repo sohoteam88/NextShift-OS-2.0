@@ -14,7 +14,13 @@ fresh() {
   jq '
     .waves |= map(
       .status="pending" | .start_sha=null |
-      .tasks |= map(.status="pending" | .verification=null | .evidence=null) |
+      .tasks |= map(
+        if .status == "blocked" then
+          .verification=null | .evidence=null
+        else
+          .status="pending" | .verification=null | .evidence=null
+        end
+      ) |
       .checkpoint.status="pending" |
       .checkpoint.requested_end_sha=null |
       .checkpoint.reviewed_sha=null |
