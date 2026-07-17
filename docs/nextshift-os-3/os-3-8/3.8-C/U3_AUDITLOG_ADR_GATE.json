@@ -13,7 +13,7 @@
     "gate_id": "U3-AUDITLOG-ADR",
     "gate_task_id": "U3ADR",
     "consumer_task_id": "U3B",
-    "policy_version": "2026-07-17.pr96-round4-v2",
+    "policy_version": "2026-07-17.pr96-round5-v3",
     "decision_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
     "allowed_selected_options": [
       "A_OPTIONAL_TENANT_WITH_SCOPE",
@@ -24,7 +24,9 @@
       "platform_global_storage",
       "target_id_uuid_and_global_target_mapping",
       "failure_event_durability_after_business_rollback",
-      "tenant_deletion_audit_retention"
+      "tenant_deletion_audit_retention",
+      "deleted_tenant_terminal_operational_state",
+      "auditlog_idempotency_authority"
     ],
     "protected_paths": [
       "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
@@ -34,16 +36,41 @@
       "prisma/schema.prisma",
       "prisma/migrations",
       "src/lib/audit-delete-guard.ts",
+      "src/lib/supabase",
+      "src/middleware.ts",
+      "src/app/(auth)/layout.tsx",
+      "src/app/(public)",
+      "src/app/setup-workspace",
+      "src/modules/auth",
+      "src/modules/tenant",
       "src/modules/admin/services",
+      "src/modules/ai",
+      "src/modules/ai-coo",
+      "src/modules/autonomous-execution",
+      "src/modules/agent-runtime",
+      "src/modules/agent-workforce",
+      "src/modules/automation",
+      "src/modules/content-publishing",
+      "src/modules/mission-workspace",
+      "src/modules/payments",
+      "src/app/api/payments",
       "src/app/api/v1/admin",
       "src/app/api/v1/platform-admin",
+      "src/app/api/v1/superadmin",
       "src/app/api/v1/admin-command",
       "src/app/api/v1/team",
       "src/app/api/v1/member",
+      "src/app/api/v1/auth",
+      "src/app/api/v1/tenant",
       "src/app/api/v1/ai",
+      "src/app/api/v1/ai-coo",
+      "src/app/api/v1/ai-workforce",
+      "src/app/api/v1/automation",
+      "src/app/api/v1/executions",
+      "src/app/api/v1/mission",
+      "src/app/api/v1/workforce",
       "src/app/api/v1/crm",
-      "src/app/api/v1/funnel",
-      "src/app/api/v1/auth/fix-uid"
+      "src/app/api/v1/funnel"
     ],
     "review": {
       "required_verdict": "PASS",
@@ -58,9 +85,9 @@
       "proof_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_OPTION_C_NO_GLOBAL_MUTATIONS_PROOF.md"
     }
   },
-  "policy_version": "2026-07-17.pr96-round4-v2",
-  "policy_sha256": "386163fd89536136085287f17637d69f712cce1d1a3b95f7a8502a7c0677cfa3",
-  "protected_paths_sha256": "5b9a8d83b83cbfeb8c1defb2dfd051ec4cbe1d33754efdbb171393625f3d2dd6",
+  "policy_version": "2026-07-17.pr96-round5-v3",
+  "policy_sha256": "ac3ea1acb9770bfca02cc6daed245dd245400e51d0ea68a7ff61f7f3e5da9bfb",
+  "protected_paths_sha256": "b0560d71feb2177f769448b84ef16432714b518d8545dd801eafce637ae40dbf",
   "required_decisions": [],
   "option_c_proof": null,
   "architecture_review": {
@@ -72,7 +99,7 @@
   "freshness": {
     "state": "unverified",
     "verified_against_planning_sha": null,
-    "protected_paths_sha256": "5b9a8d83b83cbfeb8c1defb2dfd051ec4cbe1d33754efdbb171393625f3d2dd6"
+    "protected_paths_sha256": "b0560d71feb2177f769448b84ef16432714b518d8545dd801eafce637ae40dbf"
   },
   "u3b_dispatch_authorized": false
 }

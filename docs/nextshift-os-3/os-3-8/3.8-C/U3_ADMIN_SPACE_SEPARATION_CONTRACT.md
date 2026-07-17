@@ -257,7 +257,9 @@ The reviewed decision selects **Option A — `A_OPTIONAL_TENANT_WITH_SCOPE`**:
 - preserve the exact target tenant for tenant-targeted events and use `tenantId = null`, never a placeholder, for platform-global events;
 - use `targetId` only for a real UUID target; non-UUID/global identifiers remain redacted stable metadata with `targetId = null`;
 - represent every tenant-deletion attempt as a non-FK `PLATFORM` lifecycle event with `tenantId = null` and the real tenant UUID in `targetId`, while the product DELETE operation remains the logical-delete status transition required by accepted ADR-023;
-- after a failed business transaction rolls back, write failure evidence through an isolated audit transaction and the append-only `AuditEventOutbox`; audit/outbox persistence failure remains fail closed.
+- make the retained `deleted` tenant a terminal fail-closed state across authentication, product APIs, public tenant resolution, automation, queued work, scheduled publishing, webhooks, and AI execution;
+- after a failed business transaction rolls back, write failure evidence through an isolated audit transaction and the append-only `AuditEventOutbox`; audit/outbox persistence failure remains fail closed;
+- give the final `AuditLog` row its own database-enforced idempotency key and payload digest so direct writes and replay share one conflict authority.
 
 #### 9.0.1 Database invariant and migration contract
 
@@ -276,16 +278,38 @@ U3B must implement Option A as a database contract, not only as TypeScript/Prism
 
 The successful status transition and audit event commit atomically. A failed transition rolls back first and records its event using the isolated audit/outbox flow. Tenant-deletion lifecycle evidence is retained for at least 24 months and longer under a legal, security, or incident hold. A later physical purge is controlled maintenance only: it is prohibited before retention expiry, required archive completion, and hold clearance. Ordinary cleanup and Tenant cascade must never remove the `PLATFORM` deletion event. U3B must prove this with logical-delete, rollback, retention-cleanup, and isolated test-only forced-cascade integration cases.
 
-#### 9.0.3 Durable failure-event channel
+#### 9.0.3 Deleted-tenant terminal state
+
+`Tenant.status = deleted` is terminal and fail closed for OS 3.8. Keeping the Tenant and User rows for audit retention does not preserve operational authority:
+
+1. **Authentication and APIs.** The shared server-side principal resolver must read the retained Tenant status on every authenticated request; per-request caching is allowed, but a JWT, cookie, user row, or previously issued session is never sufficient authority. On the next request after deletion, member, leader, and operator principals receive a stable `TENANT_DELETED` denial before tenant data is loaded. Authenticated pages terminate the tenant session without rendering protected data, and product APIs reject the request. Public tenant resolution also treats the deleted tenant as unavailable. `platform_admin` may inspect a retained tombstone only through an explicit superadmin forensic read and never through member/product tenant context.
+2. **Workers and side effects.** Every tenant-owned worker checks the Tenant row when it claims work and again immediately before an external, billable, or irreversible side effect. Deleted-tenant background jobs, autonomous/agent queue items, scheduled messages, publishing operations, automation, AI execution, and webhooks are cancelled or skipped with a stable reason. They may not mutate tenant data, send a message, call a provider, consume billable AI, or schedule follow-on work. A provider webhook may return the protocol-safe acknowledgement needed to avoid a retry storm only after durable redacted suppression evidence; it may not apply the tenant mutation. In particular, a late paid webhook must never set a deleted tenant back to `active`. The repository does not yet contain a production ScheduledMessage executor, so this is a mandatory U3B/future-worker acceptance boundary rather than a claim of current coverage.
+3. **Restore.** Ordinary `PATCH` of a deleted tenant fails with `TENANT_DELETED_TERMINAL`; it cannot change status, plan, quota, slug, or any operational field. Restore is prohibited in OS 3.8. A future restore requires a separate endpoint and separately reviewed ADR/task with exact platform authorization and success/failure audit evidence; it cannot be smuggled into U3B.
+4. **Repeated and concurrent DELETE.** The first valid DELETE performs a conditional status transition or holds a database row lock and commits exactly one state change. A retry with the same idempotency key returns its original terminal result and event. A later independent request, or a concurrent loser after serialization, re-reads `deleted`, performs no state change, returns the same terminal no-op response, and records its own redacted `already_deleted` attempt evidence under its distinct key. The audit idempotency authority below guarantees one final event per key.
+
+The protected-path policy binds the current auth/session, tenant resolution, public tenant surface, payment webhook, automation, publishing, mission/agent/autonomous execution, AI, workforce, and future superadmin authorities. If any of them changes after the decision review and before adoption/dispatch, freshness fails closed. U3B acceptance tests must cover an already-issued session; member, leader, and operator page/API denial; public resolution; claim-time and pre-side-effect deletion races; queued, scheduled, AI, publishing, automation, and webhook suppression; late payment non-reactivation; forensic superadmin read; ordinary PATCH rejection; same-key retry; independent repeat; concurrent DELETE; and the absence of any unreviewed restore path.
+
+#### 9.0.4 Durable failure-event channel
 
 The reviewed retry channel is a dedicated append-only database table named `AuditEventOutbox`, introduced and tested by U3B. It is not an in-memory queue, log line, best-effort callback, or reuse of the rolled-back business transaction.
 
 - After rollback, attempt the failure `AuditLog` insert in an isolated transaction. If that insert fails but the database accepts the independent outbox transaction, commit a redacted outbox row.
-- The idempotency key is `SHA-256(correlation_id + action + target_type + stable_target_key + outcome)` and is unique. Replay upserts the final AuditLog event by the same key; duplicate delivery is success, not a second event.
+- The outbox records the same versioned canonical event identity and payload digest used by the final `AuditLog` row. Replay calls the shared database primitive defined below; duplicate delivery is success only for the same key and digest, never for conflicting evidence.
 - A worker claims rows in `created_at` order, preserves ordering within a correlation ID, applies bounded exponential backoff, and records attempt count, next attempt time, delivery time, and a stable redacted failure code.
 - Pending rows are never time-purged. Delivered receipts remain for at least 30 days. Dead-letter evidence remains for at least 24 months and longer under legal/security hold. Payloads follow the AuditLog prohibition list and never contain secrets or full request bodies.
 - If neither the direct AuditLog transaction nor the outbox transaction durably commits, the endpoint returns HTTP `503` with the correlation ID, raises an operational alert, and never reports mutation success. For an already-failed business mutation, this 503 supersedes the ordinary domain error because durable audit evidence is unavailable.
 - Tests must independently query the outbox after the business transaction rollback, replay the event exactly once, exercise duplicate delivery and retry ordering, inspect retention/redaction, and prove the 503 response cannot be interpreted as success.
+
+#### 9.0.5 AuditLog database idempotency authority
+
+U3B must add nullable dedicated `AuditLog.idempotencyKey` (`idempotency_key`) and `AuditLog.payloadDigest` (`payload_digest`) columns. The reviewed SQL migration—not JSON metadata or application memory—is authoritative:
+
+1. Existing rows remain `NULL` in both columns. No historical identity is fabricated, and a legacy null row can never satisfy a replay lookup.
+2. A database CHECK requires the pair to be both null or both non-null lowercase 64-character SHA-256 hex. A unique partial index on `idempotency_key WHERE idempotency_key IS NOT NULL` enforces one final event per key. Prisma declarations are insufficient if they cannot express the CHECK or partial index; database introspection tests must inspect both.
+3. Every new `/api/v1/superadmin/*` success/failure event and every `AuditEventOutbox` row supplies both values. Direct writes and replay call one shared canonical event builder and one database insert/dedupe primitive.
+4. The key is SHA-256 of versioned RFC 8785 canonical JSON containing correlation ID, scope/tenant marker, action, target type, stable target key, and outcome. The payload digest is SHA-256 of the complete redacted canonical audit payload; delivery timestamps, retry count, and worker metadata are excluded so direct and replay paths derive the same value.
+5. The insert uses the dedicated unique key. On conflict it reads the committed event: equal digest returns the existing stable event ID as duplicate success; a different digest never overwrites the row or marks the outbox item delivered. It fails closed with `AUDIT_IDEMPOTENCY_CONFLICT`, creates durable security/operations alert/dead-letter evidence, and returns/records failure rather than mutation success.
+6. Real PostgreSQL integration tests race replay/replay and direct/replay transactions. Equal payloads must produce exactly one `AuditLog` row and one stable event ID. A different-digest race must preserve the first row, reject the conflict, and prove alert/dead-letter evidence, all below the application layer.
 
 This is a governance decision for later separately reviewed implementation. It does not modify Prisma or complete U3ADR. The trusted policy continues to enumerate the two rejected alternatives so a different decision requires a new reviewed artifact and policy-consistent exact-head review:
 
@@ -309,7 +333,7 @@ The exact review target SHA cannot be embedded in the commit that creates itself
 2. `selected_option` comes from the reviewed decision artifact and is allowed by the trusted Manifest policy;
 3. `decision_sha` is a 40-character SHA, the Architecture Review verdict is exactly `PASS`, `review_id` is a positive GitHub review ID, and `architecture_review.reviewed_sha == decision_sha`;
 4. the reviewed decision commit contains the canonical decision artifact, the artifact is in the reviewed PR diff, and U3ADR verification `verified_head_sha` equals `decision_sha`;
-5. canonical policy and protected-path SHA-256 values equal the reviewed decision values; freshness is recomputed from Git history rather than accepted from the envelope; every policy-required decision—including tenant-deletion retention—must exist exactly once and be resolved;
+5. canonical policy and protected-path SHA-256 values equal the reviewed decision values; freshness is recomputed from Git history rather than accepted from the envelope; all six policy-required decisions—including tenant-deletion retention, deleted-tenant terminal operation, and final-event idempotency authority—must exist exactly once and be resolved;
 6. option C's proof artifact exists at `decision_sha`, is included in the reviewed PR diff, and proves the absence of platform-global mutations;
 7. U3ADR is `completed` and U3B's Manifest dependency is exactly `U3ADR`.
 
@@ -329,16 +353,16 @@ U3A must turn the 39-page and 37-source-API inventory into executable expected-r
 - visible ADMIN/PLATFORM shell identity and responsive/keyboard checks;
 - exact audit-field, success/failure, redaction, correlation ID, and tenant/global-scope tests for every superadmin write;
 - database integration tests for the `TENANT`/`PLATFORM` CHECK, deterministic existing-row backfill, invalid-combination rejection, and exact tenant/platform partial indexes;
-- tenant deletion tests proving logical-delete success evidence, rollback failure evidence, 24-month/hold retention, ordinary-cleanup exclusion, and survival of a test-only forced Tenant cascade;
-- `AuditEventOutbox` tests proving isolated post-rollback commit, deterministic idempotency, per-correlation ordering, duplicate-safe replay, retry/dead-letter retention, payload redaction, operational alerting, and fail-closed HTTP 503 when neither durable write succeeds;
-- all 36 production-path governance dispatch fixtures: 18 immutable-policy/candidate/rollback cases plus 18 retained selection, exact-review, proof, evidence, TOCTOU, stale/duplicate adoption, and zero-side-effect cases;
+- tenant deletion tests proving logical-delete success evidence, rollback failure evidence, 24-month/hold retention, ordinary-cleanup exclusion, survival of a test-only forced Tenant cascade, terminal next-request denial for existing sessions and all tenant roles, public-resolution denial, claim/pre-side-effect worker suppression, late-webhook non-reactivation, PATCH/restore prohibition, and deterministic repeated/concurrent DELETE behavior;
+- `AuditEventOutbox` and `AuditLog` database tests proving isolated post-rollback commit, shared direct/replay key derivation, database-enforced one-row replay/replay and direct/replay races, same-key/different-digest rejection and alerting, per-correlation ordering, retry/dead-letter retention, payload redaction, legacy-null handling, and fail-closed HTTP 503 when neither durable write succeeds;
+- all 39 production-path governance dispatch fixtures: 21 immutable-policy/candidate/rollback cases (including separate omission checks for the deleted-tenant terminal and AuditLog idempotency decisions plus an idempotency-decision mismatch) and 18 retained selection, exact-review, proof, evidence, TOCTOU, stale/duplicate adoption, and zero-side-effect cases;
 - regression of existing `admin-api.test.ts`, `rbac.test.ts`, `user-isolation.test.ts`, `audit-delete-guard.test.ts`, `navigation-access.test.ts`, `canonical-routes.test.ts`, `compatibility-redirect.test.ts`, `admin.spec.ts`, and `navigation-convergence.spec.ts`;
 - full type-check, unit/integration, lint, boundary, build, and targeted E2E gates.
 
 ## 11. Rollout and rollback
 
 1. U3A freezes executable source/target inventories, identifies owners, and resolves every ambiguous capability before code changes.
-2. U3ADR selects and receives exact-head Architecture Review PASS for the AuditLog option, scope/tenant database invariant and migration, non-UUID/global target behavior, tenant-deletion retention, and the concrete `AuditEventOutbox` failure-event mechanism. Its governance adoption must persist the fresh gate artifact before U3B becomes eligible.
+2. U3ADR selects and receives exact-head Architecture Review PASS for the AuditLog option, scope/tenant database invariant and migration, non-UUID/global target behavior, tenant-deletion retention, terminal operational deactivation, the concrete `AuditEventOutbox` failure-event mechanism, and final-row database idempotency authority. Its governance adoption must persist the fresh gate artifact before U3B becomes eligible.
 3. U3B first creates guarded target shells/routes/APIs behind no frontend links, then migrates internal callers and tests.
 4. Verify authorization, tenant isolation, and auditing at exact target endpoints before enabling legacy GET redirects.
 5. Migrate mutation callers before retiring old mutation endpoints. Compatibility windows are exceptional and time-bounded.
@@ -353,6 +377,6 @@ U3A must turn the 39-page and 37-source-API inventory into executable expected-r
 - No second route registry and no change to the approved seven desktop destinations or five-slot mobile projection.
 - No E3A/E3B continuation until U3B is completed and verified.
 - No AR-W3 generation, merge, deploy, tag, release, or production access.
-- Fail closed if inventory identity, session tenant authority, exact guard parity, audit scope, or redirect termination is ambiguous.
+- Fail closed if inventory identity, session tenant authority, deleted-tenant operational suppression, exact guard parity, audit scope, final-event idempotency, or redirect termination is ambiguous.
 
 PR #95 remains an independent parked Draft. This contract does not alter, close, rebase, merge, or adopt its evidence.
