@@ -471,9 +471,63 @@
           "contract": null,
           "execution_task": null,
           "depends_on": ["U1B"],
-          "status": "pending",
-          "verification": null,
-          "evidence": null
+          "status": "completed",
+          "verification": {
+            "status": "passed",
+            "task_id": "U3",
+            "task_verification_policy": "actual_checks_required",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "feature/os-3.8-u3-navigation-convergence",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/93",
+            "verified_head_sha": "3c10b07616eff58b2fd7ad6c2c3152a23a93f0f2",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "passed",
+            "architecture_review": {
+              "review_id": 4718436416,
+              "verdict": "PASS",
+              "reviewed_sha": "3c10b07616eff58b2fd7ad6c2c3152a23a93f0f2"
+            },
+            "verified_at": "2026-07-17T00:38:55Z"
+          },
+          "evidence": {
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/93",
+            "merge_sha": "0d4eed1b763265339b6958da279df93b5191a6fc",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+            "verification": {
+              "status": "passed",
+              "task_id": "U3",
+              "task_verification_policy": "actual_checks_required",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "base_branch": "planning/os-3.8-product-usability",
+              "task_branch": "feature/os-3.8-u3-navigation-convergence",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/93",
+              "verified_head_sha": "3c10b07616eff58b2fd7ad6c2c3152a23a93f0f2",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3_IMPLEMENTATION_REPORT.md",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3_DISPATCH.json",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "checks": "passed",
+              "architecture_review": {
+                "review_id": 4718436416,
+                "verdict": "PASS",
+                "reviewed_sha": "3c10b07616eff58b2fd7ad6c2c3152a23a93f0f2"
+              },
+              "verified_at": "2026-07-17T00:38:55Z"
+            },
+            "validation": {
+              "checks": "passed",
+              "head_sha": "3c10b07616eff58b2fd7ad6c2c3152a23a93f0f2"
+            },
+            "recovered": true,
+            "recovered_at": "2026-07-17T00:38:55Z",
+            "github_merged_at": "2026-07-17T00:15:52Z",
+            "execution_mode": "manual_codex_desktop",
+            "adoption_mode": "manual_governance_backfill"
+          }
         },
         {
           "id": "E3A",
