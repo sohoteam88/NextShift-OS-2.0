@@ -530,13 +530,37 @@
           }
         },
         {
+          "id": "U3A",
+          "verification_policy": "paths_ignored_zero_checks_allowed",
+          "title": "Admin Space Inventory and Security Contract",
+          "blueprint_section": "10.1",
+          "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+          "execution_task": null,
+          "depends_on": ["U3"],
+          "status": "pending",
+          "verification": null,
+          "evidence": null
+        },
+        {
+          "id": "U3B",
+          "verification_policy": "actual_checks_required",
+          "title": "Three-Space Admin Migration",
+          "blueprint_section": "10.1",
+          "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+          "execution_task": null,
+          "depends_on": ["U3A"],
+          "status": "pending",
+          "verification": null,
+          "evidence": null
+        },
+        {
           "id": "E3A",
           "verification_policy": "actual_checks_required",
           "title": "Video Lead Magnet Webinar Capability Revalidation",
           "blueprint_section": "11",
           "contract": null,
           "execution_task": null,
-          "depends_on": ["U3"],
+          "depends_on": ["U3B"],
           "status": "pending",
           "verification": null,
           "evidence": null

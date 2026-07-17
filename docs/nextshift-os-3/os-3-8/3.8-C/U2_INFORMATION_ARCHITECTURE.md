@@ -33,6 +33,20 @@ Steven approved all five previously unresolved routes as Hide. `/automation`, `/
 
 This corrects, but does not adopt, the preserved PR #87 hypothesis. In particular, the repository has no current authenticated pages at `/content`, `/library`, `/tools`, or `/learn`; U2 therefore does not create a second registry or approve speculative routes. The preserved `U2_IA_ONE_PAGER.md`, roadmap v1.2, and UI Constitution remain non-authoritative design inputs.
 
+## Amendment A overlay — Three-Space Administration Isolation
+
+Steven approved this overlay on 2026-07-17. The original 112-route map below remains the historical record of the approved U2 decision at its reviewed SHA; Amendment A supersedes only its administration-space rows, destinations, landing language, and implementation sequencing. It does not recalculate or claim a new complete authenticated-route count before U3A performs the new-space inventory.
+
+- The member frontend keeps the approved seven desktop destinations and five-slot mobile projection. All member-facing navigation surfaces contain zero administration links; an administration space is entered only through an authorized direct URL.
+- `/admin/*` is tenant administration. Only `leader` and `operator` may enter, with narrower route-level permissions preserved. Every read and mutation uses the authenticated session's tenant; query, path, body, or header `tenantId` is never authority. The shell displays a clear **ADMIN** identity.
+- `/superadmin/*` is platform administration. Only `platform_admin` may enter. Every capability currently under `/platform-admin/*` or `/admin-command` migrates here. The shell displays a clear **PLATFORM** identity and is never included in member or team-admin navigation.
+- `/platform-admin`, `/platform-admin/*`, and `/admin-command` become legacy compatibility GET paths. They use one-hop `301` redirects to `/superadmin`, the corresponding `/superadmin/*` path, or `/superadmin/command`, preserving only allowlisted query/bookmark state. They never redirect into `/admin/*` and never form chains.
+- Team administration APIs use `/api/v1/admin/*`; platform administration APIs use `/api/v1/superadmin/*`. Their guards mirror the page space. Admin tenant identity is session-only. Superadmin target-tenant selection is explicit resource targeting, not a substitute for the platform role guard.
+- API mutations never rely on `301`/`302`. The preferred migration is caller cutover followed by fail-closed retirement of the old mutation route. Any separately approved compatibility endpoint must use method-preserving `308` and identical guards, validation, auditing, and tenant semantics.
+- Every superadmin write must emit a redacted `AuditLog` event. Because the current Prisma `AuditLog.tenantId` is mandatory, platform-global writes remain unresolved pending a separate ADR; this governance overlay authorizes no Prisma change.
+
+The full implementation inventory and security contract is `U3_ADMIN_SPACE_SEPARATION_CONTRACT.md`. W3 inserts U3A and U3B after the completed historical U3 task and before E3A. E3A/E3B remain paused until U3B completes and is verified.
+
 ## Evidence and method
 
 The inventory was generated from the exact baseline with reproducible searches:
