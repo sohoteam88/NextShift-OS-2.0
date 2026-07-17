@@ -32,6 +32,10 @@ reset_manifest() {
   jq '
     .base_branch="planning" |
     .main_branch="main" |
+    .waves |= map(if .id == "W3" then
+      .tasks |= map(select(.id != "U3A" and .id != "U3ADR" and .id != "U3B")) |
+      .tasks |= map(if .id == "E3A" then .depends_on = ["U3"] else . end)
+    else . end) |
     .waves |= map(
       .status="pending" |
       .start_sha=null |

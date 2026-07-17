@@ -221,7 +221,7 @@ Steven approved Amendment A on 2026-07-17. The member IA keeps the seven desktop
 - legacy platform page GET routes use terminal one-hop 301 redirects; mutation APIs never rely on 301/302;
 - every superadmin write is audited, and platform-global audit storage requires a separate ADR before any Prisma change.
 
-The implementation is split into U3A (Admin Space Inventory and Security Contract), U3ADR (exact-head Architecture Review and adoption of the machine-readable [AuditLog ADR gate](os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json)), and U3B (Three-Space Admin Migration). Historical U3 evidence remains completed and immutable. U3B remains Manifest `blocked` while the ADR artifact is missing, pending, non-PASS, stale, SHA-mismatched, or missing required option-C proof; only a separate exact-head PASS governance adoption may transition it to pending. E3A remains blocked until U3B completes.
+The implementation is split into U3A (Admin Space Inventory and Security Contract), U3ADR (exact-head Architecture Review of the machine-readable [AuditLog ADR decision](os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json) followed by production-runner adoption into the canonical [gate](os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json)), and U3B (Three-Space Admin Migration). The proposed decision selects Option A: nullable audit tenant plus explicit tenant/platform scope, subject to exact-head PASS and separate adoption. Historical U3 evidence remains completed and immutable. U3B remains Manifest `blocked` while the gate is missing, pending, non-PASS, stale, SHA-mismatched, or missing required option-C proof; only a separate exact-head PASS governance adoption may transition it to pending. E3A remains blocked until U3B completes.
 
 ## 11. Workstream E3 — Pattern Extension
 

@@ -2,7 +2,7 @@
 
 Status: **STEVEN-APPROVED AMENDMENT — ARCHITECTURE REVIEW PENDING**
 
-Authorized baseline: `3976a57f32014eb303bd66078f310fcf6913a9c1`
+Authorized governance baseline: `287a0de4d08507dd142e0a862c370067f9292948` (PR #97 production gate contract merged)
 
 Decision: Steven Amendment A, approved 2026-07-17
 
@@ -249,27 +249,42 @@ Current Prisma `AuditLog` mapping is explicit:
 
 For a successful superadmin mutation, the business write and its audit event must commit atomically. For a failed mutation, the business transaction rolls back first and the failure event is persisted through an isolated audit transaction; a failed audit persistence may never be converted into a successful business response. The durable retry/outbox or separate-sink behavior needed when the audit store itself is unavailable is an ADR decision, not an implementation guess.
 
-For tenant-targeted superadmin writes, `AuditLog.tenantId` is the target tenant. For platform-global writes, the current required `AuditLog.tenantId` cannot represent truthfully scoped evidence. The machine-readable gate is `U3_AUDITLOG_ADR_GATE.json`, owned by the explicit U3ADR task between U3A and U3B. It must receive exact-head Architecture Review PASS before U3B dispatch and choose one minimum option:
+For tenant-targeted superadmin writes, `AuditLog.tenantId` is the target tenant. For platform-global writes, the current required `AuditLog.tenantId` cannot represent truthfully scoped evidence. The immutable authorization policy is owned only by the synchronized planning Manifest under U3ADR's `governance_gate.policy`; the canonical runtime state is `U3_AUDITLOG_ADR_GATE.json`, and the reviewed machine-readable decision is `U3_AUDITLOG_ADR_DECISION.json`.
+
+The reviewed decision selects **Option A — `A_OPTIONAL_TENANT_WITH_SCOPE`**:
+
+- make `AuditLog.tenantId` nullable and add an explicit `TENANT`/`PLATFORM` scope discriminator;
+- preserve the exact target tenant for tenant-targeted events and use `tenantId = null`, never a placeholder, for platform-global events;
+- use `targetId` only for a real UUID target; non-UUID/global identifiers remain redacted stable metadata with `targetId = null`;
+- after a failed business transaction rolls back, write failure evidence through an isolated audit transaction and a separately durable retry channel; audit persistence failure remains fail closed.
+
+This is a governance decision for later separately reviewed implementation. It does not modify Prisma or complete U3ADR. The trusted policy continues to enumerate the two rejected alternatives so a different decision requires a new reviewed artifact and policy-consistent exact-head review:
 
 A. make `AuditLog.tenantId` optional and add an explicit scope discriminator;
 B. add a separate `PlatformAuditLog` model;
 C. prove that there are no platform-global mutations and keep the existing model.
 
-Option C additionally requires the reviewed proof artifact named by the gate JSON. No arbitrary tenant, actor tenant, or placeholder tenant may be used for a platform-global event. The ADR must also decide non-UUID/global targets and failure-event durability. U3B dispatch fails closed when the gate artifact is missing, pending, non-PASS, stale against the reviewed decision SHA, mismatched to the U3ADR evidence, or—under option C—missing its exact-head proof artifact.
+Option C additionally requires the proof artifact named by the immutable policy and bound from the reviewed decision. No arbitrary tenant, actor tenant, or placeholder tenant may be used for a platform-global event. U3B dispatch fails closed when the gate artifact is missing, pending, non-PASS, stale against the reviewed decision SHA, mismatched to the U3ADR evidence, or—under option C—missing its exact-head proof artifact.
 
 ### 9.1 U3ADR completion and U3B dispatch gate
 
-U3ADR is a separate Manifest task after U3A. Its governance adoption must atomically persist its completed verification/evidence and the final gate JSON. Before marking U3ADR completed, and again before changing or selecting U3B, the operator must validate all of these machine-readable assertions:
+U3ADR is a separate Manifest task after U3A. Its governance adoption must use the production runner introduced by merged PR #97 and atomically persist its completed verification/evidence and final gate JSON. Authorization is split into three layers:
+
+1. **Immutable policy:** only synchronized planning Manifest data may define gate/task/consumer identity, allowed options, required decisions, protected paths, review/freshness rules, Option C proof requirements, canonical decision path, policy version, and canonical SHA-256.
+2. **Reviewed decision:** the runner reads `git show DECISION_SHA:U3_AUDITLOG_ADR_DECISION.json`, requires the artifact in the reviewed PR diff, and validates its identity, selected option, policy/protected-path digests, all resolved decisions, and conditional Option C proof.
+3. **Transport envelope:** an external source may carry only decision SHA, review ID, reviewed PR URL, canonical decision path, and decision-artifact SHA-256. It cannot define selected/allowed options, protected paths, required decisions, freshness/completion policy, or proof policy.
+
+The exact review target SHA cannot be embedded in the commit that creates itself. It is bound without self-reference by the transport `decision_sha`, the GitHub review's exact commit anchor and `REVIEWED_SHA`, the artifact blob digest, and the reviewed PR diff. Before marking U3ADR completed, and again before changing or selecting U3B, the production runner validates all of these machine-readable assertions:
 
 1. `status == "approved"`, `approval_state == "approved"`, and `u3b_dispatch_authorized == true`;
-2. `selected_option` is one of the three enumerated completion-contract values;
+2. `selected_option` comes from the reviewed decision artifact and is allowed by the trusted Manifest policy;
 3. `decision_sha` is a 40-character SHA, the Architecture Review verdict is exactly `PASS`, `review_id` is a positive GitHub review ID, and `architecture_review.reviewed_sha == decision_sha`;
-4. the reviewed decision commit contains the canonical gate artifact, and the U3ADR verification `verified_head_sha` equals `decision_sha`;
-5. freshness is `fresh`, its planning SHA is current for dispatch, the reviewed decision is in authorized planning history, and no protected contract/schema/inventory/guard path changed without a newer exact-head PASS;
+4. the reviewed decision commit contains the canonical decision artifact, the artifact is in the reviewed PR diff, and U3ADR verification `verified_head_sha` equals `decision_sha`;
+5. canonical policy and protected-path SHA-256 values equal the reviewed decision values; freshness is recomputed from Git history rather than accepted from the envelope;
 6. option C's proof artifact exists at `decision_sha`, is included in the reviewed PR diff, and proves the absence of platform-global mutations;
 7. U3ADR is `completed` and U3B's Manifest dependency is exactly `U3ADR`.
 
-Missing/null fields represent the current unresolved gate and must reject dispatch. Neither a PR label/body, caller input, environment variable, task outcome, nor a manually edited `u3b_dispatch_authorized` flag can replace the exact task evidence and GitHub review identity. U3B remains `blocked` and produces no dispatch artifact until a separate exact-head PASS governance adoption atomically records U3ADR completed, persists a fresh gate, and transitions U3B to pending.
+The committed gate intentionally remains `pending`; U3ADR and U3B remain `pending` and `blocked` respectively. Neither a PR label/body, caller input, environment variable, task outcome, nor a manually edited `u3b_dispatch_authorized` flag can replace the exact task evidence and GitHub review identity. U3B produces no dispatch artifact until a later separate exact-head PASS governance adoption passes candidate-first validation, locked revalidation, atomic Manifest/gate persistence, and byte-identical rollback protection before transitioning U3B to pending.
 
 ## 10. Test contract
 
@@ -284,7 +299,7 @@ U3A must turn the 39-page and 37-source-API inventory into executable expected-r
 - navigation tests proving zero backend links in desktop, mobile, More, workspace, and utilities;
 - visible ADMIN/PLATFORM shell identity and responsive/keyboard checks;
 - exact audit-field, success/failure, redaction, correlation ID, and tenant/global-scope tests for every superadmin write;
-- named ADR dispatch fixtures proving missing artifact, pending/non-PASS verdict, reviewed-SHA mismatch, stale protected paths, and missing option-C proof all block U3B; only a fresh exact-head PASS artifact may satisfy U3ADR;
+- all 36 production-path governance dispatch fixtures: 18 immutable-policy/candidate/rollback cases plus 18 retained selection, exact-review, proof, evidence, TOCTOU, stale/duplicate adoption, and zero-side-effect cases;
 - regression of existing `admin-api.test.ts`, `rbac.test.ts`, `user-isolation.test.ts`, `audit-delete-guard.test.ts`, `navigation-access.test.ts`, `canonical-routes.test.ts`, `compatibility-redirect.test.ts`, `admin.spec.ts`, and `navigation-convergence.spec.ts`;
 - full type-check, unit/integration, lint, boundary, build, and targeted E2E gates.
 

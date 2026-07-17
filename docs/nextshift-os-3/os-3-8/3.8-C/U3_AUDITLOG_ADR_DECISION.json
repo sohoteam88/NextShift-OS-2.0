@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "gate_id": "U3-AUDITLOG-ADR",
+  "task_id": "U3ADR",
+  "consumer_task_id": "U3B",
+  "decision_status": "approved",
+  "selected_option": "A_OPTIONAL_TENANT_WITH_SCOPE",
+  "policy_version": "2026-07-17.pr97-v1",
+  "policy_sha256": "7d26e4efc5ff3d65aff3262c477ea5c909cc4ec81bc54146c9a08ac99f42f0a9",
+  "protected_paths_sha256": "994024007e2cdc2559a89b1d08888b2f2f92b4ccc6e739c2226e742a88ef0384",
+  "required_decisions": [
+    {
+      "id": "platform_global_storage",
+      "status": "resolved",
+      "decision": "Use the existing AuditLog model with nullable tenantId plus an explicit TENANT or PLATFORM scope discriminator; tenant-targeted events retain the exact target tenant and platform-global events use null tenantId with PLATFORM scope."
+    },
+    {
+      "id": "target_id_uuid_and_global_target_mapping",
+      "status": "resolved",
+      "decision": "Use targetId only for a real UUID target; for a non-UUID or platform-global target set targetId to null, retain targetType, and store a redacted stable target key in metadata without inventing a UUID or tenant."
+    },
+    {
+      "id": "failure_event_durability_after_business_rollback",
+      "status": "resolved",
+      "decision": "Rollback the failed business transaction first, then persist the failure audit in an isolated audit transaction; if the audit store is unavailable, fail closed and use a separately durable retry channel outside the rolled-back business transaction before reporting a successful mutation outcome."
+    }
+  ],
+  "option_c_proof": null
+}
