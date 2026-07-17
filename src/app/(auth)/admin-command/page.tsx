@@ -11,5 +11,5 @@ export default async function AdminCommandPage({ searchParams }: RedirectPagePro
   if (!user) redirect('/login');
   if (user.role !== 'platform_admin') redirect('/dashboard');
 
-  redirect(buildCompatibilityDestination('/platform-admin?view=command', await searchParams));
+  redirect(buildCompatibilityDestination('/superadmin/command', await searchParams, ['source']));
 }

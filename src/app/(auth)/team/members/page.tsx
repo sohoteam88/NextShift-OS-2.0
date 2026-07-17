@@ -1,22 +1,18 @@
 import { redirect } from 'next/navigation';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
-import { TeamOverviewDashboard } from '@/modules/team/components/TeamOverviewDashboard';
+import { buildCompatibilityDestination, type RedirectPageProps } from '@/lib/navigation/compatibility-redirect';
 
 export default async function TeamMembersPage({
   searchParams,
-}: {
-  searchParams?: { member?: string };
-}) {
+}: RedirectPageProps) {
   const user = await getAuthUser();
-  const params = searchParams ?? {};
-
   if (!user) {
     redirect('/login');
   }
 
-  if (user.role === 'member') {
+  if (!['leader', 'operator'].includes(user.role)) {
     redirect('/dashboard');
   }
 
-  return <TeamOverviewDashboard user={user} defaultView="list" initialMemberId={params.member ?? null} />;
+  redirect(buildCompatibilityDestination('/admin/team/members', await searchParams, ['member', 'source']));
 }

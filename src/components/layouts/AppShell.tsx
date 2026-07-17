@@ -51,9 +51,8 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   const pathname = usePathname();
   const isOnboardingPath = pathname.startsWith('/onboarding');
   const isWizardPath = pathname.startsWith('/brand-builder/step');
-  const isAdminRole = ['operator', 'platform_admin'].includes(user.role);
-  const isAdminExperience = isAdminRole || pathname.startsWith('/admin') || pathname.startsWith('/workspace');
-  const adminHomeHref = user.role === 'platform_admin' ? '/platform-admin' : '/admin';
+  const isAdminExperience = pathname.startsWith('/admin') || pathname.startsWith('/superadmin') || pathname.startsWith('/workspace');
+  const adminHomeHref = pathname.startsWith('/superadmin') ? '/superadmin' : '/admin';
   const branding = extractBranding(tenant);
 
   if (isOnboardingPath || isWizardPath) {
@@ -65,8 +64,12 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
     );
   }
 
-  // Platform admin gets a dedicated admin console shell
-  if (user.role === 'platform_admin' && pathname.startsWith('/platform-admin')) {
+  if (['leader', 'operator'].includes(user.role) && pathname.startsWith('/admin')) {
+    return <TeamAdminShell userName={user.name} tenantName={tenant?.name ?? 'Tenant'}>{children}</TeamAdminShell>;
+  }
+
+  // Platform administration is intentionally a different shell and namespace.
+  if (user.role === 'platform_admin' && pathname.startsWith('/superadmin')) {
     return (
       <PlatformAdminShell userName={user.name} pathname={pathname}>
         {children}
@@ -99,12 +102,24 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   );
 }
 
+function TeamAdminShell({ userName, tenantName, children }: { userName: string; tenantName: string; children: ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[var(--color-surface)]">
+      <header className="flex items-center justify-between border-b border-[var(--color-border)] bg-white px-4 py-3 lg:px-6">
+        <div><span className="mr-2 rounded bg-slate-900 px-2 py-1 text-xs font-bold tracking-widest text-white">ADMIN</span><span className="text-sm text-[var(--color-text-muted)]">{tenantName}</span></div>
+        <span className="text-sm text-[var(--color-text-muted)]">{userName}</span>
+      </header>
+      <main className="mx-auto max-w-[1440px] p-4 lg:p-6">{children}</main>
+    </div>
+  );
+}
+
 function PlatformAdminShell({ userName, pathname, children }: { userName: string; pathname: string; children: ReactNode }) {
   const t = useTranslations('platformAdmin');
 
   const breadcrumbItems = useMemo(() => {
-    const items = [{ label: t('platformAdmin'), href: '/platform-admin' }];
-    const segments = pathname.replace('/platform-admin', '').split('/').filter(Boolean);
+    const items = [{ label: 'PLATFORM', href: '/superadmin' }];
+    const segments = pathname.replace('/superadmin', '').split('/').filter(Boolean);
 
     const labelMap: Record<string, string> = {
       'revenue': t('revenueIntel'),
@@ -121,7 +136,7 @@ function PlatformAdminShell({ userName, pathname, children }: { userName: string
       'tenants': t('tenants'),
     };
 
-    let currentPath = '/platform-admin';
+    let currentPath = '/superadmin';
     for (const seg of segments) {
       currentPath += `/${seg}`;
       items.push({ label: labelMap[seg] ?? seg.replace(/-/g, ' '), href: currentPath });

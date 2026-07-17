@@ -33,6 +33,9 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   if (authRedirect) {
     redirect(authRedirect);
   }
+  if (user.tenantStatus === 'deleted') {
+    redirect('/login');
+  }
 
   const onboarding = await onboardingService.getState(user.id);
   const tenant = await getTenantById(user.tenantId);

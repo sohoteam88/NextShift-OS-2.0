@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
-import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
+import { requireAuthApi, requireRoleApi } from '@/modules/auth/middleware/require-auth-api';
 import { inviteService } from '@/modules/member/services/invite-service';
 
 const InviteCreateSchema = z.object({
@@ -10,12 +10,14 @@ const InviteCreateSchema = z.object({
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  requireRoleApi(user, ['leader', 'operator']);
   const invites = await inviteService.listActiveInvites(user);
   return NextResponse.json({ data: invites });
 });
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  requireRoleApi(user, ['leader', 'operator']);
   const body = await request.json().catch(() => ({}));
   const input = InviteCreateSchema.parse(body);
 

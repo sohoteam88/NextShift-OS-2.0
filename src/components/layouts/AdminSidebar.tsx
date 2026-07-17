@@ -29,18 +29,18 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: '/platform-admin',                  label: 'Founder Console',   icon: LayoutDashboard, exact: true },
-  { href: '/platform-admin/revenue',          label: 'Revenue',          icon: CircleDollarSign },
-  { href: '/platform-admin/tenant-health',    label: 'Tenant Health',    icon: HeartPulse },
-  { href: '/platform-admin/growth',           label: 'Growth',           icon: LineChart },
-  { href: '/platform-admin/funnels',          label: 'Funnels',          icon: Workflow },
-  { href: '/platform-admin/ai-profitability', label: 'AI Profitability', icon: Brain },
-  { href: '/platform-admin/beta',             label: 'Beta Center',      icon: Rocket },
-  { href: '/platform-admin/health',           label: 'System Health',    icon: Activity },
-  { href: '/platform-admin/tenants',          label: 'Tenants',          icon: Building2 },
-  { href: '/platform-admin/users',            label: 'Users',            icon: Users },
-  { href: '/platform-admin/billing',          label: 'Billing',          icon: CircleDollarSign },
-  { href: '/platform-admin/audit-logs',       label: 'Audit Logs',       icon: ScrollText },
+  { href: '/superadmin',                  label: 'PLATFORM',          icon: LayoutDashboard, exact: true },
+  { href: '/superadmin/revenue',          label: 'Revenue',           icon: CircleDollarSign },
+  { href: '/superadmin/tenant-health',    label: 'Tenant Health',     icon: HeartPulse },
+  { href: '/superadmin/growth',           label: 'Growth',            icon: LineChart },
+  { href: '/superadmin/funnels',          label: 'Funnels',           icon: Workflow },
+  { href: '/superadmin/ai-profitability', label: 'AI Profitability',  icon: Brain },
+  { href: '/superadmin/beta',             label: 'Beta Center',       icon: Rocket },
+  { href: '/superadmin/health',           label: 'System Health',     icon: Activity },
+  { href: '/superadmin/tenants',          label: 'Tenants',           icon: Building2 },
+  { href: '/superadmin/users',            label: 'Users',             icon: Users },
+  { href: '/superadmin/billing',          label: 'Billing',           icon: CircleDollarSign },
+  { href: '/superadmin/audit-logs',       label: 'Audit Logs',        icon: ScrollText },
 ];
 
 export function AdminSidebar({ userName }: { userName: string }) {
