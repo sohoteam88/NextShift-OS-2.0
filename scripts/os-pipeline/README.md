@@ -279,17 +279,24 @@ validates the gate at three independent boundaries:
 3. the final locked task-start transaction revalidates the gate and the same
    digest before `pending → running` and dispatch-artifact persistence.
 
-The gate binds a reviewed `decision_artifact`, decision SHA, one exact PASS
-Architecture Review and positive review ID, selected allowed option, approval
-state, freshness baseline, protected paths, dependency verification, and the
-adopted gate SHA-256. The decision SHA must be in current planning history.
-Changes to protected paths after that decision make the gate stale. The
-canonical gate path itself is protected by its adopted SHA-256, avoiding an
-impossible commit-self-SHA contract. Option C additionally requires a safe
-proof artifact at the reviewed decision SHA, included in that reviewed PR's
-diff, with its exact blob SHA-256 recorded in the gate. The reviewed Git tree
-plus that digest binds the proof without an impossible commit-SHA
-self-reference.
+Authorization has three separate layers. The immutable gate policy comes only
+from the synchronized planning Manifest and defines the gate/task/consumer
+identity, option allowlist, required decisions, protected paths, review and
+freshness rules, Option C proof contract, decision artifact, and canonical
+policy version/digest. A machine-readable decision artifact at the reviewed
+Git SHA selects one allowed option and resolves every required decision while
+binding the policy and protected-path digests. The external adoption envelope
+is transport-only: it identifies the decision SHA, review, PR, canonical
+decision path, and decision blob digest. It cannot select an option, amend an
+allowlist, remove a protected path, assert freshness, or define completion.
+
+The runner reads the decision with `git show DECISION_SHA:DECISION_ARTIFACT`,
+requires it in the reviewed PR diff, and binds one exact PASS Architecture
+Review to that SHA. The decision SHA and merge SHA must be in current planning
+history. Changes to trusted protected paths after the decision make the gate
+stale. Option C additionally requires its policy-designated proof at the same
+reviewed SHA and PR diff, with the decision artifact recording the exact proof
+SHA-256.
 
 Missing, partial, unknown, stale, symlinked, SHA-mismatched, or manually
 toggled evidence fails closed. Environment variables, task outcomes, PR body,
@@ -306,13 +313,19 @@ scripts/os-pipeline/run-pipeline.sh \
   https://github.com/OWNER/REPOSITORY/pull/NUMBER
 ```
 
-The command verifies the exact repository/base/head/merge, review body and
-commit anchor, decision artifact, GitHub checks policy, planning ancestry,
-freshness, and option-C proof outside the lock. It then redoes those checks
-inside `state_transaction` and atomically persists the canonical gate,
-completed dependency evidence, and `blocked → pending`. An identical adoption
-is a clean stop; a different or stale adoption is rejected. There is no
-production test shortcut for manufacturing a gate PASS.
+Before touching the worktree, the command builds an external candidate tree
+containing the proposed canonical gate and Manifest transition, then runs the
+same validator and cross-field rules used for repository state. Inside
+`state_transaction`, it resynchronizes, rebuilds every source/policy/decision/
+proof/protected-path digest, requires the locked bundle to equal the candidate,
+and validates a fresh candidate again. Only then are same-directory temporary
+files flushed and renamed into place for one Manifest+gate commit and push.
+The transaction snapshots only those two owned paths. A post-write validator,
+commit, or push failure restores their original bytes, removes transaction
+temporaries, releases the common-dir lock, and requires a clean unchanged local
+HEAD; it never resets or stashes unrelated work. An identical adoption is a
+clean stop, while a different or stale adoption is rejected. Governance
+adoption tasks are not eligible for ordinary Codex product dispatch.
 
 ## Architecture Review checkpoints
 
@@ -509,12 +522,16 @@ Expected pipeline-specific coverage is:
   cases covering U1A/U2 authorization, rejection for every actual-check task,
   missing/unknown policies, forged/mismatched/cross-task evidence, caller
   non-authority, recovery revalidation, and exact PR #84 U1A evidence.
-- `tests/governance-dispatch-gate.sh`: **18 named real-Git production-path
-  fixtures** covering pending/missing/non-PASS/mismatched/stale/unknown/manual
-  gate rejection, gate-ID/partial-schema rejection, option-C proof, dependency evidence, valid exact-PASS
-  dispatch, selection-to-lock and planning-head TOCTOU, duplicate/stale
-  adoption, atomic valid adoption, and zero Codex/branch/PR/dispatch/state side
-  effects for rejected gates.
+- `tests/governance-dispatch-gate.sh`: **36 named real-Git production-path
+  fixtures**. Eighteen policy/candidate/rollback fixtures prove immutable
+  option and protected-path policy, reviewed decision/digest binding, required
+  ADR completeness, transport-envelope non-authority, candidate-before-write,
+  locked drift rejection, byte-identical post-write/push rollback, atomic
+  adoption, and duplicate clean stop. Eighteen retained dispatch-gate fixtures
+  cover pending/missing/non-PASS/mismatched/stale/unknown/manual gates,
+  gate-ID/partial-schema rejection, Option C proof, dependency evidence, valid
+  exact-PASS dispatch, selection-to-lock and planning-head TOCTOU, duplicate/
+  stale/valid adoption, and zero Codex/branch/PR/dispatch/state side effects.
 
 The real-Git fixtures use temporary bare remotes/worktrees plus fake GitHub and
 Codex commands. They do not contact GitHub, execute real E1/E2 product work,

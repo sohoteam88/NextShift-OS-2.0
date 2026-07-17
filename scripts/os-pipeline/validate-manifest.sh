@@ -229,10 +229,23 @@ jq -e '
     (test("[\\x00-\\x1f\\x7f]") | not);
   def governance_contract:
     type == "object" and
-    ((keys_unsorted - ["gate_id","artifact","required_status","required_verdict","reviewed_sha_must_equal_decision_sha","required_freshness_state","option_c_proof_required"]) | length == 0) and
-    (.gate_id | type == "string" and length > 0) and (.artifact | rel) and .required_status == "approved" and .required_verdict == "PASS" and
-    .reviewed_sha_must_equal_decision_sha == true and .required_freshness_state == "fresh" and
-    .option_c_proof_required == true;
+    ((keys_unsorted - ["gate_id","artifact","policy"]) | length == 0) and
+    (.gate_id | type == "string" and length > 0) and (.artifact | rel) and
+    (.policy | type == "object") and
+    (((.policy | keys_unsorted) - ["schema_version","gate_id","gate_task_id","consumer_task_id","policy_version","decision_artifact","allowed_selected_options","required_decisions","protected_paths","review","freshness","option_c"]) | length == 0) and
+    .policy.schema_version == 1 and .policy.gate_id == .gate_id and
+    (.policy.gate_task_id | type == "string" and length > 0) and (.policy.consumer_task_id | type == "string" and length > 0) and
+    (.policy.policy_version | type == "string" and length > 0) and (.policy.decision_artifact | rel) and
+    (.policy.allowed_selected_options | type == "array" and length > 0 and length == (unique | length)) and
+    all(.policy.allowed_selected_options[]; type == "string" and length > 0) and
+    (.policy.required_decisions | type == "array" and length > 0 and length == (unique | length)) and
+    all(.policy.required_decisions[]; type == "string" and length > 0) and
+    (.policy.protected_paths | type == "array" and length > 0 and length == (unique | length)) and all(.policy.protected_paths[]; rel) and
+    .policy.review == {required_verdict:"PASS",reviewed_sha_must_equal_decision_sha:true} and
+    .policy.freshness == {reject_protected_path_changes_after_review:true} and
+    (.policy.option_c | type == "object") and .policy.option_c.proof_required == true and
+      (.policy.option_c.selected_option | type == "string" and length > 0) and
+      (.policy.option_c.selected_option as $option | .policy.allowed_selected_options | index($option) != null) and (.policy.option_c.proof_artifact | rel);
   def dispatch_contract:
     type == "object" and
     ((keys_unsorted - ["gate_id","task_id","artifact","required_status","required_verdict","reviewed_sha_must_equal_decision_sha","required_freshness_state","option_c_proof_required","blocked_reason"]) | length == 0) and
@@ -252,6 +265,8 @@ jq -e '
       ([ $tasks[] | select(.id == $consumer.dispatch_gate.task_id) ][0]) as $dependency |
       ($consumer.depends_on | index($dependency.id) != null) and
       ($dependency.governance_gate | governance_contract) and
+      $dependency.governance_gate.policy.gate_task_id == $dependency.id and
+      $dependency.governance_gate.policy.consumer_task_id == $consumer.id and
       $consumer.dispatch_gate.gate_id == $dependency.governance_gate.gate_id and
       $consumer.dispatch_gate.artifact == $dependency.governance_gate.artifact and
       (if $consumer.status == "blocked" then $dependency.status != "completed" else $dependency.status == "completed" end)
@@ -262,7 +277,8 @@ jq -e '
   exit 1
 }
 
-manifest_repo="$(git -C "$(dirname "$MANIFEST_PATH")" rev-parse --show-toplevel 2>/dev/null || true)"
+manifest_repo="${PIPELINE_VALIDATION_ROOT:-$(git -C "$(dirname "$MANIFEST_PATH")" rev-parse --show-toplevel 2>/dev/null || true)}"
+if [[ -n "$manifest_repo" ]]; then manifest_repo="$(cd "$manifest_repo" && pwd -P)"; fi
 while IFS=$'\t' read -r gate_task gate_status artifact_relative; do
   [[ -n "$gate_task" ]] || continue
   [[ -n "$manifest_repo" ]] || { echo "ERROR: gated manifest must live in a Git repository" >&2; exit 1; }
@@ -271,39 +287,36 @@ while IFS=$'\t' read -r gate_task gate_status artifact_relative; do
   artifact_parent="$(cd "$(dirname "$artifact")" && pwd -P)"
   [[ "$artifact_parent" == "$manifest_repo" || "$artifact_parent" == "$manifest_repo/"* ]] || { echo "ERROR: governance gate artifact escapes repository: $artifact_relative" >&2; exit 1; }
   expected_gate_id="$(jq -r --arg id "$gate_task" '.waves[].tasks[] | select(.id == $id) | .governance_gate.gate_id' "$MANIFEST_PATH")"
-  jq -e --arg task "$gate_task" --arg status "$gate_status" --arg expected_gate_id "$expected_gate_id" '
+  trusted_policy="$(jq -c --arg id "$gate_task" '.waves[].tasks[] | select(.id == $id) | .governance_gate.policy' "$MANIFEST_PATH")"
+  policy_digest="$(jq -Sc . <<<"$trusted_policy" | shasum -a 256 | awk '{print $1}')"
+  protected_digest="$(jq -Sc '.protected_paths | sort' <<<"$trusted_policy" | shasum -a 256 | awk '{print $1}')"
+  expected_consumer="$(jq -r '.consumer_task_id' <<<"$trusted_policy")"
+  jq -e --arg task "$gate_task" --arg consumer "$expected_consumer" --arg status "$gate_status" --arg expected_gate_id "$expected_gate_id" --arg policy_digest "$policy_digest" --arg protected_digest "$protected_digest" --argjson policy "$trusted_policy" '
     . as $gate |
-    .schema_version == 1 and .gate_id == $expected_gate_id and .task_id == $task and
-    (.decision_artifact | type == "string" and length > 0 and (startswith("/") | not) and (contains("..") | not)) and
-    (.completion_contract.allowed_selected_options | type == "array" and length > 0 and length == (unique | length)) and
-    all(.completion_contract.allowed_selected_options[]; type == "string" and length > 0) and
-    .completion_contract.required_status == "approved" and
-    .completion_contract.required_review_verdict == "PASS" and
-    .completion_contract.reviewed_sha_must_equal_decision_sha == true and
-    .completion_contract.required_approval_state == "approved" and
-    .completion_contract.required_freshness_state == "fresh" and
-    .completion_contract.option_c_requires_proof_artifact_at_reviewed_sha == true and
-    .completion_contract.u3b_dispatch_authorized_must_be_true == true and
+    .schema_version == 1 and .gate_id == $expected_gate_id and .task_id == $task and .consumer_task_id == $consumer and
+    .policy == $policy and .policy_version == $policy.policy_version and .policy_sha256 == $policy_digest and
+    .protected_paths_sha256 == $protected_digest and
     (if $status == "completed" then
       .status == "approved" and (.selected_option | type == "string") and
-      (.completion_contract.allowed_selected_options | index($gate.selected_option) != null) and
+      ($policy.allowed_selected_options | index($gate.selected_option) != null) and
+      (.decision_artifact == $policy.decision_artifact) and (.decision_artifact_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+      (.required_decisions | type == "array" and ([.[].id] | sort) == ($policy.required_decisions | sort)) and
+      all(.required_decisions[]; .status == "resolved" and (.decision | type == "string" and length > 0)) and
       .approval_state == "approved" and .architecture_review.verdict == "PASS" and
       (.architecture_review.review_id | type == "number" and . > 0 and floor == .) and
       (.decision_sha | type == "string" and test("^[0-9a-f]{40}$")) and
       .architecture_review.reviewed_sha == .decision_sha and .freshness.state == "fresh" and
       .freshness.verified_against_planning_sha == .decision_sha and
-      (.freshness.protected_paths | type == "array" and length > 0 and length == (unique | length)) and
-      all(.freshness.protected_paths[]; type == "string" and length > 0 and (startswith("/") | not) and (contains("..") | not)) and
-      (if .selected_option == "C_NO_PLATFORM_GLOBAL_MUTATIONS" then
-        (.option_c_proof_artifact | type == "string" and length > 0 and (startswith("/") | not) and (contains("..") | not)) and
-        (.option_c_proof_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
-       else true end) and
+      .freshness.protected_paths_sha256 == $protected_digest and
+      (if .selected_option == $policy.option_c.selected_option then
+        .option_c_proof.path == $policy.option_c.proof_artifact and (.option_c_proof.sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+       else .option_c_proof == null end) and
       .u3b_dispatch_authorized == true
      else
-      .status == "pending" and .selected_option == null and .decision_sha == null and
-      .architecture_review.verdict == null and .architecture_review.reviewed_sha == null and
-      .architecture_review.review_id == null and .approval_state == "pending" and
-      .freshness.state == "unverified" and .freshness.verified_against_planning_sha == null and
+      .status == "pending" and .selected_option == null and .decision_sha == null and .decision_artifact == $policy.decision_artifact and
+      .decision_artifact_sha256 == null and .required_decisions == [] and .option_c_proof == null and
+      .architecture_review == {verdict:null,reviewed_sha:null,review_id:null} and .approval_state == "pending" and
+      .freshness == {state:"unverified",verified_against_planning_sha:null,protected_paths_sha256:$protected_digest} and
       .u3b_dispatch_authorized == false
      end)
   ' "$artifact" >/dev/null || { echo "ERROR: governance gate artifact does not match task state: $gate_task" >&2; exit 1; }
