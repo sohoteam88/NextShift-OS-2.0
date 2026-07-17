@@ -542,16 +542,46 @@
           "evidence": null
         },
         {
+          "id": "U3ADR",
+          "verification_policy": "paths_ignored_zero_checks_allowed",
+          "title": "Platform-global AuditLog Architecture Decision Gate",
+          "blueprint_section": "10.1",
+          "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+          "execution_task": null,
+          "depends_on": ["U3A"],
+          "status": "pending",
+          "verification": null,
+          "evidence": null,
+          "governance_gate": {
+            "artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+            "required_status": "approved",
+            "required_verdict": "PASS",
+            "reviewed_sha_must_equal_decision_sha": true,
+            "required_freshness_state": "fresh",
+            "option_c_proof_required": true
+          }
+        },
+        {
           "id": "U3B",
           "verification_policy": "actual_checks_required",
           "title": "Three-Space Admin Migration",
           "blueprint_section": "10.1",
           "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
           "execution_task": null,
-          "depends_on": ["U3A"],
-          "status": "pending",
+          "depends_on": ["U3ADR"],
+          "status": "blocked",
           "verification": null,
-          "evidence": null
+          "evidence": null,
+          "dispatch_gate": {
+            "task_id": "U3ADR",
+            "artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+            "required_status": "approved",
+            "required_verdict": "PASS",
+            "reviewed_sha_must_equal_decision_sha": true,
+            "required_freshness_state": "fresh",
+            "option_c_proof_required": true,
+            "blocked_reason": "AuditLog ADR is unresolved; a separate exact-head PASS governance adoption must unblock U3B"
+          }
         },
         {
           "id": "E3A",

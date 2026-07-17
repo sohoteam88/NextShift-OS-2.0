@@ -92,7 +92,7 @@ This gate unlocks seed-user acquisition. It does not automatically authorize Sta
 | P0 | U2 — Information Architecture Decision | One-page route map classified as Keep / Merge / Hide | Blueprint approval; Steven decision before U3 |
 | P1 | U1 — Dead-code Inventory and Removal | Duplicate/orphan surfaces are proven before removal | E1 stable; inventory before delete |
 | P1 | U3 — Navigation Convergence | Navigation follows the approved U2 map | Steven approves U2 |
-| P1 | U3A/U3B — Administration Space Separation | Freeze the admin security contract, then migrate team and platform administration into isolated page/API namespaces | U3 complete; Steven Amendment A approved |
+| P1 | U3A/U3ADR/U3B — Administration Space Separation | Freeze the complete admin inventory, resolve the AuditLog ADR gate, then migrate team and platform administration into isolated page/API namespaces | U3 complete; Steven Amendment A approved |
 | P1 | E3 — Pattern Extension | Verified gaps in Video, Lead Magnet, and Webinar use the same working loop | E1/E2 pattern stable; current-state revalidation |
 
 ## 6. Workstream E1 — Editable Content Output
@@ -221,7 +221,7 @@ Steven approved Amendment A on 2026-07-17. The member IA keeps the seven desktop
 - legacy platform page GET routes use terminal one-hop 301 redirects; mutation APIs never rely on 301/302;
 - every superadmin write is audited, and platform-global audit storage requires a separate ADR before any Prisma change.
 
-The implementation is split into U3A (Admin Space Inventory and Security Contract) and U3B (Three-Space Admin Migration). The canonical contract is [U3 Admin Space Separation Contract](os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md). Historical U3 evidence remains completed and immutable; U3A/U3B are additive work after U3 and before E3A.
+The implementation is split into U3A (Admin Space Inventory and Security Contract), U3ADR (exact-head Architecture Review and adoption of the machine-readable [AuditLog ADR gate](os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json)), and U3B (Three-Space Admin Migration). Historical U3 evidence remains completed and immutable. U3B remains Manifest `blocked` while the ADR artifact is missing, pending, non-PASS, stale, SHA-mismatched, or missing required option-C proof; only a separate exact-head PASS governance adoption may transition it to pending. E3A remains blocked until U3B completes.
 
 ## 11. Workstream E3 — Pattern Extension
 
@@ -309,7 +309,7 @@ Before product implementation starts, Codex must complete the one-time [Pipeline
 | --- | --- | --- | --- |
 | W1 — Content Working Loop | E1 editable/save/copy loop → E2 Content Library | After each task PR passes required verification, the Pipeline merges it into the planning branch and selects the next pending task | AR-W1 cumulative Architecture Review after E2 |
 | W2 — Product Structure Decision | U1A dead-code inventory → U2 one-page IA | U2 starts automatically after the inventory task passes | AR-W2 cumulative Architecture Review, then Steven approves the complete IA map |
-| W3 — Convergence and Extension | U1B approved removals → U3 navigation → U3A admin-space inventory/security contract → U3B three-space admin migration → E3A capability revalidation → E3B proven gap fixes | Each task advances only after required verification; E3A is blocked on U3B and E3B scope is derived from E3A evidence | AR-W3 cumulative Architecture Review |
+| W3 — Convergence and Extension | U1B approved removals → U3 navigation → U3A admin-space inventory/security contract → U3ADR AuditLog decision gate → U3B three-space admin migration → E3A capability revalidation → E3B proven gap fixes | U3ADR requires fresh exact-head PASS evidence before U3B; E3A is blocked on U3B and E3B scope is derived from E3A evidence | AR-W3 cumulative Architecture Review |
 | Final | Full verification → independent technical Audit → release evidence | No automatic release or deployment | One Claude Code Audit, then explicit Steven release approval |
 
 Rules:
@@ -365,7 +365,7 @@ The restart-safe state machine, artifact paths, task order, and gates are author
 - [x] Steven approved E3 as revalidation-first, with fixes only for proven gaps.
 - [x] Steven approved reuse of canonical `Content` with no Prisma change by default.
 - [x] Steven approved the complete OS 3.8 Blueprint scope and ordering.
-- [x] Steven approved Amendment A: isolated member, team-admin, and platform-admin spaces, implemented through U3A/U3B before E3A.
+- [x] Steven approved Amendment A: isolated member, team-admin, and platform-admin spaces, implemented through U3A/U3ADR/U3B before E3A.
 - [x] Invite-link environment hardening and audit A-1/A-3 remain deferred unless directly touched or proven to be a release blocker.
 - [ ] Steven approves the U2 one-page IA after AR-W2.
 - [ ] Steven approves OS 3.8 release after final independent Audit and release evidence.

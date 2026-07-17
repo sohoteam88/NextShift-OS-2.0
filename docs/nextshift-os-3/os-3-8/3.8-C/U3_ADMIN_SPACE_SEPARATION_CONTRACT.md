@@ -1,6 +1,6 @@
 # OS 3.8 U3 — Admin Space Separation Contract
 
-Status: **APPROVED GOVERNANCE CONTRACT — implementation pending U3A/U3B**
+Status: **STEVEN-APPROVED AMENDMENT — ARCHITECTURE REVIEW PENDING**
 
 Authorized baseline: `3976a57f32014eb303bd66078f310fcf6913a9c1`
 
@@ -10,7 +10,7 @@ This document is an evidence-based migration contract. It does not implement a r
 
 ## 1. Scope and inventory method
 
-The inventory covers every authenticated page under `src/app/(auth)/admin`, `src/app/(auth)/platform-admin`, and `src/app/(auth)/admin-command`; every API under `src/app/api/v1/admin`, `src/app/api/v1/platform-admin`, and `src/app/api/v1/admin-command`; mounted and historical shells; role guards; tenant-identity inputs; mutation handlers; audit writers; direct tests; and code/document/bookmark consumers.
+The inventory starts at the repository roots, not at known prefixes. It covers all 112 authenticated page routes, all API route files, page- and service-level role/capability guards, mounted and historical shells, tenant-identity inputs, redirects, mutation handlers, audit writers, direct tests, and code/document/bookmark consumers. A candidate enters the administration matrix when it mounts an administration capability, is restricted to a role above ordinary member product access, or is a compatibility/direct-link authority for such a capability. Role-specialized product projections are dispositioned separately so that a role check alone does not silently turn a member product API into an admin API.
 
 Reproducible searches:
 
@@ -19,20 +19,25 @@ find 'src/app/(auth)/admin' -name page.tsx -print | sort
 find 'src/app/(auth)/platform-admin' -name page.tsx -print | sort
 find 'src/app/(auth)/admin-command' -name page.tsx -print | sort
 find src/app/api/v1/admin src/app/api/v1/platform-admin src/app/api/v1/admin-command -name route.ts -print | sort
+find 'src/app/(auth)' -name page.tsx -print | sort
+find src/app/api -name route.ts -print | sort
 rg -n "getAuthUser|requireRoleApi|platform_admin|operator|leader|redirect\\(" 'src/app/(auth)/admin' 'src/app/(auth)/platform-admin' 'src/app/(auth)/admin-command' src/app/api/v1/admin src/app/api/v1/platform-admin src/app/api/v1/admin-command
+rg -n "platform_admin|operator|leader|requireRoleApi|requireRole|ALLOWED_ROLES|ROLE_GUARD|APPROVAL_ROLES|INVITE_ROLES|TEAM_ROLES|FORBIDDEN" 'src/app/(auth)' src/app/api src/modules
 rg -n "tenantId|tenant_id|searchParams|headers\\(|request\\.json|req\\.json|params" src/app/api/v1/admin src/app/api/v1/platform-admin src/app/api/v1/admin-command src/modules/admin
-rg -n "AdminSidebar|TopBar|MobileTabBar|AppShell|/platform-admin|/admin-command|/admin" src tests docs
+rg -n "AdminSidebar|TopBar|MobileTabBar|AppShell|/platform-admin|/admin-command|/admin|/team|/workspace" src tests docs
 rg -n "auditLog\\.(create|createMany)|AuditLog|audit_logs" src tests prisma docs/architecture
-rg -n "export const (POST|PUT|PATCH|DELETE)" src/app/api/v1/admin src/app/api/v1/platform-admin src/app/api/v1/admin-command
+rg -n "export const (POST|PUT|PATCH|DELETE)" src/app/api
+rg -n "fetch\\(|router\\.(push|replace)|href=|redirect\\(" src tests
 ```
 
 Measured source inventory:
 
-- **34 administration pages**: 19 `/admin` pages, 14 `/platform-admin` pages, and 1 `/admin-command` page.
-- **16 administration API route files**: 10 `/api/v1/admin/*`, 5 `/api/v1/platform-admin/*`, and 1 `/api/v1/admin-command`.
-- **13 mutation handlers** across those route files; 5 currently reach an `AuditLog` writer and 8 do not.
-- **5 adjacent API dependencies** called by administration components but owned by other product namespaces.
+- **39 privileged administration page route files**: the original 34 (19 `/admin`, 14 `/platform-admin`, 1 `/admin-command`) plus `/team`, `/team/members`, `/team/growth`, `/workspace`, and `/workspace/[...path]` discovered outside those prefixes.
+- **37 privileged administration API source route files**: the original 16 plus 21 repository-wide discoveries whose whole route or privileged methods administer teams, members, tenant configuration, or platform state. Shared product GET methods are split from privileged writes rather than moved wholesale.
+- **30 unique privileged source write operations**, producing **33 target-namespace write capabilities** after feedback PATCH and user PATCH/DELETE are split into tenant and platform variants: 23 target `/api/v1/admin/*` and 10 target `/api/v1/superadmin/*`. Existing direct/transitive `AuditLog` coverage is 5/23 for target team-admin writes and 4/10 for target superadmin writes.
+- **Role-specialized but non-administration product endpoints** were dispositioned explicitly: member/leader/operator analytics projections, ordinary CRM lead ownership operations, and member-facing product reads stay in their product namespaces.
 - **6 primary shell/navigation authorities** inspected: `AppShell`, `AdminSidebar`, `TopBar`, `MobileTabBar`, `WorkspaceTopNavigation`, and the currently unmounted legacy `Sidebar`.
+- **4 mounted entry/compatibility authorities** require coordinated migration: `auth-routing.ts`, authenticated `/dashboard`, `AppShell`, and `compatibility-redirect.ts`; their platform home, breadcrumb, and allowlisted redirect targets must terminate in the correct new space.
 - **9 direct test authorities** inspected: admin API, RBAC, tenant isolation, audit deletion, navigation access, canonical routes, compatibility redirects, admin E2E, and navigation-convergence E2E.
 - Repository consumer search found 34 files containing `/platform-admin`, 12 containing `/admin-command`, and 21 code/test/doc files with literal `/admin` route references at this baseline.
 
@@ -46,7 +51,7 @@ Measured source inventory:
 
 `platform_admin` is not a permitted `/admin/*` role after migration. Cross-tenant capability belongs in `/superadmin/*`; team-admin handlers must not contain a privileged branch that drops tenant predicates.
 
-## 3. Page migration matrix (34 source pages)
+## 3. Page migration matrix (39 source pages)
 
 | Current page | Current authority | Target | Target authority / action |
 | --- | --- | --- | --- |
@@ -84,10 +89,15 @@ Measured source inventory:
 | `/platform-admin/tenants` | current redirect to root `tab=tenants` | `/superadmin/tenants` | Platform-only terminal route; old GET 301; allowlisted query preserved without chain |
 | `/platform-admin/users` | platform-only | `/superadmin/users` | Platform-only; old GET 301 |
 | `/admin-command` | platform-only redirect to platform root `view=command` | `/superadmin/command` | Platform-only terminal route; old GET 301; no chain |
+| `/team` | leader/operator/platform administration surface; member denied | `/admin/team` | Team admin leader/operator, session tenant; old GET 301 after the source role gate; platform denied |
+| `/team/members` | leader/operator/platform human-team list/detail | `/admin/team/members` | Team admin leader/operator, session tenant; terminal route; old GET 301; platform denied |
+| `/team/growth` | operator/platform compatibility redirect to `/team` | `/admin/team` | Team admin operator-only compatibility; old GET resolves directly to terminal `/admin/team` with no chain; platform denied |
+| `/workspace` | operator/platform compatibility redirect to `/admin` | `/admin` | Team admin operator-only; old GET 301 after role check; platform denied |
+| `/workspace/[...path]` | operator/platform compatibility resolver for admin suffixes | terminal `/admin/*` allowlist | Team admin operator-only; each suffix resolves directly to a terminal admin route; old GET 301; platform denied |
 
-The original U2 112-route counts are historical and are not recalculated by this overlay. U3A must inventory newly created target routes before it claims a new complete route total.
+The original U2 112-route counts are historical and are not recalculated by this overlay. This matrix supersedes the U2 statement that privileged human-team administration remains at `/team` and `/team/members`. Those legacy paths become compatibility-only; their capabilities terminate under `/admin/*`. U3A must inventory newly created target routes before it claims a new complete route total.
 
-## 4. API migration matrix (16 source route files)
+## 4. API migration matrix (37 source route files)
 
 | Current API | Methods | Current authority / finding | Target contract |
 | --- | --- | --- | --- |
@@ -95,20 +105,52 @@ The original U2 112-route counts are historical and are not recalculated by this
 | `/api/v1/admin/crm/recalculate-scores` | POST | operator/platform; session tenant | Keep path; operator, session tenant; platform excluded |
 | `/api/v1/admin/daily-actions/defaults` | GET, PUT | operator/platform; session tenant | Keep path; operator, session tenant; platform excluded |
 | `/api/v1/admin/feedback` | GET | operator/platform; **missing tenant predicate** | Team view remains at same path with session tenant; platform portfolio view becomes `/api/v1/superadmin/feedback` |
-| `/api/v1/admin/feedback/:id` | PATCH | operator/platform; **update by ID without tenant predicate** | Same split; admin mutation must constrain ID + session tenant |
+| `/api/v1/admin/feedback/:id` | PATCH | operator/platform; **update by ID without tenant predicate** | Split into admin PATCH constrained by ID + session tenant and platform-only `/api/v1/superadmin/feedback/:id` |
 | `/api/v1/admin/override` | GET, POST, DELETE | platform-only; accepts target tenant from query/body | `/api/v1/superadmin/override`; explicit platform target tenant; old mutation path fails closed unless separately approved 308 parity window |
 | `/api/v1/admin/settings` | GET, PATCH | operator/platform; session tenant | Keep path; operator, session tenant; platform excluded |
 | `/api/v1/admin/system-health` | GET | platform-only | `/api/v1/superadmin/system-health` |
 | `/api/v1/admin/training/defaults` | GET, PUT | operator/platform; session tenant | Keep path; operator, session tenant; platform excluded |
 | `/api/v1/admin/users` | GET | operator/platform; `includeAllTenants` for platform | Keep team path with the cross-tenant branch removed; platform list belongs to `/api/v1/superadmin/users` if an API is required |
-| `/api/v1/admin/users/:id` | PATCH, DELETE | service drops tenant predicate for platform actor | Keep team path constrained by actor + session tenant; platform mutation moves to `/api/v1/superadmin/users/:id` |
+| `/api/v1/admin/users/:id` | PATCH, DELETE | service drops tenant predicate for platform actor | Split into team path constrained by actor + session tenant and platform-only `/api/v1/superadmin/users/:id` |
 | `/api/v1/platform-admin/founder` | GET | **incorrectly permits operator** | `/api/v1/superadmin/founder`; platform-only |
 | `/api/v1/platform-admin/stats` | GET | platform-only | `/api/v1/superadmin/stats`; platform-only |
 | `/api/v1/platform-admin/tenants` | GET, POST | platform-only | `/api/v1/superadmin/tenants`; platform-only |
 | `/api/v1/platform-admin/tenants/:id` | GET, PATCH, DELETE | platform-only; explicit target tenant | `/api/v1/superadmin/tenants/:id`; platform-only and fully audited writes |
 | `/api/v1/platform-admin/usage` | POST | platform-only; literal old path schema; writes analytics only | `/api/v1/superadmin/usage`; update path allowlist and add required write audit |
 
-Adjacent component dependencies remain in their owning namespaces and require call-site authorization tests rather than automatic renaming: `/api/v1/health`, `/api/v1/feedback`, `/api/v1/funnel/templates`, `/api/v1/funnel/funnels`, and `/api/v1/ai/router/stats`. U3A must prove whether each call belongs in team administration or is merely a shared product API before U3B changes it.
+Repository-wide discovery adds these 21 source route files outside the three legacy API prefixes:
+
+| Current API | Methods | Current authority / finding | Target contract |
+| --- | --- | --- | --- |
+| `/api/v1/team/dashboard` | GET | service guard leader/operator/platform | `/api/v1/admin/team/dashboard`; leader/operator, session tenant; platform excluded |
+| `/api/v1/team/journey-progress` | GET | explicit leader/operator/platform | `/api/v1/admin/team/journey-progress`; leader/operator, session tenant; platform excluded |
+| `/api/v1/team/members` | GET | service guard leader/operator/platform | `/api/v1/admin/team/members`; leader/operator, session tenant; platform excluded |
+| `/api/v1/team/summary` | GET | service guard leader/operator/platform | `/api/v1/admin/team/summary`; leader/operator, session tenant; platform excluded |
+| `/api/v1/team/tree` | GET | service guard leader/operator/platform | `/api/v1/admin/team/tree`; leader/operator, session tenant; platform excluded |
+| `/api/v1/member/pending` | GET | service guard leader/operator/platform; platform branch drops tenant scope | `/api/v1/admin/members/pending`; leader/operator with session tenant/sub-team scope; platform excluded |
+| `/api/v1/member/:id/approve` | POST | service guard leader/operator/platform; audited | `/api/v1/admin/members/:id/approve`; leader/operator with session tenant/sub-team scope |
+| `/api/v1/member/:id/reject` | POST | service guard leader/operator/platform; audited | `/api/v1/admin/members/:id/reject`; leader/operator with session tenant/sub-team scope |
+| `/api/v1/member/invite` | GET, POST | service guard leader/operator/platform; session tenant | `/api/v1/admin/member-invites`; leader/operator and session tenant; platform excluded |
+| `/api/v1/ai/router/stats` | GET | operator-only tenant statistics | `/api/v1/admin/ai/router/stats`; operator and session tenant |
+| `/api/v1/ai/templates` | GET, POST | shared tenant read; operator-only create | Keep product GET; move POST to `/api/v1/admin/ai/templates` |
+| `/api/v1/ai/templates/:id` | GET, PATCH, DELETE | shared tenant read; operator-only writes | Keep product GET; move writes to `/api/v1/admin/ai/templates/:id` |
+| `/api/v1/ai/usage` | GET | user view for all; tenant view operator-only | Keep user scope; move tenant scope to `/api/v1/admin/ai/usage` |
+| `/api/v1/crm/pipeline-stages` | GET, POST | shared tenant read; operator/platform write | Keep product GET; move POST to `/api/v1/admin/crm/pipeline-stages`, operator only |
+| `/api/v1/crm/pipeline-stages/:id` | PATCH, DELETE | operator/platform write; service calls lack explicit tenant predicate | `/api/v1/admin/crm/pipeline-stages/:id`; operator, session tenant, ID + tenant predicate |
+| `/api/v1/crm/pipeline-stages/reorder` | POST | operator/platform, session tenant | `/api/v1/admin/crm/pipeline-stages/reorder`; operator and session tenant |
+| `/api/v1/crm/tags` | GET, POST | shared tenant read; leader/operator/platform create | Keep product GET; move POST to `/api/v1/admin/crm/tags`, leader/operator and session tenant |
+| `/api/v1/crm/tags/:id` | PATCH, DELETE | operator/platform; service calls lack explicit tenant predicate | `/api/v1/admin/crm/tags/:id`; operator, session tenant, ID + tenant predicate |
+| `/api/v1/funnel/templates` | GET, POST | shared tenant read; operator/platform create | Keep product GET; move POST to `/api/v1/admin/funnel/templates`, operator and session tenant |
+| `/api/v1/funnel/templates/:id` | GET, PATCH, DELETE | shared tenant read; operator/platform writes | Keep product GET; move writes to `/api/v1/admin/funnel/templates/:id` |
+| `/api/v1/auth/fix-uid` | **GET that mutates IDs** | operator/platform; multi-table write with no audit | Replace with explicit POST `/api/v1/superadmin/auth/uid-reconciliation`, platform-only and audited; old GET fails closed, never redirects |
+
+Completeness disposition for role-signalled routes that do not enter an administration namespace:
+
+- `/api/v1/analytics/member`, `/leader`, and `/operator` are member-frontend role projections, not configuration or administration; they remain product APIs and retain their current least-privilege view semantics.
+- ordinary CRM lead/customer/activity APIs remain product APIs because members use them with ownership scoping; only configuration writes listed above move to admin.
+- shared AI, CRM, and Funnel GET methods remain product reads; their privileged write or tenant-wide scope is split into `/api/v1/admin/*`.
+
+Adjacent shared dependencies that do not expose an administration capability remain in their owning namespaces and require call-site authorization tests rather than automatic renaming: `/api/v1/health`, `/api/v1/feedback`, and `/api/v1/funnel/funnels`. U3A must generate executable page, method-level API, direct-link, redirect, and consumer manifests from all 39/37 rows; any discovered source absent from those manifests blocks U3A completion.
 
 ## 5. Role matrix
 
@@ -159,7 +201,7 @@ The current `AppShell` only provides a dedicated shell for `platform_admin` on `
 ## 8. Redirect and compatibility rules
 
 1. Legacy page compatibility is GET-only, one-hop, status `301`, and terminal.
-2. `/platform-admin` → `/superadmin`; `/platform-admin/<suffix>` → `/superadmin/<corresponding-suffix>`; `/admin-command` → `/superadmin/command`.
+2. `/platform-admin` → `/superadmin`; `/platform-admin/<suffix>` → `/superadmin/<corresponding-suffix>`; `/admin-command` → `/superadmin/command`. After source-role authorization, `/team` and `/team/growth` resolve directly to `/admin/team`, `/team/members` resolves to `/admin/team/members`, and `/workspace` resolves to `/admin`; platform admins are denied those team-admin compatibility paths.
 3. Only a documented allowlist of non-sensitive query keys may survive. At minimum, revalidate existing `tab=tenants`, `view=command`, and `source=bookmark`; unknown keys are dropped.
 4. A platform legacy path never targets `/admin/*`. A target may not be another compatibility route.
 5. Non-GET APIs never use `301`/`302`. Prefer migrated callers plus a fail-closed old endpoint.
@@ -181,45 +223,86 @@ Every superadmin write records:
 
 Never record tokens, secrets, passwords, authentication cookies, complete request bodies, or complete sensitive payloads.
 
-The 13 current administration mutation handlers are: admin score recalculation; daily-action PUT; feedback PATCH; override POST/DELETE; settings PATCH; training PUT; user PATCH/DELETE; platform tenant POST/PATCH/DELETE; and platform usage POST. Current direct/transitive audit coverage exists for override POST/DELETE, settings PATCH, and user PATCH/DELETE (**5/13**). The other **8/13** require explicit audit acceptance in U3B. Analytics telemetry is not a substitute for an administration audit event.
+The complete repository-wide inventory contains 30 unique privileged source writes. Three source methods (feedback PATCH and user PATCH/DELETE) split into both tenant and platform variants, yielding 33 target-namespace write capabilities:
 
-For tenant-targeted superadmin writes, `AuditLog.tenantId` is the target tenant. For platform-global writes, the current required `AuditLog.tenantId` cannot represent truthfully scoped evidence. U3B is blocked from a schema change until a separate ADR receives Architecture Review and chooses one minimum option:
+| Target namespace | Writes | Existing direct/transitive audit coverage | Amendment requirement |
+| --- | ---: | ---: | --- |
+| `/api/v1/admin/*` | 23 | 5/23: settings PATCH, user PATCH/DELETE, member approve/reject | Preserve existing approved audit behavior. This amendment does not silently require new audit events for the other 18 team-admin writes. |
+| `/api/v1/superadmin/*` | 10 | 4/10: override POST/DELETE and the existing user PATCH/DELETE audit path | All 10/10 must emit success and failure audit evidence before U3B can complete. Analytics telemetry is not an audit event. |
+
+The 23 target team-admin writes comprise the original seven team-scoped operations (score recalculation; daily-action PUT; feedback PATCH; settings PATCH; training PUT; user PATCH/DELETE) plus member approve/reject/invite, AI-template create/update/delete, CRM pipeline-stage create/update/delete/reorder, CRM tag create/update/delete, and Funnel-template create/update/delete. The 10 target superadmin writes are feedback PATCH, override POST/DELETE, user PATCH/DELETE, tenant POST/PATCH/DELETE, platform usage POST, and the replacement UID-reconciliation POST.
+
+Current Prisma `AuditLog` mapping is explicit:
+
+| Required event field | Current storage contract |
+| --- | --- |
+| actor ID | Dedicated nullable UUID `actorId`; null is allowed only for a proven non-user system actor and must be explained in metadata |
+| actor role | `metadata.actor_role` until an independently reviewed schema decision adds a dedicated column |
+| action | Dedicated `action` string |
+| target type | Dedicated nullable `targetType` |
+| target ID | Dedicated nullable UUID `targetId` only when the real target is a UUID; a non-UUID or global target uses `targetId=null` plus redacted `metadata.target_key` and must never fabricate a UUID |
+| target tenant | Dedicated required UUID `tenantId` for tenant-targeted events and mirrored as `metadata.target_tenant_id`; platform-global handling is unresolved by the ADR gate below |
+| request/correlation ID | `metadata.request_id` and/or `metadata.correlation_id` |
+| success/failure | `metadata.outcome` (`success` or `failure`) plus a redacted stable failure code when applicable |
+| redacted metadata | Dedicated JSON `metadata`, subject to the prohibition list above |
+| timestamp | Dedicated `createdAt` |
+
+For a successful superadmin mutation, the business write and its audit event must commit atomically. For a failed mutation, the business transaction rolls back first and the failure event is persisted through an isolated audit transaction; a failed audit persistence may never be converted into a successful business response. The durable retry/outbox or separate-sink behavior needed when the audit store itself is unavailable is an ADR decision, not an implementation guess.
+
+For tenant-targeted superadmin writes, `AuditLog.tenantId` is the target tenant. For platform-global writes, the current required `AuditLog.tenantId` cannot represent truthfully scoped evidence. The machine-readable gate is `U3_AUDITLOG_ADR_GATE.json`, owned by the explicit U3ADR task between U3A and U3B. It must receive exact-head Architecture Review PASS before U3B dispatch and choose one minimum option:
 
 A. make `AuditLog.tenantId` optional and add an explicit scope discriminator;
 B. add a separate `PlatformAuditLog` model;
 C. prove that there are no platform-global mutations and keep the existing model.
 
-No arbitrary tenant, actor tenant, or placeholder tenant may be used for a platform-global event.
+Option C additionally requires the reviewed proof artifact named by the gate JSON. No arbitrary tenant, actor tenant, or placeholder tenant may be used for a platform-global event. The ADR must also decide non-UUID/global targets and failure-event durability. U3B dispatch fails closed when the gate artifact is missing, pending, non-PASS, stale against the reviewed decision SHA, mismatched to the U3ADR evidence, or—under option C—missing its exact-head proof artifact.
+
+### 9.1 U3ADR completion and U3B dispatch gate
+
+U3ADR is a separate Manifest task after U3A. Its governance adoption must atomically persist its completed verification/evidence and the final gate JSON. Before marking U3ADR completed, and again before changing or selecting U3B, the operator must validate all of these machine-readable assertions:
+
+1. `status == "approved"`, `approval_state == "approved"`, and `u3b_dispatch_authorized == true`;
+2. `selected_option` is one of the three enumerated completion-contract values;
+3. `decision_sha` is a 40-character SHA, the Architecture Review verdict is exactly `PASS`, `review_id` is a positive GitHub review ID, and `architecture_review.reviewed_sha == decision_sha`;
+4. the reviewed decision commit contains the canonical gate artifact, and the U3ADR verification `verified_head_sha` equals `decision_sha`;
+5. freshness is `fresh`, its planning SHA is current for dispatch, the reviewed decision is in authorized planning history, and no protected contract/schema/inventory/guard path changed without a newer exact-head PASS;
+6. option C's proof artifact exists at `decision_sha`, is included in the reviewed PR diff, and proves the absence of platform-global mutations;
+7. U3ADR is `completed` and U3B's Manifest dependency is exactly `U3ADR`.
+
+Missing/null fields represent the current unresolved gate and must reject dispatch. Neither a PR label/body, caller input, environment variable, task outcome, nor a manually edited `u3b_dispatch_authorized` flag can replace the exact task evidence and GitHub review identity. U3B remains `blocked` and produces no dispatch artifact until a separate exact-head PASS governance adoption atomically records U3ADR completed, persists a fresh gate, and transitions U3B to pending.
 
 ## 10. Test contract
 
-U3A must turn the inventory into executable expected-route/API manifests. U3B cannot complete until all of the following pass:
+U3A must turn the 39-page and 37-source-API inventory into executable expected-route, method-level API, redirect, consumer, and role-guard manifests. Completeness tests compare those manifests with repository-wide searches and fail on an unclassified addition or removal. U3B cannot dispatch until U3ADR is completed with the exact reviewed gate artifact, and cannot complete until all of the following pass:
 
 - page access matrix for member, leader, operator, and platform admin across all three spaces;
 - negative direct-link tests proving members cannot enter either backend, operators/leaders cannot enter superadmin, and platform admins cannot enter team admin;
 - tenant-isolation integration tests for every admin read/mutation, including ID guessing and the current feedback/user gaps;
-- API namespace/guard tests for every one of the 16 source endpoints and every replacement endpoint;
+- API namespace/guard tests for every one of the 37 source route files, every privileged method split, and every replacement endpoint;
 - GET 301 compatibility tests for every legacy page, query allowlist, terminal destination, and no chain;
 - mutation tests proving no 301/302, no weaker legacy guard, and fail-closed retirement or exact 308 parity;
 - navigation tests proving zero backend links in desktop, mobile, More, workspace, and utilities;
 - visible ADMIN/PLATFORM shell identity and responsive/keyboard checks;
 - exact audit-field, success/failure, redaction, correlation ID, and tenant/global-scope tests for every superadmin write;
+- named ADR dispatch fixtures proving missing artifact, pending/non-PASS verdict, reviewed-SHA mismatch, stale protected paths, and missing option-C proof all block U3B; only a fresh exact-head PASS artifact may satisfy U3ADR;
 - regression of existing `admin-api.test.ts`, `rbac.test.ts`, `user-isolation.test.ts`, `audit-delete-guard.test.ts`, `navigation-access.test.ts`, `canonical-routes.test.ts`, `compatibility-redirect.test.ts`, `admin.spec.ts`, and `navigation-convergence.spec.ts`;
 - full type-check, unit/integration, lint, boundary, build, and targeted E2E gates.
 
 ## 11. Rollout and rollback
 
-1. U3A freezes source/target inventories, identifies owners, and resolves every ambiguous capability before code changes.
-2. U3B first creates guarded target shells/routes/APIs behind no frontend links, then migrates internal callers and tests.
-3. Verify authorization, tenant isolation, and auditing at exact target endpoints before enabling legacy GET redirects.
-4. Migrate mutation callers before retiring old mutation endpoints. Compatibility windows are exceptional and time-bounded.
-5. Roll back by disabling the new target entry points and restoring the last reviewed code commit; never weaken guards, remove audit evidence, rewrite user data, or route platform traffic into team admin.
-6. No production rollout occurs in U3A/U3B governance. Deployment requires the later Wave review, Final Audit, and explicit Steven release approval.
+1. U3A freezes executable source/target inventories, identifies owners, and resolves every ambiguous capability before code changes.
+2. U3ADR selects and receives exact-head Architecture Review PASS for the AuditLog option, schema mapping, non-UUID/global target behavior, and failure-event durability. Its governance adoption must persist the fresh gate artifact before U3B becomes eligible.
+3. U3B first creates guarded target shells/routes/APIs behind no frontend links, then migrates internal callers and tests.
+4. Verify authorization, tenant isolation, and auditing at exact target endpoints before enabling legacy GET redirects.
+5. Migrate mutation callers before retiring old mutation endpoints. Compatibility windows are exceptional and time-bounded.
+6. Roll back by disabling the new target entry points and restoring the last reviewed code commit; never weaken guards, remove audit evidence, rewrite user data, or route platform traffic into team admin.
+7. No production rollout occurs in U3A/U3ADR/U3B governance. Deployment requires the later Wave review, Final Audit, and explicit Steven release approval.
 
 ## 12. Prohibited scope and stop conditions
 
 - No product route/API/navigation implementation in this governance PR.
 - No Prisma schema or migration without a separate ADR and Architecture Review.
+- No U3B dispatch while U3ADR or `U3_AUDITLOG_ADR_GATE.json` is absent, pending, stale, mismatched, non-PASS, or missing required option-C proof.
 - No second route registry and no change to the approved seven desktop destinations or five-slot mobile projection.
 - No E3A/E3B continuation until U3B is completed and verified.
 - No AR-W3 generation, merge, deploy, tag, release, or production access.
