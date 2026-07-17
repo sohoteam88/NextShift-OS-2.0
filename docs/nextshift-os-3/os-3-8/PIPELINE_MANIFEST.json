@@ -537,9 +537,63 @@
           "contract": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
           "execution_task": null,
           "depends_on": ["U3"],
-          "status": "pending",
-          "verification": null,
-          "evidence": null
+          "status": "completed",
+          "verification": {
+            "status": "passed",
+            "task_id": "U3A",
+            "task_verification_policy": "paths_ignored_zero_checks_allowed",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "docs/os-3.8-u3a-admin-space-inventory",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/98",
+            "verified_head_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3A_IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3A_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "passed",
+            "architecture_review": {
+              "review_id": 4722379566,
+              "verdict": "PASS",
+              "reviewed_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933"
+            },
+            "verified_at": "2026-07-17T12:10:13Z"
+          },
+          "evidence": {
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/98",
+            "merge_sha": "0678327511f218c78213829d12371817d9b06f63",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3A_IMPLEMENTATION_REPORT.md",
+            "verification": {
+              "status": "passed",
+              "task_id": "U3A",
+              "task_verification_policy": "paths_ignored_zero_checks_allowed",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "base_branch": "planning/os-3.8-product-usability",
+              "task_branch": "docs/os-3.8-u3a-admin-space-inventory",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/98",
+              "verified_head_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3A_IMPLEMENTATION_REPORT.md",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3A_DISPATCH.json",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "checks": "passed",
+              "architecture_review": {
+                "review_id": 4722379566,
+                "verdict": "PASS",
+                "reviewed_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933"
+              },
+              "verified_at": "2026-07-17T12:10:13Z"
+            },
+            "validation": {
+              "checks": "passed",
+              "head_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933"
+            },
+            "recovered": true,
+            "recovered_at": "2026-07-17T12:10:13Z",
+            "github_merged_at": "2026-07-17T11:53:15Z",
+            "execution_mode": "manual_codex_desktop",
+            "adoption_mode": "manual_governance_backfill"
+          }
         },
         {
           "id": "U3ADR",

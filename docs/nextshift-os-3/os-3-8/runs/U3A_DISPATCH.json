@@ -1,0 +1,136 @@
+{
+  "schema": "nextshift.os3.8.task-dispatch",
+  "version": 1,
+  "task_id": "U3A",
+  "wave_id": "W3",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "task_verification_policy": "paths_ignored_zero_checks_allowed",
+  "task_branch": "docs/os-3.8-u3a-admin-space-inventory",
+  "base_branch": "planning/os-3.8-product-usability",
+  "base_sha": "76636360d8c1a643c86bb26eb8923c6271241679",
+  "pr_number": 98,
+  "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/98",
+  "verified_head_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933",
+  "merge_sha": "0678327511f218c78213829d12371817d9b06f63",
+  "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3A_IMPLEMENTATION_REPORT.md",
+  "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3A_DISPATCH.json",
+  "report_exists_at_exact_head": true,
+  "report_in_pr_diff": true,
+  "checks": "passed",
+  "github_actions_run_id": 29576985517,
+  "check_runs": [
+    {
+      "name": "Type Check + Lint + Build",
+      "job_id": 87873585362,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29576985517/job/87873585362"
+    },
+    {
+      "name": "Tests",
+      "job_id": 87874371591,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29576985517/job/87874371591"
+    },
+    {
+      "name": "E2E Secret Check",
+      "job_id": 87874679846,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29576985517/job/87874679846"
+    },
+    {
+      "name": "E2E Tests",
+      "job_id": 87874696634,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29576985517/job/87874696634"
+    }
+  ],
+  "changed_files": [
+    "docs/nextshift-os-3/os-3-8/3.8-C/U3A_API_METHOD_INVENTORY.json",
+    "docs/nextshift-os-3/os-3-8/3.8-C/U3A_IMPLEMENTATION_REPORT.md",
+    "docs/nextshift-os-3/os-3-8/3.8-C/U3A_PAGE_INVENTORY.json",
+    "docs/nextshift-os-3/os-3-8/3.8-C/U3A_REDIRECT_CONSUMER_INVENTORY.json",
+    "docs/nextshift-os-3/os-3-8/3.8-C/U3A_SECURITY_AUTHORITY_INVENTORY.json",
+    "scripts/u3a-admin-inventory/validator.test.ts",
+    "scripts/u3a-admin-inventory/validator.ts",
+    "src/__tests__/governance/u3a-admin-inventory-runner.test.ts"
+  ],
+  "architecture_review": {
+    "review_id": 4722379566,
+    "verdict": "PASS",
+    "reviewed_sha": "cac4e50951bb8cd0c303433c9526a5aaa663a933",
+    "review_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/98#pullrequestreview-4722379566"
+  },
+  "architecture_review_resolutions": [
+    {
+      "id": "AMB-PAGE-001",
+      "status": "approved",
+      "decision": "/admin/team is a leader/operator shell; operator-only command capabilities remain separately guarded inside the terminal."
+    },
+    {
+      "id": "AMB-PAGE-002",
+      "status": "approved",
+      "decision": "view=command maps directly to /superadmin/command, tab=tenants maps directly to /superadmin/tenants, and the default maps directly to /superadmin."
+    },
+    {
+      "id": "AMB-PAGE-003",
+      "status": "approved",
+      "decision": "Compatibility redirects consume view=command and tab=tenants, preserve only source=bookmark plus a validated member UUID on the exact team-detail route, and drop other query keys."
+    },
+    {
+      "id": "AMB-CONSUMER-001",
+      "status": "approved",
+      "decision": "Member-facing Team calls to action migrate to /ai-workforce and never to /admin/team."
+    },
+    {
+      "id": "AMB-CONSUMER-002",
+      "status": "approved",
+      "decision": "The dormant primary workspace route authority is replaced by the canonical dashboard destination and receives no new runtime consumer."
+    }
+  ],
+  "inventory_counts": {
+    "privileged_pages": 39,
+    "api_source_files": 37,
+    "exported_methods": 57,
+    "source_writes": 30,
+    "target_writes": 33,
+    "admin_writes": 23,
+    "superadmin_writes": 10,
+    "superadmin_audit_required": 10,
+    "superadmin_audit_total": 10,
+    "consumer_rows": 241,
+    "consumer_files": 85,
+    "consumer_occurrences": 521
+  },
+  "validator_evidence": {
+    "assertions": 2565,
+    "contract_fixtures_passed": 55,
+    "contract_fixtures_total": 55
+  },
+  "merge_ancestry": {
+    "merge_sha_in_planning_history": true,
+    "verified_against_planning_sha": "0678327511f218c78213829d12371817d9b06f63"
+  },
+  "pr96_decision_freshness": {
+    "decision_sha": "5ab3aead887f6c2c9cc29a0b4b5196a0f8e122f8",
+    "merge_sha": "76636360d8c1a643c86bb26eb8923c6271241679",
+    "state": "fresh",
+    "verified_against_planning_sha": "0678327511f218c78213829d12371817d9b06f63",
+    "protected_path_changes": []
+  },
+  "execution_mode": "manual_codex_desktop",
+  "adoption_mode": "manual_governance_backfill",
+  "adoption_reason": "U3A completed through the approved classic Codex workflow; PR #98 was exact-head reviewed, passed all required checks, and was manually merged before governance evidence persistence.",
+  "recovered": true,
+  "github_merged_at": "2026-07-17T11:53:15Z",
+  "verified_at": "2026-07-17T12:10:13Z",
+  "recovered_at": "2026-07-17T12:10:13Z",
+  "adopted_at": "2026-07-17T12:10:13Z"
+}
