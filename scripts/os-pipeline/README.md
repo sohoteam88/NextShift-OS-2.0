@@ -525,7 +525,8 @@ Expected pipeline-specific coverage is:
 - `tests/governance-dispatch-gate.sh`: **36 named real-Git production-path
   fixtures**. Eighteen policy/candidate/rollback fixtures prove immutable
   option and protected-path policy, reviewed decision/digest binding, required
-  ADR completeness, transport-envelope non-authority, candidate-before-write,
+  ADR completeness (including rejection of a pre-tenant-deletion decision),
+  transport-envelope non-authority, candidate-before-write,
   locked drift rejection, byte-identical post-write/push rollback, atomic
   adoption, and duplicate clean stop. Eighteen retained dispatch-gate fixtures
   cover pending/missing/non-PASS/mismatched/stale/unknown/manual gates,

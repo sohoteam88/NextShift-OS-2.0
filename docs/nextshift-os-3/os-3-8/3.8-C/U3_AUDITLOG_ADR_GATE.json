@@ -13,7 +13,7 @@
     "gate_id": "U3-AUDITLOG-ADR",
     "gate_task_id": "U3ADR",
     "consumer_task_id": "U3B",
-    "policy_version": "2026-07-17.pr97-v1",
+    "policy_version": "2026-07-17.pr96-round4-v2",
     "decision_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
     "allowed_selected_options": [
       "A_OPTIONAL_TENANT_WITH_SCOPE",
@@ -23,7 +23,8 @@
     "required_decisions": [
       "platform_global_storage",
       "target_id_uuid_and_global_target_mapping",
-      "failure_event_durability_after_business_rollback"
+      "failure_event_durability_after_business_rollback",
+      "tenant_deletion_audit_retention"
     ],
     "protected_paths": [
       "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
@@ -31,6 +32,9 @@
       "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
       "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
       "prisma/schema.prisma",
+      "prisma/migrations",
+      "src/lib/audit-delete-guard.ts",
+      "src/modules/admin/services",
       "src/app/api/v1/admin",
       "src/app/api/v1/platform-admin",
       "src/app/api/v1/admin-command",
@@ -54,9 +58,9 @@
       "proof_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_OPTION_C_NO_GLOBAL_MUTATIONS_PROOF.md"
     }
   },
-  "policy_version": "2026-07-17.pr97-v1",
-  "policy_sha256": "7d26e4efc5ff3d65aff3262c477ea5c909cc4ec81bc54146c9a08ac99f42f0a9",
-  "protected_paths_sha256": "994024007e2cdc2559a89b1d08888b2f2f92b4ccc6e739c2226e742a88ef0384",
+  "policy_version": "2026-07-17.pr96-round4-v2",
+  "policy_sha256": "386163fd89536136085287f17637d69f712cce1d1a3b95f7a8502a7c0677cfa3",
+  "protected_paths_sha256": "5b9a8d83b83cbfeb8c1defb2dfd051ec4cbe1d33754efdbb171393625f3d2dd6",
   "required_decisions": [],
   "option_c_proof": null,
   "architecture_review": {
@@ -68,7 +72,7 @@
   "freshness": {
     "state": "unverified",
     "verified_against_planning_sha": null,
-    "protected_paths_sha256": "994024007e2cdc2559a89b1d08888b2f2f92b4ccc6e739c2226e742a88ef0384"
+    "protected_paths_sha256": "5b9a8d83b83cbfeb8c1defb2dfd051ec4cbe1d33754efdbb171393625f3d2dd6"
   },
   "u3b_dispatch_authorized": false
 }

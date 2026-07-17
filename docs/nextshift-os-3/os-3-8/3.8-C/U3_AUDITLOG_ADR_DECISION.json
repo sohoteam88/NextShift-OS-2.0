@@ -5,14 +5,14 @@
   "consumer_task_id": "U3B",
   "decision_status": "approved",
   "selected_option": "A_OPTIONAL_TENANT_WITH_SCOPE",
-  "policy_version": "2026-07-17.pr97-v1",
-  "policy_sha256": "7d26e4efc5ff3d65aff3262c477ea5c909cc4ec81bc54146c9a08ac99f42f0a9",
-  "protected_paths_sha256": "994024007e2cdc2559a89b1d08888b2f2f92b4ccc6e739c2226e742a88ef0384",
+  "policy_version": "2026-07-17.pr96-round4-v2",
+  "policy_sha256": "386163fd89536136085287f17637d69f712cce1d1a3b95f7a8502a7c0677cfa3",
+  "protected_paths_sha256": "5b9a8d83b83cbfeb8c1defb2dfd051ec4cbe1d33754efdbb171393625f3d2dd6",
   "required_decisions": [
     {
       "id": "platform_global_storage",
       "status": "resolved",
-      "decision": "Use the existing AuditLog model with nullable tenantId plus an explicit TENANT or PLATFORM scope discriminator; tenant-targeted events retain the exact target tenant and platform-global events use null tenantId with PLATFORM scope."
+      "decision": "Option A adds an AuditScope enum with TENANT and PLATFORM, makes AuditLog.tenantId nullable, and retains the existing Tenant relation with cascade semantics only for TENANT rows. The reviewed migration must add a database CHECK enforcing (scope = TENANT AND tenant_id IS NOT NULL) OR (scope = PLATFORM AND tenant_id IS NULL), backfill every existing row to TENANT before making the constraint valid, reject either inconsistent combination below the application layer, add a partial tenant query index on (tenant_id, created_at DESC) WHERE scope = TENANT, and add a partial platform chronology index on (created_at DESC) WHERE scope = PLATFORM. Prisma schema declarations alone are not sufficient when they cannot express the CHECK or partial indexes; the SQL migration and database integration tests are mandatory."
     },
     {
       "id": "target_id_uuid_and_global_target_mapping",
@@ -22,7 +22,12 @@
     {
       "id": "failure_event_durability_after_business_rollback",
       "status": "resolved",
-      "decision": "Rollback the failed business transaction first, then persist the failure audit in an isolated audit transaction; if the audit store is unavailable, fail closed and use a separately durable retry channel outside the rolled-back business transaction before reporting a successful mutation outcome."
+      "decision": "U3B must introduce a dedicated append-only AuditEventOutbox table as the durable retry channel. After a business rollback, the service first attempts an isolated AuditLog transaction; if that write fails while the database can accept the outbox transaction, it atomically enqueues the redacted event outside the rolled-back business transaction using idempotency key SHA-256(correlation_id + action + target_type + stable_target_key + outcome). A worker claims rows in created_at order, retries with bounded exponential backoff, upserts the AuditLog event by idempotency key, treats duplicate delivery as success, and marks delivered rows. Pending rows are never time-purged, delivered receipts are retained for at least 30 days, and dead-letter evidence is retained for at least 24 months or longer under legal/security hold. Outbox payloads follow the same redaction prohibition as AuditLog and contain no secrets or complete request bodies. If neither AuditLog nor the outbox can durably commit, the endpoint returns HTTP 503 with the correlation ID and never reports mutation success; an operational alert is required. Tests must prove the business transaction rolled back, the outbox row committed independently, replay creates exactly one audit event, retries preserve ordering per correlation ID, duplicates are harmless, redaction and retention hold, and the 503 path cannot be mistaken for success."
+    },
+    {
+      "id": "tenant_deletion_audit_retention",
+      "status": "resolved",
+      "decision": "DELETE /api/v1/superadmin/tenants/:id implements logical deletion under accepted ADR-023: production code changes the retained Tenant status to deleted and must not call tenant.delete or tenant.deleteMany. Every deletion attempt is also a PLATFORM-scoped immutable lifecycle event, for both success and failure: tenantId is null, targetType is tenant, targetId is the real tenant UUID (the field has no Tenant foreign key), and metadata contains only a redacted pre-delete snapshot allowlist (tenant UUID, non-secret display label or hash, prior status, request/correlation ID, actor role, outcome, and stable failure code). The successful status transition and PLATFORM event commit atomically; a failed transition rolls back first and its PLATFORM event is written through the isolated AuditLog/outbox mechanism. The deletion event is retained for at least 24 months and longer under legal/security hold. A later controlled physical purge is prohibited until the retention window expires, required evidence is archived, and no hold exists; the non-FK PLATFORM event remains retained and is excluded from tenant cascade and ordinary cleanup. U3B tests must prove logical-delete success evidence remains queryable, failure evidence survives rollback, a test-only forced Tenant cascade cannot remove the PLATFORM event, retention cleanup cannot remove it early, and no placeholder tenant or actor tenant is stored."
     }
   ],
   "option_c_proof": null

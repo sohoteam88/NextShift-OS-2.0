@@ -560,7 +560,7 @@
               "gate_id": "U3-AUDITLOG-ADR",
               "gate_task_id": "U3ADR",
               "consumer_task_id": "U3B",
-              "policy_version": "2026-07-17.pr97-v1",
+              "policy_version": "2026-07-17.pr96-round4-v2",
               "decision_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
               "allowed_selected_options": [
                 "A_OPTIONAL_TENANT_WITH_SCOPE",
@@ -570,7 +570,8 @@
               "required_decisions": [
                 "platform_global_storage",
                 "target_id_uuid_and_global_target_mapping",
-                "failure_event_durability_after_business_rollback"
+                "failure_event_durability_after_business_rollback",
+                "tenant_deletion_audit_retention"
               ],
               "protected_paths": [
                 "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
@@ -578,6 +579,9 @@
                 "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
                 "docs/nextshift-os-3/os-3-8/approvals/STEVEN_IA_APPROVAL.md",
                 "prisma/schema.prisma",
+                "prisma/migrations",
+                "src/lib/audit-delete-guard.ts",
+                "src/modules/admin/services",
                 "src/app/api/v1/admin",
                 "src/app/api/v1/platform-admin",
                 "src/app/api/v1/admin-command",

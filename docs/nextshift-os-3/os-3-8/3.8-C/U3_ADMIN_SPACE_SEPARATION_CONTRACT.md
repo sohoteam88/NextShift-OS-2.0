@@ -247,7 +247,7 @@ Current Prisma `AuditLog` mapping is explicit:
 | redacted metadata | Dedicated JSON `metadata`, subject to the prohibition list above |
 | timestamp | Dedicated `createdAt` |
 
-For a successful superadmin mutation, the business write and its audit event must commit atomically. For a failed mutation, the business transaction rolls back first and the failure event is persisted through an isolated audit transaction; a failed audit persistence may never be converted into a successful business response. The durable retry/outbox or separate-sink behavior needed when the audit store itself is unavailable is an ADR decision, not an implementation guess.
+For a successful superadmin mutation, the business write and its audit event must commit atomically. For a failed mutation, the business transaction rolls back first and the failure event is persisted through an isolated audit transaction. If that direct audit write fails, U3B must enqueue the event in the reviewed `AuditEventOutbox` mechanism below; a failed audit/outbox persistence may never be converted into a successful business response.
 
 For tenant-targeted superadmin writes, `AuditLog.tenantId` is the target tenant. For platform-global writes, the current required `AuditLog.tenantId` cannot represent truthfully scoped evidence. The immutable authorization policy is owned only by the synchronized planning Manifest under U3ADR's `governance_gate.policy`; the canonical runtime state is `U3_AUDITLOG_ADR_GATE.json`, and the reviewed machine-readable decision is `U3_AUDITLOG_ADR_DECISION.json`.
 
@@ -256,7 +256,36 @@ The reviewed decision selects **Option A — `A_OPTIONAL_TENANT_WITH_SCOPE`**:
 - make `AuditLog.tenantId` nullable and add an explicit `TENANT`/`PLATFORM` scope discriminator;
 - preserve the exact target tenant for tenant-targeted events and use `tenantId = null`, never a placeholder, for platform-global events;
 - use `targetId` only for a real UUID target; non-UUID/global identifiers remain redacted stable metadata with `targetId = null`;
-- after a failed business transaction rolls back, write failure evidence through an isolated audit transaction and a separately durable retry channel; audit persistence failure remains fail closed.
+- represent every tenant-deletion attempt as a non-FK `PLATFORM` lifecycle event with `tenantId = null` and the real tenant UUID in `targetId`, while the product DELETE operation remains the logical-delete status transition required by accepted ADR-023;
+- after a failed business transaction rolls back, write failure evidence through an isolated audit transaction and the append-only `AuditEventOutbox`; audit/outbox persistence failure remains fail closed.
+
+#### 9.0.1 Database invariant and migration contract
+
+U3B must implement Option A as a database contract, not only as TypeScript/Prisma validation:
+
+1. Add database enum `AuditScope` with exactly `TENANT` and `PLATFORM`, add the `scope` column, and make `tenant_id` nullable.
+2. Backfill every existing `audit_logs` row to `scope = TENANT` while its existing non-null `tenant_id` remains intact. The migration must abort on any unmappable row; it may not invent a tenant or silently choose `PLATFORM`.
+3. Add and validate a database CHECK equivalent to `(scope = 'TENANT' AND tenant_id IS NOT NULL) OR (scope = 'PLATFORM' AND tenant_id IS NULL)`. Both inconsistent combinations must fail in direct database integration tests below the application layer. If Prisma cannot express the CHECK, the reviewed SQL migration must create it explicitly.
+4. Preserve the Tenant foreign key and existing cascade semantics only for rows with a real `tenant_id`. A `PLATFORM` row has no tenant FK value and therefore cannot be removed by a Tenant cascade.
+5. Add a tenant lookup partial index on `(tenant_id, created_at DESC) WHERE scope = 'TENANT'` and a platform chronology partial index on `(created_at DESC) WHERE scope = 'PLATFORM'`; migration tests inspect the exact constraint and indexes.
+6. Migration rollback must not coerce a `PLATFORM` row into a placeholder tenant. Rollback is permitted only before any platform row exists, or through a separately reviewed archival/conversion plan that preserves every event.
+
+#### 9.0.2 Tenant-deletion persistence
+
+`DELETE /api/v1/superadmin/tenants/:id` is deletion semantics backed by a logical status transition in production. In accordance with accepted ADR-023, product code must not call `tenant.delete` or `tenant.deleteMany`; the Tenant row remains for the audit-retention window. Both success and failure attempts create an immutable `PLATFORM` event with `tenantId = null`, `targetType = tenant`, and the real tenant UUID in non-FK `targetId`. The redacted snapshot allowlist is limited to tenant UUID, non-secret display label or hash, prior status, correlation/request ID, actor role, outcome, and stable failure code.
+
+The successful status transition and audit event commit atomically. A failed transition rolls back first and records its event using the isolated audit/outbox flow. Tenant-deletion lifecycle evidence is retained for at least 24 months and longer under a legal, security, or incident hold. A later physical purge is controlled maintenance only: it is prohibited before retention expiry, required archive completion, and hold clearance. Ordinary cleanup and Tenant cascade must never remove the `PLATFORM` deletion event. U3B must prove this with logical-delete, rollback, retention-cleanup, and isolated test-only forced-cascade integration cases.
+
+#### 9.0.3 Durable failure-event channel
+
+The reviewed retry channel is a dedicated append-only database table named `AuditEventOutbox`, introduced and tested by U3B. It is not an in-memory queue, log line, best-effort callback, or reuse of the rolled-back business transaction.
+
+- After rollback, attempt the failure `AuditLog` insert in an isolated transaction. If that insert fails but the database accepts the independent outbox transaction, commit a redacted outbox row.
+- The idempotency key is `SHA-256(correlation_id + action + target_type + stable_target_key + outcome)` and is unique. Replay upserts the final AuditLog event by the same key; duplicate delivery is success, not a second event.
+- A worker claims rows in `created_at` order, preserves ordering within a correlation ID, applies bounded exponential backoff, and records attempt count, next attempt time, delivery time, and a stable redacted failure code.
+- Pending rows are never time-purged. Delivered receipts remain for at least 30 days. Dead-letter evidence remains for at least 24 months and longer under legal/security hold. Payloads follow the AuditLog prohibition list and never contain secrets or full request bodies.
+- If neither the direct AuditLog transaction nor the outbox transaction durably commits, the endpoint returns HTTP `503` with the correlation ID, raises an operational alert, and never reports mutation success. For an already-failed business mutation, this 503 supersedes the ordinary domain error because durable audit evidence is unavailable.
+- Tests must independently query the outbox after the business transaction rollback, replay the event exactly once, exercise duplicate delivery and retry ordering, inspect retention/redaction, and prove the 503 response cannot be interpreted as success.
 
 This is a governance decision for later separately reviewed implementation. It does not modify Prisma or complete U3ADR. The trusted policy continues to enumerate the two rejected alternatives so a different decision requires a new reviewed artifact and policy-consistent exact-head review:
 
@@ -280,7 +309,7 @@ The exact review target SHA cannot be embedded in the commit that creates itself
 2. `selected_option` comes from the reviewed decision artifact and is allowed by the trusted Manifest policy;
 3. `decision_sha` is a 40-character SHA, the Architecture Review verdict is exactly `PASS`, `review_id` is a positive GitHub review ID, and `architecture_review.reviewed_sha == decision_sha`;
 4. the reviewed decision commit contains the canonical decision artifact, the artifact is in the reviewed PR diff, and U3ADR verification `verified_head_sha` equals `decision_sha`;
-5. canonical policy and protected-path SHA-256 values equal the reviewed decision values; freshness is recomputed from Git history rather than accepted from the envelope;
+5. canonical policy and protected-path SHA-256 values equal the reviewed decision values; freshness is recomputed from Git history rather than accepted from the envelope; every policy-required decision—including tenant-deletion retention—must exist exactly once and be resolved;
 6. option C's proof artifact exists at `decision_sha`, is included in the reviewed PR diff, and proves the absence of platform-global mutations;
 7. U3ADR is `completed` and U3B's Manifest dependency is exactly `U3ADR`.
 
@@ -299,6 +328,9 @@ U3A must turn the 39-page and 37-source-API inventory into executable expected-r
 - navigation tests proving zero backend links in desktop, mobile, More, workspace, and utilities;
 - visible ADMIN/PLATFORM shell identity and responsive/keyboard checks;
 - exact audit-field, success/failure, redaction, correlation ID, and tenant/global-scope tests for every superadmin write;
+- database integration tests for the `TENANT`/`PLATFORM` CHECK, deterministic existing-row backfill, invalid-combination rejection, and exact tenant/platform partial indexes;
+- tenant deletion tests proving logical-delete success evidence, rollback failure evidence, 24-month/hold retention, ordinary-cleanup exclusion, and survival of a test-only forced Tenant cascade;
+- `AuditEventOutbox` tests proving isolated post-rollback commit, deterministic idempotency, per-correlation ordering, duplicate-safe replay, retry/dead-letter retention, payload redaction, operational alerting, and fail-closed HTTP 503 when neither durable write succeeds;
 - all 36 production-path governance dispatch fixtures: 18 immutable-policy/candidate/rollback cases plus 18 retained selection, exact-review, proof, evidence, TOCTOU, stale/duplicate adoption, and zero-side-effect cases;
 - regression of existing `admin-api.test.ts`, `rbac.test.ts`, `user-isolation.test.ts`, `audit-delete-guard.test.ts`, `navigation-access.test.ts`, `canonical-routes.test.ts`, `compatibility-redirect.test.ts`, `admin.spec.ts`, and `navigation-convergence.spec.ts`;
 - full type-check, unit/integration, lint, boundary, build, and targeted E2E gates.
@@ -306,7 +338,7 @@ U3A must turn the 39-page and 37-source-API inventory into executable expected-r
 ## 11. Rollout and rollback
 
 1. U3A freezes executable source/target inventories, identifies owners, and resolves every ambiguous capability before code changes.
-2. U3ADR selects and receives exact-head Architecture Review PASS for the AuditLog option, schema mapping, non-UUID/global target behavior, and failure-event durability. Its governance adoption must persist the fresh gate artifact before U3B becomes eligible.
+2. U3ADR selects and receives exact-head Architecture Review PASS for the AuditLog option, scope/tenant database invariant and migration, non-UUID/global target behavior, tenant-deletion retention, and the concrete `AuditEventOutbox` failure-event mechanism. Its governance adoption must persist the fresh gate artifact before U3B becomes eligible.
 3. U3B first creates guarded target shells/routes/APIs behind no frontend links, then migrates internal callers and tests.
 4. Verify authorization, tenant isolation, and auditing at exact target endpoints before enabling legacy GET redirects.
 5. Migrate mutation callers before retiring old mutation endpoints. Compatibility windows are exceptional and time-bounded.
