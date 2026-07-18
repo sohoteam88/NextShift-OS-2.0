@@ -316,8 +316,11 @@ describe.sequential('U3B PostgreSQL authority', () => {
       env: { ...process.env, DATABASE_URL: schemaDatabaseUrl, DIRECT_URL: schemaDatabaseUrl },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    execFileSync('pnpm', ['exec', 'prisma', 'db', 'execute', '--file', schemaIdentityAuthority, '--url', schemaDatabaseUrl], {
+    execFileSync('pnpm', [
+      'exec', 'prisma', 'db', 'execute', '--schema', 'prisma/schema.prisma', '--file', schemaIdentityAuthority,
+    ], {
       cwd: repoRoot,
+      env: { ...process.env, DATABASE_URL: schemaDatabaseUrl, DIRECT_URL: schemaDatabaseUrl },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     schemaDb = new PrismaClient({ datasourceUrl: schemaDatabaseUrl });

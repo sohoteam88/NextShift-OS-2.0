@@ -117,7 +117,7 @@ jobs:
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
 
       - name: Install U3B partial audit identity authority
-        run: pnpm exec prisma db execute --file scripts/u3b-admin-migration/install-audit-idempotency-authority.sql
+        run: pnpm exec prisma db execute --schema prisma/schema.prisma --file scripts/u3b-admin-migration/install-audit-idempotency-authority.sql
         env:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
@@ -232,7 +232,7 @@ jobs:
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
 
       - name: Install U3B partial audit identity authority
-        run: pnpm exec prisma db execute --file scripts/u3b-admin-migration/install-audit-idempotency-authority.sql
+        run: pnpm exec prisma db execute --schema prisma/schema.prisma --file scripts/u3b-admin-migration/install-audit-idempotency-authority.sql
         env:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
