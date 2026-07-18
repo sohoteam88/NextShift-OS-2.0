@@ -19,7 +19,7 @@ export type PlatformAuditInput = {
   targetKey: string;
   outcome: 'success' | 'failure';
   correlationId?: string;
-  /** A caller-supplied retry identity. It must identify one logical attempt. */
+  /** @deprecated Correlation ID is the canonical logical-attempt identity. */
   idempotencyIdentity?: string;
   metadata?: Record<string, unknown>;
 };
@@ -58,7 +58,7 @@ export function buildPlatformAuditEvent(input: PlatformAuditInput) {
   const correlationId = input.correlationId ?? randomUUID();
   const identity = {
     version: 1,
-    retryIdentity: input.idempotencyIdentity ?? correlationId,
+    correlationId,
     scope: 'PLATFORM',
     action: input.action,
     targetType: input.targetType,
@@ -68,7 +68,6 @@ export function buildPlatformAuditEvent(input: PlatformAuditInput) {
   const metadata = redact(input.metadata ?? {}) as Record<string, unknown>;
   const payload = {
     ...identity,
-    correlationId,
     actorId: input.actorId,
     actorRole: input.actorRole,
     targetId: input.targetId ?? null,
@@ -91,6 +90,42 @@ async function enqueueAuditOutbox(
 ): Promise<void> {
   const now = new Date();
   const deadLetter = options.deadLetter === true;
+  const outboxId = randomUUID();
+  const alertId = randomUUID();
+  if (deadLetter) {
+    await db.$executeRaw(Prisma.sql`
+      WITH inserted AS (
+        INSERT INTO "audit_event_outbox" (
+          "id", "idempotency_key", "payload_digest", "payload", "correlation_id",
+          "status", "attempt_count", "next_attempt_at", "dead_lettered_at",
+          "failure_code", "last_error", "alerted_at", "retention_until",
+          "legal_hold", "created_at", "updated_at"
+        ) VALUES (
+          ${outboxId}, ${event.idempotencyKey}, ${event.payloadDigest},
+          CAST(${canonicalizeJson(event.payload)} AS jsonb), ${event.correlationId},
+          'dead_letter', 1, ${now}, ${now}, ${options.failureCode},
+          ${options.error?.slice(0, 500) ?? null}, NULL,
+          ${addMonths(now, PLATFORM_RETENTION_MONTHS)}, false, ${now}, ${now}
+        )
+        ON CONFLICT ("idempotency_key", "payload_digest") DO UPDATE
+          SET "updated_at" = "audit_event_outbox"."updated_at"
+        RETURNING "id", "correlation_id", "payload_digest", "failure_code"
+      )
+      INSERT INTO "audit_operational_alerts" (
+        "id", "outbox_event_id", "correlation_id", "alert_type", "severity",
+        "payload_digest", "payload", "retention_until", "created_at", "updated_at"
+      )
+      SELECT ${alertId}, inserted."id", inserted."correlation_id",
+        COALESCE(inserted."failure_code", 'AUDIT_DEAD_LETTER'), 'critical',
+        inserted."payload_digest",
+        jsonb_build_object('outbox_event_id', inserted."id", 'correlation_id', inserted."correlation_id",
+          'failure_code', inserted."failure_code"),
+        ${addMonths(now, PLATFORM_RETENTION_MONTHS)}, ${now}, ${now}
+      FROM inserted
+      ON CONFLICT ("outbox_event_id") DO NOTHING
+    `);
+    return;
+  }
   await db.$executeRaw(Prisma.sql`
     INSERT INTO "audit_event_outbox" (
       "id", "idempotency_key", "payload_digest", "payload", "correlation_id",
@@ -98,11 +133,11 @@ async function enqueueAuditOutbox(
       "failure_code", "last_error", "alerted_at", "retention_until",
       "legal_hold", "created_at", "updated_at"
     ) VALUES (
-      ${randomUUID()}, ${event.idempotencyKey}, ${event.payloadDigest},
+      ${outboxId}, ${event.idempotencyKey}, ${event.payloadDigest},
       CAST(${canonicalizeJson(event.payload)} AS jsonb), ${event.correlationId},
       ${deadLetter ? 'dead_letter' : 'pending'}, ${deadLetter ? 1 : 0}, ${now},
-      ${deadLetter ? now : null}, ${options.failureCode}, ${options.error?.slice(0, 500) ?? null},
-      ${deadLetter ? now : null}, ${addMonths(now, PLATFORM_RETENTION_MONTHS)}, false, ${now}, ${now}
+      NULL, ${options.failureCode}, ${options.error?.slice(0, 500) ?? null},
+      NULL, ${addMonths(now, PLATFORM_RETENTION_MONTHS)}, false, ${now}, ${now}
     )
     ON CONFLICT ("idempotency_key", "payload_digest") DO NOTHING
   `);

@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 import { createServiceRoleSupabaseClient, hasServiceRoleSupabaseCredentials } from '@/lib/supabase/server';
 import type { AdminUserRecord, AdminUserRole, AdminUserStatus, AdminUsersResponse } from '../types';
+import { requirePlatformAdminDataAccess } from '@/lib/security/platform-data-authority';
 
 const VALID_ROLES: AdminUserRole[] = ['member', 'leader', 'operator', 'platform_admin'];
 const VALID_STATUSES: AdminUserStatus[] = ['active', 'pending', 'suspended'];
@@ -73,6 +74,7 @@ export async function listUsers(
   query: { search?: string; role?: string; status?: string; page?: number; limit?: number },
   options: { includeAllTenants?: boolean } = {},
 ): Promise<AdminUsersResponse> {
+  if (options.includeAllTenants) await requirePlatformAdminDataAccess();
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(Math.max(1, query.limit ?? 10), 50);
   const where: Prisma.UserWhereInput = {

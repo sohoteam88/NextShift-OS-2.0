@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { rm, computeRevenueMetrics, computeAIMetrics, computeSummary } from './ai-profitability';
 import { computeTenantHealth } from './tenant-health';
 import { computeGrowthWindow, computeAlerts, computeFunnelAnalysis } from './system-monitoring';
+import { requirePlatformAdminDataAccess } from '@/lib/security/platform-data-authority';
 
 // Re-export types for backward compat
 export type { ChurnRiskLevel } from './tenant-health';
@@ -31,6 +32,7 @@ export type PlatformOperatingData = {
 
 class PlatformOperatingService {
   async getOperatingData(): Promise<PlatformOperatingData> {
+    await requirePlatformAdminDataAccess();
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);

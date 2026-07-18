@@ -4,10 +4,11 @@ import { AppError } from '@/lib/errors';
 import { tenantService } from '@/modules/tenant/services/tenant-service';
 import type { PlatformTenantDetail, PlatformTenantOverview } from '../types';
 import type { PlanTier } from '@/modules/tenant/constants/plans';
+import { requirePlatformAdminDataAccess } from '@/lib/security/platform-data-authority';
 
 type TenantListQuery = { search?: string; plan?: string; status?: string; page?: number; limit?: number };
 type TenantCreateInput = { name: string; slug: string; plan: PlanTier; ownerId: string; ownerEmail: string; ownerName: string };
-type TenantUpdateInput = { name?: string; slug?: string; plan?: PlanTier; status?: string; maxMembers?: number; maxAiCalls?: number };
+type TenantUpdateInput = { name?: string; slug?: string; plan?: PlanTier; status?: 'active' | 'suspended'; maxMembers?: number; maxAiCalls?: number };
 
 function decimalToNumber(value: Prisma.Decimal | number | null | undefined) { return Number(value ?? 0); }
 function startOfMonth(date = new Date()) { const v = new Date(date); v.setDate(1); v.setHours(0,0,0,0); return v; }
@@ -31,6 +32,7 @@ async function loadTenantOverview(tenant: { id: string; name: string; slug: stri
 }
 
 export async function listTenants(query: TenantListQuery = {}) {
+  await requirePlatformAdminDataAccess();
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(50, Math.max(1, query.limit ?? 10));
   const where: Prisma.TenantWhereInput = {
@@ -47,6 +49,7 @@ export async function listTenants(query: TenantListQuery = {}) {
 }
 
 export async function getTenantDetail(tenantId: string): Promise<PlatformTenantDetail> {
+  await requirePlatformAdminDataAccess();
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { id: true, name: true, slug: true, plan: true, maxMembers: true, maxAiCalls: true, status: true, settings: true, createdAt: true, updatedAt: true } });
   if (!tenant) throw new AppError('NOT_FOUND', 404, 'Tenant not found');
   const [usage, ai, users, leads, funnels] = await Promise.all([
@@ -70,6 +73,9 @@ export async function upgradeTenant(tenantId: string, plan: PlanTier) { return t
 export async function createTenant(input: TenantCreateInput) { return tenantService.create(input); }
 
 export async function updateTenant(tenantId: string, data: TenantUpdateInput) {
+  const current = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { status: true } });
+  if (!current) throw new AppError('NOT_FOUND', 404, 'Tenant not found');
+  if (current.status === 'deleted') throw new AppError('TENANT_DELETED_TERMINAL', 409, 'Deleted tenant is terminal');
   if (data.plan) await tenantService.upgradePlan(tenantId, data.plan);
   return prisma.tenant.update({ where: { id: tenantId }, data: { ...(data.name !== undefined ? { name: data.name } : {}), ...(data.slug !== undefined ? { slug: data.slug } : {}), ...(data.status !== undefined ? { status: data.status } : {}), ...(data.maxMembers !== undefined ? { maxMembers: data.maxMembers } : {}), ...(data.maxAiCalls !== undefined ? { maxAiCalls: data.maxAiCalls } : {}), updatedAt: new Date() }, select: { id: true, name: true, slug: true, plan: true, maxMembers: true, maxAiCalls: true, status: true } });
 }

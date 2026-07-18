@@ -64,7 +64,7 @@ CREATE TABLE "audit_event_outbox" (
   CONSTRAINT "audit_event_outbox_attempt_check" CHECK ("attempt_count" >= 0),
   CONSTRAINT "audit_event_outbox_terminal_check" CHECK (
     ("status" = 'delivered' AND "delivered_at" IS NOT NULL AND "delivered_audit_log_id" IS NOT NULL) OR
-    ("status" = 'dead_letter' AND "dead_lettered_at" IS NOT NULL AND "alerted_at" IS NOT NULL) OR
+    ("status" = 'dead_letter' AND "dead_lettered_at" IS NOT NULL) OR
     ("status" IN ('pending', 'processing') AND "delivered_at" IS NULL AND "dead_lettered_at" IS NULL)
   )
 );
@@ -76,6 +76,59 @@ CREATE INDEX "audit_event_outbox_correlation_idx"
 CREATE INDEX "audit_event_outbox_retention_idx"
   ON "audit_event_outbox" ("retention_until")
   WHERE "status" IN ('delivered', 'dead_letter') AND "legal_hold" = false;
+
+-- Dead-letter state is not alert delivery. A separate durable alert queue owns
+-- delivery attempts and the provider receipt; alerted_at is set only after a
+-- receipt is committed.
+CREATE TABLE "audit_operational_alerts" (
+  "id" text PRIMARY KEY,
+  "outbox_event_id" text NOT NULL UNIQUE REFERENCES "audit_event_outbox"("id") ON DELETE RESTRICT,
+  "correlation_id" text NOT NULL,
+  "alert_type" text NOT NULL,
+  "severity" text NOT NULL DEFAULT 'critical',
+  "payload_digest" text NOT NULL,
+  "payload" jsonb NOT NULL,
+  "status" text NOT NULL DEFAULT 'pending',
+  "attempt_count" integer NOT NULL DEFAULT 0,
+  "next_attempt_at" timestamptz NOT NULL DEFAULT now(),
+  "claim_token" text,
+  "claimed_at" timestamptz,
+  "delivered_at" timestamptz,
+  "delivery_receipt" text,
+  "last_error" text,
+  "retention_until" timestamptz NOT NULL DEFAULT (now() + interval '24 months'),
+  "legal_hold" boolean NOT NULL DEFAULT false,
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT "audit_operational_alert_digest_check" CHECK ("payload_digest" ~ '^[0-9a-f]{64}$'),
+  CONSTRAINT "audit_operational_alert_status_check" CHECK ("status" IN ('pending','processing','delivered')),
+  CONSTRAINT "audit_operational_alert_receipt_check" CHECK (
+    ("status" = 'delivered' AND "delivered_at" IS NOT NULL AND "delivery_receipt" IS NOT NULL) OR
+    ("status" IN ('pending','processing') AND "delivered_at" IS NULL AND "delivery_receipt" IS NULL)
+  )
+);
+CREATE INDEX "audit_operational_alert_claim_idx"
+  ON "audit_operational_alerts" ("status", "next_attempt_at", "created_at");
+CREATE INDEX "audit_operational_alert_correlation_idx"
+  ON "audit_operational_alerts" ("correlation_id", "created_at");
+
+-- An alert receipt is retained as security evidence. Pending/processing alerts
+-- cannot be discarded, and delivered alerts remain protected until retention
+-- expires unless a legal hold keeps them longer.
+CREATE FUNCTION enforce_audit_operational_alert_retention() RETURNS trigger AS $$
+BEGIN
+  IF OLD."status" <> 'delivered'
+     OR OLD."legal_hold" = true
+     OR OLD."retention_until" > now() THEN
+    RAISE EXCEPTION 'audit operational alert retention prevents deletion';
+  END IF;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER "audit_operational_alert_retention_guard"
+BEFORE DELETE ON "audit_operational_alerts"
+FOR EACH ROW EXECUTE FUNCTION enforce_audit_operational_alert_retention();
 
 -- Audit event identity and payload are immutable. Delivery bookkeeping remains
 -- mutable so workers can claim, retry, receipt and dead-letter the event.

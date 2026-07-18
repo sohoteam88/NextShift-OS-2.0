@@ -11,6 +11,48 @@ export const COMPLETION_MATRIX = `${GOVERNANCE_DIR}/U3B_COMPLETION_MATRIX.json`;
 type Status = 'complete' | 'incomplete' | 'intentionally_retained_compatibility_source' | 'blocked';
 type JsonRecord = Record<string, any>;
 
+const SUPERADMIN_FIXTURE_FILE = 'src/__tests__/integration/u3b-postgres.test.ts';
+const SUPERADMIN_ROLE_FIXTURE_FILE = 'src/__tests__/security/superadmin-mutation-authority.test.ts';
+const SUPERADMIN_SHARED_POSTGRES_FIXTURES = [
+  'U3B-PG-ATOMIC-TARGET-WRITES',
+  'U3B-PG-FAILURE-AFTER-ROLLBACK',
+  'U3B-PG-IDEMPOTENCY-DIRECT-RACE',
+  'U3B-PG-IDEMPOTENCY-REPLAY-RACES',
+  'U3B-PG-CORRELATION-ORDERING',
+  'U3B-PG-DIGEST-CONFLICT',
+  'U3B-PG-ALERT-DELIVERY-RECEIPT',
+  'U3B-PG-DELETED-TERMINAL',
+] as const;
+const SUPERADMIN_WRITE_AUTHORITIES: Record<string, string[]> = {
+  'TARGET-SUPER-001': ['writePlatformAuditInTransaction', '$transaction'],
+  'TARGET-SUPER-002': ['setPlatformOverrideWithAudit'],
+  'TARGET-SUPER-003': ['revokePlatformOverrideWithAudit'],
+  'TARGET-SUPER-004': ['updatePlatformUserWithAudit'],
+  'TARGET-SUPER-005': ['deletePlatformUserWithAudit'],
+  'TARGET-SUPER-006': ['createPlatformTenantWithAudit'],
+  'TARGET-SUPER-007': ['updatePlatformTenantWithAudit'],
+  'TARGET-SUPER-008': ['deleteTenantWithAudit'],
+  'TARGET-SUPER-009': ['writePlatformAudit'],
+  'TARGET-SUPER-010': ['writePlatformAuditInTransaction', '$transaction'],
+};
+
+const PRIVILEGED_LOADERS = [
+  ['operating dashboard', 'src/modules/admin/services/platformOperatingService.ts'],
+  ['platform stats', 'src/modules/admin/services/platform-stats.ts'],
+  ['AI tenant costs', 'src/modules/admin/services/ai-analytics.ts'],
+  ['AI model costs', 'src/modules/admin/services/ai-analytics.ts'],
+  ['platform users', 'src/modules/admin/services/platform-health.ts'],
+  ['platform audit log', 'src/modules/admin/services/platform-health.ts'],
+  ['platform health counts', 'src/modules/admin/services/platform-health.ts'],
+  ['tenant list', 'src/modules/admin/services/tenant-management.ts'],
+  ['tenant detail', 'src/modules/admin/services/tenant-management.ts'],
+  ['founder command overview', 'src/modules/admin/services/adminCommandService.ts'],
+  ['founder feature access', 'src/modules/admin/services/adminCommandService.ts'],
+  ['cross-tenant API users', 'src/modules/admin/services/user-management.ts'],
+  ['manual override detail', 'src/modules/saas/saasService.ts'],
+  ['override expiry warnings', 'src/modules/saas/saasService.ts'],
+] as const;
+
 export class U3BValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -158,7 +200,20 @@ export function buildCompletionMatrix(root: string): JsonRecord {
     const file = apiFile(target.target_route);
     const text = currentSource(root, file);
     const auditRequired = target.target_namespace === 'superadmin';
-    const auditPresent = !auditRequired || /writePlatformAudit|deleteTenantWithAudit/.test(text);
+    const fixtureSource = source(root, SUPERADMIN_FIXTURE_FILE);
+    const roleFixtureSource = source(root, SUPERADMIN_ROLE_FIXTURE_FILE);
+    const roleFixturePresent = !auditRequired || (
+      roleFixtureSource.includes(target.stable_target_id) &&
+      roleFixtureSource.includes('U3B-SUPERADMIN-WRITE-ROLE-GUARD')
+    );
+    const postgresFixturesPresent = !auditRequired || (
+      fixtureSource.includes(target.stable_target_id) &&
+      SUPERADMIN_SHARED_POSTGRES_FIXTURES.every((fixture) => fixtureSource.includes(fixture))
+    );
+    const namedFixturePresent = roleFixturePresent && postgresFixturesPresent;
+    const requiredAuthorities = SUPERADMIN_WRITE_AUTHORITIES[target.stable_target_id] ?? [];
+    const transactionAuthorityPresent = !auditRequired || requiredAuthorities.every((authority) => text.includes(authority));
+    const auditPresent = !auditRequired || (namedFixturePresent && transactionAuthorityPresent);
     const roleBoundaryPresent = target.target_namespace === 'superadmin'
       ? /requireRoleApi\([\s\S]{0,120}\['platform_admin'\]\)/.test(text)
       : target.target_roles.includes('leader')
@@ -178,7 +233,37 @@ export function buildCompletionMatrix(root: string): JsonRecord {
       tenant_boundary: target.tenant_authority,
       audit_requirement: target.audit,
       success_failure_audit_present: auditPresent,
+      executable_fixture: auditRequired ? {
+        stable_id: `U3B-POSTGRES-${target.stable_target_id}`,
+        files: [SUPERADMIN_ROLE_FIXTURE_FILE, SUPERADMIN_FIXTURE_FILE],
+        named_fixture_present: namedFixturePresent,
+        role_fixture: 'U3B-SUPERADMIN-WRITE-ROLE-GUARD',
+        postgres_fixtures: SUPERADMIN_SHARED_POSTGRES_FIXTURES,
+        transaction_authority_present: transactionAuthorityPresent,
+        required_authorities: requiredAuthorities,
+        verifies: ['exact_role_guard', 'platform_scope', 'success_audit', 'failure_audit', 'transaction_or_durable_ordering', 'idempotency', 'deleted_terminal_policy'],
+      } : null,
       test_evidence: target.required_test_ids,
+    };
+  });
+
+  const loaderFixtureSource = source(root, 'src/__tests__/security/platform-data-authority.test.ts');
+  const privilegedLoaderRows = PRIVILEGED_LOADERS.map(([name, file], index) => {
+    const text = source(root, file);
+    const authorityPresent = text.includes('requirePlatformAdminDataAccess');
+    const fixturePresent = loaderFixtureSource.includes(`'${name}'`);
+    return {
+      stable_id: `PRIVILEGED-LOADER-${String(index + 1).padStart(3, '0')}`,
+      name,
+      source_file: file,
+      status: authorityPresent && fixturePresent ? 'complete' : 'incomplete',
+      exact_role_guard: 'platform_admin',
+      authority_present: authorityPresent,
+      executable_fixture: {
+        file: 'src/__tests__/security/platform-data-authority.test.ts',
+        named_fixture_present: fixturePresent,
+        denied_roles: ['member', 'leader', 'operator'],
+      },
     };
   });
 
@@ -222,7 +307,7 @@ export function buildCompletionMatrix(root: string): JsonRecord {
     };
   });
 
-  const allRows = [...pageRows, ...methodRows, ...targetRows, ...compatibilityRows, ...consumerRows, ...securityRows];
+  const allRows = [...pageRows, ...methodRows, ...targetRows, ...compatibilityRows, ...consumerRows, ...securityRows, ...privilegedLoaderRows];
   return {
     schema_version: 1,
     task_id: 'U3B',
@@ -246,6 +331,7 @@ export function buildCompletionMatrix(root: string): JsonRecord {
       consumer_occurrences: 521,
       compatibility_page_routes: 22,
       security_authorities: security.authority_entries.length,
+      privileged_cross_tenant_loaders: PRIVILEGED_LOADERS.length,
     },
     page_rows: pageRows,
     api_method_rows: methodRows,
@@ -253,6 +339,7 @@ export function buildCompletionMatrix(root: string): JsonRecord {
     compatibility_route_rows: compatibilityRows,
     consumer_rows: consumerRows,
     security_authority_rows: securityRows,
+    privileged_loader_rows: privilegedLoaderRows,
     status_counts: statusCounts(allRows),
   };
 }
@@ -292,7 +379,8 @@ export function validateCompletionMatrix(root: string, matrix = buildCompletionM
   exactCount('consumer_occurrences', redirect.consumer_snapshot.reduce((sum: number, row: JsonRecord) => sum + row.count, 0), expected.consumer_occurrences, passes);
   exactCount('compatibility_page_routes', matrix.compatibility_route_rows.length, expected.compatibility_page_routes, passes);
   exactCount('security_authorities', matrix.security_authority_rows.length, expected.security_authorities, passes);
-  for (const [section, rows] of Object.entries({ pages: matrix.page_rows, methods: matrix.api_method_rows, targets: matrix.target_write_rows, redirects: matrix.compatibility_route_rows, security: matrix.security_authority_rows })) {
+  exactCount('privileged_cross_tenant_loaders', matrix.privileged_loader_rows.length, expected.privileged_cross_tenant_loaders, passes);
+  for (const [section, rows] of Object.entries({ pages: matrix.page_rows, methods: matrix.api_method_rows, targets: matrix.target_write_rows, redirects: matrix.compatibility_route_rows, security: matrix.security_authority_rows, privileged_loaders: matrix.privileged_loader_rows })) {
     const incomplete = (rows as JsonRecord[]).filter((row) => row.status === 'incomplete' || row.status === 'blocked');
     if (incomplete.length) throw new U3BValidationError(`${section} incomplete: ${incomplete.map((row) => row.stable_id ?? row.stable_capability_id ?? row.stable_target_id).join(', ')}`);
     passes.push(`${section}_complete`);
@@ -323,7 +411,8 @@ export function validateCompletionMatrix(root: string, matrix = buildCompletionM
   invariant(root, 'src/lib/navigation/compatibility-policy.ts', [/status: 301/, /SOURCE_BOOKMARK/, /memberQueryAuthorized/, /WORKSPACE_COMPATIBILITY_NOT_APPROVED/], [/status: 302/, /destination:\s*searchParams/], passes, 'terminal_redirect_policy');
   invariant(root, 'src/modules/admin/services/platform-audit-service.ts', [/ON CONFLICT \(["']?idempotency_key["']?\)/, /AUDIT_IDEMPOTENCY_CONFLICT/, /canonicalizeJson/], [/findFirst\s*\(/], passes, 'atomic_audit_authority');
   invariant(root, 'src/modules/admin/workers/audit-outbox-worker.ts', [/FOR UPDATE SKIP LOCKED/, /dead_letter/, /next_attempt_at/, /retention/], [], passes, 'outbox_replay_authority');
-  invariant(root, 'supabase/migrations/20260717135456_u3b_three_space_audit.sql', [/CREATE UNIQUE INDEX[\s\S]*idempotency/i, /audit_event_outbox/i, /legal_hold/i, /retention_until/i], [], passes, 'database_audit_authority');
+  invariant(root, 'src/modules/admin/workers/audit-outbox-worker.ts', [/NOT EXISTS[\s\S]*earlier\."correlation_id"/, /audit_operational_alerts/, /delivery_receipt/], [/"alerted_at"\s*=\s*\$\{deadLetter/], passes, 'ordered_replay_and_alert_receipt_authority');
+  invariant(root, 'supabase/migrations/20260717135456_u3b_three_space_audit.sql', [/CREATE UNIQUE INDEX[\s\S]*idempotency/i, /audit_event_outbox/i, /audit_operational_alerts/i, /delivery_receipt/i, /legal_hold/i, /retention_until/i], [], passes, 'database_audit_authority');
   const productionSources = [
     'src/app/api/v1/lead-magnet/publish/route.ts',
     'src/app/api/v1/video/projects/[id]/publish/route.ts',

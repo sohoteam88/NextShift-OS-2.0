@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { Activity, CheckCircle2, Clock3, Database, Mail, MessageCircle, Radio, Server, Webhook } from 'lucide-react';
-import prisma from '@/lib/prisma';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
+import { getPlatformHealthCounts } from '@/modules/admin/services/platform-health';
 
 type HealthState = 'ok' | 'degraded' | 'unknown';
 
@@ -23,12 +23,9 @@ export default async function SuperadminHealthPage() {
   let userCount = 0;
 
   try {
-    const [tenants, users] = await Promise.all([
-      prisma.tenant.count(),
-      prisma.user.count({ where: { deletedAt: null } }),
-    ]);
-    tenantCount = tenants;
-    userCount = users;
+    const counts = await getPlatformHealthCounts();
+    tenantCount = counts.tenants;
+    userCount = counts.users;
   } catch {
     databaseStatus = 'degraded';
   }

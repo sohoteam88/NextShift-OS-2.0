@@ -658,6 +658,32 @@ model AuditEventOutbox {
   @@map("audit_event_outbox")
 }
 
+model AuditOperationalAlert {
+  id             String    @id @default(cuid())
+  outboxEventId  String    @unique @map("outbox_event_id")
+  correlationId  String    @map("correlation_id")
+  alertType      String    @map("alert_type")
+  severity       String    @default("critical")
+  payloadDigest  String    @map("payload_digest")
+  payload        Json
+  status         String    @default("pending")
+  attemptCount   Int       @default(0) @map("attempt_count")
+  nextAttemptAt  DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  claimToken     String?   @map("claim_token")
+  claimedAt      DateTime? @map("claimed_at") @db.Timestamptz(6)
+  deliveredAt    DateTime? @map("delivered_at") @db.Timestamptz(6)
+  deliveryReceipt String?  @map("delivery_receipt")
+  lastError      String?   @map("last_error")
+  retentionUntil DateTime  @map("retention_until") @db.Timestamptz(6)
+  legalHold      Boolean   @default(false) @map("legal_hold")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([correlationId, createdAt])
+  @@map("audit_operational_alerts")
+}
+
 model PostPerformance {
   id          String    @id @default(cuid())
   tenantId    String    @map("tenant_id") @db.Uuid

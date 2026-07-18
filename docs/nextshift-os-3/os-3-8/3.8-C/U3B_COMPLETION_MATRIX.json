@@ -20,7 +20,8 @@
     "consumer_files": 85,
     "consumer_occurrences": 521,
     "compatibility_page_routes": 22,
-    "security_authorities": 11
+    "security_authorities": 11,
+    "privileged_cross_tenant_loaders": 14
   },
   "page_rows": [
     {
@@ -3480,6 +3481,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-001-SUCCESS",
         "U3B-TARGET-ADMIN-001-FAILURE",
@@ -3505,6 +3507,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-002-SUCCESS",
         "U3B-TARGET-ADMIN-002-FAILURE",
@@ -3530,6 +3533,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-003-SUCCESS",
         "U3B-TARGET-ADMIN-003-FAILURE",
@@ -3555,6 +3559,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-004-SUCCESS",
         "U3B-TARGET-ADMIN-004-FAILURE",
@@ -3580,6 +3585,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-005-SUCCESS",
         "U3B-TARGET-ADMIN-005-FAILURE",
@@ -3605,6 +3611,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-006-SUCCESS",
         "U3B-TARGET-ADMIN-006-FAILURE",
@@ -3630,6 +3637,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-007-SUCCESS",
         "U3B-TARGET-ADMIN-007-FAILURE",
@@ -3656,6 +3664,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-008-SUCCESS",
         "U3B-TARGET-ADMIN-008-FAILURE",
@@ -3682,6 +3691,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-009-SUCCESS",
         "U3B-TARGET-ADMIN-009-FAILURE",
@@ -3708,6 +3718,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-010-SUCCESS",
         "U3B-TARGET-ADMIN-010-FAILURE",
@@ -3733,6 +3744,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-011-SUCCESS",
         "U3B-TARGET-ADMIN-011-FAILURE",
@@ -3758,6 +3770,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-012-SUCCESS",
         "U3B-TARGET-ADMIN-012-FAILURE",
@@ -3783,6 +3796,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-013-SUCCESS",
         "U3B-TARGET-ADMIN-013-FAILURE",
@@ -3808,6 +3822,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-014-SUCCESS",
         "U3B-TARGET-ADMIN-014-FAILURE",
@@ -3833,6 +3848,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-015-SUCCESS",
         "U3B-TARGET-ADMIN-015-FAILURE",
@@ -3858,6 +3874,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-016-SUCCESS",
         "U3B-TARGET-ADMIN-016-FAILURE",
@@ -3883,6 +3900,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-017-SUCCESS",
         "U3B-TARGET-ADMIN-017-FAILURE",
@@ -3909,6 +3927,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-018-SUCCESS",
         "U3B-TARGET-ADMIN-018-FAILURE",
@@ -3934,6 +3953,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-019-SUCCESS",
         "U3B-TARGET-ADMIN-019-FAILURE",
@@ -3959,6 +3979,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-020-SUCCESS",
         "U3B-TARGET-ADMIN-020-FAILURE",
@@ -3984,6 +4005,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-021-SUCCESS",
         "U3B-TARGET-ADMIN-021-FAILURE",
@@ -4009,6 +4031,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-022-SUCCESS",
         "U3B-TARGET-ADMIN-022-FAILURE",
@@ -4034,6 +4057,7 @@
         "scope": "TENANT"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": null,
       "test_evidence": [
         "U3B-TARGET-ADMIN-023-SUCCESS",
         "U3B-TARGET-ADMIN-023-FAILURE",
@@ -4072,6 +4096,39 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-001",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "writePlatformAuditInTransaction",
+          "$transaction"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-001-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-001-AUDIT-FAILURE",
@@ -4111,6 +4168,38 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-002",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "setPlatformOverrideWithAudit"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-002-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-002-AUDIT-FAILURE",
@@ -4150,6 +4239,38 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-003",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "revokePlatformOverrideWithAudit"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-003-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-003-AUDIT-FAILURE",
@@ -4189,6 +4310,38 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-004",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "updatePlatformUserWithAudit"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-004-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-004-AUDIT-FAILURE",
@@ -4228,6 +4381,38 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-005",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "deletePlatformUserWithAudit"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-005-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-005-AUDIT-FAILURE",
@@ -4267,6 +4452,38 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-006",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "createPlatformTenantWithAudit"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-006-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-006-AUDIT-FAILURE",
@@ -4306,6 +4523,38 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-007",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "updatePlatformTenantWithAudit"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-007-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-007-AUDIT-FAILURE",
@@ -4345,6 +4594,38 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-008",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "deleteTenantWithAudit"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-008-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-008-AUDIT-FAILURE",
@@ -4384,6 +4665,38 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-009",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "writePlatformAudit"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-009-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-009-AUDIT-FAILURE",
@@ -4423,6 +4736,39 @@
         "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
       },
       "success_failure_audit_present": true,
+      "executable_fixture": {
+        "stable_id": "U3B-POSTGRES-TARGET-SUPER-010",
+        "files": [
+          "src/__tests__/security/superadmin-mutation-authority.test.ts",
+          "src/__tests__/integration/u3b-postgres.test.ts"
+        ],
+        "named_fixture_present": true,
+        "role_fixture": "U3B-SUPERADMIN-WRITE-ROLE-GUARD",
+        "postgres_fixtures": [
+          "U3B-PG-ATOMIC-TARGET-WRITES",
+          "U3B-PG-FAILURE-AFTER-ROLLBACK",
+          "U3B-PG-IDEMPOTENCY-DIRECT-RACE",
+          "U3B-PG-IDEMPOTENCY-REPLAY-RACES",
+          "U3B-PG-CORRELATION-ORDERING",
+          "U3B-PG-DIGEST-CONFLICT",
+          "U3B-PG-ALERT-DELIVERY-RECEIPT",
+          "U3B-PG-DELETED-TERMINAL"
+        ],
+        "transaction_authority_present": true,
+        "required_authorities": [
+          "writePlatformAuditInTransaction",
+          "$transaction"
+        ],
+        "verifies": [
+          "exact_role_guard",
+          "platform_scope",
+          "success_audit",
+          "failure_audit",
+          "transaction_or_durable_ordering",
+          "idempotency",
+          "deleted_terminal_policy"
+        ]
+      },
       "test_evidence": [
         "U3B-TARGET-SUPER-010-AUDIT-SUCCESS",
         "U3B-TARGET-SUPER-010-AUDIT-FAILURE",
@@ -7480,8 +7826,8 @@
       "count": 1,
       "kind": "TEST_REFERENCE",
       "resolution_group_id": "CONSUMER-TESTS",
-      "status": "intentionally_retained_compatibility_source",
-      "caller_migration": "non-runtime or compatibility authority retained"
+      "status": "complete",
+      "caller_migration": "legacy literal removed or canonicalized"
     },
     {
       "stable_id": "CONSUMER-238",
@@ -7839,10 +8185,250 @@
       ]
     }
   ],
+  "privileged_loader_rows": [
+    {
+      "stable_id": "PRIVILEGED-LOADER-001",
+      "name": "operating dashboard",
+      "source_file": "src/modules/admin/services/platformOperatingService.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-002",
+      "name": "platform stats",
+      "source_file": "src/modules/admin/services/platform-stats.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-003",
+      "name": "AI tenant costs",
+      "source_file": "src/modules/admin/services/ai-analytics.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-004",
+      "name": "AI model costs",
+      "source_file": "src/modules/admin/services/ai-analytics.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-005",
+      "name": "platform users",
+      "source_file": "src/modules/admin/services/platform-health.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-006",
+      "name": "platform audit log",
+      "source_file": "src/modules/admin/services/platform-health.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-007",
+      "name": "platform health counts",
+      "source_file": "src/modules/admin/services/platform-health.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-008",
+      "name": "tenant list",
+      "source_file": "src/modules/admin/services/tenant-management.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-009",
+      "name": "tenant detail",
+      "source_file": "src/modules/admin/services/tenant-management.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-010",
+      "name": "founder command overview",
+      "source_file": "src/modules/admin/services/adminCommandService.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-011",
+      "name": "founder feature access",
+      "source_file": "src/modules/admin/services/adminCommandService.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-012",
+      "name": "cross-tenant API users",
+      "source_file": "src/modules/admin/services/user-management.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-013",
+      "name": "manual override detail",
+      "source_file": "src/modules/saas/saasService.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    },
+    {
+      "stable_id": "PRIVILEGED-LOADER-014",
+      "name": "override expiry warnings",
+      "source_file": "src/modules/saas/saasService.ts",
+      "status": "complete",
+      "exact_role_guard": "platform_admin",
+      "authority_present": true,
+      "executable_fixture": {
+        "file": "src/__tests__/security/platform-data-authority.test.ts",
+        "named_fixture_present": true,
+        "denied_roles": [
+          "member",
+          "leader",
+          "operator"
+        ]
+      }
+    }
+  ],
   "status_counts": {
-    "complete": 198,
+    "complete": 213,
     "incomplete": 0,
-    "intentionally_retained_compatibility_source": 205,
+    "intentionally_retained_compatibility_source": 204,
     "blocked": 0
   }
 }

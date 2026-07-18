@@ -1,10 +1,12 @@
 import prisma from '@/lib/prisma';
 import type { PlatformAICostBreakdown } from '../types';
+import { requirePlatformAdminDataAccess } from '@/lib/security/platform-data-authority';
 
 function decimalToNumber(value: any) { return Number(value ?? 0); }
 function startOfMonth(d = new Date()) { const v = new Date(d); v.setDate(1); v.setHours(0,0,0,0); return v; }
 
 export async function getAICostBreakdown(): Promise<PlatformAICostBreakdown[]> {
+  await requirePlatformAdminDataAccess();
   const monthStart = startOfMonth();
   const [tenants, usageGroups] = await Promise.all([
     prisma.tenant.findMany({ select: { id: true, name: true, slug: true, plan: true }, orderBy: { name: 'asc' } }),
@@ -17,6 +19,7 @@ export async function getAICostBreakdown(): Promise<PlatformAICostBreakdown[]> {
 }
 
 export async function getAIModelBreakdown() {
+  await requirePlatformAdminDataAccess();
   const monthStart = startOfMonth();
   const fourteenDaysAgo = new Date(); fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13); fourteenDaysAgo.setHours(0,0,0,0);
   const [summary, byModel, byFeature, recentLogs] = await Promise.all([
