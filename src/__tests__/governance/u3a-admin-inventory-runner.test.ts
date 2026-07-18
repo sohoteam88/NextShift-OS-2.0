@@ -8,19 +8,20 @@ import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const frozenEvidenceHead = '0678327511f218c78213829d12371817d9b06f63';
+const authorizedBaseline = '76636360d8c1a643c86bb26eb8923c6271241679';
 
-function ensureFrozenEvidenceCommit(): void {
+function ensureGitObject(object: string, fetchRef: string): void {
   try {
-    execFileSync('git', ['cat-file', '-e', `${frozenEvidenceHead}^{commit}`], {
+    execFileSync('git', ['cat-file', '-e', object], {
       cwd: repoRoot,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch {
-    execFileSync('git', ['fetch', '--no-tags', '--depth=1', 'origin', frozenEvidenceHead], {
+    execFileSync('git', ['fetch', '--no-tags', '--depth=1', 'origin', fetchRef], {
       cwd: repoRoot,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    execFileSync('git', ['cat-file', '-e', `${frozenEvidenceHead}^{commit}`], {
+    execFileSync('git', ['cat-file', '-e', object], {
       cwd: repoRoot,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -29,7 +30,11 @@ function ensureFrozenEvidenceCommit(): void {
 
 describe('U3A admin-space frozen inventory', () => {
   it('runs all 55 frozen inventory contract fixtures in the default test suite', () => {
-    ensureFrozenEvidenceCommit();
+    ensureGitObject(`${frozenEvidenceHead}^{commit}`, frozenEvidenceHead);
+    // A shallow CI checkout may contain the baseline commit object without all
+    // path/tree objects needed by the frozen validator. Verify a known frozen
+    // source blob, and deepen that exact commit only when it is unavailable.
+    ensureGitObject(`${authorizedBaseline}:src/app/(auth)/admin/page.tsx`, authorizedBaseline);
     const fixtureRoot = mkdtempSync(resolve(tmpdir(), 'nextshift-u3a-frozen-'));
     const frozenRoot = resolve(fixtureRoot, 'tree');
     try {
