@@ -1,0 +1,2990 @@
+{
+  "schema_version": "u3a.api-method-inventory.v1",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "baseline_sha": "76636360d8c1a643c86bb26eb8923c6271241679",
+  "authoritative_contract": {
+    "path": "docs/nextshift-os-3/os-3-8/3.8-C/U3_ADMIN_SPACE_SEPARATION_CONTRACT.md",
+    "sha256": "b12de777450763ad0d9e56357d5173eae61cb19a5c563133e74e90859afd1e2b",
+    "git_blob": "ba10f0b4c5f0429c5ae7e2e8ffbd920daa6ffd3f"
+  },
+  "expected_counts": {
+    "source_route_files": 37,
+    "exported_methods": 57,
+    "unique_privileged_source_writes": 30,
+    "target_write_capabilities": 33,
+    "admin_target_writes": 23,
+    "superadmin_target_writes": 10,
+    "admin_existing_audit_coverage": 5,
+    "superadmin_existing_audit_coverage": 4,
+    "superadmin_required_success_failure_audit": 10,
+    "split_source_writes": 3
+  },
+  "discovery": {
+    "full_api_route_census": {
+      "count": 209,
+      "path_sha256": "9ab63d556a2ecb027b08b2e74ff9b330085fe371e76af84551f1a39716ac97de",
+      "policy": "Any added, removed, or renamed API route fails closed, including delegated guards with no role literal, until this reviewed inventory is regenerated."
+    },
+    "roots": [
+      "src/app/api"
+    ],
+    "privileged_prefixes": [
+      "/api/v1/admin",
+      "/api/v1/platform-admin",
+      "/api/v1/admin-command"
+    ],
+    "method_export_pattern": "export (const|async function) (GET|POST|PUT|PATCH|DELETE)",
+    "privilege_signals": [
+      "platform_admin",
+      "operator",
+      "leader",
+      "requireRoleApi",
+      "service-level role allowlist"
+    ],
+    "service_guard_sources": [
+      "src/modules/team/services/team-service.ts",
+      "src/modules/team/services/leader-dashboard-service.ts",
+      "src/modules/member/services/approval-service.ts",
+      "src/modules/member/services/invite-service.ts"
+    ],
+    "classified_non_sources": [
+      {
+        "stable_id": "API-EXCLUSION-001",
+        "source_file": "src/app/api/v1/analytics/member/route.ts",
+        "baseline_blob": "4ad43a3d297b1da88c082a2e6b1ba0e77f662e75",
+        "classification": "PRODUCT_API_EXCLUSION",
+        "reason": "member product analytics projection"
+      },
+      {
+        "stable_id": "API-EXCLUSION-002",
+        "source_file": "src/app/api/v1/analytics/leader/route.ts",
+        "baseline_blob": "f9ffd4bfe9f1a479d41c383d3ac0a4849d913f4b",
+        "classification": "PRODUCT_API_EXCLUSION",
+        "reason": "leader product analytics projection"
+      },
+      {
+        "stable_id": "API-EXCLUSION-003",
+        "source_file": "src/app/api/v1/analytics/operator/route.ts",
+        "baseline_blob": "8c6af3091e7e42ff4d20e2504a32d3cf38919839",
+        "classification": "PRODUCT_API_EXCLUSION",
+        "reason": "operator product analytics projection"
+      },
+      {
+        "stable_id": "API-EXCLUSION-004",
+        "source_file": "src/app/api/v1/crm/leads/route.ts",
+        "baseline_blob": "5320a52ed286771aff4e9c62828c489d7ccd51e8",
+        "classification": "PRODUCT_API_EXCLUSION",
+        "reason": "member-facing owner-scoped CRM product operations"
+      },
+      {
+        "stable_id": "API-EXCLUSION-005",
+        "source_file": "src/app/api/v1/crm/leads/[id]/route.ts",
+        "baseline_blob": "cee599a972e92514f5ce39101cdcc0c3eb1de214",
+        "classification": "PRODUCT_API_EXCLUSION",
+        "reason": "member-facing owner-scoped CRM product operations"
+      },
+      {
+        "stable_id": "API-EXCLUSION-006",
+        "source_file": "src/app/api/v1/crm/leads/[id]/recalculate-score/route.ts",
+        "baseline_blob": "4af8df1a7c2edb2378aff48ca401a8cd09d58b9d",
+        "classification": "PRODUCT_API_EXCLUSION",
+        "reason": "member-facing owner-scoped CRM product operation"
+      },
+      {
+        "stable_id": "API-EXCLUSION-007",
+        "source_file": "src/app/api/v1/crm/stats/route.ts",
+        "baseline_blob": "2157c6b16b02762d85bb41332fe0d386f355a1be",
+        "classification": "PRODUCT_API_EXCLUSION",
+        "reason": "role-aware session-tenant/owner-scoped CRM product analytics read; no administration capability"
+      }
+    ]
+  },
+  "split_source_method_ids": [
+    "METHOD-ADMIN-FEEDBACK-ID-PATCH",
+    "METHOD-ADMIN-USERS-ID-PATCH",
+    "METHOD-ADMIN-USERS-ID-DELETE"
+  ],
+  "sources": [
+    {
+      "stable_file_id": "API-SRC-001",
+      "source_route": "/api/v1/admin-command",
+      "source_file": "src/app/api/v1/admin-command/route.ts",
+      "current_guard": "requireAuthApi + exact platform_admin",
+      "current_tenant_authority": "platform global read",
+      "owner_module": "modules/admin/adminCommandService",
+      "consumers": [
+        "src/modules/admin/components/AdminCommandDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-COMMAND-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/superadmin/command",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "platform command",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-COMMAND-GET-METHOD",
+            "U3B-METHOD-ADMIN-COMMAND-GET-GUARD",
+            "U3B-METHOD-ADMIN-COMMAND-GET-TENANT",
+            "U3B-METHOD-ADMIN-COMMAND-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "f5bea4348ad9118558c6c011eb31428b5d1070ba"
+    },
+    {
+      "stable_file_id": "API-SRC-002",
+      "source_route": "/api/v1/admin/crm/recalculate-scores",
+      "source_file": "src/app/api/v1/admin/crm/recalculate-scores/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "user.tenantId",
+      "owner_module": "modules/crm/scoring",
+      "consumers": [],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-RECALCULATE-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-001"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-RECALCULATE-POST-METHOD",
+            "U3B-METHOD-ADMIN-RECALCULATE-POST-GUARD",
+            "U3B-METHOD-ADMIN-RECALCULATE-POST-TENANT",
+            "U3B-METHOD-ADMIN-RECALCULATE-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "36cae95c42fa37c175f3eb9ea17d8362213eaf7e"
+    },
+    {
+      "stable_file_id": "API-SRC-003",
+      "source_route": "/api/v1/admin/daily-actions/defaults",
+      "source_file": "src/app/api/v1/admin/daily-actions/defaults/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/admin/daily-actions",
+      "consumers": [
+        "src/modules/admin/components/DailyActionsConfig.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-DAILY-DEFAULTS-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/daily-actions/defaults",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+              "capability": "daily-action defaults",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-DAILY-DEFAULTS-GET-METHOD",
+            "U3B-METHOD-ADMIN-DAILY-DEFAULTS-GET-GUARD",
+            "U3B-METHOD-ADMIN-DAILY-DEFAULTS-GET-TENANT",
+            "U3B-METHOD-ADMIN-DAILY-DEFAULTS-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-ADMIN-DAILY-DEFAULTS-PUT",
+          "source_method": "PUT",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-002"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-DAILY-DEFAULTS-PUT-METHOD",
+            "U3B-METHOD-ADMIN-DAILY-DEFAULTS-PUT-GUARD",
+            "U3B-METHOD-ADMIN-DAILY-DEFAULTS-PUT-TENANT",
+            "U3B-METHOD-ADMIN-DAILY-DEFAULTS-PUT-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "c298ae052facc24602daa1408e7d2818762cc781"
+    },
+    {
+      "stable_file_id": "API-SRC-004",
+      "source_route": "/api/v1/admin/feedback",
+      "source_file": "src/app/api/v1/admin/feedback/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "MISSING tenant predicate",
+      "owner_module": "modules/admin/feedback",
+      "consumers": [
+        "src/app/(auth)/admin/feedback/page.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-FEEDBACK-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/feedback",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+              "capability": "tenant feedback",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            },
+            {
+              "route": "/api/v1/superadmin/feedback",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "platform feedback portfolio",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-FEEDBACK-GET-METHOD",
+            "U3B-METHOD-ADMIN-FEEDBACK-GET-GUARD",
+            "U3B-METHOD-ADMIN-FEEDBACK-GET-TENANT",
+            "U3B-METHOD-ADMIN-FEEDBACK-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "43492d29f5c8b232538477347a56cc9df70f18fb"
+    },
+    {
+      "stable_file_id": "API-SRC-005",
+      "source_route": "/api/v1/admin/feedback/:id",
+      "source_file": "src/app/api/v1/admin/feedback/[id]/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "ID-only update; MISSING tenant predicate",
+      "owner_module": "modules/admin/feedback",
+      "consumers": [
+        "src/app/(auth)/admin/feedback/page.tsx"
+      ],
+      "implementation_risk": "CRITICAL",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-FEEDBACK-ID-PATCH",
+          "source_method": "PATCH",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-003",
+            "TARGET-SUPER-001"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-FEEDBACK-ID-PATCH-METHOD",
+            "U3B-METHOD-ADMIN-FEEDBACK-ID-PATCH-GUARD",
+            "U3B-METHOD-ADMIN-FEEDBACK-ID-PATCH-TENANT",
+            "U3B-METHOD-ADMIN-FEEDBACK-ID-PATCH-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "b61883f09cdf3ee647dfc4641cd59cbc94af6bb6"
+    },
+    {
+      "stable_file_id": "API-SRC-006",
+      "source_route": "/api/v1/admin/override",
+      "source_file": "src/app/api/v1/admin/override/route.ts",
+      "current_guard": "exact platform_admin",
+      "current_tenant_authority": "query/body target with actor-tenant fallback",
+      "owner_module": "modules/admin/override",
+      "consumers": [],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-OVERRIDE-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/superadmin/override",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "override state",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-OVERRIDE-GET-METHOD",
+            "U3B-METHOD-ADMIN-OVERRIDE-GET-GUARD",
+            "U3B-METHOD-ADMIN-OVERRIDE-GET-TENANT",
+            "U3B-METHOD-ADMIN-OVERRIDE-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-ADMIN-OVERRIDE-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-SUPER-002"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-OVERRIDE-POST-METHOD",
+            "U3B-METHOD-ADMIN-OVERRIDE-POST-GUARD",
+            "U3B-METHOD-ADMIN-OVERRIDE-POST-TENANT",
+            "U3B-METHOD-ADMIN-OVERRIDE-POST-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-ADMIN-OVERRIDE-DELETE",
+          "source_method": "DELETE",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-SUPER-003"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-OVERRIDE-DELETE-METHOD",
+            "U3B-METHOD-ADMIN-OVERRIDE-DELETE-GUARD",
+            "U3B-METHOD-ADMIN-OVERRIDE-DELETE-TENANT",
+            "U3B-METHOD-ADMIN-OVERRIDE-DELETE-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "dd5cb70b0c5db9225e0e65d1d3f9ccf5d053b5fc"
+    },
+    {
+      "stable_file_id": "API-SRC-007",
+      "source_route": "/api/v1/admin/settings",
+      "source_file": "src/app/api/v1/admin/settings/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/admin/settings",
+      "consumers": [
+        "src/__tests__/api/admin-api.test.ts",
+        "src/modules/admin/components/AdminSettingsPanel.tsx",
+        "src/modules/admin/components/OperatorDashboard.tsx",
+        "src/modules/admin/components/TemplatesPanel.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-SETTINGS-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/settings",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+              "capability": "tenant settings",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-SETTINGS-GET-METHOD",
+            "U3B-METHOD-ADMIN-SETTINGS-GET-GUARD",
+            "U3B-METHOD-ADMIN-SETTINGS-GET-TENANT",
+            "U3B-METHOD-ADMIN-SETTINGS-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-ADMIN-SETTINGS-PATCH",
+          "source_method": "PATCH",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-004"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-SETTINGS-PATCH-METHOD",
+            "U3B-METHOD-ADMIN-SETTINGS-PATCH-GUARD",
+            "U3B-METHOD-ADMIN-SETTINGS-PATCH-TENANT",
+            "U3B-METHOD-ADMIN-SETTINGS-PATCH-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "effb6ce4f04349ccf12903dd846ed067f059e5e9"
+    },
+    {
+      "stable_file_id": "API-SRC-008",
+      "source_route": "/api/v1/admin/system-health",
+      "source_file": "src/app/api/v1/admin/system-health/route.ts",
+      "current_guard": "platform guard called with fabricated empty request",
+      "current_tenant_authority": "platform global",
+      "owner_module": "modules/admin/system-monitoring",
+      "consumers": [
+        "src/app/(auth)/admin/launch-readiness/page.tsx"
+      ],
+      "implementation_risk": "CRITICAL",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-SYSTEM-HEALTH-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/superadmin/system-health",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "platform health",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-SYSTEM-HEALTH-GET-METHOD",
+            "U3B-METHOD-ADMIN-SYSTEM-HEALTH-GET-GUARD",
+            "U3B-METHOD-ADMIN-SYSTEM-HEALTH-GET-TENANT",
+            "U3B-METHOD-ADMIN-SYSTEM-HEALTH-GET-COMPAT"
+          ],
+          "notes": "Target must authorize with the real request."
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "2330b5662689cd0ecc91b029de5b84446a021dd7"
+    },
+    {
+      "stable_file_id": "API-SRC-009",
+      "source_route": "/api/v1/admin/training/defaults",
+      "source_file": "src/app/api/v1/admin/training/defaults/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/admin/training",
+      "consumers": [
+        "src/modules/admin/components/TrainingModulesConfig.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-TRAINING-DEFAULTS-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/training/defaults",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+              "capability": "training defaults",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-TRAINING-DEFAULTS-GET-METHOD",
+            "U3B-METHOD-ADMIN-TRAINING-DEFAULTS-GET-GUARD",
+            "U3B-METHOD-ADMIN-TRAINING-DEFAULTS-GET-TENANT",
+            "U3B-METHOD-ADMIN-TRAINING-DEFAULTS-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-ADMIN-TRAINING-DEFAULTS-PUT",
+          "source_method": "PUT",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-005"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-TRAINING-DEFAULTS-PUT-METHOD",
+            "U3B-METHOD-ADMIN-TRAINING-DEFAULTS-PUT-GUARD",
+            "U3B-METHOD-ADMIN-TRAINING-DEFAULTS-PUT-TENANT",
+            "U3B-METHOD-ADMIN-TRAINING-DEFAULTS-PUT-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "3aa20a2eda4db69e54fcd25b21f6284dd4519b4a"
+    },
+    {
+      "stable_file_id": "API-SRC-010",
+      "source_route": "/api/v1/admin/users",
+      "source_file": "src/app/api/v1/admin/users/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "operator session tenant; platform includeAllTenants drops scope",
+      "owner_module": "modules/admin/user-management",
+      "consumers": [
+        "src/__tests__/api/admin-api.test.ts",
+        "src/modules/admin/components/UserManagementPanel.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-USERS-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/users",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+              "capability": "tenant user list",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            },
+            {
+              "route": "/api/v1/superadmin/users",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "platform user portfolio",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-USERS-GET-METHOD",
+            "U3B-METHOD-ADMIN-USERS-GET-GUARD",
+            "U3B-METHOD-ADMIN-USERS-GET-TENANT",
+            "U3B-METHOD-ADMIN-USERS-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "cb82bd12055fc2b4e585ecf27044fac95fe11917"
+    },
+    {
+      "stable_file_id": "API-SRC-011",
+      "source_route": "/api/v1/admin/users/:id",
+      "source_file": "src/app/api/v1/admin/users/[id]/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "platform branch drops tenant; ID-only mutation",
+      "owner_module": "modules/admin/user-management",
+      "consumers": [
+        "src/__tests__/api/admin-api.test.ts",
+        "src/modules/admin/components/EditUserDialog.tsx",
+        "src/modules/admin/components/UserManagementPanel.tsx"
+      ],
+      "implementation_risk": "CRITICAL",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-ADMIN-USERS-ID-PATCH",
+          "source_method": "PATCH",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-006",
+            "TARGET-SUPER-004"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-USERS-ID-PATCH-METHOD",
+            "U3B-METHOD-ADMIN-USERS-ID-PATCH-GUARD",
+            "U3B-METHOD-ADMIN-USERS-ID-PATCH-TENANT",
+            "U3B-METHOD-ADMIN-USERS-ID-PATCH-COMPAT"
+          ],
+          "notes": "Admin target forbids assigning platform_admin."
+        },
+        {
+          "stable_capability_id": "METHOD-ADMIN-USERS-ID-DELETE",
+          "source_method": "DELETE",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-007",
+            "TARGET-SUPER-005"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-ADMIN-USERS-ID-DELETE-METHOD",
+            "U3B-METHOD-ADMIN-USERS-ID-DELETE-GUARD",
+            "U3B-METHOD-ADMIN-USERS-ID-DELETE-TENANT",
+            "U3B-METHOD-ADMIN-USERS-ID-DELETE-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "456b44562a48ecb9511889ca09839ff287feda65"
+    },
+    {
+      "stable_file_id": "API-SRC-012",
+      "source_route": "/api/v1/platform-admin/founder",
+      "source_file": "src/app/api/v1/platform-admin/founder/route.ts",
+      "current_guard": "platform_admin|operator (baseline defect)",
+      "current_tenant_authority": "platform global",
+      "owner_module": "modules/admin/founder",
+      "consumers": [
+        "src/app/(auth)/platform-admin/founder/page.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-PLATFORM-FOUNDER-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/superadmin/founder",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "Founder Console",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-PLATFORM-FOUNDER-GET-METHOD",
+            "U3B-METHOD-PLATFORM-FOUNDER-GET-GUARD",
+            "U3B-METHOD-PLATFORM-FOUNDER-GET-TENANT",
+            "U3B-METHOD-PLATFORM-FOUNDER-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "9144314a21ee5d2c5a32205612489b299f3b56e0"
+    },
+    {
+      "stable_file_id": "API-SRC-013",
+      "source_route": "/api/v1/platform-admin/stats",
+      "source_file": "src/app/api/v1/platform-admin/stats/route.ts",
+      "current_guard": "exact platform_admin",
+      "current_tenant_authority": "platform global",
+      "owner_module": "modules/admin/platform-stats",
+      "consumers": [],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-PLATFORM-STATS-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/superadmin/stats",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "platform statistics",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-PLATFORM-STATS-GET-METHOD",
+            "U3B-METHOD-PLATFORM-STATS-GET-GUARD",
+            "U3B-METHOD-PLATFORM-STATS-GET-TENANT",
+            "U3B-METHOD-PLATFORM-STATS-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "4f7b957972ae3e4bcff7b431282dfe6d8146e811"
+    },
+    {
+      "stable_file_id": "API-SRC-014",
+      "source_route": "/api/v1/platform-admin/tenants",
+      "source_file": "src/app/api/v1/platform-admin/tenants/route.ts",
+      "current_guard": "exact platform_admin",
+      "current_tenant_authority": "global list / created tenant target",
+      "owner_module": "modules/admin/platform-tenant",
+      "consumers": [],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-PLATFORM-TENANTS-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/superadmin/tenants",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "tenant portfolio",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-PLATFORM-TENANTS-GET-METHOD",
+            "U3B-METHOD-PLATFORM-TENANTS-GET-GUARD",
+            "U3B-METHOD-PLATFORM-TENANTS-GET-TENANT",
+            "U3B-METHOD-PLATFORM-TENANTS-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-PLATFORM-TENANTS-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-SUPER-006"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-PLATFORM-TENANTS-POST-METHOD",
+            "U3B-METHOD-PLATFORM-TENANTS-POST-GUARD",
+            "U3B-METHOD-PLATFORM-TENANTS-POST-TENANT",
+            "U3B-METHOD-PLATFORM-TENANTS-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "6c0a52e0dbb50cd7c2a8986edc1b4c971efcae3e"
+    },
+    {
+      "stable_file_id": "API-SRC-015",
+      "source_route": "/api/v1/platform-admin/tenants/:id",
+      "source_file": "src/app/api/v1/platform-admin/tenants/[id]/route.ts",
+      "current_guard": "exact platform_admin",
+      "current_tenant_authority": "path target tenant after platform guard",
+      "owner_module": "modules/admin/platform-tenant",
+      "consumers": [],
+      "implementation_risk": "CRITICAL",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-PLATFORM-TENANTS-ID-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/superadmin/tenants/:id",
+              "method": "GET",
+              "namespace": "superadmin",
+              "roles": [
+                "platform_admin"
+              ],
+              "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+              "capability": "tenant forensic detail",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-PLATFORM-TENANTS-ID-GET-METHOD",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-GET-GUARD",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-GET-TENANT",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-PLATFORM-TENANTS-ID-PATCH",
+          "source_method": "PATCH",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-SUPER-007"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-PLATFORM-TENANTS-ID-PATCH-METHOD",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-PATCH-GUARD",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-PATCH-TENANT",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-PATCH-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-PLATFORM-TENANTS-ID-DELETE",
+          "source_method": "DELETE",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-SUPER-008"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-PLATFORM-TENANTS-ID-DELETE-METHOD",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-DELETE-GUARD",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-DELETE-TENANT",
+            "U3B-METHOD-PLATFORM-TENANTS-ID-DELETE-COMPAT"
+          ],
+          "notes": "Logical terminal deletion; never physical delete."
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "7b69c544169c75711d73fbdb57590c40c1c287a4"
+    },
+    {
+      "stable_file_id": "API-SRC-016",
+      "source_route": "/api/v1/platform-admin/usage",
+      "source_file": "src/app/api/v1/platform-admin/usage/route.ts",
+      "current_guard": "exact platform_admin",
+      "current_tenant_authority": "currently actor tenant on AnalyticsEvent; not audit authority",
+      "owner_module": "modules/admin/platform-usage",
+      "consumers": [
+        "src/modules/admin/components/PlatformOperatingDashboard.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-PLATFORM-USAGE-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-SUPER-009"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-PLATFORM-USAGE-POST-METHOD",
+            "U3B-METHOD-PLATFORM-USAGE-POST-GUARD",
+            "U3B-METHOD-PLATFORM-USAGE-POST-TENANT",
+            "U3B-METHOD-PLATFORM-USAGE-POST-COMPAT"
+          ],
+          "notes": "Analytics telemetry does not satisfy AuditLog."
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "fde4c3d882f25b26e09befebb34050b10d82349b"
+    },
+    {
+      "stable_file_id": "API-SRC-017",
+      "source_route": "/api/v1/team/dashboard",
+      "source_file": "src/app/api/v1/team/dashboard/route.ts",
+      "current_guard": "route/service leader|operator|platform_admin",
+      "current_tenant_authority": "session tenant/downline",
+      "owner_module": "modules/team/leader-dashboard",
+      "consumers": [
+        "src/__tests__/api/admin-api.test.ts",
+        "src/modules/team/components/LeaderDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-TEAM-DASHBOARD-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/team/dashboard",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant plus approved leader sub-team predicate",
+              "capability": "human-team read",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-TEAM-DASHBOARD-GET-METHOD",
+            "U3B-METHOD-TEAM-DASHBOARD-GET-GUARD",
+            "U3B-METHOD-TEAM-DASHBOARD-GET-TENANT",
+            "U3B-METHOD-TEAM-DASHBOARD-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "ee313dee0ac88d8b6cd1a1994202a3cd3300e13f"
+    },
+    {
+      "stable_file_id": "API-SRC-018",
+      "source_route": "/api/v1/team/journey-progress",
+      "source_file": "src/app/api/v1/team/journey-progress/route.ts",
+      "current_guard": "route/service leader|operator|platform_admin",
+      "current_tenant_authority": "session tenant; leader sponsor subset",
+      "owner_module": "modules/team/journey-progress",
+      "consumers": [
+        "src/modules/team/components/TeamJourneyProgress.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-TEAM-JOURNEY-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/team/journey-progress",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant plus approved leader sub-team predicate",
+              "capability": "human-team read",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-TEAM-JOURNEY-GET-METHOD",
+            "U3B-METHOD-TEAM-JOURNEY-GET-GUARD",
+            "U3B-METHOD-TEAM-JOURNEY-GET-TENANT",
+            "U3B-METHOD-TEAM-JOURNEY-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "bda43f06df1341c10dc9092b2c7cab818c61156d"
+    },
+    {
+      "stable_file_id": "API-SRC-019",
+      "source_route": "/api/v1/team/members",
+      "source_file": "src/app/api/v1/team/members/route.ts",
+      "current_guard": "route/service leader|operator|platform_admin",
+      "current_tenant_authority": "session tenant/downline",
+      "owner_module": "modules/team",
+      "consumers": [
+        "src/modules/team/components/TeamOverviewDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-TEAM-MEMBERS-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/team/members",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant plus approved leader sub-team predicate",
+              "capability": "human-team read",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-TEAM-MEMBERS-GET-METHOD",
+            "U3B-METHOD-TEAM-MEMBERS-GET-GUARD",
+            "U3B-METHOD-TEAM-MEMBERS-GET-TENANT",
+            "U3B-METHOD-TEAM-MEMBERS-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "1df4d487e7f8994c2d51366f410c2225de6b6d00"
+    },
+    {
+      "stable_file_id": "API-SRC-020",
+      "source_route": "/api/v1/team/summary",
+      "source_file": "src/app/api/v1/team/summary/route.ts",
+      "current_guard": "route/service leader|operator|platform_admin",
+      "current_tenant_authority": "session tenant/descendants",
+      "owner_module": "modules/team",
+      "consumers": [
+        "src/modules/team/components/TeamOverviewDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-TEAM-SUMMARY-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/team/summary",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant plus approved leader sub-team predicate",
+              "capability": "human-team read",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-TEAM-SUMMARY-GET-METHOD",
+            "U3B-METHOD-TEAM-SUMMARY-GET-GUARD",
+            "U3B-METHOD-TEAM-SUMMARY-GET-TENANT",
+            "U3B-METHOD-TEAM-SUMMARY-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "6e234f4a7c29564b67e27f9b3a81aff7e04d5d38"
+    },
+    {
+      "stable_file_id": "API-SRC-021",
+      "source_route": "/api/v1/team/tree",
+      "source_file": "src/app/api/v1/team/tree/route.ts",
+      "current_guard": "route/service leader|operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/team",
+      "consumers": [
+        "src/modules/team/components/TeamOverviewDashboard.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-TEAM-TREE-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/team/tree",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant plus approved leader sub-team predicate",
+              "capability": "human-team read",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-TEAM-TREE-GET-METHOD",
+            "U3B-METHOD-TEAM-TREE-GET-GUARD",
+            "U3B-METHOD-TEAM-TREE-GET-TENANT",
+            "U3B-METHOD-TEAM-TREE-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "534d97a83199fb1eca8caf018841f2de3591105c"
+    },
+    {
+      "stable_file_id": "API-SRC-022",
+      "source_route": "/api/v1/member/pending",
+      "source_file": "src/app/api/v1/member/pending/route.ts",
+      "current_guard": "service leader|operator|platform_admin",
+      "current_tenant_authority": "platform branch drops tenant; leader sponsor subset",
+      "owner_module": "modules/member/approval",
+      "consumers": [
+        "src/components/layouts/Sidebar.tsx",
+        "src/modules/member/components/MemberApprovalQueue.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-MEMBER-PENDING-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/members/pending",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant plus approved leader sub-team predicate",
+              "capability": "pending member list",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-MEMBER-PENDING-GET-METHOD",
+            "U3B-METHOD-MEMBER-PENDING-GET-GUARD",
+            "U3B-METHOD-MEMBER-PENDING-GET-TENANT",
+            "U3B-METHOD-MEMBER-PENDING-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "6b106b44d99fb42731fbc6b1b34f82c34159ec4a"
+    },
+    {
+      "stable_file_id": "API-SRC-023",
+      "source_route": "/api/v1/member/:id/approve",
+      "source_file": "src/app/api/v1/member/[id]/approve/route.ts",
+      "current_guard": "service leader|operator|platform_admin",
+      "current_tenant_authority": "platform branch drops tenant; leader sponsor subset",
+      "owner_module": "modules/member/approval",
+      "consumers": [
+        "src/modules/member/components/MemberApprovalQueue.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-MEMBER-APPROVE-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-008"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-MEMBER-APPROVE-POST-METHOD",
+            "U3B-METHOD-MEMBER-APPROVE-POST-GUARD",
+            "U3B-METHOD-MEMBER-APPROVE-POST-TENANT",
+            "U3B-METHOD-MEMBER-APPROVE-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "79ce47588d8c7f8eb5475ef18b1efe03234fc9ec"
+    },
+    {
+      "stable_file_id": "API-SRC-024",
+      "source_route": "/api/v1/member/:id/reject",
+      "source_file": "src/app/api/v1/member/[id]/reject/route.ts",
+      "current_guard": "service leader|operator|platform_admin",
+      "current_tenant_authority": "platform branch drops tenant; leader sponsor subset",
+      "owner_module": "modules/member/approval",
+      "consumers": [
+        "src/modules/member/components/MemberApprovalQueue.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-MEMBER-REJECT-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-009"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-MEMBER-REJECT-POST-METHOD",
+            "U3B-METHOD-MEMBER-REJECT-POST-GUARD",
+            "U3B-METHOD-MEMBER-REJECT-POST-TENANT",
+            "U3B-METHOD-MEMBER-REJECT-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "201a4c5d1aedee56d7b2590d2c9a74877476b927"
+    },
+    {
+      "stable_file_id": "API-SRC-025",
+      "source_route": "/api/v1/member/invite",
+      "source_file": "src/app/api/v1/member/invite/route.ts",
+      "current_guard": "service leader|operator|platform_admin",
+      "current_tenant_authority": "session tenant and sponsor",
+      "owner_module": "modules/member/invite",
+      "consumers": [
+        "src/modules/member/components/MemberInvitePanel.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-MEMBER-INVITE-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/member-invites",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant plus approved leader sub-team predicate",
+              "capability": "member invite state",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-MEMBER-INVITE-GET-METHOD",
+            "U3B-METHOD-MEMBER-INVITE-GET-GUARD",
+            "U3B-METHOD-MEMBER-INVITE-GET-TENANT",
+            "U3B-METHOD-MEMBER-INVITE-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-MEMBER-INVITE-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-010"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-MEMBER-INVITE-POST-METHOD",
+            "U3B-METHOD-MEMBER-INVITE-POST-GUARD",
+            "U3B-METHOD-MEMBER-INVITE-POST-TENANT",
+            "U3B-METHOD-MEMBER-INVITE-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "8148b93af1d24210971029d2e4979440c95c56f9"
+    },
+    {
+      "stable_file_id": "API-SRC-026",
+      "source_route": "/api/v1/ai/router/stats",
+      "source_file": "src/app/api/v1/ai/router/stats/route.ts",
+      "current_guard": "operator only",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/ai/router",
+      "consumers": [
+        "src/modules/admin/components/settings/AIRouterConfig.tsx",
+        "src/modules/analytics/components/OperatorAnalytics.tsx"
+      ],
+      "implementation_risk": "LOW",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-AI-ROUTER-STATS-GET",
+          "source_method": "GET",
+          "classification": "PRIVILEGED_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/admin/ai/router/stats",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+              "capability": "tenant AI router statistics",
+              "compatibility": "DIRECT_OR_CALLER_MIGRATION"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-AI-ROUTER-STATS-GET-METHOD",
+            "U3B-METHOD-AI-ROUTER-STATS-GET-GUARD",
+            "U3B-METHOD-AI-ROUTER-STATS-GET-TENANT",
+            "U3B-METHOD-AI-ROUTER-STATS-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "faaba5c0298b7e4330f3e0d99c67a923ff3fe1ff"
+    },
+    {
+      "stable_file_id": "API-SRC-027",
+      "source_route": "/api/v1/ai/templates",
+      "source_file": "src/app/api/v1/ai/templates/route.ts",
+      "current_guard": "GET authenticated; POST operator",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/ai/templates",
+      "consumers": [
+        "src/modules/ai/components/AIPromptPanel.tsx",
+        "src/modules/ai/components/AITemplateManager.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-AI-TEMPLATES-GET",
+          "source_method": "GET",
+          "classification": "SHARED_PRODUCT_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/ai/templates",
+              "method": "GET",
+              "namespace": "product",
+              "roles": [
+                "member",
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated product session and existing resource ownership",
+              "capability": "tenant template read",
+              "compatibility": "KEEP_PRODUCT_READ"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-AI-TEMPLATES-GET-METHOD",
+            "U3B-METHOD-AI-TEMPLATES-GET-GUARD",
+            "U3B-METHOD-AI-TEMPLATES-GET-TENANT",
+            "U3B-METHOD-AI-TEMPLATES-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-AI-TEMPLATES-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-011"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-AI-TEMPLATES-POST-METHOD",
+            "U3B-METHOD-AI-TEMPLATES-POST-GUARD",
+            "U3B-METHOD-AI-TEMPLATES-POST-TENANT",
+            "U3B-METHOD-AI-TEMPLATES-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "0295f0f7c97f5cfe527b1a9da15f8f9ce9d1ce66"
+    },
+    {
+      "stable_file_id": "API-SRC-028",
+      "source_route": "/api/v1/ai/templates/:id",
+      "source_file": "src/app/api/v1/ai/templates/[id]/route.ts",
+      "current_guard": "GET authenticated; writes operator",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/ai/templates",
+      "consumers": [
+        "src/modules/ai/components/AITemplateManager.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-AI-TEMPLATES-ID-GET",
+          "source_method": "GET",
+          "classification": "SHARED_PRODUCT_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/ai/templates/:id",
+              "method": "GET",
+              "namespace": "product",
+              "roles": [
+                "member",
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated product session and existing resource ownership",
+              "capability": "tenant template detail",
+              "compatibility": "KEEP_PRODUCT_READ"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-AI-TEMPLATES-ID-GET-METHOD",
+            "U3B-METHOD-AI-TEMPLATES-ID-GET-GUARD",
+            "U3B-METHOD-AI-TEMPLATES-ID-GET-TENANT",
+            "U3B-METHOD-AI-TEMPLATES-ID-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-AI-TEMPLATES-ID-PATCH",
+          "source_method": "PATCH",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-012"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-AI-TEMPLATES-ID-PATCH-METHOD",
+            "U3B-METHOD-AI-TEMPLATES-ID-PATCH-GUARD",
+            "U3B-METHOD-AI-TEMPLATES-ID-PATCH-TENANT",
+            "U3B-METHOD-AI-TEMPLATES-ID-PATCH-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-AI-TEMPLATES-ID-DELETE",
+          "source_method": "DELETE",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-013"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-AI-TEMPLATES-ID-DELETE-METHOD",
+            "U3B-METHOD-AI-TEMPLATES-ID-DELETE-GUARD",
+            "U3B-METHOD-AI-TEMPLATES-ID-DELETE-TENANT",
+            "U3B-METHOD-AI-TEMPLATES-ID-DELETE-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "849eff0ac9e5ce05cde45a91c4c31f678ab8e97d"
+    },
+    {
+      "stable_file_id": "API-SRC-029",
+      "source_route": "/api/v1/ai/usage",
+      "source_file": "src/app/api/v1/ai/usage/route.ts",
+      "current_guard": "authenticated; tenant scope operator only",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/ai/usage",
+      "consumers": [],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-AI-USAGE-GET",
+          "source_method": "GET",
+          "classification": "METHOD_SCOPE_SPLIT",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/ai/usage?scope=user",
+              "method": "GET",
+              "namespace": "product",
+              "roles": [
+                "member",
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated product session and existing resource ownership",
+              "capability": "personal AI usage",
+              "compatibility": "KEEP_PRODUCT_READ"
+            },
+            {
+              "route": "/api/v1/admin/ai/usage",
+              "method": "GET",
+              "namespace": "admin",
+              "roles": [
+                "operator"
+              ],
+              "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+              "capability": "tenant AI usage",
+              "compatibility": "MIGRATE_TENANT_SCOPE"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-AI-USAGE-GET-METHOD",
+            "U3B-METHOD-AI-USAGE-GET-GUARD",
+            "U3B-METHOD-AI-USAGE-GET-TENANT",
+            "U3B-METHOD-AI-USAGE-GET-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "9b93fcac7ffcb4d864d9b324b4a39438a2ee21b0"
+    },
+    {
+      "stable_file_id": "API-SRC-030",
+      "source_route": "/api/v1/crm/pipeline-stages",
+      "source_file": "src/app/api/v1/crm/pipeline-stages/route.ts",
+      "current_guard": "GET authenticated; POST operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/crm/pipeline-stages",
+      "consumers": [
+        "src/modules/crm/components/StageManagerDialog.tsx",
+        "src/modules/crm/hooks/use-pipeline.ts"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-CRM-STAGES-GET",
+          "source_method": "GET",
+          "classification": "SHARED_PRODUCT_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/crm/pipeline-stages",
+              "method": "GET",
+              "namespace": "product",
+              "roles": [
+                "member",
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated product session and existing resource ownership",
+              "capability": "pipeline stage read",
+              "compatibility": "KEEP_PRODUCT_READ"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-STAGES-GET-METHOD",
+            "U3B-METHOD-CRM-STAGES-GET-GUARD",
+            "U3B-METHOD-CRM-STAGES-GET-TENANT",
+            "U3B-METHOD-CRM-STAGES-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-CRM-STAGES-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-014"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-STAGES-POST-METHOD",
+            "U3B-METHOD-CRM-STAGES-POST-GUARD",
+            "U3B-METHOD-CRM-STAGES-POST-TENANT",
+            "U3B-METHOD-CRM-STAGES-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "74c61ab37619a37fb00fd508ae047dcac2fb1af7"
+    },
+    {
+      "stable_file_id": "API-SRC-031",
+      "source_route": "/api/v1/crm/pipeline-stages/:id",
+      "source_file": "src/app/api/v1/crm/pipeline-stages/[id]/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "service ID-only; missing tenant predicate",
+      "owner_module": "modules/crm/pipeline-stages",
+      "consumers": [
+        "src/modules/crm/components/StageManagerDialog.tsx",
+        "src/modules/crm/hooks/use-pipeline.ts"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-CRM-STAGES-ID-PATCH",
+          "source_method": "PATCH",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-015"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-STAGES-ID-PATCH-METHOD",
+            "U3B-METHOD-CRM-STAGES-ID-PATCH-GUARD",
+            "U3B-METHOD-CRM-STAGES-ID-PATCH-TENANT",
+            "U3B-METHOD-CRM-STAGES-ID-PATCH-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-CRM-STAGES-ID-DELETE",
+          "source_method": "DELETE",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-016"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-STAGES-ID-DELETE-METHOD",
+            "U3B-METHOD-CRM-STAGES-ID-DELETE-GUARD",
+            "U3B-METHOD-CRM-STAGES-ID-DELETE-TENANT",
+            "U3B-METHOD-CRM-STAGES-ID-DELETE-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "60f2c91491b7277d9acc26799fbf342b24fb48e6"
+    },
+    {
+      "stable_file_id": "API-SRC-032",
+      "source_route": "/api/v1/crm/pipeline-stages/reorder",
+      "source_file": "src/app/api/v1/crm/pipeline-stages/reorder/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/crm/pipeline-stages",
+      "consumers": [
+        "src/modules/crm/components/StageManagerDialog.tsx",
+        "src/modules/crm/hooks/use-pipeline.ts"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-CRM-STAGES-REORDER-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-017"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-STAGES-REORDER-POST-METHOD",
+            "U3B-METHOD-CRM-STAGES-REORDER-POST-GUARD",
+            "U3B-METHOD-CRM-STAGES-REORDER-POST-TENANT",
+            "U3B-METHOD-CRM-STAGES-REORDER-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "08757ccf8668e7b560d7b1129cdfd1fcbfba291f"
+    },
+    {
+      "stable_file_id": "API-SRC-033",
+      "source_route": "/api/v1/crm/tags",
+      "source_file": "src/app/api/v1/crm/tags/route.ts",
+      "current_guard": "GET authenticated; POST leader|operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/crm/tags",
+      "consumers": [
+        "src/modules/crm/components/TagManagerDialog.tsx",
+        "src/modules/crm/hooks/use-tags.ts"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-CRM-TAGS-GET",
+          "source_method": "GET",
+          "classification": "SHARED_PRODUCT_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/crm/tags",
+              "method": "GET",
+              "namespace": "product",
+              "roles": [
+                "member",
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated product session and existing resource ownership",
+              "capability": "CRM tag read",
+              "compatibility": "KEEP_PRODUCT_READ"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-TAGS-GET-METHOD",
+            "U3B-METHOD-CRM-TAGS-GET-GUARD",
+            "U3B-METHOD-CRM-TAGS-GET-TENANT",
+            "U3B-METHOD-CRM-TAGS-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-CRM-TAGS-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-018"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-TAGS-POST-METHOD",
+            "U3B-METHOD-CRM-TAGS-POST-GUARD",
+            "U3B-METHOD-CRM-TAGS-POST-TENANT",
+            "U3B-METHOD-CRM-TAGS-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "7a1ad911205c1e232e4daf912e6895b03e80a0c7"
+    },
+    {
+      "stable_file_id": "API-SRC-034",
+      "source_route": "/api/v1/crm/tags/:id",
+      "source_file": "src/app/api/v1/crm/tags/[id]/route.ts",
+      "current_guard": "operator|platform_admin",
+      "current_tenant_authority": "service ID-only; missing tenant predicate",
+      "owner_module": "modules/crm/tags",
+      "consumers": [
+        "src/modules/crm/components/TagManagerDialog.tsx"
+      ],
+      "implementation_risk": "HIGH",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-CRM-TAGS-ID-PATCH",
+          "source_method": "PATCH",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-019"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-TAGS-ID-PATCH-METHOD",
+            "U3B-METHOD-CRM-TAGS-ID-PATCH-GUARD",
+            "U3B-METHOD-CRM-TAGS-ID-PATCH-TENANT",
+            "U3B-METHOD-CRM-TAGS-ID-PATCH-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-CRM-TAGS-ID-DELETE",
+          "source_method": "DELETE",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-020"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-CRM-TAGS-ID-DELETE-METHOD",
+            "U3B-METHOD-CRM-TAGS-ID-DELETE-GUARD",
+            "U3B-METHOD-CRM-TAGS-ID-DELETE-TENANT",
+            "U3B-METHOD-CRM-TAGS-ID-DELETE-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "41b2dbe4d2db8af1ccf5c8a335dfe20f3ee12623"
+    },
+    {
+      "stable_file_id": "API-SRC-035",
+      "source_route": "/api/v1/funnel/templates",
+      "source_file": "src/app/api/v1/funnel/templates/route.ts",
+      "current_guard": "GET authenticated; POST operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/funnel/templates",
+      "consumers": [
+        "src/modules/admin/components/TemplatesPanel.tsx",
+        "src/modules/funnel/hooks/use-funnels.ts"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-FUNNEL-TEMPLATES-GET",
+          "source_method": "GET",
+          "classification": "SHARED_PRODUCT_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/funnel/templates",
+              "method": "GET",
+              "namespace": "product",
+              "roles": [
+                "member",
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated product session and existing resource ownership",
+              "capability": "funnel template read",
+              "compatibility": "KEEP_PRODUCT_READ"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-FUNNEL-TEMPLATES-GET-METHOD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-GET-GUARD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-GET-TENANT",
+            "U3B-METHOD-FUNNEL-TEMPLATES-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-FUNNEL-TEMPLATES-POST",
+          "source_method": "POST",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-021"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-FUNNEL-TEMPLATES-POST-METHOD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-POST-GUARD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-POST-TENANT",
+            "U3B-METHOD-FUNNEL-TEMPLATES-POST-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "a40add4a27282ad19b319e587cdfaf372abc86c8"
+    },
+    {
+      "stable_file_id": "API-SRC-036",
+      "source_route": "/api/v1/funnel/templates/:id",
+      "source_file": "src/app/api/v1/funnel/templates/[id]/route.ts",
+      "current_guard": "GET authenticated; writes operator|platform_admin",
+      "current_tenant_authority": "session tenant",
+      "owner_module": "modules/funnel/templates",
+      "consumers": [
+        "src/modules/admin/components/TemplatesPanel.tsx"
+      ],
+      "implementation_risk": "MEDIUM",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-FUNNEL-TEMPLATES-ID-GET",
+          "source_method": "GET",
+          "classification": "SHARED_PRODUCT_READ",
+          "is_privileged_source_write": false,
+          "targets": [
+            {
+              "route": "/api/v1/funnel/templates/:id",
+              "method": "GET",
+              "namespace": "product",
+              "roles": [
+                "member",
+                "leader",
+                "operator"
+              ],
+              "tenant_authority": "authenticated product session and existing resource ownership",
+              "capability": "funnel template detail",
+              "compatibility": "KEEP_PRODUCT_READ"
+            }
+          ],
+          "target_write_capability_ids": [],
+          "required_test_ids": [
+            "U3A-METHOD-FUNNEL-TEMPLATES-ID-GET-METHOD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-GET-GUARD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-GET-TENANT",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-GET-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-FUNNEL-TEMPLATES-ID-PATCH",
+          "source_method": "PATCH",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-022"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-FUNNEL-TEMPLATES-ID-PATCH-METHOD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-PATCH-GUARD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-PATCH-TENANT",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-PATCH-COMPAT"
+          ],
+          "notes": ""
+        },
+        {
+          "stable_capability_id": "METHOD-FUNNEL-TEMPLATES-ID-DELETE",
+          "source_method": "DELETE",
+          "classification": "PRIVILEGED_WRITE",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-ADMIN-023"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-FUNNEL-TEMPLATES-ID-DELETE-METHOD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-DELETE-GUARD",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-DELETE-TENANT",
+            "U3B-METHOD-FUNNEL-TEMPLATES-ID-DELETE-COMPAT"
+          ],
+          "notes": ""
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "fe7869480e3271dfc8e42f581e07cb0fff1157bc"
+    },
+    {
+      "stable_file_id": "API-SRC-037",
+      "source_route": "/api/v1/auth/fix-uid",
+      "source_file": "src/app/api/v1/auth/fix-uid/route.ts",
+      "current_guard": "Supabase session plus operator|platform_admin allowlist",
+      "current_tenant_authority": "email-based multi-table ID rewrite; no tenant predicate",
+      "owner_module": "modules/auth/uid-reconciliation",
+      "consumers": [],
+      "implementation_risk": "CRITICAL",
+      "methods": [
+        {
+          "stable_capability_id": "METHOD-AUTH-FIX-UID-GET",
+          "source_method": "GET",
+          "classification": "MUTATING_GET",
+          "is_privileged_source_write": true,
+          "targets": [],
+          "target_write_capability_ids": [
+            "TARGET-SUPER-010"
+          ],
+          "required_test_ids": [
+            "U3A-METHOD-AUTH-FIX-UID-GET-METHOD",
+            "U3B-METHOD-AUTH-FIX-UID-GET-GUARD",
+            "U3B-METHOD-AUTH-FIX-UID-GET-TENANT",
+            "U3B-METHOD-AUTH-FIX-UID-GET-COMPAT"
+          ],
+          "notes": "Old GET must fail closed; replacement is explicit POST with reviewed target semantics."
+        }
+      ],
+      "evidence": {
+        "source_exists_at_baseline": true,
+        "contract_section": "4"
+      },
+      "baseline_blob": "4cdfc45bf9cc551c021b06bcfbb663c350f48379"
+    }
+  ],
+  "target_write_capabilities": [
+    {
+      "stable_target_id": "TARGET-ADMIN-001",
+      "source_method_id": "METHOD-ADMIN-RECALCULATE-POST",
+      "target_route": "/api/v1/admin/crm/recalculate-scores",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-001-SUCCESS",
+        "U3B-TARGET-ADMIN-001-FAILURE",
+        "U3B-TARGET-ADMIN-001-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-002",
+      "source_method_id": "METHOD-ADMIN-DAILY-DEFAULTS-PUT",
+      "target_route": "/api/v1/admin/daily-actions/defaults",
+      "target_method": "PUT",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-002-SUCCESS",
+        "U3B-TARGET-ADMIN-002-FAILURE",
+        "U3B-TARGET-ADMIN-002-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-003",
+      "source_method_id": "METHOD-ADMIN-FEEDBACK-ID-PATCH",
+      "target_route": "/api/v1/admin/feedback/:id",
+      "target_method": "PATCH",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-003-SUCCESS",
+        "U3B-TARGET-ADMIN-003-FAILURE",
+        "U3B-TARGET-ADMIN-003-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-004",
+      "source_method_id": "METHOD-ADMIN-SETTINGS-PATCH",
+      "target_route": "/api/v1/admin/settings",
+      "target_method": "PATCH",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "PRESERVE_EXISTING_APPROVED_AUDIT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-004-SUCCESS",
+        "U3B-TARGET-ADMIN-004-FAILURE",
+        "U3B-TARGET-ADMIN-004-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-005",
+      "source_method_id": "METHOD-ADMIN-TRAINING-DEFAULTS-PUT",
+      "target_route": "/api/v1/admin/training/defaults",
+      "target_method": "PUT",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-005-SUCCESS",
+        "U3B-TARGET-ADMIN-005-FAILURE",
+        "U3B-TARGET-ADMIN-005-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-006",
+      "source_method_id": "METHOD-ADMIN-USERS-ID-PATCH",
+      "target_route": "/api/v1/admin/users/:id",
+      "target_method": "PATCH",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "PRESERVE_EXISTING_APPROVED_AUDIT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-006-SUCCESS",
+        "U3B-TARGET-ADMIN-006-FAILURE",
+        "U3B-TARGET-ADMIN-006-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-007",
+      "source_method_id": "METHOD-ADMIN-USERS-ID-DELETE",
+      "target_route": "/api/v1/admin/users/:id",
+      "target_method": "DELETE",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "PRESERVE_EXISTING_APPROVED_AUDIT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-007-SUCCESS",
+        "U3B-TARGET-ADMIN-007-FAILURE",
+        "U3B-TARGET-ADMIN-007-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-008",
+      "source_method_id": "METHOD-MEMBER-APPROVE-POST",
+      "target_route": "/api/v1/admin/members/:id/approve",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "leader",
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant; member/sponsor ID lookup uses id plus session tenant and approved leader sub-team predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "PRESERVE_EXISTING_APPROVED_AUDIT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-008-SUCCESS",
+        "U3B-TARGET-ADMIN-008-FAILURE",
+        "U3B-TARGET-ADMIN-008-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-009",
+      "source_method_id": "METHOD-MEMBER-REJECT-POST",
+      "target_route": "/api/v1/admin/members/:id/reject",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "leader",
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant; member/sponsor ID lookup uses id plus session tenant and approved leader sub-team predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "PRESERVE_EXISTING_APPROVED_AUDIT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-009-SUCCESS",
+        "U3B-TARGET-ADMIN-009-FAILURE",
+        "U3B-TARGET-ADMIN-009-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-010",
+      "source_method_id": "METHOD-MEMBER-INVITE-POST",
+      "target_route": "/api/v1/admin/member-invites",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "leader",
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant; member/sponsor ID lookup uses id plus session tenant and approved leader sub-team predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-010-SUCCESS",
+        "U3B-TARGET-ADMIN-010-FAILURE",
+        "U3B-TARGET-ADMIN-010-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-011",
+      "source_method_id": "METHOD-AI-TEMPLATES-POST",
+      "target_route": "/api/v1/admin/ai/templates",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-011-SUCCESS",
+        "U3B-TARGET-ADMIN-011-FAILURE",
+        "U3B-TARGET-ADMIN-011-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-012",
+      "source_method_id": "METHOD-AI-TEMPLATES-ID-PATCH",
+      "target_route": "/api/v1/admin/ai/templates/:id",
+      "target_method": "PATCH",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-012-SUCCESS",
+        "U3B-TARGET-ADMIN-012-FAILURE",
+        "U3B-TARGET-ADMIN-012-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-013",
+      "source_method_id": "METHOD-AI-TEMPLATES-ID-DELETE",
+      "target_route": "/api/v1/admin/ai/templates/:id",
+      "target_method": "DELETE",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-013-SUCCESS",
+        "U3B-TARGET-ADMIN-013-FAILURE",
+        "U3B-TARGET-ADMIN-013-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-014",
+      "source_method_id": "METHOD-CRM-STAGES-POST",
+      "target_route": "/api/v1/admin/crm/pipeline-stages",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-014-SUCCESS",
+        "U3B-TARGET-ADMIN-014-FAILURE",
+        "U3B-TARGET-ADMIN-014-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-015",
+      "source_method_id": "METHOD-CRM-STAGES-ID-PATCH",
+      "target_route": "/api/v1/admin/crm/pipeline-stages/:id",
+      "target_method": "PATCH",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-015-SUCCESS",
+        "U3B-TARGET-ADMIN-015-FAILURE",
+        "U3B-TARGET-ADMIN-015-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-016",
+      "source_method_id": "METHOD-CRM-STAGES-ID-DELETE",
+      "target_route": "/api/v1/admin/crm/pipeline-stages/:id",
+      "target_method": "DELETE",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-016-SUCCESS",
+        "U3B-TARGET-ADMIN-016-FAILURE",
+        "U3B-TARGET-ADMIN-016-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-017",
+      "source_method_id": "METHOD-CRM-STAGES-REORDER-POST",
+      "target_route": "/api/v1/admin/crm/pipeline-stages/reorder",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-017-SUCCESS",
+        "U3B-TARGET-ADMIN-017-FAILURE",
+        "U3B-TARGET-ADMIN-017-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-018",
+      "source_method_id": "METHOD-CRM-TAGS-POST",
+      "target_route": "/api/v1/admin/crm/tags",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "leader",
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant plus approved leader sub-team predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-018-SUCCESS",
+        "U3B-TARGET-ADMIN-018-FAILURE",
+        "U3B-TARGET-ADMIN-018-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-019",
+      "source_method_id": "METHOD-CRM-TAGS-ID-PATCH",
+      "target_route": "/api/v1/admin/crm/tags/:id",
+      "target_method": "PATCH",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-019-SUCCESS",
+        "U3B-TARGET-ADMIN-019-FAILURE",
+        "U3B-TARGET-ADMIN-019-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-020",
+      "source_method_id": "METHOD-CRM-TAGS-ID-DELETE",
+      "target_route": "/api/v1/admin/crm/tags/:id",
+      "target_method": "DELETE",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-020-SUCCESS",
+        "U3B-TARGET-ADMIN-020-FAILURE",
+        "U3B-TARGET-ADMIN-020-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-021",
+      "source_method_id": "METHOD-FUNNEL-TEMPLATES-POST",
+      "target_route": "/api/v1/admin/funnel/templates",
+      "target_method": "POST",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-021-SUCCESS",
+        "U3B-TARGET-ADMIN-021-FAILURE",
+        "U3B-TARGET-ADMIN-021-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-022",
+      "source_method_id": "METHOD-FUNNEL-TEMPLATES-ID-PATCH",
+      "target_route": "/api/v1/admin/funnel/templates/:id",
+      "target_method": "PATCH",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-022-SUCCESS",
+        "U3B-TARGET-ADMIN-022-FAILURE",
+        "U3B-TARGET-ADMIN-022-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-ADMIN-023",
+      "source_method_id": "METHOD-FUNNEL-TEMPLATES-ID-DELETE",
+      "target_route": "/api/v1/admin/funnel/templates/:id",
+      "target_method": "DELETE",
+      "target_namespace": "admin",
+      "target_roles": [
+        "operator"
+      ],
+      "tenant_authority": "authenticated session tenant only; ID lookups use id plus tenant predicate",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "NO_NEW_AUDIT_AUTHORIZED_BY_THIS_AMENDMENT",
+        "scope": "TENANT"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-ADMIN-023-SUCCESS",
+        "U3B-TARGET-ADMIN-023-FAILURE",
+        "U3B-TARGET-ADMIN-023-TENANT"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-001",
+      "source_method_id": "METHOD-ADMIN-FEEDBACK-ID-PATCH",
+      "target_route": "/api/v1/superadmin/feedback/:id",
+      "target_method": "PATCH",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-001-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-001-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-001-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-001-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-002",
+      "source_method_id": "METHOD-ADMIN-OVERRIDE-POST",
+      "target_route": "/api/v1/superadmin/override",
+      "target_method": "POST",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-002-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-002-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-002-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-002-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-003",
+      "source_method_id": "METHOD-ADMIN-OVERRIDE-DELETE",
+      "target_route": "/api/v1/superadmin/override",
+      "target_method": "DELETE",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-003-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-003-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-003-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-003-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-004",
+      "source_method_id": "METHOD-ADMIN-USERS-ID-PATCH",
+      "target_route": "/api/v1/superadmin/users/:id",
+      "target_method": "PATCH",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-004-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-004-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-004-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-004-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-005",
+      "source_method_id": "METHOD-ADMIN-USERS-ID-DELETE",
+      "target_route": "/api/v1/superadmin/users/:id",
+      "target_method": "DELETE",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": true,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-005-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-005-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-005-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-005-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-006",
+      "source_method_id": "METHOD-PLATFORM-TENANTS-POST",
+      "target_route": "/api/v1/superadmin/tenants",
+      "target_method": "POST",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-006-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-006-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-006-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-006-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-007",
+      "source_method_id": "METHOD-PLATFORM-TENANTS-ID-PATCH",
+      "target_route": "/api/v1/superadmin/tenants/:id",
+      "target_method": "PATCH",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-007-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-007-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-007-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-007-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-008",
+      "source_method_id": "METHOD-PLATFORM-TENANTS-ID-DELETE",
+      "target_route": "/api/v1/superadmin/tenants/:id",
+      "target_method": "DELETE",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-008-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-008-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-008-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-008-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-009",
+      "source_method_id": "METHOD-PLATFORM-USAGE-POST",
+      "target_route": "/api/v1/superadmin/usage",
+      "target_method": "POST",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-009-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-009-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-009-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-009-TENANT-SCOPE"
+      ]
+    },
+    {
+      "stable_target_id": "TARGET-SUPER-010",
+      "source_method_id": "METHOD-AUTH-FIX-UID-GET",
+      "target_route": "/api/v1/superadmin/auth/uid-reconciliation",
+      "target_method": "POST",
+      "target_namespace": "superadmin",
+      "target_roles": [
+        "platform_admin"
+      ],
+      "tenant_authority": "exact platform_admin guard first; explicit validated target tenant when applicable; no actor-tenant or placeholder fallback",
+      "mutation_compatibility": "MIGRATE_CALLERS_THEN_FAIL_CLOSED_OLD_METHOD; NO_301_OR_302; 308_ONLY_BY_SEPARATE_EXPIRING_PARITY_APPROVAL",
+      "audit": {
+        "current_direct_or_transitive": false,
+        "requirement": "SUCCESS_AND_FAILURE_AUDIT_REQUIRED",
+        "scope": "TENANT_OR_PLATFORM_PER_REVIEWED_DECISION",
+        "required_fields": [
+          "actorId",
+          "actorRole",
+          "action",
+          "targetType",
+          "targetId",
+          "targetTenantId",
+          "correlationId",
+          "outcome",
+          "redactedMetadata",
+          "timestamp"
+        ],
+        "delivery_authority": "shared direct/replay idempotency key and payload digest with AuditEventOutbox fallback"
+      },
+      "required_test_ids": [
+        "U3B-TARGET-SUPER-010-AUDIT-SUCCESS",
+        "U3B-TARGET-SUPER-010-AUDIT-FAILURE",
+        "U3B-TARGET-SUPER-010-IDEMPOTENCY",
+        "U3B-TARGET-SUPER-010-TENANT-SCOPE"
+      ]
+    }
+  ],
+  "implementation_risks": [
+    "Platform usage currently writes AnalyticsEvent with actor tenant; analytics is not AuditLog authority and the target event is PLATFORM-scoped.",
+    "UID reconciliation is a mutating GET with implicit target semantics and no audit; target is explicit platform-only POST.",
+    "Team services admit platform_admin through service-level guards; target admin routes exclude it.",
+    "Pending/approve/reject and admin feedback/user baseline paths contain cross-tenant or missing-tenant branches.",
+    "Pipeline-stage and tag ID mutations lack explicit ID plus tenant predicates.",
+    "Admin user PATCH currently permits assigning platform_admin; target admin schema must forbid it.",
+    "The four currently audited superadmin targets have success-path evidence only; all ten still require success and failure audit, outbox, scope, and idempotency."
+  ]
+}

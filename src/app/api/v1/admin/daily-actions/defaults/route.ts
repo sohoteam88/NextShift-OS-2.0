@@ -15,14 +15,14 @@ const BodySchema = z.object({
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
   const actions = await dailyActionService.getDefaultActions(user.tenantId);
   return NextResponse.json({ data: actions });
 });
 
 export const PUT = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
   const body = await request.json();
   const input = BodySchema.parse(body);
   const actions = await dailyActionService.updateDefaultActions(user.tenantId, input.actions);

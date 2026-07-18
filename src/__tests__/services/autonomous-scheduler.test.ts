@@ -3,6 +3,11 @@ import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { missionAgentAssistanceService } from '@/modules/mission-workspace/services/MissionAgentAssistanceService';
 import { executionQueue } from '@/modules/autonomous-execution/services/execution-queue';
 import { runAutonomousExecution } from '@/modules/autonomous-execution/services/autonomous-scheduler';
+import { assertTenantOperational } from '@/modules/tenant/services/tenant-operational-guard';
+
+vi.mock('@/modules/tenant/services/tenant-operational-guard', () => ({
+  assertTenantOperational: vi.fn(),
+}));
 
 vi.mock('@/modules/autonomous-execution/services/execution-queue', () => ({
   executionQueue: {
@@ -31,6 +36,7 @@ const user: AuthUser = {
 describe('EXEC-004 Autonomous Scheduler', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(assertTenantOperational).mockResolvedValue(undefined);
     vi.mocked(executionQueue.enqueue).mockResolvedValue({} as never);
     vi.mocked(executionQueue.transition).mockResolvedValue({} as never);
     vi.mocked(executionQueue.list).mockResolvedValue([]);
@@ -62,6 +68,18 @@ describe('EXEC-004 Autonomous Scheduler', () => {
         fallbackUsed: false,
       },
     });
+  });
+
+  it('does not claim queued work for a deleted tenant', async () => {
+    vi.mocked(assertTenantOperational).mockRejectedValueOnce(new Error('TENANT_DELETED_TERMINAL'));
+    await expect(runAutonomousExecution({
+      user,
+      missionId: 'mission-plan-lead_magnet',
+      action: 'AUTO_GENERATE_LEAD_MAGNET_DRAFT',
+      triggerType: 'mission',
+    })).rejects.toThrow('TENANT_DELETED_TERMINAL');
+    expect(executionQueue.enqueue).not.toHaveBeenCalled();
+    expect(missionAgentAssistanceService.invokeAgent).not.toHaveBeenCalled();
   });
 
   it('runs approved level 4 mission-triggered draft generation automatically', async () => {

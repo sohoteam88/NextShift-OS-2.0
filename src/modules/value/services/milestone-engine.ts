@@ -29,8 +29,8 @@ const RETAIL_MILESTONES: MilestoneDefinition[] = [
 
 const TEAM_MILESTONES: MilestoneDefinition[] = [
   { id: 'first_prospect', label: 'First Prospect', route: '/crm', achievedAt: (facts) => facts.firstLeadAt },
-  { id: 'first_recruit', label: 'First Recruit', route: '/team/growth', achievedAt: (facts) => facts.firstTeamMemberAt },
-  { id: 'first_team_member', label: 'First Team Member', route: '/team/growth', achievedAt: (facts) => facts.firstTeamMemberAt },
+  { id: 'first_recruit', label: 'First Recruit', route: '/ai-workforce', achievedAt: (facts) => facts.firstTeamMemberAt },
+  { id: 'first_team_member', label: 'First Team Member', route: '/ai-workforce', achievedAt: (facts) => facts.firstTeamMemberAt },
 ];
 
 export function milestoneDefinitionsFor(mode: InterviewAuthorityBusinessMode): MilestoneDefinition[] {

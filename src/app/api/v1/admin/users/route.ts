@@ -17,11 +17,9 @@ export const dynamic = 'force-dynamic';
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
 
   const query = QuerySchema.parse(getSearchParams(request));
-  const result = await adminService.listUsers(user.tenantId, query, {
-    includeAllTenants: user.role === 'platform_admin',
-  });
+  const result = await adminService.listUsers(user.tenantId, query);
   return NextResponse.json(result);
 });

@@ -170,12 +170,11 @@ test.describe('OS 3.8 member navigation convergence', () => {
 
   test('member cannot cross privileged Team or Founder boundaries', async ({ page }) => {
     await loginAsUser(page);
-    await page.goto('/team/growth');
-    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
-    await page.goto('/admin-command');
-    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
-    await page.goto('/platform-admin/tenants');
-    await expect(page).toHaveURL(/\/dashboard(?:\?|$)/);
+    for (const route of ['/team/growth', '/admin-command', '/platform-admin/tenants']) {
+      const response = await page.goto(route);
+      expect(response?.status()).toBe(403);
+      await expect(page).toHaveURL(new RegExp(`${route.replaceAll('/', '\\/')}(?:\\?|$)`));
+    }
   });
 });
 
@@ -183,18 +182,18 @@ test.describe('OS 3.8 founder compatibility terminal views', () => {
   test('platform tenant bookmark resolves to a platform-admin-only tenant list', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/platform-admin/tenants?source=bookmark');
-    await expect(page).toHaveURL(/\/platform-admin\?tab=tenants&source=bookmark/);
-    await expect(page.locator('#platform-admin-tenants')).toBeVisible();
-    await expect(page.locator('#platform-admin-tenants table')).toBeVisible();
+    await expect(page).toHaveURL(/\/superadmin\/tenants\?source=bookmark/);
+    await expect(page.locator('#superadmin-tenants')).toBeVisible();
+    await expect(page.locator('#superadmin-tenants table')).toBeVisible();
     await page.reload();
-    await expect(page.locator('#platform-admin-tenants table')).toBeVisible();
+    await expect(page.locator('#superadmin-tenants table')).toBeVisible();
   });
 
   test('Admin Command remains a separate platform-admin capability', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/admin-command');
-    await expect(page).toHaveURL(/\/platform-admin\?view=command/);
-    await expect(page.locator('#admin-command')).toBeVisible();
+    await expect(page).toHaveURL(/\/superadmin\/command(?:\?|$)/);
+    await expect(page.locator('#superadmin-command')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Admin Command Center' })).toBeVisible();
   });
 });

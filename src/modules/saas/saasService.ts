@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import type { PlanId, FeatureKey, FeatureGateResult, UsageLimitResult, Subscription, UpgradeRecommendation, ManualOverride } from './types';
 import { PLANS, UPGRADE_PATHS } from './planDefinitions';
+import { requirePlatformAdminDataAccess } from '@/lib/security/platform-data-authority';
 
 // ---- Override Helpers ----
 async function getOverride(tenantId: string): Promise<ManualOverride | null> {
@@ -126,6 +127,7 @@ export const saasService = {
 
   // ---- Manual Admin Override ----
   async getManualOverride(tenantId: string): Promise<ManualOverride | null> {
+    await requirePlatformAdminDataAccess();
     return getOverride(tenantId);
   },
 
@@ -148,6 +150,7 @@ export const saasService = {
   },
 
   async getOverrideExpiryWarnings(): Promise<Array<{ tenantId: string; tenantName: string; expiresAt: string; daysLeft: number }>> {
+    await requirePlatformAdminDataAccess();
     const tenants = await prisma.tenant.findMany({ select: { id: true, name: true, settings: true } });
     const warnings: Array<{ tenantId: string; tenantName: string; expiresAt: string; daysLeft: number }> = [];
     const now = new Date();

@@ -224,7 +224,7 @@ export function Sidebar({ className, role = 'operator', tenantName, tenantLogoUr
   const { data: pendingCountData } = useQuery({
     queryKey: ['member-pending-count', role],
     queryFn: async () => {
-      const res = await fetch('/api/v1/member/pending');
+      const res = await fetch('/api/v1/admin/members/pending');
       if (!res.ok) throw new Error('Failed to load pending members');
       return res.json() as Promise<{ meta: { total: number } }>;
     },

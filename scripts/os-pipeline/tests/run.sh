@@ -12,9 +12,22 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 assert_eq() { [[ "$1" == "$2" ]] || fail "$3 (expected $2, got $1)"; pass=$((pass + 1)); }
 fresh() {
   jq '
+    # The generic state-machine fixture exercises the original product-task
+    # lifecycle. U3A/U3ADR/U3B use real Git/GitHub evidence and are covered by
+    # governance-dispatch-gate.sh; do not manufacture their blocked gate here.
+    .waves |= map(if .id == "W3" then
+      .tasks |= map(select(.id != "U3A" and .id != "U3ADR" and .id != "U3B")) |
+      .tasks |= map(if .id == "E3A" then .depends_on = ["U3"] else . end)
+    else . end) |
     .waves |= map(
       .status="pending" | .start_sha=null |
-      .tasks |= map(.status="pending" | .verification=null | .evidence=null) |
+      .tasks |= map(
+        if .status == "blocked" then
+          .verification=null | .evidence=null
+        else
+          .status="pending" | .verification=null | .evidence=null
+        end
+      ) |
       .checkpoint.status="pending" |
       .checkpoint.requested_end_sha=null |
       .checkpoint.reviewed_sha=null |

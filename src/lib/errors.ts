@@ -26,6 +26,9 @@ export const ERROR_MESSAGES: Record<Locale, Record<string, string>> = {
     FILE_TOO_LARGE: '文件太大，请选择较小的文件',
     INVALID_INVITE: '邀请链接无效或已过期',
     MEMBER_PENDING: '你的账号正在审核中',
+    TENANT_DELETED: '此工作区已删除',
+    TENANT_DELETED_TERMINAL: '已删除的工作区无法恢复',
+    AUDIT_IDEMPOTENCY_CONFLICT: '审计记录冲突',
   },
   en: {
     UNAUTHORIZED: 'Please log in first',
@@ -40,6 +43,9 @@ export const ERROR_MESSAGES: Record<Locale, Record<string, string>> = {
     FILE_TOO_LARGE: 'File too large, please choose a smaller file',
     INVALID_INVITE: 'Invite link is invalid or expired',
     MEMBER_PENDING: 'Your account is pending approval',
+    TENANT_DELETED: 'This tenant has been deleted',
+    TENANT_DELETED_TERMINAL: 'A deleted tenant cannot be restored',
+    AUDIT_IDEMPOTENCY_CONFLICT: 'Audit event conflict',
   },
   ms: {
     UNAUTHORIZED: 'Sila log masuk terlebih dahulu',
@@ -54,6 +60,9 @@ export const ERROR_MESSAGES: Record<Locale, Record<string, string>> = {
     FILE_TOO_LARGE: 'Fail terlalu besar, sila pilih fail yang lebih kecil',
     INVALID_INVITE: 'Pautan jemputan tidak sah atau telah tamat tempoh',
     MEMBER_PENDING: 'Akaun anda sedang menunggu kelulusan',
+    TENANT_DELETED: 'Ruang kerja ini telah dipadamkan',
+    TENANT_DELETED_TERMINAL: 'Ruang kerja yang dipadamkan tidak boleh dipulihkan',
+    AUDIT_IDEMPOTENCY_CONFLICT: 'Konflik acara audit',
   },
 };
 

@@ -174,7 +174,24 @@ create_fixture() {
   git -C "$SEED" config user.name fixture
   mkdir -p "$SEED/$(dirname "$MANIFEST_REL")"
   cp "$SOURCE_MANIFEST" "$SEED/$MANIFEST_REL"
-  jq '.base_branch="planning"' "$SEED/$MANIFEST_REL" >"$SEED/manifest.tmp"
+  jq '
+    .base_branch="planning" |
+    .waves |= map(if .id == "W3" then
+      .tasks |= map(select(.id != "U3A" and .id != "U3ADR" and .id != "U3B")) |
+      .tasks |= map(if .id == "E3A" then .depends_on = ["U3"] else . end)
+    else . end) |
+    .waves |= to_entries | .waves |= map(
+      if .key == 0 then .value
+      else
+        .value |
+        .status="pending" | .start_sha=null |
+        .tasks |= map(if .status == "blocked" then .verification=null | .evidence=null else .status="pending" | .verification=null | .evidence=null end) |
+        .checkpoint.status="pending" | .checkpoint.requested_end_sha=null | .checkpoint.reviewed_sha=null |
+        .checkpoint.remediation_attempts=0 | .checkpoint.active_remediation=null | .checkpoint.remediation_block=null |
+        if .human_gate then .human_gate.status="pending" | .human_gate.approved_by=null | .human_gate.approved_at=null | .human_gate.approved_reviewed_sha=null else . end
+      end
+    )
+  ' "$SEED/$MANIFEST_REL" >"$SEED/manifest.tmp"
   mv "$SEED/manifest.tmp" "$SEED/$MANIFEST_REL"
   git -C "$SEED" add .
   git -C "$SEED" commit -m 'fixture product baseline' >/dev/null

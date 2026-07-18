@@ -4,12 +4,9 @@ import { loginAsUser, loginAsAdmin } from './helpers/auth';
 test.describe('Admin Protection', () => {
   test('normal user cannot access admin-command', async ({ page }) => {
     await loginAsUser(page);
-    await page.goto('/admin-command');
-    await page.waitForLoadState('networkidle');
-    // Should be redirected or see an error/unauthorized message
-    const url = page.url();
-    const isRedirected = url.includes('unauthorized') || url.includes('login') || !url.includes('admin');
-    expect(isRedirected).toBeTruthy();
+    const response = await page.goto('/admin-command');
+    expect(response?.status()).toBe(403);
+    await expect(page).toHaveURL(/\/admin-command(?:\?|$)/);
   });
 
   test('normal user cannot access admin/feedback', async ({ page }) => {
@@ -23,11 +20,9 @@ test.describe('Admin Protection', () => {
 
   test('normal user cannot access admin/launch-readiness', async ({ page }) => {
     await loginAsUser(page);
-    await page.goto('/admin/launch-readiness');
-    await page.waitForLoadState('networkidle');
-    const url = page.url();
-    const isRedirected = url.includes('unauthorized') || url.includes('login') || !url.includes('admin');
-    expect(isRedirected).toBeTruthy();
+    const response = await page.goto('/admin/launch-readiness');
+    expect(response?.status()).toBe(403);
+    await expect(page).toHaveURL(/\/admin\/launch-readiness(?:\?|$)/);
   });
 
   test('normal user cannot access admin/approvals', async ({ page }) => {

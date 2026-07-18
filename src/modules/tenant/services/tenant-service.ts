@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { seedDefaultTemplates } from '@/modules/ai/seed/default-templates';
 import { seedFunnelTemplates } from '@/modules/funnel/seed/default-templates';
 import { PLAN_TIERS, type PlanTier } from '@/modules/tenant/constants/plans';
+import { AppError } from '@/lib/errors';
 
 type CreateTenantInput = {
   name: string;
@@ -84,6 +85,48 @@ async function applyTenantDefaults(tx: Prisma.TransactionClient, tenantId: strin
   await seedFunnelTemplates(tx, tenantId);
 }
 
+export async function createTenantUsing(tx: Prisma.TransactionClient, input: CreateTenantInput) {
+  const planConfig = PLAN_TIERS[input.plan];
+  const tenantSettings = {
+    default_language: 'zh',
+    ai_monthly_quota: planConfig.max_ai_calls,
+    max_ai_calls: planConfig.max_ai_calls,
+    member_limit: planConfig.max_members,
+    max_members: planConfig.max_members,
+    storage_limit_mb: planConfig.max_storage_mb,
+    max_storage_mb: planConfig.max_storage_mb,
+    branding: { primary_color: '#2563eb' },
+    logo_url: null,
+    training_modules: defaultTrainingModules(),
+    default_daily_actions: defaultDailyActions(),
+    plan: input.plan,
+    custom_branding: planConfig.custom_branding,
+  };
+
+  const tenant = await tx.tenant.create({
+    data: {
+      name: input.name,
+      slug: input.slug,
+      plan: input.plan,
+      maxMembers: planConfig.max_members,
+      maxAiCalls: planConfig.max_ai_calls,
+      settings: tenantSettings as Prisma.InputJsonValue,
+    },
+  });
+  const user = await tx.user.create({
+    data: {
+      id: input.ownerId,
+      tenantId: tenant.id,
+      email: input.ownerEmail,
+      name: input.ownerName,
+      role: 'operator',
+      status: 'active',
+    },
+  });
+  await applyTenantDefaults(tx, tenant.id);
+  return { tenant, user };
+}
+
 async function estimateStorageMb(client: typeof prisma, tenantId: string) {
   const [contents, funnels, promptTemplates, messages, voiceProfiles, events] = await Promise.all([
     client.content.findMany({
@@ -127,52 +170,7 @@ async function estimateStorageMb(client: typeof prisma, tenantId: string) {
 
 export const tenantService = {
   async create(input: CreateTenantInput) {
-    const planConfig = PLAN_TIERS[input.plan];
-    const tenantSettings = {
-      default_language: 'zh',
-      ai_monthly_quota: planConfig.max_ai_calls,
-      max_ai_calls: planConfig.max_ai_calls,
-      member_limit: planConfig.max_members,
-      max_members: planConfig.max_members,
-      storage_limit_mb: planConfig.max_storage_mb,
-      max_storage_mb: planConfig.max_storage_mb,
-      branding: {
-        primary_color: '#2563eb',
-      },
-      logo_url: null,
-      training_modules: defaultTrainingModules(),
-      default_daily_actions: defaultDailyActions(),
-      plan: input.plan,
-      custom_branding: planConfig.custom_branding,
-    };
-
-    return prisma.$transaction(async (tx) => {
-      const tenant = await tx.tenant.create({
-        data: {
-          name: input.name,
-          slug: input.slug,
-          plan: input.plan,
-          maxMembers: planConfig.max_members,
-          maxAiCalls: planConfig.max_ai_calls,
-          settings: tenantSettings as Prisma.InputJsonValue,
-        },
-      });
-
-      const user = await tx.user.create({
-        data: {
-          id: input.ownerId,
-          tenantId: tenant.id,
-          email: input.ownerEmail,
-          name: input.ownerName,
-          role: 'operator',
-          status: 'active',
-        },
-      });
-
-      await applyTenantDefaults(tx, tenant.id);
-
-      return { tenant, user };
-    });
+    return prisma.$transaction((tx) => createTenantUsing(tx, input));
   },
 
   async update(
@@ -183,9 +181,12 @@ export const tenantService = {
       settings?: Prisma.InputJsonValue;
       maxMembers?: number;
       maxAiCalls?: number;
-      status?: string;
+      status?: 'active' | 'suspended';
     },
   ) {
+    const current = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { status: true } });
+    if (!current) throw new AppError('NOT_FOUND', 404, 'Tenant not found');
+    if (current.status === 'deleted') throw new AppError('TENANT_DELETED_TERMINAL', 409, 'Deleted tenant is terminal');
     return prisma.tenant.update({
       where: { id: tenantId },
       data,
@@ -196,8 +197,10 @@ export const tenantService = {
     const planConfig = PLAN_TIERS[newPlan];
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { settings: true },
+      select: { settings: true, status: true },
     });
+    if (!tenant) throw new AppError('NOT_FOUND', 404, 'Tenant not found');
+    if (tenant.status === 'deleted') throw new AppError('TENANT_DELETED_TERMINAL', 409, 'Deleted tenant is terminal');
 
     const settings = normalizeSettings(tenant?.settings);
 
@@ -223,14 +226,18 @@ export const tenantService = {
   },
 
   async suspend(tenantId: string) {
-    await prisma.user.updateMany({
-      where: { tenantId, deletedAt: null },
-      data: { status: 'suspended' },
-    });
-
-    return prisma.tenant.update({
-      where: { id: tenantId },
-      data: { status: 'suspended' },
+    return prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.findUnique({ where: { id: tenantId }, select: { status: true } });
+      if (!tenant) throw new AppError('NOT_FOUND', 404, 'Tenant not found');
+      if (tenant.status === 'deleted') throw new AppError('TENANT_DELETED_TERMINAL', 409, 'Deleted tenant is terminal');
+      await tx.user.updateMany({
+        where: { tenantId, deletedAt: null },
+        data: { status: 'suspended' },
+      });
+      return tx.tenant.update({
+        where: { id: tenantId },
+        data: { status: 'suspended' },
+      });
     });
   },
 

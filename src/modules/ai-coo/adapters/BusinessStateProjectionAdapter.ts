@@ -61,7 +61,7 @@ function routeForDomain(domain: COORecommendationDomain): string {
     case 'sales':
       return '/sales';
     case 'team':
-      return '/team/growth';
+      return '/ai-workforce';
     case 'operations':
       return '/dashboard';
   }

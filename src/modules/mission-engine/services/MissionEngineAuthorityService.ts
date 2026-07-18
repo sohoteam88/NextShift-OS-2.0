@@ -91,7 +91,7 @@ function teamWorkforceMission(baseMission: MissionAuthorityDefinition): MissionA
     description: 'Your core business system has reached the team-building stage. Turn the proven workflow into repeatable team and AI workforce actions.',
     expectedOutcome: 'Business operates beyond founder',
     estimatedMinutes: 20,
-    route: '/team/growth',
+    route: '/ai-workforce',
   };
 }
 

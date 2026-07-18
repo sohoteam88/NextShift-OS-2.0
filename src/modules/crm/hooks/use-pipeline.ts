@@ -89,7 +89,7 @@ export function useReorderStages() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (stageIds: string[]) => {
-      const res = await fetch('/api/v1/crm/pipeline-stages/reorder', {
+      const res = await fetch('/api/v1/admin/crm/pipeline-stages/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage_ids: stageIds }),

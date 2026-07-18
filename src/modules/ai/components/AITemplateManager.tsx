@@ -104,7 +104,7 @@ export function AITemplateManager() {
         model_preference: payload.modelPreference,
         is_default: payload.isDefault,
       };
-      const res = await fetch(payload.id ? `/api/v1/ai/templates/${payload.id}` : '/api/v1/ai/templates', {
+      const res = await fetch(payload.id ? `/api/v1/admin/ai/templates/${payload.id}` : '/api/v1/admin/ai/templates', {
         method: payload.id ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -120,7 +120,7 @@ export function AITemplateManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/v1/ai/templates/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/v1/admin/ai/templates/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete template');
       return res.json();
     },

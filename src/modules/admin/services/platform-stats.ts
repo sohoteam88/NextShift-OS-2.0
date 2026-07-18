@@ -1,10 +1,12 @@
 import prisma from '@/lib/prisma';
 import type { PlatformStats } from '../types';
+import { requirePlatformAdminDataAccess } from '@/lib/security/platform-data-authority';
 
 function decimalToNumber(value: any) { return Number(value ?? 0); }
 function startOfMonth(d = new Date()) { const v = new Date(d); v.setDate(1); v.setHours(0,0,0,0); return v; }
 
 export async function getPlatformStats(): Promise<PlatformStats> {
+  await requirePlatformAdminDataAccess();
   const [totalTenants, activeTenants, totalUsers, totalLeads, totalFunnels, aiUsage, planGroups] = await Promise.all([
     prisma.tenant.count(),
     prisma.tenant.count({ where: { status: 'active' } }),

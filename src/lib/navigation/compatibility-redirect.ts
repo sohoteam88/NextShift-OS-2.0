@@ -8,6 +8,7 @@ export type RedirectPageProps = {
 export function buildCompatibilityDestination(
   destination: string,
   searchParams: RedirectSearchParams = {},
+  allowedKeys?: readonly string[],
 ) {
   if (!destination.startsWith('/') || destination.startsWith('//')) {
     throw new Error('Compatibility redirect destination must be an internal absolute path');
@@ -19,6 +20,7 @@ export function buildCompatibilityDestination(
 
   for (const [key, rawValue] of Object.entries(searchParams)) {
     if (rawValue === undefined) continue;
+    if (allowedKeys && !allowedKeys.includes(key)) continue;
     // A destination-owned key (for example `view=command`) is an authority
     // boundary and cannot be replaced by an untrusted source query.
     if (query.has(key) || (destinationOwnsViewState && (key === 'view' || key === 'tab'))) continue;
@@ -48,7 +50,6 @@ export const WORKSPACE_ADMIN_SUFFIXES = new Set([
   'feedback',
   'funnels',
   'journey',
-  'launch-readiness',
   'members',
   'operations',
   'plan',

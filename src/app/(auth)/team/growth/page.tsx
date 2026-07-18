@@ -9,7 +9,7 @@ export default async function TeamGrowthPage({ searchParams }: RedirectPageProps
   const user = await getAuthUser();
 
   if (!user) redirect('/login');
-  if (!['operator', 'platform_admin'].includes(user.role)) redirect('/dashboard');
+  if (user.role !== 'operator') redirect('/dashboard');
 
-  redirect(buildCompatibilityDestination('/team', await searchParams));
+  redirect(buildCompatibilityDestination('/admin/team', await searchParams));
 }

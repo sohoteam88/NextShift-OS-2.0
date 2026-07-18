@@ -11,6 +11,7 @@ export type AuthUser = {
   name: string;
   preferredLanguage: string;
   status: 'active' | 'pending' | 'suspended';
+  tenantStatus?: string;
 };
 
 const cacheAuthResolver = (React as typeof React & {
@@ -36,6 +37,7 @@ export const getAuthUser = cacheAuthResolver(async function getAuthUser(): Promi
         name: true,
         languagePreference: true,
         status: true,
+        tenant: { select: { status: true } },
       },
     }),
   );
@@ -50,6 +52,7 @@ export const getAuthUser = cacheAuthResolver(async function getAuthUser(): Promi
     name: dbUser.name,
     preferredLanguage: dbUser.languagePreference,
     status: dbUser.status as AuthUser['status'],
+    tenantStatus: dbUser.tenant.status,
   };
 });
 

@@ -29,9 +29,25 @@ Steven approved all five previously unresolved routes as Hide. `/automation`, `/
 
 `/settings`, `/billing`, and `/help` are utilities, not primary destinations. Tenant administration (`/admin`) and Founder Console (`/platform-admin`) remain role-scoped experiences outside the seven member destinations.
 
-“Team” is not one authorization domain. The member destination `/ai-workforce` is the AI workforce/execution surface. Privileged human-team administration stays at `/team` and `/team/members` for operator/platform-admin users; tenant-admin team command stays at `/admin/team`; Founder/platform operations stay at `/admin-command` and `/platform-admin`. U2 does not merge those four capability or privilege domains.
+“Team” is not one authorization domain. At the original reviewed U2 SHA, privileged human-team administration stayed at `/team` and `/team/members`; Amendment A below now supersedes that placement. The member destination remains `/ai-workforce`, team administration terminates under `/admin/*`, and platform operations terminate under `/superadmin/*`.
 
 This corrects, but does not adopt, the preserved PR #87 hypothesis. In particular, the repository has no current authenticated pages at `/content`, `/library`, `/tools`, or `/learn`; U2 therefore does not create a second registry or approve speculative routes. The preserved `U2_IA_ONE_PAGER.md`, roadmap v1.2, and UI Constitution remain non-authoritative design inputs.
+
+## Amendment A overlay — Three-Space Administration Isolation
+
+Steven approved this overlay on 2026-07-17. The original 112-route map below remains the historical record of the approved U2 decision at its reviewed SHA; Amendment A supersedes only its administration-space rows, destinations, landing language, and implementation sequencing. It does not recalculate or claim a new complete authenticated-route count before U3A performs the new-space inventory.
+
+- The member frontend keeps the approved seven desktop destinations and five-slot mobile projection. All member-facing navigation surfaces contain zero administration links; an administration space is entered only through an authorized direct URL.
+- `/admin/*` is tenant administration. Only `leader` and `operator` may enter, with narrower route-level permissions preserved. Every read and mutation uses the authenticated session's tenant; query, path, body, or header `tenantId` is never authority. The shell displays a clear **ADMIN** identity.
+- `/superadmin/*` is platform administration. Only `platform_admin` may enter. Every capability currently under `/platform-admin/*` or `/admin-command` migrates here. The shell displays a clear **PLATFORM** identity and is never included in member or team-admin navigation.
+- `/platform-admin`, `/platform-admin/*`, and `/admin-command` become legacy compatibility GET paths. They use one-hop `301` redirects to `/superadmin`, the corresponding `/superadmin/*` path, or `/superadmin/command`, preserving only allowlisted query/bookmark state. They never redirect into `/admin/*` and never form chains.
+- Team administration APIs use `/api/v1/admin/*`; platform administration APIs use `/api/v1/superadmin/*`. Their guards mirror the page space. Admin tenant identity is session-only. Superadmin target-tenant selection is explicit resource targeting, not a substitute for the platform role guard.
+- API mutations never rely on `301`/`302`. The preferred migration is caller cutover followed by fail-closed retirement of the old mutation route. Any separately approved compatibility endpoint must use method-preserving `308` and identical guards, validation, auditing, and tenant semantics.
+- Every superadmin write must emit a redacted `AuditLog` event. The U3ADR reviewed-decision proposal selects nullable `AuditLog.tenantId` plus an explicit tenant/platform scope, terminal deleted-tenant enforcement, durable failure delivery, and database-enforced final-event idempotency; it remains non-executable until exact-head PASS and separate production-runner adoption, and this governance overlay authorizes no Prisma change.
+
+The following original matrix decisions are specifically superseded: `/team` becomes a compatibility GET to terminal `/admin/team`; `/team/members` becomes a compatibility GET to terminal `/admin/team/members`; `/team/growth` resolves directly to `/admin/team` without a redirect chain; `/workspace` and `/workspace/[...path]` are also team-admin compatibility paths. Leader/operator authorization and session-tenant scope are preserved or narrowed, while `platform_admin` is excluded from those legacy team routes.
+
+The full implementation inventory and security contract is `U3_ADMIN_SPACE_SEPARATION_CONTRACT.md`. W3 inserts U3A, the U3ADR exact-head AuditLog decision gate, and U3B after the completed historical U3 task and before E3A. U3B remains blocked until a fresh PASS gate is adopted; E3A/E3B remain paused until U3B completes and is verified.
 
 ## Evidence and method
 
@@ -259,7 +275,7 @@ Steven's approval explicitly accepts every group below, subject to the authoriza
 - Retail and Recruitment share route identity only at the navigation layer; `mode`, dual pipelines, and the auditable graduation bridge remain isolated.
 - Journey `/journey` owns starting-account guidance, staged learning, the canonical next task, and progress resumption; no `/learn`, `/academy`, or second learning center is approved.
 - Tenant Admin and Founder Console remain separate role-scoped navigation systems.
-- Member Team means `/ai-workforce`; privileged human-team administration remains `/team` and `/team/members`; tenant team command remains `/admin/team`; Founder/platform operations remain `/admin-command` and `/platform-admin`.
+- Historical reviewed-map statement (superseded by Amendment A): member Team meant `/ai-workforce`, privileged human-team administration used `/team` and `/team/members`, tenant command used `/admin/team`, and platform operations used `/admin-command` and `/platform-admin`.
 
 ### Merge decisions (9)
 
@@ -287,7 +303,7 @@ Steven's approval explicitly accepts every group below, subject to the authoriza
 - Admin compatibility: `/admin/ai-templates` → `/admin/templates`; `/workspace` → `/admin`; `/workspace/[...path]` → terminal `/admin` or an exact role-equivalent Keep child.
 - AI aliases: `/ai` → `/content-engine`; `/ai/brand-builder` → `/brand-builder`; `/ai/content-plan` → `/content-engine`; `/ai/funnel-builder` → `/funnel`; `/ai/workforce` → `/ai-workforce`.
 - Brand aliases: `/brand-builder/step/calendar` and `/brand-builder/step/strategy` → `/content-engine`; `/brand-builder/video-script` → `/video`; `/social-setup` → guarded terminal `/brand-builder`.
-- Growth/relationship aliases: `/customers` → `/crm`; `/funnel-builder` → `/funnel`; `/team/growth` → privileged terminal Keep route `/team`.
+- Historical reviewed-map aliases (Amendment A supersedes the team entry): `/customers` → `/crm`; `/funnel-builder` → `/funnel`; `/team/growth` formerly targeted `/team` and now resolves directly to terminal `/admin/team`.
 - Onboarding aliases: `/onboarding/brand`, `/onboarding/goals`, and `/onboarding/profile` → `/brand-builder`; `/onboarding/complete` → `/dashboard`; `/onboarding/first-content` → `/content-engine`; `/onboarding/first-funnel` → `/funnel`.
 - Founder compatibility: `/platform-admin/tenants` → `/platform-admin?tab=tenants`.
 
@@ -317,7 +333,7 @@ Steven resolved all five items as Hide: `/automation`, `/blueprints`, `/franchis
 8. Existing `Sidebar.tsx` is not a runtime navigation authority unless U3 deliberately remounts it; its entries are evidence of historical intent only.
 9. No Merge or Redirect may weaken the source route’s role, tenant, or capability boundary; the destination must preserve or strengthen it.
 10. Every Merge or Redirect destination must normalize directly to a Keep route. It cannot target another Merge or Redirect.
-11. `/team`, `/team/members`, and `/team/growth` remain operator/platform-admin human-team administration; `/ai-workforce` remains the separate member-facing AI workforce destination.
+11. Historical reviewed-map decision, superseded only for placement by Amendment A: `/team`, `/team/members`, and `/team/growth` held privileged human-team administration; their capability now moves to `/admin/*`, platform access is removed, and `/ai-workforce` remains the separate member-facing AI workforce destination.
 12. `/admin-command` remains Founder/platform-admin-only and never enters Tenant Admin navigation; any merge requires platform-command capability parity.
 
 ## Final Steven decision summary

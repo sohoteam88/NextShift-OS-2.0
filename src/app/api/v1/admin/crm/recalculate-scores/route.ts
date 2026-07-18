@@ -5,7 +5,7 @@ import { recalculateAllLeadScores } from '@/modules/crm/services/scoring-service
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
 
   const updated = await recalculateAllLeadScores(user.tenantId);
 

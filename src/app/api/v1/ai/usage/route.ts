@@ -6,7 +6,10 @@ import { getUsageStats } from '@/modules/ai/usage/tracker';
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  const scope = request.nextUrl.searchParams.get('scope') ?? 'user';
+  const isCanonicalTenantAdminRoute = request.nextUrl.pathname === '/api/v1/admin/ai/usage';
+  const scope = isCanonicalTenantAdminRoute
+    ? 'tenant'
+    : (request.nextUrl.searchParams.get('scope') ?? 'user');
 
   if (scope === 'tenant') {
     requireRoleApi(user, ['operator']);
