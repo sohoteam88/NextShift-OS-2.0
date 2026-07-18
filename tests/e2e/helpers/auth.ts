@@ -22,7 +22,7 @@ export async function loginAsAdmin(page: Page) {
   await page.fill('input[name="email"]', ADMIN_EMAIL);
   await page.fill('input[name="password"]', ADMIN_PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL((url) => url.pathname === '/platform-admin', { timeout: 15000 });
+  await page.waitForURL((url) => url.pathname === '/superadmin', { timeout: 15000 });
 }
 
 export async function loginAsDanglingUser(page: Page) {
