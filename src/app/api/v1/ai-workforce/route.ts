@@ -10,7 +10,7 @@ function recommendedRouteFor(currentState: string, missingRequirements: string[]
   if (missingRequirements.includes('Process Documented')) return '/journey';
   if (missingRequirements.includes('Delegation Ready')) return '/journey';
   if (missingRequirements.includes('Agent Workforce Active')) return '/content-engine';
-  if (missingRequirements.includes('Human Team Added')) return '/team';
+  if (missingRequirements.includes('Human Team Added')) return '/ai-workforce';
   return '/dashboard';
 }
 
@@ -72,7 +72,7 @@ export const GET = apiHandler(async (req: NextRequest) => {
             label: 'Human Team Added',
             completed: !teamRequirements.some((item) => item.id === 'humanTeamAdded') && isTeamStage,
             description: '已经邀请或加入第一位团队成员，开始从个人执行进入复制阶段。',
-            route: '/team',
+            route: '/ai-workforce',
           },
         ],
       },

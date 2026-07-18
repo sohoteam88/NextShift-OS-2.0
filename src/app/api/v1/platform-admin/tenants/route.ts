@@ -32,6 +32,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
 });
 
 export const POST = apiHandler(async (request: NextRequest) => {
-  void request;
+  const user = await requireAuthApi(request);
+  requireRoleApi(user, ['platform_admin']);
   return NextResponse.json({ error: { code: 'GONE', message: 'Use /api/v1/superadmin/tenants' } }, { status: 410 });
 });

@@ -115,7 +115,7 @@ export function TemplatesPanel() {
         }
       }
 
-      const res = await fetch(`/api/v1/funnel/templates/${templateId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/v1/admin/funnel/templates/${templateId}`, { method: 'DELETE' });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
         throw new Error(payload?.error?.message ?? 'Failed to delete template');

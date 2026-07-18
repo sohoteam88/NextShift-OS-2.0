@@ -47,7 +47,7 @@ export function detectReferralRisks(facts: ReferralFacts, readiness: ReferralPro
       riskCode: 'REFERRAL_PATH_MISSING',
       title: 'Referral path missing',
       reason: 'The user is ready for advocacy but has no invite or referral path configured.',
-      route: '/team/growth',
+      route: '/ai-workforce',
       priority: 'medium',
     });
   }

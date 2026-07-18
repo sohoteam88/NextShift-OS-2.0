@@ -2,6 +2,7 @@
 import type { WorkflowDefinition, WorkflowExecution, WorkflowCondition, WorkflowAction, TriggerType, ExecutionStatus } from './types';
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { assertTenantOperational } from '@/modules/tenant/services/tenant-operational-guard';
 
 // ---- Trigger evaluation ----
 export function evaluateTrigger(workflow: WorkflowDefinition, event: { type: TriggerType; data?: Record<string, unknown> }): boolean {
@@ -25,6 +26,7 @@ export async function executeActions(actions: WorkflowAction[], userId: string, 
   let success = 0; const errors: string[] = [];
   for (const action of actions) {
     try {
+      await assertTenantOperational(tenantId, 'pre_side_effect');
       switch (action.type) {
         case 'createLead': await prisma.lead.create({ data: { tenantId, ownerId: userId, name: (action.config.name as string) ?? 'New Lead', source: (action.config.source as string) ?? 'automation', pipelineStage: 'new_lead' } }); break;
         case 'createOpportunity': /* Log to audit */ break;
@@ -53,6 +55,7 @@ export async function executeWorkflow(
   userId: string,
   tenantId: string,
 ): Promise<WorkflowExecution> {
+  await assertTenantOperational(tenantId, 'claim');
   const startTime = Date.now();
   const id = `exec-${++executionCount}-${Date.now()}`;
 
@@ -76,6 +79,7 @@ export async function runAutomationForEvent(
   userId: string,
   tenantId: string,
 ): Promise<WorkflowExecution[]> {
+  await assertTenantOperational(tenantId, 'claim');
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
   const meta = (user?.metadata as Record<string, unknown>) ?? {};
   const workflows: WorkflowDefinition[] = Array.isArray(meta.automation_workflows) ? (meta.automation_workflows as WorkflowDefinition[]) : [];

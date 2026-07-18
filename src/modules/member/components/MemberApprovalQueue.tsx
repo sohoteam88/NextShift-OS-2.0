@@ -31,7 +31,7 @@ export function MemberApprovalQueue({ role }: { role: Role }) {
   const pendingQuery = useQuery({
     queryKey: ['member-pending'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/member/pending');
+      const res = await fetch('/api/v1/admin/members/pending');
       if (!res.ok) throw new Error('Failed to load pending members');
       return res.json() as Promise<{ data: PendingMember[]; meta: { total: number } }>;
     },
@@ -41,7 +41,7 @@ export function MemberApprovalQueue({ role }: { role: Role }) {
 
   const approveMutation = useMutation({
     mutationFn: async (memberId: string) => {
-      const res = await fetch(`/api/v1/member/${memberId}/approve`, { method: 'POST' });
+      const res = await fetch(`/api/v1/admin/members/${memberId}/approve`, { method: 'POST' });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
         throw new Error(payload?.error?.message ?? 'Failed to approve member');
@@ -55,7 +55,7 @@ export function MemberApprovalQueue({ role }: { role: Role }) {
 
   const rejectMutation = useMutation({
     mutationFn: async ({ memberId, reason }: { memberId: string; reason?: string }) => {
-      const res = await fetch(`/api/v1/member/${memberId}/reject`, {
+      const res = await fetch(`/api/v1/admin/members/${memberId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason }),

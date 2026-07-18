@@ -57,12 +57,12 @@ export function computeAlerts(
     ...tenantHealth
       .filter(t => t.churnRisk === 'Critical' || t.churnRisk === 'High')
       .slice(0, 5)
-      .map(t => ({ title: `${t.name} churn risk`, description: `${t.healthScore}/100 health · ${t.riskSignals.join(', ') || 'low activity'}`, priority: t.churnRisk === 'Critical' ? 'Critical' as const : 'High' as const, href: '/platform-admin/tenant-health' })),
-    ...(grossMargin > 0 && grossMargin < 60 ? [{ title: 'AI cost spike', description: `Gross margin is ${grossMargin}%`, priority: 'High' as const, href: '/platform-admin/ai-profitability' }] : []),
-    ...(mrr < previousMrr ? [{ title: 'Revenue drop', description: 'MRR is lower than previous period estimate.', priority: 'Critical' as const, href: '/platform-admin/revenue' }] : []),
-    ...(activeTenants < totalTenants ? [{ title: 'Inactive tenant', description: `${totalTenants - activeTenants} tenants are not active.`, priority: 'Medium' as const, href: '/platform-admin/tenant-health' }] : []),
+      .map(t => ({ title: `${t.name} churn risk`, description: `${t.healthScore}/100 health · ${t.riskSignals.join(', ') || 'low activity'}`, priority: t.churnRisk === 'Critical' ? 'Critical' as const : 'High' as const, href: '/superadmin/tenant-health' })),
+    ...(grossMargin > 0 && grossMargin < 60 ? [{ title: 'AI cost spike', description: `Gross margin is ${grossMargin}%`, priority: 'High' as const, href: '/superadmin/ai-profitability' }] : []),
+    ...(mrr < previousMrr ? [{ title: 'Revenue drop', description: 'MRR is lower than previous period estimate.', priority: 'Critical' as const, href: '/superadmin/revenue' }] : []),
+    ...(activeTenants < totalTenants ? [{ title: 'Inactive tenant', description: `${totalTenants - activeTenants} tenants are not active.`, priority: 'Medium' as const, href: '/superadmin/tenant-health' }] : []),
   ];
-  return alerts.length > 0 ? alerts : [{ title: 'Platform stable', description: 'No critical founder alerts detected.', priority: 'Low', href: '/platform-admin' }];
+  return alerts.length > 0 ? alerts : [{ title: 'Platform stable', description: 'No critical founder alerts detected.', priority: 'Low', href: '/superadmin' }];
 }
 
 export function computeFunnelAnalysis(

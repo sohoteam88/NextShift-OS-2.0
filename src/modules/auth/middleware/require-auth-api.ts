@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { AppError } from '@/lib/errors';
 import { getAuthUser, type AuthUser } from '../services/auth-service';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export async function requireAuthApi(request: NextRequest): Promise<AuthUser> {
   void request;
@@ -17,7 +18,11 @@ export async function requireAuthApi(request: NextRequest): Promise<AuthUser> {
   }
   // getAuthUser re-reads the retained Tenant row for every request. Keeping the
   // status on the resolved principal avoids a second database round-trip here.
-  if (user.tenantStatus === 'deleted') {
+  if (user.tenantStatus === 'deleted' && user.role !== 'platform_admin') {
+    // A retained tenant row is the live authority, not a stale token claim.
+    // Terminate the local issued session on its next authenticated request.
+    const supabase = await createServerSupabaseClient();
+    await supabase.auth.signOut({ scope: 'local' });
     throw new AppError('TENANT_DELETED', 403, 'This tenant has been deleted');
   }
   return user;

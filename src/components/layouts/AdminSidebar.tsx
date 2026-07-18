@@ -18,6 +18,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
+  MessageSquareText,
+  SquareTerminal,
+  UserRoundCog,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -41,6 +44,11 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/superadmin/users',            label: 'Users',             icon: Users },
   { href: '/superadmin/billing',          label: 'Billing',           icon: CircleDollarSign },
   { href: '/superadmin/audit-logs',       label: 'Audit Logs',        icon: ScrollText },
+  { href: '/superadmin/feedback',         label: 'Feedback',          icon: MessageSquareText },
+  { href: '/superadmin/ai-usage',         label: 'AI Usage',          icon: Brain },
+  { href: '/superadmin/founder',          label: 'Founder',           icon: UserRoundCog },
+  { href: '/superadmin/launch-readiness', label: 'Launch Readiness',  icon: Rocket },
+  { href: '/superadmin/command',          label: 'Platform Command',  icon: SquareTerminal },
 ];
 
 export function AdminSidebar({ userName }: { userName: string }) {
@@ -66,8 +74,9 @@ export function AdminSidebar({ userName }: { userName: string }) {
 
   return (
     <aside
+      aria-label="Platform administration navigation"
       className={cn(
-        'relative flex h-screen shrink-0 flex-col border-r border-slate-800 bg-slate-900 transition-[width] duration-200',
+        'relative hidden h-screen shrink-0 flex-col border-r border-slate-800 bg-slate-900 transition-[width] duration-200 xl:flex',
         collapsed ? 'w-14' : 'w-[220px]',
       )}
     >
@@ -153,6 +162,8 @@ export function AdminSidebar({ userName }: { userName: string }) {
         )}
         <button
           type="button"
+          aria-label={collapsed ? 'Expand platform navigation' : 'Collapse platform navigation'}
+          aria-expanded={!collapsed}
           onClick={toggle}
           className={cn(
             'flex h-8 w-full items-center rounded-md text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-300',

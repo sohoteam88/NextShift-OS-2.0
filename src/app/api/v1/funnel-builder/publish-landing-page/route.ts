@@ -6,9 +6,11 @@ import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { funnelBuilderService } from '@/modules/funnel/services/funnel-builder-service';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 import { resolveRequestWorkspaceContext } from '@/modules/workspace/request-workspace-context';
+import { assertTenantOperational } from '@/modules/tenant/services/tenant-operational-guard';
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
+  await assertTenantOperational(user.tenantId, 'claim');
   await sharedAiRateLimitGuard(user, { feature: 'generation' });
   let body: unknown;
   try { body = await request.json(); } catch { body = {}; }
@@ -22,6 +24,7 @@ export const POST = apiHandler(async (request: NextRequest) => {
     body,
     legacyWorkspaceType: track,
   });
+  await assertTenantOperational(user.tenantId, 'pre_side_effect');
   const data = await funnelBuilderService.publishLandingPage(user, track, workspaceContext);
   const mission = await notifyMissionProgress(user, 'funnel_published');
   return NextResponse.json({ data, mission });

@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
 import { requireAuthApi, requireRoleApi } from '@/modules/auth/middleware/require-auth-api';
 import { platformAdminService } from '@/modules/admin/services/platform-admin-service';
 import { writePlatformAudit } from '@/modules/admin/services/platform-audit-service';
+import { deleteTenantWithAudit } from '@/modules/admin/services/tenant-deletion-service';
 
 const UpdateSchema = z.object({ name: z.string().min(1).max(120).optional(), slug: z.string().min(1).max(120).optional(), plan: z.enum(['starter', 'growth', 'pro']).optional(), status: z.string().trim().optional(), maxMembers: z.coerce.number().int().positive().optional(), maxAiCalls: z.coerce.number().int().positive().optional() });
 const idOf = async (context: { params?: Promise<Record<string, string>> | Record<string, string> } | undefined) => (await Promise.resolve(context?.params ?? {})).id;
@@ -20,9 +21,17 @@ export const PATCH = apiHandler(async (request, context) => {
   catch (error) { await writePlatformAudit({ actorId: user.id, actorRole: 'platform_admin', action: 'tenant.update', targetType: 'tenant', targetId: id, targetKey: id, outcome: 'failure', metadata: { failure_code: error instanceof Error ? error.name : 'UNKNOWN' } }); throw error; }
 });
 export const DELETE = apiHandler(async (request, context) => {
-  const user = await authorize(request); const id = await idOf(context);
-  const result = await prisma.tenant.updateMany({ where: { id, status: { not: 'deleted' } }, data: { status: 'deleted', updatedAt: new Date() } });
-  const outcome = result.count === 1 ? 'success' : 'failure';
-  await writePlatformAudit({ actorId: user.id, actorRole: 'platform_admin', action: 'tenant.delete', targetType: 'tenant', targetId: id, targetKey: id, outcome, metadata: outcome === 'failure' ? { failure_code: 'already_deleted' } : {} });
-  return NextResponse.json({ data: { id, status: 'deleted', alreadyDeleted: result.count === 0 } });
+  const user = await authorize(request);
+  const id = await idOf(context);
+  const suppliedIdempotency = request.headers.get('idempotency-key')?.trim();
+  if (suppliedIdempotency && !/^[A-Za-z0-9._:-]{8,128}$/.test(suppliedIdempotency)) {
+    throw new AppError('VALIDATION_ERROR', 400, 'Invalid Idempotency-Key header');
+  }
+  const result = await deleteTenantWithAudit({
+    tenantId: id,
+    actorId: user.id,
+    idempotencyKey: suppliedIdempotency,
+    correlationId: request.headers.get('x-correlation-id')?.trim() || undefined,
+  });
+  return NextResponse.json({ data: result, correlationId: result.correlationId });
 });

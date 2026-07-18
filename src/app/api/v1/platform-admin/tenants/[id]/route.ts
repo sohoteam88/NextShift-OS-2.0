@@ -26,11 +26,15 @@ export const GET = apiHandler(async (request: NextRequest, context) => {
 });
 
 export const PATCH = apiHandler(async (request: NextRequest, context) => {
-  void request; void context;
+  void context;
+  const user = await requireAuthApi(request);
+  requireRoleApi(user, ['platform_admin']);
   return NextResponse.json({ error: { code: 'GONE', message: 'Use /api/v1/superadmin/tenants/:id' } }, { status: 410 });
 });
 
 export const DELETE = apiHandler(async (request: NextRequest, context) => {
-  void request; void context;
+  void context;
+  const user = await requireAuthApi(request);
+  requireRoleApi(user, ['platform_admin']);
   return NextResponse.json({ error: { code: 'GONE', message: 'Use /api/v1/superadmin/tenants/:id' } }, { status: 410 });
 });

@@ -115,7 +115,7 @@ export function TeamPerformanceTable({ members }: Props) {
                 tone === 'warning' && 'bg-amber-50/50',
                 tone === 'danger' && 'bg-red-50/50',
               )}
-              onClick={() => router.push(`/team/members?member=${member.id}`)}
+              onClick={() => router.push(`/admin/team/members?member=${member.id}`)}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export function TeamPerformanceTable({ members }: Props) {
                   onClick={(event) => {
                     event.stopPropagation();
                     if (!member.phone) {
-                      router.push(`/team/members?member=${member.id}`);
+                      router.push(`/admin/team/members?member=${member.id}`);
                       return;
                     }
                     window.open(`https://wa.me/${member.phone.replace(/\D/g, '')}`, '_blank', 'noopener,noreferrer');
@@ -187,7 +187,7 @@ export function TeamPerformanceTable({ members }: Props) {
                       tone === 'warning' && 'bg-amber-50/50',
                       tone === 'danger' && 'bg-red-50/50',
                     )}
-                    onClick={() => router.push(`/team/members?member=${member.id}`)}
+                    onClick={() => router.push(`/admin/team/members?member=${member.id}`)}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -220,7 +220,7 @@ export function TeamPerformanceTable({ members }: Props) {
                         onClick={(event) => {
                           event.stopPropagation();
                           if (!member.phone) {
-                            router.push(`/team/members?member=${member.id}`);
+                            router.push(`/admin/team/members?member=${member.id}`);
                             return;
                           }
                           window.open(

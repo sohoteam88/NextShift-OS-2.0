@@ -3,6 +3,7 @@
 import { type ReactNode, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { MobileTabBar } from './MobileTabBar';
 import { TopBar } from './TopBar';
 import { AdminSidebar } from './AdminSidebar';
@@ -51,7 +52,7 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
   const pathname = usePathname();
   const isOnboardingPath = pathname.startsWith('/onboarding');
   const isWizardPath = pathname.startsWith('/brand-builder/step');
-  const isAdminExperience = pathname.startsWith('/admin') || pathname.startsWith('/superadmin') || pathname.startsWith('/workspace');
+  const isAdminExperience = pathname.startsWith('/admin') || pathname.startsWith('/superadmin');
   const adminHomeHref = pathname.startsWith('/superadmin') ? '/superadmin' : '/admin';
   const branding = extractBranding(tenant);
 
@@ -103,13 +104,23 @@ export default function AppShell({ children, user, onboarding, tenant }: AppShel
 }
 
 function TeamAdminShell({ userName, tenantName, children }: { userName: string; tenantName: string; children: ReactNode }) {
+  const links = [
+    ['/admin', 'Overview'],
+    ['/admin/team', 'Team'],
+    ['/admin/members', 'Members'],
+    ['/admin/approvals', 'Approvals'],
+    ['/admin/settings', 'Settings'],
+  ] as const;
   return (
     <div className="min-h-screen bg-[var(--color-surface)]">
       <header className="flex items-center justify-between border-b border-[var(--color-border)] bg-white px-4 py-3 lg:px-6">
         <div><span className="mr-2 rounded bg-slate-900 px-2 py-1 text-xs font-bold tracking-widest text-white">ADMIN</span><span className="text-sm text-[var(--color-text-muted)]">{tenantName}</span></div>
         <span className="text-sm text-[var(--color-text-muted)]">{userName}</span>
       </header>
-      <main className="mx-auto max-w-[1440px] p-4 lg:p-6">{children}</main>
+      <nav aria-label="Tenant administration navigation" className="flex gap-1 overflow-x-auto border-b border-[var(--color-border)] bg-white px-3 py-2 [scrollbar-width:none]">
+        {links.map(([href, label]) => <Link key={href} href={href} className="min-h-11 shrink-0 rounded-md px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">{label}</Link>)}
+      </nav>
+      <main className="mx-auto max-w-[1440px] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:p-6">{children}</main>
     </div>
   );
 }
@@ -149,10 +160,19 @@ function PlatformAdminShell({ userName, pathname, children }: { userName: string
     <div className="flex h-screen overflow-hidden">
       <AdminSidebar userName={userName} />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="flex h-10 shrink-0 items-center border-b border-[var(--color-border)] bg-white px-6">
+        <div className="flex min-h-10 shrink-0 items-center overflow-x-auto border-b border-[var(--color-border)] bg-white px-4 xl:px-6">
           <Breadcrumb items={breadcrumbItems} />
         </div>
-        <main className="flex-1 overflow-y-auto bg-[var(--color-surface)] p-6 xl:p-8">
+        <nav aria-label="Mobile platform administration navigation" className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-700 bg-slate-900 px-3 py-2 text-white [scrollbar-width:none] xl:hidden">
+          {[
+            ['/superadmin', 'Platform'],
+            ['/superadmin/tenants', 'Tenants'],
+            ['/superadmin/users', 'Users'],
+            ['/superadmin/health', 'Health'],
+            ['/superadmin/audit-logs', 'Audit'],
+          ].map(([href, label]) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined} className="min-h-11 shrink-0 rounded-md px-3 py-2 text-sm font-semibold hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white">{label}</Link>)}
+        </nav>
+        <main className="flex-1 overflow-y-auto bg-[var(--color-surface)] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] xl:p-8">
           {children}
         </main>
       </div>

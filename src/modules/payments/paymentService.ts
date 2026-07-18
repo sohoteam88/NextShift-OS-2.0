@@ -3,10 +3,14 @@ import prisma from '@/lib/prisma';
 import type { PlanId } from '@/modules/saas/types';
 import type { BillingCycle, CheckoutSession, PaymentRecord } from './types';
 import { billplzProvider } from './providers/billplzProvider';
+import { assertTenantOperational, tenantOperationalState } from '@/modules/tenant/services/tenant-operational-guard';
 
 export const paymentService = {
   async createCheckout(userId: string, tenantId: string, planId: PlanId, cycle: BillingCycle): Promise<CheckoutSession> {
+    await assertTenantOperational(tenantId, 'claim');
+    await assertTenantOperational(tenantId, 'pre_side_effect');
     const session = await billplzProvider.createCheckoutSession(userId, tenantId, planId, cycle);
+    await assertTenantOperational(tenantId, 'pre_side_effect');
 
     const payment: PaymentRecord = {
       id: session.paymentId, tenantId, userId, provider: 'billplz',
@@ -25,7 +29,7 @@ export const paymentService = {
     return session;
   },
 
-  async handleWebhook(payload: unknown): Promise<{ success: boolean; tenantId?: string; planId?: PlanId }> {
+  async handleWebhook(payload: unknown): Promise<{ success: boolean; tenantId?: string; planId?: PlanId; suppressed?: 'TENANT_DELETED_TERMINAL' }> {
     const verify = await billplzProvider.verifyWebhook(payload);
     if (!verify.verified || !verify.paymentId) return { success: false };
 
@@ -41,6 +45,11 @@ export const paymentService = {
       if (match) {
         tenantId = match.tenantId;
         planId = match.planId;
+        const operational = await tenantOperationalState(tenantId, 'webhook');
+        if (!operational.operational) {
+          return { success: true, tenantId, planId, suppressed: operational.reason };
+        }
+        await assertTenantOperational(tenantId, 'pre_side_effect');
         // Update payment status
         match.status = verify.status ?? 'paid';
         match.paidAt = new Date().toISOString();
@@ -52,10 +61,12 @@ export const paymentService = {
 
     // If payment succeeded, update tenant plan
     if (verify.status === 'paid' && tenantId && planId) {
-      const planConfig = await import('./billingPlanMapper').then(m => m.getPlanPrice(planId, 'billplz', 'monthly'));
+      await assertTenantOperational(tenantId, 'pre_side_effect');
       await prisma.tenant.update({
         where: { id: tenantId },
-        data: { plan: planId, status: 'active' },
+        // A provider callback may update the subscribed plan, but it is never
+        // an authority to reactivate a suspended/deleted tenant.
+        data: { plan: planId },
       });
     }
 
