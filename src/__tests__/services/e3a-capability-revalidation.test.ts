@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 const prismaMocks = vi.hoisted(() => ({
   user: {
@@ -82,6 +83,57 @@ describe('E3A capability revalidation', () => {
       expect(where.id).toBe(user.id);
       userMetadata = data.metadata;
       return { id: where.id, metadata: userMetadata };
+    });
+  });
+
+  describe('latest planning baseline delta after U3B', () => {
+    it('keeps the capability gaps unchanged while adding fail-closed publish guards', () => {
+      const leadMagnetPublish = readFileSync(
+        'src/app/api/v1/lead-magnet/publish/route.ts',
+        'utf8',
+      );
+      const videoPublish = readFileSync(
+        'src/app/api/v1/video/projects/[id]/publish/route.ts',
+        'utf8',
+      );
+      const leadMagnetServiceSource = readFileSync(
+        'src/modules/lead-magnet/leadMagnetService.ts',
+        'utf8',
+      );
+      const webinarDashboard = readFileSync(
+        'src/modules/webinar-center/components/WebinarDashboard.tsx',
+        'utf8',
+      );
+      const masterScriptEditor = readFileSync(
+        'src/modules/video/components/MasterScriptEditor.tsx',
+        'utf8',
+      );
+      const productionPlan = readFileSync(
+        'src/modules/video/components/ProductionPlanView.tsx',
+        'utf8',
+      );
+      const subtitleView = readFileSync(
+        'src/modules/video/components/SubtitleView.tsx',
+        'utf8',
+      );
+
+      for (const route of [leadMagnetPublish, videoPublish]) {
+        expect(route).toContain("assertTenantOperational(user.tenantId, 'claim')");
+        expect(route).toContain(
+          "assertTenantOperational(user.tenantId, 'pre_side_effect')",
+        );
+      }
+
+      expect(leadMagnetServiceSource).toContain(
+        'const user = await prisma.user.findUnique',
+      );
+      expect(leadMagnetServiceSource).toContain(
+        'await prisma.user.update',
+      );
+      expect(webinarDashboard).not.toContain('gen.isError');
+      expect(masterScriptEditor).not.toContain('navigator.clipboard');
+      expect(productionPlan).toContain('navigator.clipboard.writeText');
+      expect(subtitleView).toContain('navigator.clipboard.writeText');
     });
   });
 

@@ -2,9 +2,13 @@
 
 **Status:** Revalidation evidence only; no product fix is authorized by this document
 
-**Exact baseline:** `3976a57f32014eb303bd66078f310fcf6913a9c1`
+**Previous reviewed baseline:** `3976a57f32014eb303bd66078f310fcf6913a9c1`
 
-**Investigated:** 2026-07-17
+**Exact synchronized planning baseline:** `40bdce7c2ef6bd2b8c2a529aaaffd24796d67c14`
+
+**Previous E3A exact head:** `ec7c4c21fab82053f6240bdd39163a6f64eee020`
+
+**Investigated:** 2026-07-19
 
 **Task branch:** `test/os-3.8-e3a-capability-revalidation`
 
@@ -12,7 +16,7 @@
 
 ## 1. Method and verdict contract
 
-This is a fresh inspection of the exact baseline, not a copy of an earlier audit. The investigation traced each active authenticated route through its mounted component, authenticated API, service, persistence owner, authorization predicate, navigation consumer, and current executable coverage. It also searched compatibility redirects and duplicate services before classifying an operation.
+This is a fresh inspection of the latest synchronized planning baseline, not a reuse of the earlier baseline result. The investigation traced each active authenticated route through its mounted component, authenticated API, service, persistence owner, authorization predicate, navigation consumer, and current executable coverage. It also searched compatibility redirects and duplicate services before classifying an operation.
 
 The matrix uses only:
 
@@ -26,8 +30,8 @@ The focused service suite is [e3a-capability-revalidation.test.ts](../../../../s
 
 | Capability | Active route and mounted component | Authenticated API and canonical service | Canonical persistence owner | Tenant / owner authority | Navigation and mode notes |
 |---|---|---|---|---|---|
-| Video | `/video` → `VideoProjectsList`; `/video/new` → `VideoProductionFlow`; `/video/[id]` → `VideoProjectDetail`; `/video?view=production` → `VideoProductionDashboard` | `/api/v1/video/projects/**` → `videoProjectService`; `/video-production` and `/brand-builder/video-script` are compatibility redirects into `/video` | Prisma `VideoProject`, with stable `id`, `tenantId`, and `userId`; it is **not** the E1/E2 `Content` model | List and DELETE use tenant + user. Exact GET, script generation, scene regeneration, production/finalization paths first resolve by tenant + ID without `userId`; same-tenant cross-owner access is therefore not fail-closed | `/video` is the U3 terminal destination; both Retail and Recruitment share it. No capability feature flag or role gate beyond authenticated access was found |
-| Lead Magnet | `/lead-magnet` → `LeadMagnetDashboard` | GET `/api/v1/lead-magnet`, POST `/generate`, POST `/publish` → `leadMagnetService` | `User.metadata.lead_magnet` plus `lead_magnet_tracks.{retail,recruitment}`; each generated config has a stable `lm-*` ID and timestamps; it is **not** `Content` | Reads/writes are keyed by authenticated `user.id`, but each `saveTrack` performs a read-modify-replace of the whole metadata JSON. The mounted concurrent Retail/Recruitment generation is not atomic and can lose one track | Canonical destination is `/lead-magnet`; UI explicitly renders Retail and Recruitment tracks with different copy/CTA and generates both through `Promise.all`. Readiness requires Brand DNA and Content plan. No separate role/feature flag was found |
+| Video | `/video` → `VideoProjectsList`; `/video/new` → `VideoProductionFlow`; `/video/[id]` → `VideoProjectDetail`; `/video?view=production` → `VideoProductionDashboard` | `/api/v1/video/projects/**` → `videoProjectService`; `/video-production` and `/brand-builder/video-script` are compatibility redirects into `/video` | Prisma `VideoProject`, with stable `id`, `tenantId`, and `userId`; it is **not** the E1/E2 `Content` model | List and DELETE use tenant + user. Exact GET, script generation, scene regeneration, production/finalization paths first resolve by tenant + ID without `userId`; same-tenant cross-owner access is therefore not fail-closed. U3B added deleted-tenant claim/pre-side-effect guards to publish, which strengthens but does not repair exact-project owner scope | `/video` is the U3 terminal destination; both Retail and Recruitment share it. No capability feature flag or role gate beyond authenticated access was found |
+| Lead Magnet | `/lead-magnet` → `LeadMagnetDashboard` | GET `/api/v1/lead-magnet`, POST `/generate`, POST `/publish` → `leadMagnetService` | `User.metadata.lead_magnet` plus `lead_magnet_tracks.{retail,recruitment}`; each generated config has a stable `lm-*` ID and timestamps; it is **not** `Content` | Reads/writes are keyed by authenticated `user.id`, but each `saveTrack` performs a read-modify-replace of the whole metadata JSON. The mounted concurrent Retail/Recruitment generation is not atomic and can lose one track. U3B added deleted-tenant claim/pre-side-effect guards to publish only | Canonical destination is `/lead-magnet`; UI explicitly renders Retail and Recruitment tracks with different copy/CTA and generates both through `Promise.all`. Readiness requires Brand DNA and Content plan. No separate role/feature flag was found |
 | Webinar | `/webinar-center` → `WebinarDashboard` | GET `/api/v1/webinar-center`, POST `/generate` → `webinarService` | `User.metadata.webinar` singleton; `WebinarPackage` has no ID or timestamps; it is **not** `Content` | Reads/writes are keyed by authenticated `user.id`, but the saved object has no canonical record identity | Canonical destination is `/webinar-center`; current UI has one shared presentation and no explicit Retail/Recruitment mode. No separate role/feature flag was found |
 
 ### Duplicate/legacy surface check
@@ -35,6 +39,15 @@ The focused service suite is [e3a-capability-revalidation.test.ts](../../../../s
 - Video has older `video-production` and brand-builder video-script APIs/services, but their active page routes redirect to `/video`; they do not replace the canonical `VideoProject` loop.
 - Lead Magnet and Webinar each have one mounted dashboard and one user-metadata service. No second mounted editor or library was found.
 - None of these capabilities writes through the E1/E2 canonical `Content` record. Their lifecycle and evidence must therefore be evaluated against their actual owning model rather than assumed Content semantics.
+
+### Latest-baseline dependency and delta revalidation
+
+- U3B Governance Adoption PR #101 merged at `40bdce7c2ef6bd2b8c2a529aaaffd24796d67c14`; the synchronized Manifest records U3, U3A, U3ADR, and U3B completed while E3A remains pending.
+- The prior Governance Hold is therefore cleared as a dependency condition, but the earlier technical result is not reused as current evidence.
+- A path-scoped diff from `3976a57f32014eb303bd66078f310fcf6913a9c1` to `40bdce7c2ef6bd2b8c2a529aaaffd24796d67c14` found exactly two changes inside the three capability route/service/component trees: `src/app/api/v1/lead-magnet/publish/route.ts` and `src/app/api/v1/video/projects/[id]/publish/route.ts`.
+- Both changes add `assertTenantOperational` at claim and pre-side-effect boundaries. No Video, Lead Magnet, or Webinar owning service, mounted editor, canonical identity, copy, delete, generation, save, or reopen implementation changed.
+- The focused latest-baseline test pins those guards and reasserts the unchanged Lead Magnet read/replace shape, Webinar missing error UI, and Video copy inventory. Therefore no previous GAP can be promoted to PASS, and no new GAP ID is introduced.
+- Historical review note: the GitHub review matching `TECHNICAL_VERDICT: PASS`, `GOVERNANCE_STATUS: HOLD`, and reviewed SHA `ec7c4c21...` is Review `4718998630`. The supplied historical identifier `4719103190` does not resolve through GitHub APIs and is not used as evidence.
 
 ## 3. 18-cell matrix
 
@@ -44,7 +57,7 @@ The focused service suite is [e3a-capability-revalidation.test.ts](../../../../s
 | **Lead Magnet** | **GAP** — E3-GAP-LEAD-MAGNET-04 | **GAP** — E3-GAP-LEAD-MAGNET-01 | **GAP** — E3-GAP-LEAD-MAGNET-01 | **GAP** — E3-GAP-LEAD-MAGNET-04 | **GAP** — E3-GAP-LEAD-MAGNET-02 | **GAP** — E3-GAP-LEAD-MAGNET-03 |
 | **Webinar** | **GAP** — E3-GAP-WEBINAR-01 | **GAP** — E3-GAP-WEBINAR-02 | **GAP** — E3-GAP-WEBINAR-02 | **GAP** — E3-GAP-WEBINAR-01 | **GAP** — E3-GAP-WEBINAR-03 | **GAP** — E3-GAP-WEBINAR-04 |
 
-**Totals:** PASS 1 / GAP 17 / NOT_APPLICABLE 0.
+**Latest-baseline totals:** PASS 1 / GAP 17 / NOT_APPLICABLE 0. Stable GAP IDs remain 11.
 
 ### PASS evidence
 
@@ -208,9 +221,9 @@ The focused service suite is [e3a-capability-revalidation.test.ts](../../../../s
 
 Before E3A, repository-wide tests exercised shared auth/navigation and the `/video-production` compatibility redirect, but no focused service or E2E suite covered the six-operation capability matrix for these three surfaces.
 
-E3A adds:
+E3A now contains:
 
-- **9 focused Vitest tests:** Lead Magnet identity, sequential two-track reopen, and deterministic concurrent lost update; Webinar missing-ID reproduction and metadata round-trip; Video canonical create, owner-scoped list/delete, exact-read owner gap, and scene-update owner gap.
+- **10 focused Vitest tests:** the latest U3B capability-tree delta and publish guards; Lead Magnet identity, sequential two-track reopen, and deterministic concurrent lost update; Webinar missing-ID reproduction and metadata round-trip; Video canonical create, owner-scoped list/delete, exact-read owner gap, and scene-update owner gap.
 - **1 Playwright test:** authenticated mounted-route, narrow viewport, and keyboard-focus smoke across Video, Lead Magnet, and Webinar.
 
 Negative gap tests deliberately pass by asserting the exact current unsafe/missing contract. They are regression evidence, not a claim that the gap is fixed.

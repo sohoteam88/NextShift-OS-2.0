@@ -2,11 +2,15 @@
 
 **Task:** E3A — Video / Lead Magnet / Webinar Capability Revalidation
 
-**Authorized baseline:** `3976a57f32014eb303bd66078f310fcf6913a9c1`
+**Previous reviewed baseline:** `3976a57f32014eb303bd66078f310fcf6913a9c1`
+
+**New synchronized planning baseline:** `40bdce7c2ef6bd2b8c2a529aaaffd24796d67c14`
+
+**Previous E3A exact head:** `ec7c4c21fab82053f6240bdd39163a6f64eee020`
 
 **Branch:** `test/os-3.8-e3a-capability-revalidation`
 
-**Date:** 2026-07-17
+**Date:** 2026-07-19
 
 **Scope:** Evidence, executable tests, and derived E3B proposal only
 
@@ -29,6 +33,9 @@ No product source, Prisma schema/migration, Pipeline, Manifest, workflow, deploy
 - Reproduced the mounted Lead Magnet `Promise.all` persistence race with a two-read barrier so both track writes deterministically derive from one metadata snapshot.
 - Searched existing unit/integration/E2E coverage before adding focused executable evidence.
 - Applied the strict PASS/GAP/NOT_APPLICABLE contract independently to all 18 cells.
+- Revalidated the latest planning Manifest and the merged U3B Governance Adoption evidence before inspecting product code.
+- Compared the three complete capability trees between the previous and current planning baselines. U3B changed only the Lead Magnet and Video publish routes by adding deleted-tenant claim/pre-side-effect guards; no owning service or mounted loop changed.
+- Re-ran executable evidence against the synchronized U3B product tree instead of carrying forward the older test results.
 
 ## Result summary
 
@@ -37,36 +44,38 @@ No product source, Prisma schema/migration, Pipeline, Manifest, workflow, deploy
 - **NOT_APPLICABLE:** 0
 - **Stable GAP IDs:** 11
 - **Owning models:** Prisma `VideoProject`; `User.metadata.lead_magnet` / `lead_magnet_tracks`; `User.metadata.webinar`
+- **U3B impact on matrix:** no cell changed. Publish boundaries are stronger, while all previously proven lifecycle/owner gaps remain.
 
 The authoritative detail is [E3A_CAPABILITY_REVALIDATION.md](./E3A_CAPABILITY_REVALIDATION.md).
 
 ## Added tests
 
-- Focused Vitest: **9 tests** in one file.
+- Focused Vitest: **10 tests** in one file.
 - Related Playwright: **1 test** covering three authenticated mounted surfaces at narrow width with keyboard focus.
 
-The service tests prove positive single-record/Video contracts and deterministically reproduce the Lead Magnet concurrent lost update, Webinar identity gap, and Video owner-boundary gaps. They do not modify or hide the gaps.
+The service tests prove positive single-record/Video contracts, pin the latest U3B publish-guard delta, and deterministically reproduce the Lead Magnet concurrent lost update, Webinar identity gap, and Video owner-boundary gaps. They do not modify or hide the gaps.
 
 ## Validation results
 
 | Validation | Result |
 |---|---|
-| Focused E3A Vitest | PASS — 1 file / 9 tests |
+| Focused E3A Vitest | PASS — 1 file / 10 tests |
+| Lead Magnet deterministic concurrency repetition | PASS — 10/10 consecutive runs |
 | Playwright discovery | PASS — 1 E3A test discovered |
-| Related E3A Playwright | LOCAL ENVIRONMENT-LIMITED — no `.env.e2e`/`.env.local`, credentials, or local test server; exact-head GitHub E2E required |
-| Full Vitest | PASS — 102 files passed, 7 skipped; 563 tests passed, 44 skipped |
+| Related E3A Playwright | LOCAL ENVIRONMENT UNAVAILABLE — test executed but `http://localhost:3000/login` refused because this evidence worktree has no running E2E server; not represented as PASS. Exact-head GitHub E2E is required before handoff |
+| Full Vitest | PASS — 112 files passed / 7 skipped; 647 tests passed / 44 skipped |
 | TypeScript | PASS |
-| ESLint | PASS — 0 errors, 419 existing warnings |
-| Boundary check | PASS — generated boundary config in sync |
-| Production build | PASS — static generation completed; expected no-`DATABASE_URL` diagnostics were handled by existing fallbacks |
-| Manifest validator (read-only) | PASS |
-| Documentation authority | PASS; generated audit outputs were not included in the task diff |
-| Documentation navigation | PASS — 75 files, 222 warnings |
-| Documentation links | BASELINE-EXISTING FAILURE — `WAVE_EXECUTION_CONTRACT.md:13` points to missing `../../OS_3_8_BLUEPRINT.md`; E3A adds no new broken link |
+| ESLint | PASS — 0 errors / 425 existing warnings |
+| Boundary check | PASS — generated boundary configuration is in sync |
+| Production build | PASS — 297 static pages generated |
+| Manifest validator (read-only) | PASS on planning `40bdce7...` |
+| Documentation authority | PASS — generated hygiene output was not included in the E3A diff |
+| Documentation navigation | PASS — 75 files validated / 222 existing warnings |
+| Documentation links | BASELINE-EXISTING — one unchanged broken link in `WAVE_EXECUTION_CONTRACT.md`; E3A adds no new broken link |
 | `git diff --check` | PASS |
-| GitHub exact-head required checks | PENDING Draft PR |
+| GitHub exact-head required checks | PENDING refreshed Draft PR head |
 
-The exact-head GitHub results will be added to the Draft PR body after all required checks finish. Local E2E is explicitly not represented as PASS.
+The exact-head GitHub results will be added to the Draft PR body after all required checks finish. Any locally unavailable E2E is explicitly not represented as PASS.
 
 ## E3B proposed scope
 
@@ -83,6 +92,7 @@ No unrelated Stage B, CRM, marketplace, billing, WhatsApp, navigation, or new ca
 - This branch intentionally does not fix product behavior, so deterministic gap tests assert the current contract.
 - Route smoke verifies mounting, authentication, narrow layout, and focus reachability; operation-specific end-to-end acceptance belongs to E3B.
 - No production data or environment was inspected.
+- GitHub Review `4718998630` is the actual historical technical-PASS/governance-HOLD record anchored to `ec7c4c21...`; the supplied identifier `4719103190` is not resolvable and is not treated as authority.
 
 ## Confirmed non-actions
 
