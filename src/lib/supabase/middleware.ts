@@ -9,6 +9,49 @@ type UpdateSessionOptions = {
   requestHeaders?: Headers;
 };
 
+type CompatibilityAuthUser = {
+  id: string;
+  tenantId: string;
+  tenantStatus: string;
+  role: string;
+  status: string;
+};
+
+async function loadCompatibilityAuthUser(
+  request: NextRequest,
+  expectedAuthUserId: string,
+): Promise<CompatibilityAuthUser | null> {
+  const profileUrl = request.nextUrl.clone();
+  profileUrl.pathname = '/api/v1/auth/me';
+  profileUrl.search = '';
+  const cookie = request.cookies
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join('; ');
+
+  try {
+    const response = await fetch(profileUrl, {
+      method: 'GET',
+      headers: { accept: 'application/json', cookie },
+      cache: 'no-store',
+      redirect: 'manual',
+    });
+    if (!response.ok) return null;
+    const body = await response.json() as { data?: { user?: Partial<CompatibilityAuthUser> } };
+    const profile = body.data?.user;
+    if (
+      profile?.id !== expectedAuthUserId ||
+      typeof profile.tenantId !== 'string' ||
+      typeof profile.tenantStatus !== 'string' ||
+      typeof profile.role !== 'string' ||
+      profile.status !== 'active'
+    ) return null;
+    return profile as CompatibilityAuthUser;
+  } catch {
+    return null;
+  }
+}
+
 export async function updateSession(request: NextRequest, options: UpdateSessionOptions = {}) {
   const requestHeaders = options.requestHeaders ?? new Headers(request.headers);
   const publicPaths = [
@@ -70,43 +113,26 @@ export async function updateSession(request: NextRequest, options: UpdateSession
   }
 
   if (user && isCompatibilityPath(request.nextUrl.pathname)) {
-    const { data: dbUser } = await supabase
-      .from('users')
-      .select('id, tenant_id, role, status')
-      .eq('id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
-    if (!dbUser) return new NextResponse('Unauthorized', { status: 401 });
-    const { data: tenant } = await supabase
-      .from('tenants')
-      .select('status')
-      .eq('id', dbUser.tenant_id)
-      .maybeSingle();
-    if (!tenant) return new NextResponse('Unauthorized', { status: 401 });
+    const profile = await loadCompatibilityAuthUser(request, user.id);
+    if (!profile) return new NextResponse('Unauthorized', { status: 401 });
 
     let memberQueryAuthorized = false;
     const member = request.nextUrl.searchParams.get('member');
     if (member && (request.nextUrl.pathname === '/team' || request.nextUrl.pathname === '/team/members')) {
-      const { data: target } = await supabase
-        .from('users')
-        .select('id, tenant_id, sponsor_id')
-        .eq('id', member)
-        .eq('tenant_id', dbUser.tenant_id)
-        .is('deleted_at', null)
-        .maybeSingle();
-      memberQueryAuthorized = Boolean(target && (
-        dbUser.role === 'operator' || target.id === dbUser.id || target.sponsor_id === dbUser.id
-      ));
+      // Member selection is not accepted from a compatibility query unless an
+      // operator owns the session. Other relationship checks remain on the
+      // canonical tenant-scoped page instead of trusting an old bookmark.
+      memberQueryAuthorized = profile.role === 'operator';
     }
 
     const decision = resolveCompatibilityRequest({
       pathname: request.nextUrl.pathname,
       searchParams: request.nextUrl.searchParams,
       profile: {
-        id: dbUser.id,
-        tenantId: dbUser.tenant_id,
-        tenantStatus: tenant.status,
-        role: dbUser.role,
+        id: profile.id,
+        tenantId: profile.tenantId,
+        tenantStatus: profile.tenantStatus,
+        role: profile.role,
       },
       memberQueryAuthorized,
     });

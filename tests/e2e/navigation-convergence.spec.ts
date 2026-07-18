@@ -183,17 +183,17 @@ test.describe('OS 3.8 founder compatibility terminal views', () => {
     await loginAsAdmin(page);
     await page.goto('/platform-admin/tenants?source=bookmark');
     await expect(page).toHaveURL(/\/superadmin\/tenants\?source=bookmark/);
-    await expect(page.locator('#platform-admin-tenants')).toBeVisible();
-    await expect(page.locator('#platform-admin-tenants table')).toBeVisible();
+    await expect(page.locator('#superadmin-tenants')).toBeVisible();
+    await expect(page.locator('#superadmin-tenants table')).toBeVisible();
     await page.reload();
-    await expect(page.locator('#platform-admin-tenants table')).toBeVisible();
+    await expect(page.locator('#superadmin-tenants table')).toBeVisible();
   });
 
   test('Admin Command remains a separate platform-admin capability', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/admin-command');
     await expect(page).toHaveURL(/\/superadmin\/command(?:\?|$)/);
-    await expect(page.locator('#admin-command')).toBeVisible();
+    await expect(page.locator('#superadmin-command')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Admin Command Center' })).toBeVisible();
   });
 });
