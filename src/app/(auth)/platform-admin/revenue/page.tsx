@@ -1,15 +1,2 @@
-import { redirect } from 'next/navigation';
-import { getAuthUser } from '@/modules/auth/services/auth-service';
-import { RevenueDashboard } from '@/modules/admin/components/PlatformOperatingDashboard';
-import { platformOperatingService } from '@/modules/admin/services/platformOperatingService';
-
-export default async function PlatformRevenuePage() {
-  const user = await getAuthUser();
-
-  if (!user) redirect('/login');
-  if (user.role !== 'platform_admin') redirect('/dashboard');
-
-  const data = await platformOperatingService.getOperatingData();
-
-  return <RevenueDashboard data={data} />;
-}
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
+export default createCompatibilityRedirect('/superadmin/revenue');

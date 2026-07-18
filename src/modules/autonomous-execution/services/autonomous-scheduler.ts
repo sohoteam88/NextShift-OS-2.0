@@ -9,6 +9,7 @@ import { buildExecutionProjection } from './execution-projection';
 import { executionQueue } from './execution-queue';
 import { shouldAutoExecute } from './execution-orchestrator';
 import { evaluateGuardrail, guardrailStateFor } from './guardrail-engine';
+import { assertTenantOperational } from '@/modules/tenant/services/tenant-operational-guard';
 
 type AutonomousSchedulerAction =
   | 'AUTO_GENERATE_CONTENT_DRAFT'
@@ -180,6 +181,7 @@ export async function runAutonomousExecution(input: {
   missionId?: string;
   now?: Date;
 }) {
+  await assertTenantOperational(input.user.tenantId, 'claim');
   const action = buildAction({
     user: input.user,
     missionId: input.missionId,
@@ -207,6 +209,7 @@ export async function runAutonomousExecution(input: {
   });
 
   try {
+    await assertTenantOperational(input.user.tenantId, 'pre_side_effect');
     const result = await executeAgentOrInternalResult({
       user: input.user,
       missionId: input.missionId,

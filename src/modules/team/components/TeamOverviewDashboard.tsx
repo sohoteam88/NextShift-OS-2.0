@@ -140,7 +140,7 @@ export function TeamOverviewDashboard({ user, defaultView = 'tree', initialMembe
             {t('approve')}
           </Link>
           <Link
-            href="/team/members"
+            href="/admin/team/members"
             className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-medium text-[var(--color-text)] shadow-sm hover:bg-[var(--color-surface)] sm:w-auto"
           >
             <Rows3 className="h-4 w-4" />

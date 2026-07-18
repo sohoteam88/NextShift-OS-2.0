@@ -224,7 +224,7 @@ export function AdminOverview({
           <div className="flex flex-wrap items-center gap-2">
             {isPlatformAdmin ? (
               <Link
-                href="/platform-admin"
+                href="/superadmin"
                 className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
               >
                 <Crown className="h-4 w-4 text-amber-500" aria-hidden="true" />
@@ -280,7 +280,7 @@ export function AdminOverview({
           </Link>
           {isPlatformAdmin ? (
             <Link
-              href="/platform-admin"
+              href="/superadmin"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-blue-200 bg-white px-5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
             >
               <Crown className="h-4 w-4" aria-hidden="true" />

@@ -1,6 +1,8 @@
 import prisma from '@/lib/prisma';
+import { requirePlatformAdminDataAccess } from '@/lib/security/platform-data-authority';
 
 export async function listAllUsers(query: { search?: string; page?: number; limit?: number } = {}) {
+  await requirePlatformAdminDataAccess();
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(50, Math.max(1, query.limit ?? 25));
   const where = query.search
@@ -17,9 +19,19 @@ export async function listAllUsers(query: { search?: string; page?: number; limi
 }
 
 export async function getRecentAuditLogs(limit = 50) {
+  await requirePlatformAdminDataAccess();
   const logs = await prisma.auditLog.findMany({
     orderBy: { createdAt: 'desc' }, take: limit,
     select: { id: true, action: true, targetType: true, targetId: true, metadata: true, createdAt: true, actor: { select: { name: true, email: true } }, tenant: { select: { name: true, slug: true } } },
   });
   return logs.map(l => ({ id: l.id, action: l.action, targetType: l.targetType, targetId: l.targetId, actorName: l.actor?.name ?? 'System', actorEmail: l.actor?.email ?? '', tenantName: l.tenant?.name ?? '—', tenantSlug: l.tenant?.slug ?? '', createdAt: l.createdAt.toISOString() }));
+}
+
+export async function getPlatformHealthCounts() {
+  await requirePlatformAdminDataAccess();
+  const [tenants, users] = await Promise.all([
+    prisma.tenant.count(),
+    prisma.user.count({ where: { deletedAt: null } }),
+  ]);
+  return { tenants, users };
 }

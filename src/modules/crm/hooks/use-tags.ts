@@ -23,7 +23,7 @@ export function useCreateTag() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: { name: string; color: string }) => {
-      const res = await fetch('/api/v1/crm/tags', {
+      const res = await fetch('/api/v1/admin/crm/tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

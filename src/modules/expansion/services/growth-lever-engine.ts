@@ -15,7 +15,7 @@ const LEVERS: Record<GrowthLever, LeverDefinition> = {
   revenue_growth: { lever: 'revenue_growth', title: '增加收入增长', route: '/sales', metric: 'revenue' },
   audience_growth: { lever: 'audience_growth', title: '扩大受众增长', route: '/analytics', metric: 'audience' },
   content_growth: { lever: 'content_growth', title: '提高内容产出', route: '/content-engine', metric: 'content' },
-  team_growth: { lever: 'team_growth', title: '扩大团队增长', route: '/team/growth', metric: 'team' },
+  team_growth: { lever: 'team_growth', title: '扩大团队增长', route: '/ai-workforce', metric: 'team' },
 };
 
 const OPPORTUNITY_SEQUENCE: ExpansionOpportunityId[] = [
@@ -193,7 +193,7 @@ export function detectExpansionRisks(facts: ExpansionFacts): ExpansionRisk[] {
       lever: 'team_growth',
       title: 'Scaling blocked',
       reason: 'No team progress has been detected for 60 days.',
-      route: '/team/growth',
+      route: '/ai-workforce',
       priority: 'medium',
     });
   }

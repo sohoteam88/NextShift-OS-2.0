@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi, requireRoleApi } from '@/modules/auth/middleware/require-auth-api';
+import { requireCanonicalMutationPath } from '@/lib/navigation/mutation-compatibility';
 import { templateService } from '@/modules/ai/services/template-service';
 
 const CreateTemplateSchema = z.object({
@@ -25,6 +26,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
   requireRoleApi(user, ['operator']);
+  requireCanonicalMutationPath(request, '/api/v1/admin/ai/templates');
 
   const body = await request.json();
   const input = CreateTemplateSchema.parse(body);

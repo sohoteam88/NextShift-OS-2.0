@@ -1,6 +1,7 @@
 // Admin Command Center Service
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
+import { requirePlatformAdminDataAccess } from '@/lib/security/platform-data-authority';
 
 export interface AdminOverview {
   pendingApprovals: number; activeUsers: number; newUsersThisWeek: number;
@@ -13,6 +14,7 @@ export interface AdminOverview {
 
 export const adminCommandService = {
   async getOverview(): Promise<AdminOverview> {
+    await requirePlatformAdminDataAccess();
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 86400000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -97,6 +99,7 @@ export const adminCommandService = {
   },
 
   async getFeatureAccess(tenantId: string) {
+    await requirePlatformAdminDataAccess();
     const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { plan: true, settings: true, maxAiCalls: true, maxMembers: true } });
     if (!tenant) return null;
     const settings = tenant.settings as Record<string, unknown> ?? {};

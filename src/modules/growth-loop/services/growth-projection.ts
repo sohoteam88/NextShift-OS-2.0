@@ -62,7 +62,7 @@ function actionFor(input: {
         return {
           title: 'Start referral activation',
           reason: 'Growth foundation is ready for referral motion.',
-          route: '/team/growth',
+          route: '/ai-workforce',
           owner: 'growth-loop',
           expectedMetricLift: 'Increase referral_lead_count.',
         };

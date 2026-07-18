@@ -18,14 +18,14 @@ const BodySchema = z.object({
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
   const modules = await trainingService.getModules(user.tenantId);
   return NextResponse.json({ data: modules });
 });
 
 export const PUT = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
   const body = await request.json();
   const input = BodySchema.parse(body);
   const modules = await trainingService.updateDefaultModules(user.tenantId, input.modules);

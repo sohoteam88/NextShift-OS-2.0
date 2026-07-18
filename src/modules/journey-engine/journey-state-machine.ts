@@ -265,7 +265,7 @@ export const JOURNEY_PATHS: Record<AdaptiveJourneyType, JourneyPathDefinition> =
         priority: 50,
         unlockConditions: ['traffic_campaign_launched'],
         completionConditions: ['growth_mode_active'],
-        route: '/team/growth',
+        route: '/ai-workforce',
       },
     ],
   },

@@ -13,7 +13,12 @@ import {
   type InventoryObservations,
 } from './validator';
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const currentRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+// U3A is frozen historical evidence. The exact evidence commit contains both
+// the inventories and the unchanged authorized product baseline they census.
+const repoRoot = process.env.U3A_FROZEN_ROOT
+  ? resolve(process.env.U3A_FROZEN_ROOT)
+  : currentRoot;
 const baseBundle = loadInventoryBundle(repoRoot);
 const baseObservations = buildInventoryObservations(repoRoot, baseBundle);
 
@@ -35,7 +40,7 @@ function rejected(run: () => unknown, expected?: RegExp): void {
 
 describe('U3A frozen inventory fail-closed contract', () => {
   it('actual_repository_inventory_passes', () => {
-    const report = validateU3AInventory({ repoRoot });
+    const report = validateU3AInventory({ repoRoot, bundle: bundle(), observations: observations() });
     assert.deepEqual(report.stats, {
       authenticatedPages: 112,
       privilegedPages: 39,

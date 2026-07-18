@@ -29,7 +29,7 @@ export function TagManagerDialog({ open, onClose }: Props) {
     if (!newName.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/crm/tags', {
+      const res = await fetch('/api/v1/admin/crm/tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName.trim(), color: newColor }),
@@ -51,7 +51,7 @@ export function TagManagerDialog({ open, onClose }: Props) {
   async function handleDelete(tag: Tag) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/v1/crm/tags/${tag.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/v1/admin/crm/tags/${tag.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
       qc.invalidateQueries({ queryKey: ['tags'] });
       toast('success', `标签 "${tag.name}" 已删除`);
@@ -64,7 +64,7 @@ export function TagManagerDialog({ open, onClose }: Props) {
 
   async function handleUpdateColor(tag: Tag, color: string) {
     try {
-      await fetch(`/api/v1/crm/tags/${tag.id}`, {
+      await fetch(`/api/v1/admin/crm/tags/${tag.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ color }),

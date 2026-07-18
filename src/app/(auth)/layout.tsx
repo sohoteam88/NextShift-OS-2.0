@@ -33,6 +33,11 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   if (authRedirect) {
     redirect(authRedirect);
   }
+  if (user.tenantStatus === 'deleted' && user.role !== 'platform_admin') {
+    const supabase = await createServerSupabaseClient();
+    await supabase.auth.signOut({ scope: 'local' });
+    redirect('/login');
+  }
 
   const onboarding = await onboardingService.getState(user.id);
   const tenant = await getTenantById(user.tenantId);

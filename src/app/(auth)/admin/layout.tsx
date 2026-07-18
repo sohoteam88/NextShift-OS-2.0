@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 
-const ADMIN_BASE_ROLES = ['leader', 'operator', 'platform_admin'];
+const ADMIN_BASE_ROLES = ['leader', 'operator'];
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getAuthUser();
@@ -11,7 +11,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect('/login');
   }
 
-  if (!ADMIN_BASE_ROLES.includes(user.role)) {
+  if (user.tenantStatus === 'deleted' || !ADMIN_BASE_ROLES.includes(user.role)) {
     redirect('/dashboard');
   }
 

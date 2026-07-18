@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi, requireRoleApi } from '@/modules/auth/middleware/require-auth-api';
+import { requireCanonicalMutationPath } from '@/lib/navigation/mutation-compatibility';
 import { pipelineService } from '@/modules/crm/services/pipeline-service';
 
 const CreateStageSchema = z.object({
@@ -17,7 +18,8 @@ export const GET = apiHandler(async (request: NextRequest) => {
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
+  requireCanonicalMutationPath(request, '/api/v1/admin/crm/pipeline-stages');
   const body = await request.json();
   const input = CreateStageSchema.parse(body);
   const stage = await pipelineService.createStage(user.tenantId, input);

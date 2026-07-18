@@ -9,7 +9,7 @@ export default async function WorkspacePage({ searchParams }: RedirectPageProps)
   const user = await getAuthUser();
 
   if (!user) redirect('/login');
-  if (!['operator', 'platform_admin'].includes(user.role)) redirect('/dashboard');
+  if (user.role !== 'operator') redirect('/dashboard');
 
   redirect(buildCompatibilityDestination('/admin', await searchParams));
 }

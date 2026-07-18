@@ -241,7 +241,7 @@ export const RETAIL_WORKSPACE_CONFIG: WorkspaceConfig = {
     },
   ],
   navigation: {
-    primaryWorkspaceRoute: '/workspace',
+    primaryWorkspaceRoute: '/dashboard',
     items: [
       { id: 'retail_dashboard', label: 'Dashboard', route: '/dashboard', capability: 'dashboard', priority: 10 },
       { id: 'retail_customers', label: 'Customers', route: '/customers', capability: 'crm', priority: 20 },
@@ -336,21 +336,21 @@ export const RECRUITMENT_WORKSPACE_CONFIG: WorkspaceConfig = {
       id: 'recruitment_duplication_health',
       title: 'Duplication Health',
       metric: 'duplication readiness',
-      route: '/team/growth',
+      route: '/ai-workforce',
       capability: 'analytics',
     },
     {
       id: 'recruitment_leadership_pipeline',
       title: 'Leadership Pipeline',
       metric: 'leader pipeline',
-      route: '/team/growth',
+      route: '/ai-workforce',
       capability: 'analytics',
     },
     {
       id: 'recruitment_team_growth',
       title: 'Team Growth',
       metric: 'team growth',
-      route: '/team/growth',
+      route: '/ai-workforce',
       capability: 'analytics',
     },
     {
@@ -505,7 +505,7 @@ export const RECRUITMENT_WORKSPACE_CONFIG: WorkspaceConfig = {
     },
   ],
   navigation: {
-    primaryWorkspaceRoute: '/workspace',
+    primaryWorkspaceRoute: '/dashboard',
     items: [
       { id: 'recruitment_dashboard', label: 'Dashboard', route: '/dashboard', capability: 'dashboard', priority: 10 },
       { id: 'recruitment_leads', label: 'Leads', route: '/leads', capability: 'crm', priority: 20 },
@@ -520,8 +520,8 @@ export const RECRUITMENT_WORKSPACE_CONFIG: WorkspaceConfig = {
       { id: 'recruitment_ai_coach', label: 'AI Coach', route: '/ai/coach', capability: 'ai_coach', priority: 110 },
       { id: 'recruitment_ai_coo', label: 'AI COO', route: '/ceo-mode', capability: 'ai_coach', priority: 120 },
       { id: 'recruitment_fast_start', label: 'Fast Start', route: '/journey', capability: 'crm', priority: 130 },
-      { id: 'recruitment_duplication', label: 'Duplication', route: '/team/growth', capability: 'analytics', priority: 140 },
-      { id: 'recruitment_leadership', label: 'Leadership', route: '/team/growth', capability: 'analytics', priority: 150 },
+      { id: 'recruitment_duplication', label: 'Duplication', route: '/ai-workforce', capability: 'analytics', priority: 140 },
+      { id: 'recruitment_leadership', label: 'Leadership', route: '/ai-workforce', capability: 'analytics', priority: 150 },
     ],
     capabilityRoutes,
   },

@@ -10,7 +10,7 @@ export default async function DashboardPage() {
   }
 
   if (user.role === 'platform_admin') {
-    redirect('/admin');
+    redirect('/superadmin');
   }
 
   return <DashboardV4 />;

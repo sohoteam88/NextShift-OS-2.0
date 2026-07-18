@@ -11,6 +11,7 @@ import { routeActionsToAgents } from './agent-router';
 import { agentExecutionTracker } from './agent-execution-tracker';
 import { buildAgentPerformance } from './agent-performance-engine';
 import { WORKFORCE_AUDIT_ACTIONS } from './WorkforceOrchestrator';
+import { assertTenantOperational } from '@/modules/tenant/services/tenant-operational-guard';
 
 function confidenceFor(assignment: WorkforceAssignment): WorkforceExecutionResult['confidence'] {
   if (assignment.action.executionMode === 'autonomous') return 'high';
@@ -89,6 +90,7 @@ export const agentWorkforceService = {
     assignmentId?: string;
     actionId?: string;
   }): Promise<WorkforceExecutionResult> {
+    await assertTenantOperational(input.tenantId, 'claim');
     const projection = await this.getProjection(input.userId, input.tenantId);
     const assignment = projection.currentAssignments.find((item) => (
       item.assignmentId === input.assignmentId || item.actionId === input.actionId
@@ -99,6 +101,7 @@ export const agentWorkforceService = {
     const result = buildResult(assignment);
 
     if (result.status === 'completed') {
+      await assertTenantOperational(input.tenantId, 'pre_side_effect');
       await prisma.auditLog.create({
         data: {
           tenantId: input.tenantId,

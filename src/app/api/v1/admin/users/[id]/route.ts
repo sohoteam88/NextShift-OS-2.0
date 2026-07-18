@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 
 export const PATCH = apiHandler(async (request: NextRequest, context) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
 
   const params = await Promise.resolve(context?.params ?? {});
   const { id } = params;
@@ -35,7 +35,7 @@ export const PATCH = apiHandler(async (request: NextRequest, context) => {
 
 export const DELETE = apiHandler(async (request: NextRequest, context) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
 
   const params = await Promise.resolve(context?.params ?? {});
   const { id } = params;

@@ -26,18 +26,15 @@ export const GET = apiHandler(async (request: NextRequest, context) => {
 });
 
 export const PATCH = apiHandler(async (request: NextRequest, context) => {
+  void context;
   const user = await requireAuthApi(request);
   requireRoleApi(user, ['platform_admin']);
-  const tenantId = await getTenantId(context);
-  const body = TenantUpdateSchema.parse(await request.json());
-  const data = await platformAdminService.updateTenant(tenantId, body);
-  return NextResponse.json({ data });
+  return NextResponse.json({ error: { code: 'GONE', message: 'Use /api/v1/superadmin/tenants/:id' } }, { status: 410 });
 });
 
 export const DELETE = apiHandler(async (request: NextRequest, context) => {
+  void context;
   const user = await requireAuthApi(request);
   requireRoleApi(user, ['platform_admin']);
-  const tenantId = await getTenantId(context);
-  const data = await platformAdminService.suspendTenant(tenantId);
-  return NextResponse.json({ data });
+  return NextResponse.json({ error: { code: 'GONE', message: 'Use /api/v1/superadmin/tenants/:id' } }, { status: 410 });
 });

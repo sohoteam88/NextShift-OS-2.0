@@ -79,15 +79,15 @@ function trackAdminDashboardUsage(eventType: 'view' | 'click', targetId: string,
     targetId,
     targetKind,
     section,
-    path: '/platform-admin',
+    path: '/superadmin',
   });
 
   if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-    navigator.sendBeacon('/api/v1/platform-admin/usage', new Blob([payload], { type: 'application/json' }));
+    navigator.sendBeacon('/api/v1/superadmin/usage', new Blob([payload], { type: 'application/json' }));
     return;
   }
 
-  void fetch('/api/v1/platform-admin/usage', {
+  void fetch('/api/v1/superadmin/usage', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: payload,
@@ -155,10 +155,10 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
       .filter((alert) => alert.priority !== 'Low')
       .slice(0, 4)
       .map((alert) => ({ id: toTrackingId(`${alert.priority}-${alert.title}`), title: alert.title, description: alert.description, priority: alert.priority, href: alert.href })),
-    ...(atRiskTenants.length > 0 ? [{ id: 'tenant-risk-review', title: t('v3ReviewTenantRisk'), description: t('v3ReviewTenantRiskHelp', { count: atRiskTenants.length }), priority: 'High' as FounderAlertPriority, href: '/platform-admin/tenant-health' }] : []),
-    ...(data.ai.margin > 0 && data.ai.margin < 65 ? [{ id: 'ai-margin-review', title: t('v3ReviewAiMargin'), description: t('v3ReviewAiMarginHelp', { margin: data.ai.margin }), priority: 'Medium' as FounderAlertPriority, href: '/platform-admin/ai-profitability' }] : []),
+    ...(atRiskTenants.length > 0 ? [{ id: 'tenant-risk-review', title: t('v3ReviewTenantRisk'), description: t('v3ReviewTenantRiskHelp', { count: atRiskTenants.length }), priority: 'High' as FounderAlertPriority, href: '/superadmin/tenant-health' }] : []),
+    ...(data.ai.margin > 0 && data.ai.margin < 65 ? [{ id: 'ai-margin-review', title: t('v3ReviewAiMargin'), description: t('v3ReviewAiMarginHelp', { margin: data.ai.margin }), priority: 'Medium' as FounderAlertPriority, href: '/superadmin/ai-profitability' }] : []),
   ].slice(0, 5);
-  const visibleQueue = queue.length > 0 ? queue : [{ id: 'stable-review', title: t('v3NoImmediateAction'), description: t('v3NoImmediateActionHelp'), priority: 'Low' as FounderAlertPriority, href: '/platform-admin/health' }];
+  const visibleQueue = queue.length > 0 ? queue : [{ id: 'stable-review', title: t('v3NoImmediateAction'), description: t('v3NoImmediateActionHelp'), priority: 'Low' as FounderAlertPriority, href: '/superadmin/health' }];
 
   useEffect(() => {
     trackAdminDashboardUsage('view', 'founder-platform-console', 'dashboard', 'homepage');
@@ -185,7 +185,7 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
         <div className="grid gap-4 md:grid-cols-2">
           <Link
-            href="/platform-admin/health"
+            href="/superadmin/health"
             onClick={() => onTrackClick('platform-health', 'card', 'primary-card')}
             className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
           >
@@ -204,7 +204,7 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
           </Link>
 
           <Link
-            href="/platform-admin/tenant-health"
+            href="/superadmin/tenant-health"
             onClick={() => onTrackClick('tenant-portfolio', 'card', 'primary-card')}
             className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
           >
@@ -223,7 +223,7 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
           </Link>
 
           <Link
-            href="/platform-admin/ai-profitability"
+            href="/superadmin/ai-profitability"
             onClick={() => onTrackClick('ai-cost-control', 'card', 'primary-card')}
             className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
           >
@@ -241,7 +241,7 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
           </Link>
 
           <Link
-            href="/platform-admin/revenue"
+            href="/superadmin/revenue"
             onClick={() => onTrackClick('revenue-margin', 'card', 'primary-card')}
             className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
           >
@@ -265,10 +265,10 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { id: 'review-tenants', href: '/platform-admin/tenant-health', label: t('reviewTenantUsage'), icon: Building2 },
-                { id: 'check-ai-spend', href: '/platform-admin/ai-profitability', label: t('checkAiSpend'), icon: Brain },
-                { id: 'review-billing', href: '/platform-admin/billing', label: t('v3ReviewBilling'), icon: CircleDollarSign },
-                { id: 'system-health', href: '/platform-admin/health', label: t('systemHealth'), icon: Gauge },
+                { id: 'review-tenants', href: '/superadmin/tenant-health', label: t('reviewTenantUsage'), icon: Building2 },
+                { id: 'check-ai-spend', href: '/superadmin/ai-profitability', label: t('checkAiSpend'), icon: Brain },
+                { id: 'review-billing', href: '/superadmin/billing', label: t('v3ReviewBilling'), icon: CircleDollarSign },
+                { id: 'system-health', href: '/superadmin/health', label: t('systemHealth'), icon: Gauge },
               ].map((action) => {
                 const Icon = action.icon;
                 return (
@@ -333,7 +333,7 @@ export function CeoDashboard({ data }: { data: PlatformOperatingData }) {
               ) : tenantRiskRows.map((tenant) => (
                 <Link
                   key={tenant.id}
-                  href="/platform-admin/tenant-health"
+                  href="/superadmin/tenant-health"
                   onClick={() => onTrackClick(`tenant-${tenant.id}`, 'queue', 'tenant-risk')}
                   className="block rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-3 hover:bg-[var(--color-surface)]"
                 >

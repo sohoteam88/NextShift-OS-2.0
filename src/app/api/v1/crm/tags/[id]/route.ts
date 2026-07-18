@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi, requireRoleApi } from '@/modules/auth/middleware/require-auth-api';
+import { requireCanonicalMutationPath } from '@/lib/navigation/mutation-compatibility';
 import { tagService } from '@/modules/crm/services/tag-service';
 
 async function getTagId(context: { params: Promise<Record<string, string>> | Record<string, string> } | undefined) {
@@ -15,7 +16,8 @@ const UpdateTagSchema = z.object({
 
 export const PATCH = apiHandler(async (request: NextRequest, context) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
+  requireCanonicalMutationPath(request, '/api/v1/admin/crm/tags/:id');
   void user;
   const id = await getTagId(context);
   const body = await request.json();
@@ -26,7 +28,8 @@ export const PATCH = apiHandler(async (request: NextRequest, context) => {
 
 export const DELETE = apiHandler(async (request: NextRequest, context) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
+  requireCanonicalMutationPath(request, '/api/v1/admin/crm/tags/:id');
   void user;
   const id = await getTagId(context);
   await tagService.deleteTag(id);
