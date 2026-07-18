@@ -412,6 +412,9 @@ export function validateCompletionMatrix(root: string, matrix = buildCompletionM
   invariant(root, 'src/modules/admin/services/platform-audit-service.ts', [/ON CONFLICT \(["']?idempotency_key["']?\)/, /AUDIT_IDEMPOTENCY_CONFLICT/, /canonicalizeJson/], [/findFirst\s*\(/], passes, 'atomic_audit_authority');
   invariant(root, 'src/modules/admin/workers/audit-outbox-worker.ts', [/FOR UPDATE SKIP LOCKED/, /dead_letter/, /next_attempt_at/, /retention/], [], passes, 'outbox_replay_authority');
   invariant(root, 'src/modules/admin/workers/audit-outbox-worker.ts', [/NOT EXISTS[\s\S]*earlier\."correlation_id"/, /audit_operational_alerts/, /delivery_receipt/], [/"alerted_at"\s*=\s*\$\{deadLetter/], passes, 'ordered_replay_and_alert_receipt_authority');
+  invariant(root, 'prisma/schema.prisma', [
+    /idempotencyKey\s+String\?\s+@unique\(map:\s*"audit_logs_idempotency_key_unique"\)/,
+  ], [], passes, 'prisma_schema_idempotency_authority');
   invariant(root, 'supabase/migrations/20260717135456_u3b_three_space_audit.sql', [/CREATE UNIQUE INDEX[\s\S]*idempotency/i, /audit_event_outbox/i, /audit_operational_alerts/i, /delivery_receipt/i, /legal_hold/i, /retention_until/i], [], passes, 'database_audit_authority');
   const productionSources = [
     'src/app/api/v1/lead-magnet/publish/route.ts',

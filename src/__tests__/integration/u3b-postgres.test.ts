@@ -15,8 +15,10 @@ let clusterRoot: string | null = null;
 let clusterPort: number | null = null;
 let admin: PrismaClient;
 let db: PrismaClient;
+let schemaDb: PrismaClient;
 let databaseUrl: string;
 let databaseName: string;
+let schemaDatabaseName: string;
 let legacySnapshot: Record<string, unknown>;
 
 async function freePort(): Promise<number> {
@@ -99,6 +101,16 @@ describe.sequential('U3B PostgreSQL authority', () => {
       FROM "audit_logs" WHERE "id" = 'legacy-audit'
     `;
     legacySnapshot = rows[0];
+
+    schemaDatabaseName = `u3b_schema_${process.pid}_${Date.now()}`;
+    await admin.$executeRawUnsafe(`CREATE DATABASE "${schemaDatabaseName}"`);
+    const schemaDatabaseUrl = baseUrl.replace(/\/postgres$/, `/${schemaDatabaseName}`);
+    execFileSync('pnpm', ['exec', 'prisma', 'db', 'push', '--skip-generate', '--accept-data-loss'], {
+      cwd: repoRoot,
+      env: { ...process.env, DATABASE_URL: schemaDatabaseUrl, DIRECT_URL: schemaDatabaseUrl },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    schemaDb = new PrismaClient({ datasourceUrl: schemaDatabaseUrl });
   }, 120_000);
 
   beforeEach(async () => {
@@ -108,6 +120,10 @@ describe.sequential('U3B PostgreSQL authority', () => {
 
   afterAll(async () => {
     await db?.$disconnect();
+    await schemaDb?.$disconnect();
+    if (admin && schemaDatabaseName) {
+      await admin.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${schemaDatabaseName}" WITH (FORCE)`);
+    }
     if (admin && databaseName) {
       await admin.$executeRawUnsafe(`DROP DATABASE IF EXISTS "${databaseName}" WITH (FORCE)`);
       await admin.$disconnect();
@@ -146,7 +162,40 @@ describe.sequential('U3B PostgreSQL authority', () => {
     `;
     expect(indexes).toHaveLength(5);
     expect(indexes.find((row) => row.indexname === 'audit_logs_idempotency_key_unique')?.indexdef)
-      .toContain('WHERE (idempotency_key IS NOT NULL)');
+      .not.toContain('WHERE');
+  });
+
+  it('U3B-PG-PRISMA-SCHEMA-IDEMPOTENCY supports exact-key conflict handling after prisma db push', async () => {
+    const schemaTenantId = '40000000-0000-4000-8000-000000000001';
+    const schemaActorId = '40000000-0000-4000-8000-000000000002';
+    await schemaDb.tenant.create({ data: { id: schemaTenantId, name: 'Schema Authority', slug: 'schema-authority' } });
+    await schemaDb.user.create({
+      data: {
+        id: schemaActorId,
+        tenantId: schemaTenantId,
+        email: 'schema-platform@example.test',
+        name: 'Schema Platform Admin',
+        role: 'platform_admin',
+      },
+    });
+    const { writePlatformAuditUsing } = await import('@/modules/admin/services/platform-audit-service');
+    const input = {
+      actorId: schemaActorId,
+      actorRole: 'platform_admin' as const,
+      action: 'schema.idempotency',
+      targetType: 'tenant',
+      targetKey: 'schema-vector',
+      outcome: 'success' as const,
+      correlationId: 'schema-correlation',
+      metadata: { version: 1 },
+    };
+    const first = await writePlatformAuditUsing(schemaDb, input);
+    const replay = await writePlatformAuditUsing(schemaDb, input);
+    expect(replay.id).toBe(first.id);
+    await expect(writePlatformAuditUsing(schemaDb, { ...input, metadata: { version: 2 } }))
+      .rejects.toMatchObject({ code: 'AUDIT_IDEMPOTENCY_CONFLICT' });
+    expect(await schemaDb.auditLog.count({ where: { idempotencyKey: { not: null } } })).toBe(1);
+    expect(await schemaDb.auditOperationalAlert.count()).toBe(1);
   });
 
   it('rejects inconsistent TENANT/PLATFORM and digest rows below the application', async () => {

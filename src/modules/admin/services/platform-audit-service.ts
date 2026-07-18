@@ -171,7 +171,7 @@ export async function persistPlatformAuditAtomic(
       ${event.idempotencyKey}, ${event.payloadDigest},
       ${addMonths(now, PLATFORM_RETENTION_MONTHS)}, false, ${now}
     )
-    ON CONFLICT ("idempotency_key") WHERE "idempotency_key" IS NOT NULL DO NOTHING
+    ON CONFLICT ("idempotency_key") DO NOTHING
     RETURNING "id", "idempotency_key" AS "idempotencyKey",
       "payload_digest" AS "payloadDigest", "created_at" AS "createdAt"
   `);

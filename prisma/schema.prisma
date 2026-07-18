@@ -616,7 +616,7 @@ model AuditLog {
   targetType String?  @map("target_type")
   targetId   String?  @map("target_id") @db.Uuid
   metadata   Json     @default("{}")
-  idempotencyKey String? @map("idempotency_key")
+  idempotencyKey String? @unique(map: "audit_logs_idempotency_key_unique") @map("idempotency_key")
   payloadDigest  String? @map("payload_digest")
   retentionUntil DateTime? @map("retention_until") @db.Timestamptz(6)
   legalHold      Boolean   @default(false) @map("legal_hold")

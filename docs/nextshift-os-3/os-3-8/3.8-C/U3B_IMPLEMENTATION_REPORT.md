@@ -32,6 +32,7 @@
 - Bound idempotency to the correlation ID, excluded delivery/retry metadata from the payload digest, serialized later events behind earlier retrying events in the same correlation, and added a durable operational-alert queue. `alerted_at` is set only in the same transaction that stores a real delivery receipt; alert rows have retention enforcement.
 - Added UUID, retained-tenant existence, deleted-terminal, and no-actor-fallback enforcement for override GET/POST/DELETE.
 - Replaced regex-only completion claims with executable evidence. Every one of the ten superadmin target writes is bound to the exact-role fixture and named PostgreSQL fixtures for platform scope, success/failure audit, transaction/durable ordering, idempotency, correlation ordering, conflict alerting, and deleted-terminal behavior.
+- Bound `AuditLog.idempotencyKey` to an explicit database unique authority in both Prisma schema and the SQL migration. A dedicated `prisma db push` PostgreSQL fixture proves that CI/E2E-style schema creation supports exact-key replay and digest-conflict handling without PostgreSQL `42P10` inference errors.
 
 ## Frozen completion evidence
 
@@ -67,19 +68,19 @@ Final matrix status: `213 complete`, `204 intentionally_retained_compatibility_s
 | Verification | Result |
 | --- | --- |
 | Manifest validator | PASS |
-| U3B completion validator | PASS — 37 assertions |
+| U3B completion validator | PASS — 38 assertions |
 | U3B named completion fixtures | PASS — 9/9 |
 | Frozen U3A contract fixtures | PASS — 55/55 from the exact frozen evidence tree |
-| Real PostgreSQL integration | PASS — 30/30 named cases |
+| Real PostgreSQL integration | PASS — 31/31 named cases, including migration and Prisma `db push` authorities |
 | Superadmin mutation exact-role fixture | PASS — 3/3 roles; 30 route-level denial assertions across all 10 target writes |
 | Shared platform-loader authority fixture | PASS — 3/3 roles; 42 loader-level denial assertions across 14 loaders |
 | Tenant/override API boundary fixture | PASS — 5/5 |
 | RFC 8785 tests | PASS — 8/8 |
 | Compatibility policy tests | PASS — 7/7 |
 | Deleted-tenant operational guard tests | PASS — 4/4 |
-| Focused Round 2 U3B/guard tests | PASS — 50/50 |
+| Focused Round 2 U3B/guard tests | PASS — 51/51 |
 | Scheduler/priority regression tests | PASS — 23/23 |
-| Full Vitest | PASS — 625 passed, 44 skipped (669 collected across 111 passed and 7 skipped files) |
+| Full Vitest | PASS — 626 passed, 44 skipped (670 collected across 111 passed and 7 skipped files) |
 | `pnpm db:generate` | PASS |
 | `pnpm type-check` | PASS |
 | `pnpm lint` | PASS — 0 errors, 425 warnings |
