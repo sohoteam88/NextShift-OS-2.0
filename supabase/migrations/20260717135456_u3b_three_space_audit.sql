@@ -31,7 +31,8 @@ CREATE INDEX "audit_logs_tenant_chronology_idx"
 CREATE INDEX "audit_logs_platform_chronology_idx"
   ON "audit_logs" ("created_at" DESC) WHERE "scope" = 'PLATFORM';
 CREATE UNIQUE INDEX "audit_logs_idempotency_key_unique"
-  ON "audit_logs" ("idempotency_key");
+  ON "audit_logs" ("idempotency_key")
+  WHERE "idempotency_key" IS NOT NULL;
 
 CREATE TABLE "audit_event_outbox" (
   "id" text PRIMARY KEY,

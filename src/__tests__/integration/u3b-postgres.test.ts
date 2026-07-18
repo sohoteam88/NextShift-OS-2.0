@@ -1,15 +1,26 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { NextRequest } from 'next/server';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const auth = vi.hoisted(() => ({ getAuthUser: vi.fn() }));
+vi.mock('@/modules/auth/services/auth-service', () => ({ getAuthUser: auth.getAuthUser }));
 
 const repoRoot = resolve(import.meta.dirname, '../../..');
 const migration = resolve(repoRoot, 'supabase/migrations/20260717135456_u3b_three_space_audit.sql');
+const schemaIdentityAuthority = resolve(
+  repoRoot,
+  'scripts/u3b-admin-migration/install-audit-idempotency-authority.sql',
+);
 const actorTenantId = '10000000-0000-4000-8000-000000000001';
 const actorId = '10000000-0000-4000-8000-000000000002';
+const schemaActorTenantId = '40000000-0000-4000-8000-000000000001';
+const schemaActorId = '40000000-0000-4000-8000-000000000002';
 
 let clusterRoot: string | null = null;
 let clusterPort: number | null = null;
@@ -73,6 +84,201 @@ async function createTenant(id: string, slug: string): Promise<void> {
   await db.$executeRawUnsafe(`INSERT INTO "tenants" ("id","name","slug") VALUES ($1::uuid,$2,$3)`, id, slug, slug);
 }
 
+async function createSchemaTenant(
+  id: string,
+  slug: string,
+  options: { name?: string; userId?: string } = {},
+): Promise<void> {
+  await schemaDb.tenant.create({ data: { id, name: options.name ?? slug, slug } });
+  if (options.userId) {
+    await schemaDb.user.create({
+      data: {
+        id: options.userId,
+        tenantId: id,
+        email: `${slug}@example.test`,
+        name: `${slug} user`,
+        role: 'member',
+        status: 'active',
+      },
+    });
+  }
+}
+
+async function rejectPlatformSuccessAudit(action: string): Promise<void> {
+  if (!/^[a-z.]+$/.test(action)) throw new Error(`Unsafe fixture action: ${action}`);
+  await schemaDb.$executeRawUnsafe(`CREATE FUNCTION u3b_reject_success_audit() RETURNS trigger AS $$
+    BEGIN RAISE EXCEPTION 'forced success audit failure'; END;
+    $$ LANGUAGE plpgsql`);
+  await schemaDb.$executeRawUnsafe(`CREATE TRIGGER u3b_reject_success_audit
+    BEFORE INSERT ON audit_logs FOR EACH ROW
+    WHEN (NEW.action = '${action}' AND NEW.metadata->>'outcome' = 'success')
+    EXECUTE FUNCTION u3b_reject_success_audit()`);
+}
+
+type RealTargetFixture = {
+  stableId: string;
+  auditAction: string;
+  requiredTestIds: readonly string[];
+  setup: () => Promise<void>;
+  run: (correlationId: string) => Promise<unknown>;
+  assertSuccess: () => Promise<void>;
+  assertRollback: () => Promise<void>;
+};
+
+function realTargetFixtures(): RealTargetFixture[] {
+  const feedbackTenantId = '50000000-0000-4000-8000-000000000001';
+  const feedbackUserId = '50000000-0000-4000-8000-000000000002';
+  const feedbackId = '50000000-0000-4000-8000-000000000003';
+  const overrideSetTenantId = '50000000-0000-4000-8000-000000000004';
+  const overrideRevokeTenantId = '50000000-0000-4000-8000-000000000005';
+  const userUpdateTenantId = '50000000-0000-4000-8000-000000000006';
+  const userUpdateId = '50000000-0000-4000-8000-000000000007';
+  const userDeleteTenantId = '50000000-0000-4000-8000-000000000008';
+  const userDeleteId = '50000000-0000-4000-8000-000000000009';
+  const createdTenantId = '50000000-0000-4000-8000-000000000010';
+  const tenantUpdateId = '50000000-0000-4000-8000-000000000011';
+  const tenantDeleteId = '50000000-0000-4000-8000-000000000012';
+  const reconcileTenantId = '50000000-0000-4000-8000-000000000013';
+  const reconcileCurrentId = '50000000-0000-4000-8000-000000000014';
+  const reconcileDesiredId = '50000000-0000-4000-8000-000000000015';
+
+  return [
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-001', auditAction: 'feedback.update',
+      requiredTestIds: ['U3B-TARGET-SUPER-001-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-001-AUDIT-FAILURE', 'U3B-TARGET-SUPER-001-IDEMPOTENCY', 'U3B-TARGET-SUPER-001-TENANT-SCOPE'],
+      setup: async () => {
+        await createSchemaTenant(feedbackTenantId, 'feedback-target', { userId: feedbackUserId });
+        await schemaDb.feedback.create({
+          data: { id: feedbackId, tenantId: feedbackTenantId, userId: feedbackUserId, type: 'bug', message: 'fixture' },
+        });
+      },
+      run: async (correlationId) => {
+        const { updatePlatformFeedbackWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return updatePlatformFeedbackWithAudit(schemaActorId, feedbackId, correlationId, 'resolved', schemaDb);
+      },
+      assertSuccess: async () => expect(await schemaDb.feedback.findUnique({ where: { id: feedbackId } })).toMatchObject({ status: 'resolved' }),
+      assertRollback: async () => expect(await schemaDb.feedback.findUnique({ where: { id: feedbackId } })).toMatchObject({ status: 'open' }),
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-002', auditAction: 'override.set',
+      requiredTestIds: ['U3B-TARGET-SUPER-002-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-002-AUDIT-FAILURE', 'U3B-TARGET-SUPER-002-IDEMPOTENCY', 'U3B-TARGET-SUPER-002-TENANT-SCOPE'],
+      setup: () => createSchemaTenant(overrideSetTenantId, 'override-set'),
+      run: async (correlationId) => {
+        const { setPlatformOverrideWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return setPlatformOverrideWithAudit(schemaActorId, overrideSetTenantId, correlationId, {
+          enabled: true, reason: 'fixture', grantedBy: schemaActorId, grantedAt: '', updatedAt: '',
+        }, schemaDb);
+      },
+      assertSuccess: async () => expect(await schemaDb.tenant.findUnique({ where: { id: overrideSetTenantId } })).toMatchObject({ settings: expect.objectContaining({ manual_override: expect.objectContaining({ enabled: true }) }) }),
+      assertRollback: async () => expect(await schemaDb.tenant.findUnique({ where: { id: overrideSetTenantId } })).toMatchObject({ settings: {} }),
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-003', auditAction: 'override.revoke',
+      requiredTestIds: ['U3B-TARGET-SUPER-003-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-003-AUDIT-FAILURE', 'U3B-TARGET-SUPER-003-IDEMPOTENCY', 'U3B-TARGET-SUPER-003-TENANT-SCOPE'],
+      setup: async () => {
+        await createSchemaTenant(overrideRevokeTenantId, 'override-revoke');
+        await schemaDb.tenant.update({ where: { id: overrideRevokeTenantId }, data: { settings: { manual_override: { enabled: true } } } });
+      },
+      run: async (correlationId) => {
+        const { revokePlatformOverrideWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return revokePlatformOverrideWithAudit(schemaActorId, overrideRevokeTenantId, correlationId, schemaDb);
+      },
+      assertSuccess: async () => expect(await schemaDb.tenant.findUnique({ where: { id: overrideRevokeTenantId } })).toMatchObject({ settings: expect.objectContaining({ manual_override: null }) }),
+      assertRollback: async () => expect(await schemaDb.tenant.findUnique({ where: { id: overrideRevokeTenantId } })).toMatchObject({ settings: expect.objectContaining({ manual_override: expect.objectContaining({ enabled: true }) }) }),
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-004', auditAction: 'user.update',
+      requiredTestIds: ['U3B-TARGET-SUPER-004-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-004-AUDIT-FAILURE', 'U3B-TARGET-SUPER-004-IDEMPOTENCY', 'U3B-TARGET-SUPER-004-TENANT-SCOPE'],
+      setup: () => createSchemaTenant(userUpdateTenantId, 'user-update', { userId: userUpdateId }),
+      run: async (correlationId) => {
+        const { updatePlatformUserWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return updatePlatformUserWithAudit(schemaActorId, userUpdateId, correlationId, { status: 'suspended' }, schemaDb);
+      },
+      assertSuccess: async () => expect(await schemaDb.user.findUnique({ where: { id: userUpdateId } })).toMatchObject({ status: 'suspended' }),
+      assertRollback: async () => expect(await schemaDb.user.findUnique({ where: { id: userUpdateId } })).toMatchObject({ status: 'active' }),
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-005', auditAction: 'user.delete',
+      requiredTestIds: ['U3B-TARGET-SUPER-005-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-005-AUDIT-FAILURE', 'U3B-TARGET-SUPER-005-IDEMPOTENCY', 'U3B-TARGET-SUPER-005-TENANT-SCOPE'],
+      setup: () => createSchemaTenant(userDeleteTenantId, 'user-delete-real', { userId: userDeleteId }),
+      run: async (correlationId) => {
+        const { deletePlatformUserWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return deletePlatformUserWithAudit(schemaActorId, userDeleteId, correlationId, schemaDb);
+      },
+      assertSuccess: async () => expect(await schemaDb.user.findUnique({ where: { id: userDeleteId } })).toMatchObject({ status: 'suspended', deletedAt: expect.any(Date) }),
+      assertRollback: async () => expect(await schemaDb.user.findUnique({ where: { id: userDeleteId } })).toMatchObject({ status: 'active', deletedAt: null }),
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-006', auditAction: 'tenant.create',
+      requiredTestIds: ['U3B-TARGET-SUPER-006-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-006-AUDIT-FAILURE', 'U3B-TARGET-SUPER-006-IDEMPOTENCY', 'U3B-TARGET-SUPER-006-TENANT-SCOPE'],
+      setup: async () => undefined,
+      run: async (correlationId) => {
+        const { createPlatformTenantWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return createPlatformTenantWithAudit(schemaActorId, correlationId, {
+          name: 'Created Tenant', slug: 'created-tenant', plan: 'starter', ownerId: createdTenantId,
+          ownerEmail: 'created@example.test', ownerName: 'Created Owner',
+        }, schemaDb);
+      },
+      assertSuccess: async () => expect(await schemaDb.tenant.findUnique({ where: { slug: 'created-tenant' } })).not.toBeNull(),
+      assertRollback: async () => expect(await schemaDb.tenant.findUnique({ where: { slug: 'created-tenant' } })).toBeNull(),
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-007', auditAction: 'tenant.update',
+      requiredTestIds: ['U3B-TARGET-SUPER-007-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-007-AUDIT-FAILURE', 'U3B-TARGET-SUPER-007-IDEMPOTENCY', 'U3B-TARGET-SUPER-007-TENANT-SCOPE'],
+      setup: () => createSchemaTenant(tenantUpdateId, 'tenant-update-real', { name: 'Before Update' }),
+      run: async (correlationId) => {
+        const { updatePlatformTenantWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return updatePlatformTenantWithAudit(schemaActorId, tenantUpdateId, correlationId, { name: 'After Update' }, schemaDb);
+      },
+      assertSuccess: async () => expect(await schemaDb.tenant.findUnique({ where: { id: tenantUpdateId } })).toMatchObject({ name: 'After Update' }),
+      assertRollback: async () => expect(await schemaDb.tenant.findUnique({ where: { id: tenantUpdateId } })).toMatchObject({ name: 'Before Update' }),
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-008', auditAction: 'tenant.delete',
+      requiredTestIds: ['U3B-TARGET-SUPER-008-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-008-AUDIT-FAILURE', 'U3B-TARGET-SUPER-008-IDEMPOTENCY', 'U3B-TARGET-SUPER-008-TENANT-SCOPE'],
+      setup: () => createSchemaTenant(tenantDeleteId, 'tenant-delete-real', { name: 'Tenant Delete Real' }),
+      run: async (correlationId) => {
+        const { deleteTenantWithAudit } = await import('@/modules/admin/services/tenant-deletion-service');
+        return deleteTenantWithAudit({ tenantId: tenantDeleteId, actorId: schemaActorId, idempotencyKey: correlationId, correlationId }, schemaDb);
+      },
+      assertSuccess: async () => expect(await schemaDb.tenant.findUnique({ where: { id: tenantDeleteId } })).toMatchObject({ status: 'deleted' }),
+      assertRollback: async () => expect(await schemaDb.tenant.findUnique({ where: { id: tenantDeleteId } })).toMatchObject({ status: 'active' }),
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-009', auditAction: 'platform.usage.record',
+      requiredTestIds: ['U3B-TARGET-SUPER-009-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-009-AUDIT-FAILURE', 'U3B-TARGET-SUPER-009-IDEMPOTENCY', 'U3B-TARGET-SUPER-009-TENANT-SCOPE'],
+      setup: async () => undefined,
+      run: async (correlationId) => {
+        const { recordPlatformUsageWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return recordPlatformUsageWithAudit(schemaActorId, correlationId, {
+          eventType: 'click', targetId: 'security-queue', targetKind: 'queue', section: 'operations',
+        }, schemaDb);
+      },
+      assertSuccess: async () => undefined,
+      assertRollback: async () => undefined,
+    },
+    {
+      stableId: 'U3B-REAL-TARGET-SUPER-010', auditAction: 'auth.uid.reconcile',
+      requiredTestIds: ['U3B-TARGET-SUPER-010-AUDIT-SUCCESS', 'U3B-TARGET-SUPER-010-AUDIT-FAILURE', 'U3B-TARGET-SUPER-010-IDEMPOTENCY', 'U3B-TARGET-SUPER-010-TENANT-SCOPE'],
+      setup: () => createSchemaTenant(reconcileTenantId, 'uid-reconcile-real', { userId: reconcileCurrentId }),
+      run: async (correlationId) => {
+        const { reconcilePlatformAuthUidWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
+        return reconcilePlatformAuthUidWithAudit(schemaActorId, correlationId, {
+          targetTenantId: reconcileTenantId, currentUserId: reconcileCurrentId, desiredAuthUserId: reconcileDesiredId,
+        }, schemaDb);
+      },
+      assertSuccess: async () => {
+        expect(await schemaDb.user.findUnique({ where: { id: reconcileCurrentId } })).toBeNull();
+        expect(await schemaDb.user.findUnique({ where: { id: reconcileDesiredId } })).not.toBeNull();
+      },
+      assertRollback: async () => {
+        expect(await schemaDb.user.findUnique({ where: { id: reconcileCurrentId } })).not.toBeNull();
+        expect(await schemaDb.user.findUnique({ where: { id: reconcileDesiredId } })).toBeNull();
+      },
+    },
+  ];
+}
+
 describe.sequential('U3B PostgreSQL authority', () => {
   beforeAll(async () => {
     if (!process.env.CI) {
@@ -110,12 +316,44 @@ describe.sequential('U3B PostgreSQL authority', () => {
       env: { ...process.env, DATABASE_URL: schemaDatabaseUrl, DIRECT_URL: schemaDatabaseUrl },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+    execFileSync('pnpm', ['exec', 'prisma', 'db', 'execute', '--file', schemaIdentityAuthority, '--url', schemaDatabaseUrl], {
+      cwd: repoRoot,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     schemaDb = new PrismaClient({ datasourceUrl: schemaDatabaseUrl });
   }, 120_000);
 
   beforeEach(async () => {
     await db.$executeRawUnsafe('TRUNCATE TABLE "audit_operational_alerts", "audit_event_outbox", "audit_logs" CASCADE');
     await db.$executeRawUnsafe(`DELETE FROM "tenants" WHERE "id" <> '${actorTenantId}'::uuid`);
+    await schemaDb.$executeRawUnsafe('DROP TRIGGER IF EXISTS u3b_reject_success_audit ON audit_logs');
+    await schemaDb.$executeRawUnsafe('DROP FUNCTION IF EXISTS u3b_reject_success_audit()');
+    await schemaDb.$executeRawUnsafe(
+      'TRUNCATE TABLE "audit_operational_alerts", "audit_event_outbox", "audit_logs", "feedback", "users", "tenants" CASCADE',
+    );
+    await schemaDb.tenant.create({
+      data: { id: schemaActorTenantId, name: 'Schema Authority', slug: 'schema-authority' },
+    });
+    await schemaDb.user.create({
+      data: {
+        id: schemaActorId,
+        tenantId: schemaActorTenantId,
+        email: 'schema-platform@example.test',
+        name: 'Schema Platform Admin',
+        role: 'platform_admin',
+        status: 'active',
+      },
+    });
+    auth.getAuthUser.mockResolvedValue({
+      id: schemaActorId,
+      email: 'schema-platform@example.test',
+      tenantId: schemaActorTenantId,
+      role: 'platform_admin',
+      name: 'Schema Platform Admin',
+      preferredLanguage: 'en',
+      status: 'active',
+      tenantStatus: 'active',
+    });
   });
 
   afterAll(async () => {
@@ -162,22 +400,15 @@ describe.sequential('U3B PostgreSQL authority', () => {
     `;
     expect(indexes).toHaveLength(5);
     expect(indexes.find((row) => row.indexname === 'audit_logs_idempotency_key_unique')?.indexdef)
-      .not.toContain('WHERE');
+      .toContain('WHERE (idempotency_key IS NOT NULL)');
+    const schemaIndex = await schemaDb.$queryRaw<Array<{ indexdef: string }>>`
+      SELECT indexdef FROM pg_indexes WHERE indexname = 'audit_logs_idempotency_key_unique'
+    `;
+    expect(schemaIndex).toHaveLength(1);
+    expect(schemaIndex[0].indexdef).toContain('WHERE (idempotency_key IS NOT NULL)');
   });
 
   it('U3B-PG-PRISMA-SCHEMA-IDEMPOTENCY supports exact-key conflict handling after prisma db push', async () => {
-    const schemaTenantId = '40000000-0000-4000-8000-000000000001';
-    const schemaActorId = '40000000-0000-4000-8000-000000000002';
-    await schemaDb.tenant.create({ data: { id: schemaTenantId, name: 'Schema Authority', slug: 'schema-authority' } });
-    await schemaDb.user.create({
-      data: {
-        id: schemaActorId,
-        tenantId: schemaTenantId,
-        email: 'schema-platform@example.test',
-        name: 'Schema Platform Admin',
-        role: 'platform_admin',
-      },
-    });
     const { writePlatformAuditUsing } = await import('@/modules/admin/services/platform-audit-service');
     const input = {
       actorId: schemaActorId,
@@ -308,51 +539,46 @@ describe.sequential('U3B PostgreSQL authority', () => {
       .rejects.toThrow(/retention/);
   });
 
-  it.each([
-    ['feedback.update', 'TARGET-SUPER-001'],
-    ['override.set', 'TARGET-SUPER-002'],
-    ['override.revoke', 'TARGET-SUPER-003'],
-    ['user.update', 'TARGET-SUPER-004'],
-    ['user.delete', 'TARGET-SUPER-005'],
-    ['tenant.create', 'TARGET-SUPER-006'],
-    ['tenant.update', 'TARGET-SUPER-007'],
-    ['tenant.delete', 'TARGET-SUPER-008'],
-    ['platform.usage.record', 'TARGET-SUPER-009'],
-    ['auth.uid.reconcile', 'TARGET-SUPER-010'],
-  ])('U3B-PG-ATOMIC-TARGET-WRITES %s commits business state and PLATFORM success audit atomically (%s)', async (action, targetId) => {
-    const { runPlatformMutationWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
-    await db.$executeRawUnsafe('CREATE TABLE IF NOT EXISTS u3b_mutation_probe (id text PRIMARY KEY, value text NOT NULL)');
-    await db.$executeRawUnsafe('TRUNCATE TABLE u3b_mutation_probe');
-    await runPlatformMutationWithAudit(db, {
-      actorId, actorRole: 'platform_admin', action, targetType: 'fixture', targetKey: targetId,
-      correlationId: `atomic-${targetId.toLowerCase()}`,
-    }, async (tx) => {
-      await tx.$executeRawUnsafe('INSERT INTO u3b_mutation_probe (id,value) VALUES ($1,$2)', targetId, 'committed');
-      return targetId;
-    });
-    expect(await db.$queryRawUnsafe('SELECT * FROM u3b_mutation_probe')).toHaveLength(1);
-    expect(await db.auditLog.findFirst()).toMatchObject({ scope: 'PLATFORM', action });
-  });
+  it.each(realTargetFixtures())(
+    '$stableId success executes the real service and commits PLATFORM evidence',
+    async (fixture) => {
+      await fixture.setup();
+      const correlationId = `${fixture.stableId.toLowerCase()}-success`;
+      await fixture.run(correlationId);
+      await fixture.assertSuccess();
+      const event = await schemaDb.auditLog.findFirstOrThrow({
+        where: { scope: 'PLATFORM', action: fixture.auditAction },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(event.tenantId).toBeNull();
+      expect(event.idempotencyKey).toMatch(/^[0-9a-f]{64}$/);
+      expect(event.payloadDigest).toMatch(/^[0-9a-f]{64}$/);
+      expect(event.retentionUntil).not.toBeNull();
+      expect(event.metadata).toMatchObject({ outcome: 'success', correlation_id: correlationId });
+    },
+  );
 
-  it('U3B-PG-FAILURE-AFTER-ROLLBACK rolls business state back and persists failure evidence', async () => {
-    const { runPlatformMutationWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
-    await db.$executeRawUnsafe('CREATE TABLE IF NOT EXISTS u3b_mutation_probe (id text PRIMARY KEY, value text NOT NULL)');
-    await db.$executeRawUnsafe('TRUNCATE TABLE u3b_mutation_probe');
-    await db.$executeRawUnsafe(`CREATE FUNCTION reject_probe_success() RETURNS trigger AS $$ BEGIN
-      IF NEW.metadata->>'outcome' = 'success' THEN RAISE EXCEPTION 'forced success audit failure'; END IF;
-      RETURN NEW; END; $$ LANGUAGE plpgsql`);
-    await db.$executeRawUnsafe('CREATE TRIGGER reject_probe_success BEFORE INSERT ON audit_logs FOR EACH ROW EXECUTE FUNCTION reject_probe_success()');
-    await expect(runPlatformMutationWithAudit(db, {
-      actorId, actorRole: 'platform_admin', action: 'tenant.update', targetType: 'fixture', targetKey: 'rollback', correlationId: 'rollback-atomic',
-    }, async (tx) => {
-      await tx.$executeRawUnsafe("INSERT INTO u3b_mutation_probe (id,value) VALUES ('rollback','must-not-commit')");
-      return null;
-    })).rejects.toThrow();
-    expect(await db.$queryRawUnsafe('SELECT * FROM u3b_mutation_probe')).toHaveLength(0);
-    expect(await db.auditLog.findFirst()).toMatchObject({ scope: 'PLATFORM', action: 'tenant.update' });
-    await db.$executeRawUnsafe('DROP TRIGGER reject_probe_success ON audit_logs');
-    await db.$executeRawUnsafe('DROP FUNCTION reject_probe_success()');
-  });
+  it.each(realTargetFixtures())(
+    '$stableId forced success-audit failure rolls the real service back and persists PLATFORM failure evidence',
+    async (fixture) => {
+      await fixture.setup();
+      const correlationId = `${fixture.stableId.toLowerCase()}-failure`;
+      await rejectPlatformSuccessAudit(fixture.auditAction);
+      await expect(fixture.run(correlationId)).rejects.toThrow();
+      await fixture.assertRollback();
+      const failure = await schemaDb.auditLog.findFirstOrThrow({
+        where: { scope: 'PLATFORM', action: fixture.auditAction },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(failure.tenantId).toBeNull();
+      expect(failure.metadata).toMatchObject({ outcome: 'failure', correlation_id: correlationId });
+      if (fixture.stableId === 'U3B-REAL-TARGET-SUPER-005') {
+        expect(await schemaDb.auditLog.findFirst({
+          where: { scope: 'PLATFORM', action: 'user.delete.intent' },
+        })).not.toBeNull();
+      }
+    },
+  );
 
   it('persists user-delete intent before external work and commits the database outcome with its success audit', async () => {
     const { deletePlatformUserWithAudit } = await import('@/modules/admin/services/platform-mutation-service');
@@ -405,6 +631,66 @@ describe.sequential('U3B PostgreSQL authority', () => {
     expect(independent).toMatchObject({ alreadyDeleted: true, replayed: false });
     expect(await db.tenant.findUnique({ where: { id: tenantId } })).toMatchObject({ status: 'deleted' });
     expect(await db.auditLog.count({ where: { scope: 'PLATFORM' } })).toBe(2);
+  });
+
+  it('U3B-TARGET-SUPER-008-HTTP-IDEMPOTENT-REPLAY reuses one route-level attempt without X-Correlation-ID', async () => {
+    const { createTenantDeleteRoute } = await import('@/app/api/v1/superadmin/tenants/[id]/route');
+    const { deleteTenantWithAudit } = await import('@/modules/admin/services/tenant-deletion-service');
+    const tenantId = '40000000-0000-4000-8000-000000000008';
+    await schemaDb.tenant.create({ data: { id: tenantId, name: 'Delete Replay Tenant', slug: 'delete-replay' } });
+    const handler = createTenantDeleteRoute((command) => deleteTenantWithAudit(command, schemaDb));
+    const invoke = () => handler(new NextRequest(`https://example.test/api/v1/superadmin/tenants/${tenantId}`, {
+      method: 'DELETE',
+      headers: { 'Idempotency-Key': 'tenant-delete-attempt-0008' },
+    }), { params: Promise.resolve({ id: tenantId }) });
+
+    const firstResponse = await invoke();
+    const replayResponse = await invoke();
+    expect(firstResponse.status).toBe(200);
+    expect(replayResponse.status).toBe(200);
+    const first = await firstResponse.json();
+    const replay = await replayResponse.json();
+    expect(first.data).toMatchObject({ alreadyDeleted: false, replayed: false });
+    expect(replay.data).toMatchObject({ alreadyDeleted: false, replayed: true });
+    expect(first.correlationId).toBe('tenant-delete-attempt-0008');
+    expect(replay.correlationId).toBe(first.correlationId);
+
+    const events = await schemaDb.auditLog.findMany({ where: { scope: 'PLATFORM' } });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      tenantId: null,
+      action: 'tenant.delete',
+      targetId: tenantId,
+      scope: 'PLATFORM',
+    });
+    expect(events[0].metadata).toEqual({
+      tenant_id: tenantId,
+      tenant_label_sha256: createHash('sha256').update('Delete Replay Tenant').digest('hex'),
+      prior_status: 'active',
+      correlation_id: 'tenant-delete-attempt-0008',
+      actor_role: 'platform_admin',
+      outcome: 'success',
+      failure_code: null,
+    });
+  });
+
+  it('U3B-TARGET-SUPER-008-HEADER-MISMATCH rejects competing route identities before mutation', async () => {
+    const { createTenantDeleteRoute } = await import('@/app/api/v1/superadmin/tenants/[id]/route');
+    const { deleteTenantWithAudit } = await import('@/modules/admin/services/tenant-deletion-service');
+    const tenantId = '40000000-0000-4000-8000-000000000009';
+    await schemaDb.tenant.create({ data: { id: tenantId, name: 'Mismatch Tenant', slug: 'mismatch-tenant' } });
+    const handler = createTenantDeleteRoute((command) => deleteTenantWithAudit(command, schemaDb));
+    const response = await handler(new NextRequest(`https://example.test/api/v1/superadmin/tenants/${tenantId}`, {
+      method: 'DELETE',
+      headers: {
+        'Idempotency-Key': 'tenant-delete-attempt-0009',
+        'X-Correlation-ID': 'different-correlation-0009',
+      },
+    }), { params: Promise.resolve({ id: tenantId }) });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ error: { code: 'IDEMPOTENCY_CORRELATION_MISMATCH' } });
+    expect(await schemaDb.tenant.findUnique({ where: { id: tenantId } })).toMatchObject({ status: 'active' });
+    expect(await schemaDb.auditLog.count()).toBe(0);
   });
 
   it('U3B-PG-DELETED-TERMINAL allows only non-deleted PATCH statuses and reserves deleted for DELETE', async () => {
@@ -479,6 +765,16 @@ describe.sequential('U3B PostgreSQL authority', () => {
     await expect(deleteTenantWithAudit({ tenantId, actorId, idempotencyKey: 'rollback-delete-1' }, db)).rejects.toThrow();
     expect(await db.tenant.findUnique({ where: { id: tenantId } })).toMatchObject({ status: 'active' });
     expect(await db.auditLog.findFirst()).toMatchObject({ scope: 'PLATFORM' });
+    const failure = await db.auditLog.findFirstOrThrow();
+    expect(failure.metadata).toEqual({
+      tenant_id: tenantId,
+      tenant_label_sha256: createHash('sha256').update('rollback-delete').digest('hex'),
+      prior_status: 'active',
+      correlation_id: 'rollback-delete-1',
+      actor_role: 'platform_admin',
+      outcome: 'failure',
+      failure_code: 'TENANT_DELETE_TRANSACTION_FAILED',
+    });
     await db.$executeRawUnsafe('DROP TRIGGER reject_success_audit ON audit_logs');
     await db.$executeRawUnsafe('DROP FUNCTION reject_success_audit()');
   });

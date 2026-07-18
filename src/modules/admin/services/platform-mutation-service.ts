@@ -333,3 +333,157 @@ export async function deletePlatformUserWithAudit(
     throw error;
   }
 }
+
+export async function updatePlatformFeedbackWithAudit(
+  actorId: string,
+  feedbackId: string,
+  correlationId: string,
+  status: 'open' | 'acknowledged' | 'in_progress' | 'resolved' | 'closed',
+  db: PlatformDatabase = prisma,
+) {
+  try {
+    return await db.$transaction(async (tx) => {
+      const current = await tx.feedback.findUnique({
+        where: { id: feedbackId },
+        select: { id: true, tenantId: true, status: true },
+      });
+      if (!current) throw new AppError('NOT_FOUND', 404, 'Feedback not found');
+      const updated = await tx.feedback.update({
+        where: { id: feedbackId },
+        data: { status, updatedAt: new Date() },
+      });
+      await writePlatformAuditInTransaction(tx, {
+        actorId,
+        actorRole: 'platform_admin',
+        action: 'feedback.update',
+        targetType: 'feedback',
+        targetId: feedbackId,
+        targetKey: feedbackId,
+        outcome: 'success',
+        correlationId,
+        metadata: {
+          target_tenant_id: current.tenantId,
+          from_status: current.status,
+          to_status: status,
+        },
+      });
+      return updated;
+    });
+  } catch (error) {
+    await writePlatformAuditUsing(db, {
+      actorId,
+      actorRole: 'platform_admin',
+      action: 'feedback.update',
+      targetType: 'feedback',
+      targetId: feedbackId,
+      targetKey: feedbackId,
+      outcome: 'failure',
+      correlationId,
+      metadata: { failure_code: failureCode(error) },
+    });
+    throw error;
+  }
+}
+
+export async function recordPlatformUsageWithAudit(
+  actorId: string,
+  correlationId: string,
+  event: {
+    eventType: 'view' | 'click';
+    targetId: string;
+    targetKind: 'dashboard' | 'card' | 'action' | 'queue';
+    section: string;
+  },
+  db: PlatformDatabase = prisma,
+): Promise<void> {
+  await runPlatformMutationWithAudit(db, {
+    actorId,
+    actorRole: 'platform_admin',
+    action: 'platform.usage.record',
+    targetType: 'usage',
+    targetKey: `${event.section}:${event.targetId}`,
+    correlationId,
+    metadata: {
+      event_type: event.eventType,
+      target_kind: event.targetKind,
+      path: '/superadmin',
+    },
+  }, async () => undefined);
+}
+
+export async function reconcilePlatformAuthUidWithAudit(
+  actorId: string,
+  correlationId: string,
+  body: { targetTenantId: string; currentUserId: string; desiredAuthUserId: string },
+  db: PlatformDatabase = prisma,
+) {
+  const targetKey = `${body.currentUserId}->${body.desiredAuthUserId}`;
+  try {
+    return await db.$transaction(async (tx) => {
+      const target = await tx.user.findFirst({
+        where: { id: body.currentUserId, tenantId: body.targetTenantId, deletedAt: null },
+        select: { id: true, email: true, tenantId: true },
+      });
+      if (!target) throw new AppError('NOT_FOUND', 404, 'Target user not found in explicit tenant');
+      const collision = await tx.user.findUnique({
+        where: { id: body.desiredAuthUserId },
+        select: { id: true },
+      });
+      if (collision && collision.id !== target.id) {
+        throw new AppError('CONFLICT', 409, 'Desired auth UID is already assigned');
+      }
+      if (target.id !== body.desiredAuthUserId) {
+        await tx.user.updateMany({ where: { sponsorId: target.id }, data: { sponsorId: body.desiredAuthUserId } });
+        await tx.lead.updateMany({
+          where: { ownerId: target.id, tenantId: target.tenantId },
+          data: { ownerId: body.desiredAuthUserId },
+        });
+        await tx.activity.updateMany({
+          where: { userId: target.id, tenantId: target.tenantId },
+          data: { userId: body.desiredAuthUserId },
+        });
+        await tx.note.updateMany({ where: { userId: target.id }, data: { userId: body.desiredAuthUserId } });
+        await tx.funnel.updateMany({
+          where: { ownerId: target.id, tenantId: target.tenantId },
+          data: { ownerId: body.desiredAuthUserId },
+        });
+        await tx.user.update({ where: { id: target.id }, data: { id: body.desiredAuthUserId } });
+      }
+      await writePlatformAuditInTransaction(tx, {
+        actorId,
+        actorRole: 'platform_admin',
+        action: 'auth.uid.reconcile',
+        targetType: 'user',
+        targetId: body.desiredAuthUserId,
+        targetKey,
+        outcome: 'success',
+        correlationId,
+        metadata: {
+          target_tenant_id: body.targetTenantId,
+          already_reconciled: target.id === body.desiredAuthUserId,
+        },
+      });
+      return {
+        userId: body.desiredAuthUserId,
+        tenantId: body.targetTenantId,
+        reconciled: target.id !== body.desiredAuthUserId,
+      };
+    });
+  } catch (error) {
+    await writePlatformAuditUsing(db, {
+      actorId,
+      actorRole: 'platform_admin',
+      action: 'auth.uid.reconcile',
+      targetType: 'user',
+      targetId: body.desiredAuthUserId,
+      targetKey,
+      outcome: 'failure',
+      correlationId,
+      metadata: {
+        target_tenant_id: body.targetTenantId,
+        failure_code: failureCode(error),
+      },
+    });
+    throw error;
+  }
+}

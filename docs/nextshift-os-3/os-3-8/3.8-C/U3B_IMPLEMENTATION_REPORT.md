@@ -9,7 +9,8 @@
 - Authorized product baseline: `5ee0cb899b4250f9152b6e2c69ca3dfcc7b0f766`
 - Planning governance state at dispatch: `e52e5f7e59ce31bb7289d97b40cd73a10e02e2bf`
 - Round 2 Architecture Review: `4727346910` (`CHANGES_REQUESTED` at reviewed head `39c6948dfb37589949b123c7e51a236d71c47a43`)
-- Round 2 remediation recorded at: `2026-07-18`
+- Round 3 Architecture Review: `4727572816` (`CHANGES_REQUESTED` at reviewed head `79e58529ec4e95cd3f66d29285d924c16c8335d5`)
+- Round 3 remediation recorded at: `2026-07-18`
 
 ## Scope completed
 
@@ -33,6 +34,15 @@
 - Added UUID, retained-tenant existence, deleted-terminal, and no-actor-fallback enforcement for override GET/POST/DELETE.
 - Replaced regex-only completion claims with executable evidence. Every one of the ten superadmin target writes is bound to the exact-role fixture and named PostgreSQL fixtures for platform scope, success/failure audit, transaction/durable ordering, idempotency, correlation ordering, conflict alerting, and deleted-terminal behavior.
 - Bound `AuditLog.idempotencyKey` to an explicit database unique authority in both Prisma schema and the SQL migration. A dedicated `prisma db push` PostgreSQL fixture proves that CI/E2E-style schema creation supports exact-key replay and digest-conflict handling without PostgreSQL `42P10` inference errors.
+
+## Round 3 Architecture Review remediation
+
+- Restored the immutable ADR's exact partial unique authority: production SQL now creates `UNIQUE INDEX ... ON audit_logs(idempotency_key) WHERE idempotency_key IS NOT NULL`; Prisma intentionally does not claim unsupported partial-index metadata; runtime conflict inference uses the matching predicate. The production migration catalog and a fresh Prisma `db push` catalog both assert the exact predicate and exercise replay without PostgreSQL `42P10`.
+- Added `scripts/u3b-admin-migration/install-audit-idempotency-authority.sql` as the authoritative post-`db push` SQL bootstrap, and installed it explicitly in both GitHub Tests and E2E schema setup. This preserves the reviewed partial decision instead of replacing it with a full unique index.
+- Made `Idempotency-Key` the stable logical-attempt identity for tenant DELETE. If `Idempotency-Key` and `X-Correlation-ID` are both present they must be identical or the route fails closed with `400`. A real route-handler/PostgreSQL fixture performs two DELETE requests with the same idempotency key and no fixed correlation header, proving that the second request reuses the first transition/evidence rather than creating a terminal no-op.
+- Restricted tenant-deletion transition and rollback-safe failure metadata to the exact allowlist: tenant UUID, SHA-256 tenant display label, prior status, correlation identity, actor role, outcome, and stable failure code. No tenant-owned audit data, request body, or secret enters the PLATFORM snapshot; retention and legal-hold behavior remains independent of tenant cascade.
+- Replaced generic action-string evidence for the ten superadmin writes with ten stable, route-to-production-service fixtures. Each target executes its actual service success path and a forced success-audit failure path against PostgreSQL, proving PLATFORM evidence and rollback/durable ordering. User deletion continues to use the reviewed durable intent/outcome protocol.
+- Regenerated the completion matrix so every superadmin target row names its production authority, stable real-target fixture, exact role fixture, required U3A test IDs, and the shared idempotency/deletion evidence. The validator rejects generic evidence substitution.
 
 ## Frozen completion evidence
 
@@ -68,38 +78,39 @@ Final matrix status: `213 complete`, `204 intentionally_retained_compatibility_s
 | Verification | Result |
 | --- | --- |
 | Manifest validator | PASS |
-| U3B completion validator | PASS — 38 assertions |
+| U3B completion validator | PASS — 40 assertions |
 | U3B named completion fixtures | PASS — 9/9 |
 | Frozen U3A contract fixtures | PASS — 55/55 from the exact frozen evidence tree |
-| Real PostgreSQL integration | PASS — 31/31 named cases, including migration and Prisma `db push` authorities |
+| Real PostgreSQL integration | PASS — 42/42 named cases, including exact partial-index catalogs, fresh Prisma `db push` authority installation, real-route tenant DELETE replay/header conflict, deletion snapshot allowlist, and ten real mutation success/rollback pairs |
 | Superadmin mutation exact-role fixture | PASS — 3/3 roles; 30 route-level denial assertions across all 10 target writes |
 | Shared platform-loader authority fixture | PASS — 3/3 roles; 42 loader-level denial assertions across 14 loaders |
 | Tenant/override API boundary fixture | PASS — 5/5 |
 | RFC 8785 tests | PASS — 8/8 |
 | Compatibility policy tests | PASS — 7/7 |
 | Deleted-tenant operational guard tests | PASS — 4/4 |
-| Focused Round 2 U3B/guard tests | PASS — 51/51 |
+| Focused Round 2 + Round 3 U3B/guard tests | PASS — 53/53 across the four exact focused files (42 PostgreSQL + 11 API/loader/role authority) |
 | Scheduler/priority regression tests | PASS — 23/23 |
-| Full Vitest | PASS — 626 passed, 44 skipped (670 collected across 111 passed and 7 skipped files) |
+| Full Vitest | PASS — 637 passed, 44 skipped (681 collected across 111 passed and 7 skipped files) |
 | `pnpm db:generate` | PASS |
 | `pnpm type-check` | PASS |
 | `pnpm lint` | PASS — 0 errors, 425 warnings |
 | `pnpm lint:boundaries:check` | PASS |
 | `pnpm build` | PASS |
 | Pipeline state-machine assertions | PASS — 40/40 |
+| Policy-bound governance dispatch fixtures | PASS — 39/39 |
 | Governance real-Git fixtures | PASS — 8/8 |
 | Safety real-Git fixtures | PASS — 14/14 |
 | Pipeline/test shell syntax | PASS — 10/10 files |
 | Pipeline/test ShellCheck | PASS — 10/10 files, 0 issues |
 | Playwright discovery | PASS — 58 tests in 10 files |
 | Local browser E2E execution | NOT RUN — no task-local browser environment or E2E credentials were introduced |
-| GitHub Actions at Round 2 exact head | PENDING until this report and remediation are committed and pushed; Draft PR #100 records the final four required job results without pre-claiming them here |
+| GitHub Actions at Round 3 exact head | PENDING until this report and remediation are committed and pushed; Draft PR #100 records the final four required job results without pre-claiming them here |
 | `pnpm docs:audit-authority` | PASS; generated audit outputs were not included in this task diff |
 | `pnpm docs:navigation` | PASS with 222 existing warnings |
 | `pnpm docs:links` | BASELINE-EXISTING FAILURE — `WAVE_EXECUTION_CONTRACT.md:13` points to missing `../../OS_3_8_BLUEPRINT.md`; U3B adds no documentation link failure |
 | `git diff --check` | PASS |
 
-The pushed Round 2 exact head is re-checked by GitHub Actions and recorded in Draft PR #100. This repository report deliberately does not pre-claim the result of its own future commit.
+The pushed Round 3 exact head is re-checked by GitHub Actions and recorded in Draft PR #100. This repository report deliberately does not pre-claim the result of its own future commit.
 
 ## Changed-file boundaries
 

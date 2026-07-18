@@ -60,6 +60,9 @@ function asPlatformAuditInput(row: ClaimedEvent): PlatformAuditInput {
     metadata: payload.metadata && typeof payload.metadata === 'object'
       ? payload.metadata as Record<string, unknown>
       : {},
+    metadataProfile: payload.metadataProfile === 'tenant_deletion_snapshot'
+      ? 'tenant_deletion_snapshot'
+      : undefined,
   };
 }
 

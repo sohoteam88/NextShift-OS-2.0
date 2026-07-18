@@ -22,6 +22,7 @@ export type PlatformAuditInput = {
   /** @deprecated Correlation ID is the canonical logical-attempt identity. */
   idempotencyIdentity?: string;
   metadata?: Record<string, unknown>;
+  metadataProfile?: 'tenant_deletion_snapshot';
 };
 
 export type PlatformAuditEvent = ReturnType<typeof buildPlatformAuditEvent>;
@@ -72,6 +73,7 @@ export function buildPlatformAuditEvent(input: PlatformAuditInput) {
     actorRole: input.actorRole,
     targetId: input.targetId ?? null,
     metadata,
+    ...(input.metadataProfile ? { metadataProfile: input.metadataProfile } : {}),
   };
   return {
     correlationId,
@@ -153,6 +155,15 @@ export async function persistPlatformAuditAtomic(
 ): Promise<PersistedAuditRow> {
   const event = buildPlatformAuditEvent(input);
   const now = new Date();
+  const storedMetadata = input.metadataProfile === 'tenant_deletion_snapshot'
+    ? event.metadata
+    : {
+        ...event.metadata,
+        actor_role: input.actorRole,
+        outcome: input.outcome,
+        correlation_id: event.correlationId,
+        target_key: input.targetKey,
+      };
   const inserted = await db.$queryRaw<PersistedAuditRow[]>(Prisma.sql`
     INSERT INTO "audit_logs" (
       "id", "tenant_id", "scope", "actor_id", "action", "target_type",
@@ -161,17 +172,11 @@ export async function persistPlatformAuditAtomic(
     ) VALUES (
       ${randomUUID()}, NULL, CAST('PLATFORM' AS "AuditScope"), ${input.actorId}::uuid,
       ${input.action}, ${input.targetType}, ${input.targetId ?? null}::uuid,
-      CAST(${canonicalizeJson({
-        ...event.metadata,
-        actor_role: input.actorRole,
-        outcome: input.outcome,
-        correlation_id: event.correlationId,
-        target_key: input.targetKey,
-      })} AS jsonb),
+      CAST(${canonicalizeJson(storedMetadata)} AS jsonb),
       ${event.idempotencyKey}, ${event.payloadDigest},
       ${addMonths(now, PLATFORM_RETENTION_MONTHS)}, false, ${now}
     )
-    ON CONFLICT ("idempotency_key") DO NOTHING
+    ON CONFLICT ("idempotency_key") WHERE "idempotency_key" IS NOT NULL DO NOTHING
     RETURNING "id", "idempotency_key" AS "idempotencyKey",
       "payload_digest" AS "payloadDigest", "created_at" AS "createdAt"
   `);

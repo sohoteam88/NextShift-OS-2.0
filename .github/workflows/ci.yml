@@ -116,6 +116,12 @@ jobs:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
 
+      - name: Install U3B partial audit identity authority
+        run: pnpm exec prisma db execute --file scripts/u3b-admin-migration/install-audit-idempotency-authority.sql
+        env:
+          DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+          DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+
       - name: Run Tests
         run: pnpm test
         env:
@@ -221,6 +227,12 @@ jobs:
 
       - name: Push Database Schema
         run: npx prisma db push --skip-generate
+        env:
+          DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+          DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
+
+      - name: Install U3B partial audit identity authority
+        run: pnpm exec prisma db execute --file scripts/u3b-admin-migration/install-audit-idempotency-authority.sql
         env:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'

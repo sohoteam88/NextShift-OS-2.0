@@ -14,8 +14,6 @@ type JsonRecord = Record<string, any>;
 const SUPERADMIN_FIXTURE_FILE = 'src/__tests__/integration/u3b-postgres.test.ts';
 const SUPERADMIN_ROLE_FIXTURE_FILE = 'src/__tests__/security/superadmin-mutation-authority.test.ts';
 const SUPERADMIN_SHARED_POSTGRES_FIXTURES = [
-  'U3B-PG-ATOMIC-TARGET-WRITES',
-  'U3B-PG-FAILURE-AFTER-ROLLBACK',
   'U3B-PG-IDEMPOTENCY-DIRECT-RACE',
   'U3B-PG-IDEMPOTENCY-REPLAY-RACES',
   'U3B-PG-CORRELATION-ORDERING',
@@ -24,7 +22,7 @@ const SUPERADMIN_SHARED_POSTGRES_FIXTURES = [
   'U3B-PG-DELETED-TERMINAL',
 ] as const;
 const SUPERADMIN_WRITE_AUTHORITIES: Record<string, string[]> = {
-  'TARGET-SUPER-001': ['writePlatformAuditInTransaction', '$transaction'],
+  'TARGET-SUPER-001': ['updatePlatformFeedbackWithAudit'],
   'TARGET-SUPER-002': ['setPlatformOverrideWithAudit'],
   'TARGET-SUPER-003': ['revokePlatformOverrideWithAudit'],
   'TARGET-SUPER-004': ['updatePlatformUserWithAudit'],
@@ -32,8 +30,8 @@ const SUPERADMIN_WRITE_AUTHORITIES: Record<string, string[]> = {
   'TARGET-SUPER-006': ['createPlatformTenantWithAudit'],
   'TARGET-SUPER-007': ['updatePlatformTenantWithAudit'],
   'TARGET-SUPER-008': ['deleteTenantWithAudit'],
-  'TARGET-SUPER-009': ['writePlatformAudit'],
-  'TARGET-SUPER-010': ['writePlatformAuditInTransaction', '$transaction'],
+  'TARGET-SUPER-009': ['recordPlatformUsageWithAudit'],
+  'TARGET-SUPER-010': ['reconcilePlatformAuthUidWithAudit'],
 };
 
 const PRIVILEGED_LOADERS = [
@@ -206,8 +204,10 @@ export function buildCompletionMatrix(root: string): JsonRecord {
       roleFixtureSource.includes(target.stable_target_id) &&
       roleFixtureSource.includes('U3B-SUPERADMIN-WRITE-ROLE-GUARD')
     );
+    const realFixtureId = `U3B-REAL-${target.stable_target_id}`;
     const postgresFixturesPresent = !auditRequired || (
-      fixtureSource.includes(target.stable_target_id) &&
+      fixtureSource.includes(realFixtureId) &&
+      target.required_test_ids.every((testId: string) => fixtureSource.includes(testId)) &&
       SUPERADMIN_SHARED_POSTGRES_FIXTURES.every((fixture) => fixtureSource.includes(fixture))
     );
     const namedFixturePresent = roleFixturePresent && postgresFixturesPresent;
@@ -234,11 +234,12 @@ export function buildCompletionMatrix(root: string): JsonRecord {
       audit_requirement: target.audit,
       success_failure_audit_present: auditPresent,
       executable_fixture: auditRequired ? {
-        stable_id: `U3B-POSTGRES-${target.stable_target_id}`,
+        stable_id: realFixtureId,
         files: [SUPERADMIN_ROLE_FIXTURE_FILE, SUPERADMIN_FIXTURE_FILE],
         named_fixture_present: namedFixturePresent,
         role_fixture: 'U3B-SUPERADMIN-WRITE-ROLE-GUARD',
-        postgres_fixtures: SUPERADMIN_SHARED_POSTGRES_FIXTURES,
+        postgres_fixtures: [realFixtureId, ...SUPERADMIN_SHARED_POSTGRES_FIXTURES],
+        required_test_ids: target.required_test_ids,
         transaction_authority_present: transactionAuthorityPresent,
         required_authorities: requiredAuthorities,
         verifies: ['exact_role_guard', 'platform_scope', 'success_audit', 'failure_audit', 'transaction_or_durable_ordering', 'idempotency', 'deleted_terminal_policy'],
@@ -409,13 +410,16 @@ export function validateCompletionMatrix(root: string, matrix = buildCompletionM
   if (existsSync(resolve(root, 'src/app/(auth)/superadmin/[...path]/page.tsx'))) throw new U3BValidationError('superadmin catch-all is forbidden');
   passes.push('no_superadmin_catchall');
   invariant(root, 'src/lib/navigation/compatibility-policy.ts', [/status: 301/, /SOURCE_BOOKMARK/, /memberQueryAuthorized/, /WORKSPACE_COMPATIBILITY_NOT_APPROVED/], [/status: 302/, /destination:\s*searchParams/], passes, 'terminal_redirect_policy');
-  invariant(root, 'src/modules/admin/services/platform-audit-service.ts', [/ON CONFLICT \(["']?idempotency_key["']?\)/, /AUDIT_IDEMPOTENCY_CONFLICT/, /canonicalizeJson/], [/findFirst\s*\(/], passes, 'atomic_audit_authority');
+  invariant(root, 'src/modules/admin/services/platform-audit-service.ts', [/ON CONFLICT \(["']?idempotency_key["']?\) WHERE ["']?idempotency_key["']? IS NOT NULL/, /AUDIT_IDEMPOTENCY_CONFLICT/, /canonicalizeJson/], [/findFirst\s*\(/], passes, 'atomic_audit_authority');
   invariant(root, 'src/modules/admin/workers/audit-outbox-worker.ts', [/FOR UPDATE SKIP LOCKED/, /dead_letter/, /next_attempt_at/, /retention/], [], passes, 'outbox_replay_authority');
   invariant(root, 'src/modules/admin/workers/audit-outbox-worker.ts', [/NOT EXISTS[\s\S]*earlier\."correlation_id"/, /audit_operational_alerts/, /delivery_receipt/], [/"alerted_at"\s*=\s*\$\{deadLetter/], passes, 'ordered_replay_and_alert_receipt_authority');
   invariant(root, 'prisma/schema.prisma', [
-    /idempotencyKey\s+String\?\s+@unique\(map:\s*"audit_logs_idempotency_key_unique"\)/,
-  ], [], passes, 'prisma_schema_idempotency_authority');
-  invariant(root, 'supabase/migrations/20260717135456_u3b_three_space_audit.sql', [/CREATE UNIQUE INDEX[\s\S]*idempotency/i, /audit_event_outbox/i, /audit_operational_alerts/i, /delivery_receipt/i, /legal_hold/i, /retention_until/i], [], passes, 'database_audit_authority');
+    /idempotencyKey\s+String\?\s+@map\("idempotency_key"\)/,
+    /Prisma cannot represent `WHERE idempotency_key IS NOT NULL`/,
+  ], [/@unique\(map:\s*"audit_logs_idempotency_key_unique"\)/], passes, 'prisma_schema_idempotency_authority');
+  invariant(root, 'supabase/migrations/20260717135456_u3b_three_space_audit.sql', [/CREATE UNIQUE INDEX[\s\S]*ON "audit_logs" \("idempotency_key"\)[\s\S]*WHERE "idempotency_key" IS NOT NULL/, /audit_event_outbox/i, /audit_operational_alerts/i, /delivery_receipt/i, /legal_hold/i, /retention_until/i], [], passes, 'database_audit_authority');
+  invariant(root, 'scripts/u3b-admin-migration/install-audit-idempotency-authority.sql', [/CREATE UNIQUE INDEX[\s\S]*WHERE "idempotency_key" IS NOT NULL/], [], passes, 'db_push_partial_identity_authority');
+  invariant(root, '.github/workflows/ci.yml', [/Install U3B partial audit identity authority[\s\S]*install-audit-idempotency-authority\.sql/], [], passes, 'ci_partial_identity_bootstrap');
   const productionSources = [
     'src/app/api/v1/lead-magnet/publish/route.ts',
     'src/app/api/v1/video/projects/[id]/publish/route.ts',
