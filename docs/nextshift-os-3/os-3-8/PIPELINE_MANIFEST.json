@@ -752,9 +752,63 @@
           "depends_on": [
             "U3ADR"
           ],
-          "status": "running",
-          "verification": null,
-          "evidence": null,
+          "status": "completed",
+          "verification": {
+            "status": "passed",
+            "task_id": "U3B",
+            "task_verification_policy": "actual_checks_required",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "chore/os-3.8-u3b-20260717135456",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/100",
+            "verified_head_sha": "bbcb6fcc8e0bcc77edc1ee369dd5cf8ba7f2a90d",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3B_IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3B_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "passed",
+            "architecture_review": {
+              "review_id": 4728613523,
+              "verdict": "PASS",
+              "reviewed_sha": "bbcb6fcc8e0bcc77edc1ee369dd5cf8ba7f2a90d"
+            },
+            "verified_at": "2026-07-18T15:50:01Z"
+          },
+          "evidence": {
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/100",
+            "merge_sha": "2444010463c2b75957c5b75125b3d55beb80f4f3",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3B_IMPLEMENTATION_REPORT.md",
+            "verification": {
+              "status": "passed",
+              "task_id": "U3B",
+              "task_verification_policy": "actual_checks_required",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "base_branch": "planning/os-3.8-product-usability",
+              "task_branch": "chore/os-3.8-u3b-20260717135456",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/100",
+              "verified_head_sha": "bbcb6fcc8e0bcc77edc1ee369dd5cf8ba7f2a90d",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U3B_IMPLEMENTATION_REPORT.md",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U3B_DISPATCH.json",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "checks": "passed",
+              "architecture_review": {
+                "review_id": 4728613523,
+                "verdict": "PASS",
+                "reviewed_sha": "bbcb6fcc8e0bcc77edc1ee369dd5cf8ba7f2a90d"
+              },
+              "verified_at": "2026-07-18T15:50:01Z"
+            },
+            "validation": {
+              "checks": "passed",
+              "head_sha": "bbcb6fcc8e0bcc77edc1ee369dd5cf8ba7f2a90d"
+            },
+            "recovered": true,
+            "recovered_at": "2026-07-18T15:50:01Z",
+            "github_merged_at": "2026-07-18T14:06:16Z",
+            "execution_mode": "manual_codex_desktop",
+            "adoption_mode": "manual_governance_backfill"
+          },
           "dispatch_gate": {
             "gate_id": "U3-AUDITLOG-ADR",
             "task_id": "U3ADR",
