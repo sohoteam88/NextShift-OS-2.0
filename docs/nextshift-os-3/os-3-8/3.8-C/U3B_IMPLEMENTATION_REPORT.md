@@ -73,13 +73,15 @@ Final matrix status: `198 complete`, `205 intentionally_retained_compatibility_s
 | Pipeline/test shell syntax | PASS |
 | Pipeline/test ShellCheck | PASS — 0 issues |
 | Playwright discovery | PASS — 58 tests in 10 files |
-| Local browser E2E execution | NOT RUN — no task-local browser environment or E2E credentials were introduced; exact-head GitHub E2E remains required |
+| Local browser E2E execution | NOT RUN — no task-local browser environment or E2E credentials were introduced |
+| GitHub Actions at code-complete head `8fae25a219667e8ddd919c192c925d8ff7258dc4` | PASS — run `29624402973`; Type Check + Lint + Build, Tests, E2E Secret Check, and E2E Tests all passed |
+| GitHub Playwright at code-complete head | PASS — 57 passed, 1 skipped (58 tests); the separate command-center flag-off check also passed 1/1 |
 | `pnpm docs:audit-authority` | PASS; generated audit outputs were not included in this task diff |
 | `pnpm docs:navigation` | PASS with 222 existing warnings |
 | `pnpm docs:links` | BASELINE-EXISTING FAILURE — `WAVE_EXECUTION_CONTRACT.md:13` points to missing `../../OS_3_8_BLUEPRINT.md`; U3B adds no documentation link failure |
 | `git diff --check` | PASS |
 
-GitHub Actions results are recorded on Draft PR #100 after the final exact head is pushed; this report does not pre-claim a remote check result.
+The final report-only consolidation head is re-checked by GitHub Actions and recorded in Draft PR #100. This report records only the already completed run above and does not pre-claim the result of a later head.
 
 ## Changed-file boundaries
 
