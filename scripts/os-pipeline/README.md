@@ -418,15 +418,18 @@ The transaction commits the Manifest approval and this canonical artifact
 together:
 
 ```text
-GATE=STEVEN-IA
+HUMAN_GATE=STEVEN-IA
 DECISION=APPROVED
-APPROVER=stevenmacmini
+APPROVED_BY=stevenmacmini
 APPROVED_AT=2026-07-15T12:00:00Z
 AR_W2_REVIEWED_SHA=<AR-W2 reviewed SHA>
 ```
 
 An identical replay is a clean no-op. A different or incomplete duplicate
-fails closed.
+fails closed. Each required control field must appear exactly once, the
+artifact must be a regular non-symlink repository file, and the legacy
+`GATE=` / `APPROVER=` aliases are rejected rather than treated as a second
+authority schema.
 
 ## Final Audit
 
@@ -534,7 +537,7 @@ Expected pipeline-specific coverage is:
   verify/merge, regenerated checkpoint, source-review archival, attempt limits,
   branch-only/open/merged recovery, and two reviewed failures to
   `needs_human`.
-- `tests/governance-integration.sh`: **18 named Group D real-Git fixtures**:
+- `tests/governance-integration.sh`: **31 named Group D real-Git fixtures**:
   `steven_ia_transaction`, `steven_ia_duplicate_rejected`,
   `final_audit_request_once`, `final_audit_running_clean_wait`,
   `final_audit_pass_persistence`, `final_audit_wrong_sha_rejected`,
@@ -549,7 +552,17 @@ Expected pipeline-specific coverage is:
   `final_audit_code_change_after_request_rejected`,
   `final_audit_request_duplicate_clean_stop_or_rejected_without_mutation`,
   `final_audit_request_push_failure_rolls_back`, and
-  `final_audit_request_keeps_release_gate_blocked`.
+  `final_audit_request_keeps_release_gate_blocked`; plus thirteen STEVEN-IA
+  artifact-contract fixtures: `canonical_human_gate_artifact_accepted`,
+  `legacy_gate_key_rejected`, `legacy_approver_key_rejected`,
+  `mixed_canonical_and_legacy_authority_rejected`,
+  `duplicate_human_gate_field_rejected`,
+  `duplicate_approved_by_field_rejected`,
+  `mismatched_human_gate_id_rejected`, `mismatched_approved_by_rejected`,
+  `mismatched_approved_at_rejected`, `mismatched_reviewed_sha_rejected`,
+  `approval_artifact_symlink_rejected`,
+  `pipeline_generated_approval_uses_canonical_fields`, and
+  `real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites`.
 - `tests/safety-integration.sh`: **14 named Round 5 real-Git fixtures** covering
   normal task merged/running crash recovery and ambiguous identity, exact-head
   merge races, Wave checkpoint PASS persistence and stale-product rejection,

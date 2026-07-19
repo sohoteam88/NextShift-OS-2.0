@@ -71,9 +71,9 @@ write_approval_artifact() {
   artifact_relative="$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approval_artifact' "$root/$MANIFEST_REL")"
   mkdir -p "$root/$(dirname "$artifact_relative")"
   printf '%s\n' \
-    'GATE=STEVEN-IA' \
+    'HUMAN_GATE=STEVEN-IA' \
     'DECISION=APPROVED' \
-    "APPROVER=$APPROVER" \
+    "APPROVED_BY=$APPROVER" \
     "APPROVED_AT=$APPROVED_AT" \
     "AR_W2_REVIEWED_SHA=$reviewed_sha" >"$root/$artifact_relative"
 }
@@ -266,8 +266,38 @@ assert_rejected_request_unchanged() {
   [[ ! -e "$STATE/$REQUEST_REL" ]] || fail 'rejected request left a request artifact'
   assert_eq "$(git -C "$STATE" rev-parse HEAD)" "$REJECTED_LOCAL_HEAD" 'rejected request local HEAD'
   assert_eq "$(git --git-dir="$REMOTE" rev-parse refs/heads/planning)" "$REJECTED_REMOTE_HEAD" 'rejected request remote HEAD'
+  assert_eq "$(jq -r '.final_audit.status' "$MANIFEST")" pending 'rejected request Final Audit status'
+  assert_eq "$(jq -r '.release_gate.status' "$MANIFEST")" blocked 'rejected request release gate'
   assert_synced_clean
   assert_no_release_side_effects
+}
+
+commit_approval_fixture_state() {
+  local message="$1"
+  git -C "$STATE" add "$APPROVAL_REL"
+  git -C "$STATE" commit -m "$message" >/dev/null
+  git -C "$STATE" push origin planning >/dev/null
+  PRE_REQUEST_SHA="$(git -C "$STATE" rev-parse HEAD)"
+}
+
+replace_approval_line() {
+  local pattern="$1" replacement="$2"
+  sed -i.bak "s|$pattern|$replacement|" "$STATE/$APPROVAL_REL"
+  rm -f "$STATE/$APPROVAL_REL.bak"
+}
+
+assert_current_approval_rejected() {
+  local name="$1" rc
+  snapshot_rejected_request
+  set +e
+  pipeline --cycle >"$CONTROL/$name.log" 2>&1
+  rc=$?
+  set -e
+  (( rc != 0 )) || fail "$name was accepted"
+  grep -Fq 'final audit prerequisites are no longer satisfied' "$CONTROL/$name.log" ||
+    fail "$name did not fail at the human-gate artifact contract"
+  assert_rejected_request_unchanged
+  pass "$name"
 }
 
 assert_rejected_result_unchanged() {
@@ -304,9 +334,9 @@ fixture_steven_ia_transaction() {
   }
   artifact="$STATE/$APPROVAL_REL"
   expected="$(printf '%s\n' \
-    'GATE=STEVEN-IA' \
+    'HUMAN_GATE=STEVEN-IA' \
     'DECISION=APPROVED' \
-    "APPROVER=$APPROVER" \
+    "APPROVED_BY=$APPROVER" \
     "APPROVED_AT=$APPROVED_AT" \
     "AR_W2_REVIEWED_SHA=$PRODUCT_SHA")"
   assert_eq "$(cat "$artifact")" "$expected" 'canonical STEVEN-IA approval artifact'
@@ -652,6 +682,142 @@ fixture_final_audit_request_keeps_release_gate_blocked() {
   pass final_audit_request_keeps_release_gate_blocked
 }
 
+fixture_canonical_human_gate_artifact_accepted() {
+  create_case canonical_human_gate_artifact_accepted final
+  request_final_audit
+  assert_eq "$(jq -r '.final_audit.status' "$MANIFEST")" running 'canonical artifact Final Audit status'
+  assert_eq "$(jq -r '.release_gate.status' "$MANIFEST")" blocked 'canonical artifact release gate'
+  assert_synced_clean
+  assert_no_release_side_effects
+  pass canonical_human_gate_artifact_accepted
+}
+
+fixture_legacy_gate_key_rejected() {
+  create_case legacy_gate_key_rejected final
+  replace_approval_line '^HUMAN_GATE=' 'GATE='
+  commit_approval_fixture_state 'fixture legacy gate key'
+  assert_current_approval_rejected legacy_gate_key_rejected
+}
+
+fixture_legacy_approver_key_rejected() {
+  create_case legacy_approver_key_rejected final
+  replace_approval_line '^APPROVED_BY=' 'APPROVER='
+  commit_approval_fixture_state 'fixture legacy approver key'
+  assert_current_approval_rejected legacy_approver_key_rejected
+}
+
+fixture_mixed_canonical_and_legacy_authority_rejected() {
+  create_case mixed_canonical_and_legacy_authority_rejected final
+  printf '%s\n' 'GATE=STEVEN-IA' "APPROVER=$APPROVER" >>"$STATE/$APPROVAL_REL"
+  commit_approval_fixture_state 'fixture mixed approval authority'
+  assert_current_approval_rejected mixed_canonical_and_legacy_authority_rejected
+}
+
+fixture_duplicate_human_gate_field_rejected() {
+  create_case duplicate_human_gate_field_rejected final
+  printf '%s\n' 'HUMAN_GATE=STEVEN-IA' >>"$STATE/$APPROVAL_REL"
+  commit_approval_fixture_state 'fixture duplicate human gate field'
+  assert_current_approval_rejected duplicate_human_gate_field_rejected
+}
+
+fixture_duplicate_approved_by_field_rejected() {
+  create_case duplicate_approved_by_field_rejected final
+  printf '%s\n' "APPROVED_BY=$APPROVER" >>"$STATE/$APPROVAL_REL"
+  commit_approval_fixture_state 'fixture duplicate approved by field'
+  assert_current_approval_rejected duplicate_approved_by_field_rejected
+}
+
+fixture_mismatched_human_gate_id_rejected() {
+  create_case mismatched_human_gate_id_rejected final
+  replace_approval_line '^HUMAN_GATE=.*' 'HUMAN_GATE=OTHER-GATE'
+  commit_approval_fixture_state 'fixture mismatched human gate id'
+  assert_current_approval_rejected mismatched_human_gate_id_rejected
+}
+
+fixture_mismatched_approved_by_rejected() {
+  create_case mismatched_approved_by_rejected final
+  replace_approval_line '^APPROVED_BY=.*' 'APPROVED_BY=different-approver'
+  commit_approval_fixture_state 'fixture mismatched approved by'
+  assert_current_approval_rejected mismatched_approved_by_rejected
+}
+
+fixture_mismatched_approved_at_rejected() {
+  create_case mismatched_approved_at_rejected final
+  replace_approval_line '^APPROVED_AT=.*' 'APPROVED_AT=2026-07-15T12:00:01Z'
+  commit_approval_fixture_state 'fixture mismatched approved at'
+  assert_current_approval_rejected mismatched_approved_at_rejected
+}
+
+fixture_mismatched_reviewed_sha_rejected() {
+  create_case mismatched_reviewed_sha_rejected final
+  replace_approval_line '^AR_W2_REVIEWED_SHA=.*' 'AR_W2_REVIEWED_SHA=0000000000000000000000000000000000000000'
+  commit_approval_fixture_state 'fixture mismatched reviewed sha'
+  assert_current_approval_rejected mismatched_reviewed_sha_rejected
+}
+
+fixture_approval_artifact_symlink_rejected() {
+  create_case approval_artifact_symlink_rejected final
+  cp "$STATE/$APPROVAL_REL" "$CONTROL/external-approval.md"
+  rm "$STATE/$APPROVAL_REL"
+  ln -s "$CONTROL/external-approval.md" "$STATE/$APPROVAL_REL"
+  commit_approval_fixture_state 'fixture symlink approval artifact'
+  assert_current_approval_rejected approval_artifact_symlink_rejected
+}
+
+fixture_pipeline_generated_approval_uses_canonical_fields() {
+  local artifact
+  create_case pipeline_generated_approval_uses_canonical_fields steven
+  pipeline --record-steven-ia "$APPROVER" "$APPROVED_AT" >"$CONTROL/generated-approval.log" 2>&1 || {
+    sed -n '1,200p' "$CONTROL/generated-approval.log" >&2
+    fail 'Pipeline did not generate the canonical STEVEN-IA approval'
+  }
+  artifact="$STATE/$APPROVAL_REL"
+  grep -Fqx 'HUMAN_GATE=STEVEN-IA' "$artifact" || fail 'generated approval lacks HUMAN_GATE'
+  grep -Fqx "APPROVED_BY=$APPROVER" "$artifact" || fail 'generated approval lacks APPROVED_BY'
+  ! grep -Eq '^(GATE|APPROVER)=' "$artifact" || fail 'generated approval contains a legacy authority alias'
+  assert_eq "$(awk -F= '$1 == "HUMAN_GATE" {n++} END {print n + 0}' "$artifact")" 1 'generated HUMAN_GATE count'
+  assert_eq "$(awk -F= '$1 == "APPROVED_BY" {n++} END {print n + 0}' "$artifact")" 1 'generated APPROVED_BY count'
+  assert_synced_clean
+  pass pipeline_generated_approval_uses_canonical_fields
+}
+
+fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites() {
+  local real_case real_remote real_state real_manifest real_request real_artifact real_lock
+  real_case="$TMP/real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites"
+  real_remote="$real_case/origin.git"
+  real_state="$real_case/state"
+  mkdir -p "$real_case/control" "$real_case/logs"
+  git clone --bare "$ROOT" "$real_remote" >/dev/null
+  git clone -b planning/os-3.8-product-usability "$real_remote" "$real_state" >/dev/null
+  git -C "$real_state" config user.email fixture@example.test
+  git -C "$real_state" config user.name fixture
+  real_manifest="$real_state/$MANIFEST_REL"
+  real_request="$real_state/$(jq -r '.final_audit.request' "$real_manifest")"
+  real_artifact="$real_state/$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approval_artifact' "$real_manifest")"
+  [[ -f "$real_artifact" && ! -L "$real_artifact" ]] || fail 'real repository STEVEN-IA artifact is not a regular file'
+  PATH="$BIN:$PATH" \
+  FIXTURE_GH_CALLS="$GH_CALLS" \
+  PIPELINE_ALLOW_LOCAL_TEST_REMOTE=1 \
+  PIPELINE_EXPECTED_REPOSITORY="sohoteam88/NextShift-OS-2.0" \
+  REPO_DIR="$real_state" \
+  MANIFEST_PATH="$real_manifest" \
+  CONTROL_ROOT="$real_case/control" \
+  LOG_DIR="$real_case/logs" \
+  "$PIPELINE" --cycle >"$real_case/control/request.log" 2>&1 || {
+    sed -n '1,240p' "$real_case/control/request.log" >&2
+    fail 'real repository STEVEN-IA artifact did not satisfy Final Audit prerequisites'
+  }
+  assert_eq "$(jq -r '.final_audit.status' "$real_manifest")" running 'real artifact Final Audit status'
+  assert_eq "$(jq -r '.release_gate.status' "$real_manifest")" blocked 'real artifact release gate'
+  [[ -f "$real_request" ]] || fail 'real artifact fixture did not create its fixture-only request'
+  assert_eq "$(git -C "$real_state" rev-parse HEAD)" "$(git --git-dir="$real_remote" rev-parse refs/heads/planning/os-3.8-product-usability)" 'real artifact local/remote synchronization'
+  [[ -z "$(git -C "$real_state" status --porcelain)" ]] || fail 'real artifact fixture worktree is dirty'
+  real_lock="$(git -C "$real_state" rev-parse --git-common-dir)/os-pipeline-state.lock"
+  [[ "$real_lock" = /* ]] || real_lock="$real_state/$real_lock"
+  [[ ! -e "$real_lock" ]] || fail 'real artifact fixture state lock was not released'
+  pass real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites
+}
+
 fixture_steven_ia_transaction
 fixture_steven_ia_duplicate_rejected
 fixture_final_audit_request_once
@@ -670,4 +836,17 @@ fixture_final_audit_code_change_after_request_rejected
 fixture_final_audit_request_duplicate_clean_stop_or_rejected_without_mutation
 fixture_final_audit_request_push_failure_rolls_back
 fixture_final_audit_request_keeps_release_gate_blocked
-printf 'PASS: 18 Group D governance real-Git fixtures\n'
+fixture_canonical_human_gate_artifact_accepted
+fixture_legacy_gate_key_rejected
+fixture_legacy_approver_key_rejected
+fixture_mixed_canonical_and_legacy_authority_rejected
+fixture_duplicate_human_gate_field_rejected
+fixture_duplicate_approved_by_field_rejected
+fixture_mismatched_human_gate_id_rejected
+fixture_mismatched_approved_by_rejected
+fixture_mismatched_approved_at_rejected
+fixture_mismatched_reviewed_sha_rejected
+fixture_approval_artifact_symlink_rejected
+fixture_pipeline_generated_approval_uses_canonical_fields
+fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites
+printf 'PASS: 31 Group D governance real-Git fixtures\n'

@@ -113,9 +113,9 @@ set_gate() {
   ' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
   if [[ "$id" == "STEVEN-IA" && "$status" == "approved" ]]; then
     printf '%s\n' \
-      'GATE=STEVEN-IA' \
+      'HUMAN_GATE=STEVEN-IA' \
       'DECISION=APPROVED' \
-      'APPROVER=fixture' \
+      'APPROVED_BY=fixture' \
       'APPROVED_AT=2026-07-15T12:00:00Z' \
       'AR_W2_REVIEWED_SHA=0123456789012345678901234567890123456789' \
       >"$TMP_DIR/STEVEN_IA_APPROVAL.md"
