@@ -19,6 +19,11 @@ import { ClipboardButton } from '@/components/ui/ClipboardButton';
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import type { RevenueDriverResolvedIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 import type { WebinarPackage } from '../types';
+import {
+  generateWebinarWithReconciliation,
+  reconcileWebinarGeneration,
+  type WebinarGenerationOutcome,
+} from '../webinarGeneration';
 
 type Draft = {
   title: string;
@@ -61,7 +66,10 @@ export function WebinarDashboard() {
   const [deleting, setDeleting] = React.useState(false);
   const [confirmingRegeneration, setConfirmingRegeneration] =
     React.useState(false);
-  const [regenerationError, setRegenerationError] = React.useState('');
+  const [regenerationIssue, setRegenerationIssue] = React.useState<Extract<
+    WebinarGenerationOutcome,
+    { status: 'definite_failure' | 'ambiguous' }
+  > | null>(null);
   const [saved, setSaved] = React.useState<Draft | null>(null);
   const [draft, setDraft] = React.useState<Draft | null>(null);
   const [message, setMessage] = React.useState('');
@@ -90,44 +98,73 @@ export function WebinarDashboard() {
       feedback && feedback.id === activePackage?.id ? feedback.message : '',
     );
     generatedFeedback.current = null;
-    setRegenerationError('');
+    setRegenerationIssue(null);
     setEditing(false);
     setDeleting(false);
     setConfirmingRegeneration(false);
   }, [pkg?.id]);
 
   const generate = useMutation({
-    mutationFn: async ({ ownedSession }: { ownedSession: number }) => {
-      const response = await fetch('/api/v1/webinar-center/generate', {
-        method: 'POST',
-      });
-      const body = (await response.json().catch(() => ({}))) as {
-        data?: WebinarPackage;
-        error?: { message?: string };
-      };
-      if (!response.ok || !body.data) {
-        throw new Error(
-          body.error?.message ?? '重新生成失败，现有 Webinar 已保留。',
-        );
-      }
-      return { data: body.data, ownedSession };
+    mutationFn: async ({
+      ownedSession,
+      previousId,
+    }: {
+      ownedSession: number;
+      previousId: string | null;
+    }) => {
+      const outcome = await generateWebinarWithReconciliation(previousId);
+      return { outcome, ownedSession };
     },
-    onSuccess: ({ data, ownedSession }) => {
+    onSuccess: ({ outcome, ownedSession }) => {
       if (ownedSession !== session.current) return;
+      if (outcome.status !== 'success') {
+        setRegenerationIssue(outcome);
+        return;
+      }
+      const { data } = outcome;
       generatedFeedback.current = {
         id: data.id,
         message: pkg ? '重新生成成功。' : '生成成功。',
       };
-      setRegenerationError('');
+      setRegenerationIssue(null);
       queryClient.setQueryData(['webinar'], { data });
     },
     onError: (error, { ownedSession }) => {
       if (ownedSession !== session.current) return;
-      setRegenerationError(
-        error instanceof Error
-          ? error.message
-          : '重新生成失败，现有 Webinar 已保留。',
-      );
+      setRegenerationIssue({
+        status: 'ambiguous',
+        previousId: packageRef.current?.id ?? null,
+        error:
+          error instanceof Error
+            ? error.message
+            : '生成结果尚不明确，请重新检查状态。',
+      });
+    },
+  });
+
+  const recheckGeneration = useMutation({
+    mutationFn: async ({
+      ownedSession,
+      issue,
+    }: {
+      ownedSession: number;
+      issue: Extract<WebinarGenerationOutcome, { status: 'ambiguous' }>;
+    }) => {
+      const outcome = await reconcileWebinarGeneration(issue.previousId);
+      return { outcome, ownedSession };
+    },
+    onSuccess: ({ outcome, ownedSession }) => {
+      if (ownedSession !== session.current) return;
+      if (outcome.status !== 'success') {
+        setRegenerationIssue(outcome);
+        return;
+      }
+      generatedFeedback.current = {
+        id: outcome.data.id,
+        message: packageRef.current ? '重新生成成功。' : '生成成功。',
+      };
+      setRegenerationIssue(null);
+      queryClient.setQueryData(['webinar'], { data: outcome.data });
     },
   });
 
@@ -142,13 +179,16 @@ export function WebinarDashboard() {
   const dirty = Boolean(saved && draft && !same(saved, draft));
 
   function startGeneration() {
-    if (generate.isPending) return;
-    setRegenerationError('');
-    generate.mutate({ ownedSession: session.current });
+    if (generate.isPending || regenerationIssue?.status === 'ambiguous') return;
+    setRegenerationIssue(null);
+    generate.mutate({
+      ownedSession: session.current,
+      previousId: packageRef.current?.id ?? null,
+    });
   }
 
   function requestRegeneration() {
-    if (generate.isPending) return;
+    if (generate.isPending || regenerationIssue?.status === 'ambiguous') return;
     if (dirty) {
       setMessage('请先保存、取消或明确放弃未保存的编辑，再重新生成。');
       setEditing(true);
@@ -256,7 +296,8 @@ export function WebinarDashboard() {
         </div>
         {pkg ? (
           <div className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700">
-            <Trophy className="mr-1 inline h-3 w-3" />已保存
+            <Trophy className="mr-1 inline h-3 w-3" />
+            已保存
           </div>
         ) : null}
       </div>
@@ -268,7 +309,9 @@ export function WebinarDashboard() {
           <button
             type="button"
             onClick={startGeneration}
-            disabled={generate.isPending}
+            disabled={
+              generate.isPending || regenerationIssue?.status === 'ambiguous'
+            }
             className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-bold text-white disabled:opacity-50"
           >
             {generate.isPending ? (
@@ -278,16 +321,28 @@ export function WebinarDashboard() {
             )}
             生成完整 Webinar
           </button>
-          {regenerationError ? (
+          {regenerationIssue ? (
             <div role="alert" className="mt-4 text-sm text-red-700">
-              {regenerationError}
+              {regenerationIssue.error}
               <button
                 type="button"
-                onClick={startGeneration}
-                disabled={generate.isPending}
+                onClick={() => {
+                  if (regenerationIssue.status === 'ambiguous') {
+                    recheckGeneration.mutate({
+                      ownedSession: session.current,
+                      issue: regenerationIssue,
+                    });
+                  } else {
+                    startGeneration();
+                  }
+                }}
+                disabled={generate.isPending || recheckGeneration.isPending}
                 className="ml-3 inline-flex items-center gap-1 underline disabled:opacity-50"
               >
-                <RefreshCw className="h-4 w-4" />重试
+                <RefreshCw className="h-4 w-4" />
+                {regenerationIssue.status === 'ambiguous'
+                  ? '重新检查状态'
+                  : '重试'}
               </button>
             </div>
           ) : null}
@@ -299,15 +354,20 @@ export function WebinarDashboard() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={generate.isPending}
+              disabled={
+                generate.isPending || regenerationIssue?.status === 'ambiguous'
+              }
               onClick={() => setEditing(true)}
               className="inline-flex min-h-10 items-center gap-2 rounded-md border px-3 disabled:opacity-50"
             >
-              <Pencil className="h-4 w-4" />编辑
+              <Pencil className="h-4 w-4" />
+              编辑
             </button>
             <button
               type="button"
-              disabled={generate.isPending}
+              disabled={
+                generate.isPending || regenerationIssue?.status === 'ambiguous'
+              }
               onClick={requestRegeneration}
               className="inline-flex min-h-10 items-center gap-2 rounded-md border border-blue-200 px-3 text-blue-700 disabled:opacity-50"
             >
@@ -351,23 +411,36 @@ export function WebinarDashboard() {
               onClick={() => setDeleting(true)}
               className="inline-flex min-h-10 items-center gap-2 rounded-md border border-red-200 px-3 text-red-700 disabled:opacity-50"
             >
-              <Trash2 className="h-4 w-4" />删除
+              <Trash2 className="h-4 w-4" />
+              删除
             </button>
           </div>
 
-          {regenerationError ? (
+          {regenerationIssue ? (
             <div
               role="alert"
               className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
             >
-              <p>{regenerationError}</p>
+              <p>{regenerationIssue.error}</p>
               <button
                 type="button"
-                onClick={startGeneration}
-                disabled={generate.isPending}
+                onClick={() => {
+                  if (regenerationIssue.status === 'ambiguous') {
+                    recheckGeneration.mutate({
+                      ownedSession: session.current,
+                      issue: regenerationIssue,
+                    });
+                  } else {
+                    startGeneration();
+                  }
+                }}
+                disabled={generate.isPending || recheckGeneration.isPending}
                 className="mt-2 inline-flex min-h-10 items-center gap-2 font-semibold underline disabled:opacity-50"
               >
-                <RefreshCw className="h-4 w-4" />重试重新生成
+                <RefreshCw className="h-4 w-4" />
+                {regenerationIssue.status === 'ambiguous'
+                  ? '重新检查状态'
+                  : '重试重新生成'}
               </button>
             </div>
           ) : null}
@@ -504,7 +577,8 @@ export function WebinarDashboard() {
       >
         <div className="space-y-4 p-5">
           <p className="text-sm leading-6 text-[var(--color-text-muted)]">
-            只有生成成功才会替换当前 Webinar。失败时，当前 ID、内容、编辑器和复制状态都会保留。
+            只有生成成功才会替换当前 Webinar。失败时，当前
+            ID、内容、编辑器和复制状态都会保留。
           </p>
           <div className="flex justify-end gap-3">
             <button

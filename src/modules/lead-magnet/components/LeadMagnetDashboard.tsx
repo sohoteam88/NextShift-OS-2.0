@@ -26,7 +26,11 @@ import type {
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import { AccessibleDialog } from '@/components/ui/AccessibleDialog';
 import type { LeadMagnetConfig, LeadMagnetTrack } from '../types';
-import { generateLeadMagnetTracks } from '../leadMagnetGeneration';
+import {
+  generateLeadMagnetTracks,
+  reconcileLeadMagnetTrack,
+  type LeadMagnetGenerationOutcome,
+} from '../leadMagnetGeneration';
 import { LeadMagnetWorkingLoopCard } from './LeadMagnetWorkingLoopCard';
 
 type BrandProfile = Record<string, unknown>;
@@ -245,10 +249,20 @@ function ReadinessGate({
 
 export function LeadMagnetDashboard() {
   const queryClient = useQueryClient();
-  const [generationErrors, setGenerationErrors] = useState<
-    Partial<Record<LeadMagnetTrack, string>>
+  const [generationIssues, setGenerationIssues] = useState<
+    Partial<
+      Record<
+        LeadMagnetTrack,
+        Extract<
+          LeadMagnetGenerationOutcome,
+          { status: 'definite_failure' | 'ambiguous' }
+        >
+      >
+    >
   >({});
-  const [replaceTrack, setReplaceTrack] = useState<LeadMagnetTrack | null>(null);
+  const [replaceTrack, setReplaceTrack] = useState<LeadMagnetTrack | null>(
+    null,
+  );
   const brandProfileQuery = useQuery({
     queryKey: ['brand-builder-profile'],
     queryFn: async () => {
@@ -278,56 +292,71 @@ export function LeadMagnetDashboard() {
     staleTime: 30_000,
   });
 
+  function currentTrackResource(track: LeadMagnetTrack) {
+    const current = queryClient.getQueryData<LeadMagnetResponse>([
+      'lead-magnet',
+    ]);
+    return (
+      current?.trackLeadMagnets?.[track] ??
+      (track === 'retail' ? current?.data : null) ??
+      null
+    );
+  }
+
+  function applyGenerationOutcomes(outcomes: LeadMagnetGenerationOutcome[]) {
+    const successes = outcomes.filter(
+      (
+        outcome,
+      ): outcome is Extract<
+        LeadMagnetGenerationOutcome,
+        { status: 'success' }
+      > => outcome.status === 'success',
+    );
+    setGenerationIssues((current) => {
+      const next = { ...current };
+      for (const outcome of outcomes) {
+        if (outcome.status === 'success') delete next[outcome.track];
+        else next[outcome.track] = outcome;
+      }
+      return next;
+    });
+    if (successes.length === 0) return;
+    queryClient.setQueryData<LeadMagnetResponse>(['lead-magnet'], (current) => {
+      const tracks: Record<LeadMagnetTrack, LeadMagnetConfig | null> = {
+        retail: current?.trackLeadMagnets?.retail ?? current?.data ?? null,
+        recruitment: current?.trackLeadMagnets?.recruitment ?? null,
+      };
+      for (const outcome of successes) tracks[outcome.track] = outcome.data;
+      return { data: tracks.retail, trackLeadMagnets: tracks };
+    });
+    void queryClient.invalidateQueries({ queryKey: ['lead-magnet'] });
+    void queryClient.invalidateQueries({ queryKey: ['dashboard-projection'] });
+  }
+
   const generateResources = useMutation({
     mutationFn: async (requestedTracks: LeadMagnetTrack[]) => {
       const outcomes = await generateLeadMagnetTracks(
         requestedTracks.map((trackId) => {
           const track = TRACKS.find((candidate) => candidate.id === trackId);
           if (!track) throw new Error('未知的引流资源方向。');
-          return { track: track.id, type: track.recommendedType };
+          return {
+            track: track.id,
+            type: track.recommendedType,
+            previousId: currentTrackResource(track.id)?.id ?? null,
+          };
         }),
       );
 
       return { requestedTracks, outcomes };
     },
-    onSuccess: ({ requestedTracks, outcomes }) => {
-      const successes = outcomes.filter(
-        (outcome): outcome is { track: LeadMagnetTrack; data: LeadMagnetConfig } =>
-          'data' in outcome,
-      );
-      setGenerationErrors((current) => {
-        const next = { ...current };
-        for (const track of requestedTracks) delete next[track];
-        for (const outcome of outcomes) {
-          if ('error' in outcome) next[outcome.track] = outcome.error;
-        }
-        return next;
-      });
-      if (successes.length > 0) {
-        queryClient.setQueryData<LeadMagnetResponse>(
-          ['lead-magnet'],
-          (current) => {
-            const tracks: Record<
-              LeadMagnetTrack,
-              LeadMagnetConfig | null
-            > = {
-              retail: current?.trackLeadMagnets?.retail ?? current?.data ?? null,
-              recruitment:
-                current?.trackLeadMagnets?.recruitment ?? null,
-            };
-            for (const outcome of successes) tracks[outcome.track] = outcome.data;
-            return {
-              data: tracks.retail,
-              trackLeadMagnets: tracks,
-            };
-          },
-        );
-      }
-      void queryClient.invalidateQueries({ queryKey: ['lead-magnet'] });
-      void queryClient.invalidateQueries({
-        queryKey: ['dashboard-projection'],
-      });
-    },
+    onSuccess: ({ outcomes }) => applyGenerationOutcomes(outcomes),
+  });
+
+  const recheckGeneration = useMutation({
+    mutationFn: (
+      issue: Extract<LeadMagnetGenerationOutcome, { status: 'ambiguous' }>,
+    ) => reconcileLeadMagnetTrack(issue.track, issue.previousId),
+    onSuccess: (outcome) => applyGenerationOutcomes([outcome]),
   });
 
   if (
@@ -359,10 +388,15 @@ export function LeadMagnetDashboard() {
     trackLeadMagnets.retail ?? leadMagnetQuery.data?.data ?? null;
   const recruitmentResource = trackLeadMagnets.recruitment ?? null;
   const hasGeneratedResources = Boolean(retailResource && recruitmentResource);
-  const hasAnyGeneratedResource = Boolean(retailResource || recruitmentResource);
+  const hasAnyGeneratedResource = Boolean(
+    retailResource || recruitmentResource,
+  );
   const missingTracks = TRACKS.filter((track) =>
     track.id === 'retail' ? !retailResource : !recruitmentResource,
   ).map((track) => track.id);
+  const hasAmbiguousGeneration = Object.values(generationIssues).some(
+    (issue) => issue?.status === 'ambiguous',
+  );
   const brandSummary = [
     {
       label: 'Brand DNA',
@@ -480,7 +514,9 @@ export function LeadMagnetDashboard() {
                 <button
                   type="button"
                   onClick={() => generateResources.mutate(missingTracks)}
-                  disabled={generateResources.isPending}
+                  disabled={
+                    generateResources.isPending || hasAmbiguousGeneration
+                  }
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
                 >
                   {generateResources.isPending ? (
@@ -509,28 +545,46 @@ export function LeadMagnetDashboard() {
               </Link>
             </div>
 
-            {Object.keys(generationErrors).length > 0 ? (
+            {Object.keys(generationIssues).length > 0 ? (
               <div className="mt-4 rounded-[var(--radius-md)] border border-red-100 bg-red-50 p-4">
                 <p className="text-sm font-semibold text-red-800">
                   部分引流资源尚未生成。
                 </p>
-                {TRACKS.filter((track) => generationErrors[track.id]).map(
-                  (track) => (
-                    <div key={track.id} className="mt-2 text-xs text-red-700">
-                      <p>
-                        {track.title}：{generationErrors[track.id]}
-                      </p>
-                      <button
-                        type="button"
-                        disabled={generateResources.isPending}
-                        onClick={() => generateResources.mutate([track.id])}
-                        className="mt-2 inline-flex items-center gap-2 font-semibold underline disabled:opacity-50"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                        只重试 {track.id === 'retail' ? 'Retail' : 'Recruitment'}
-                      </button>
-                    </div>
-                  ),
+                {TRACKS.filter((track) => generationIssues[track.id]).map(
+                  (track) => {
+                    const issue = generationIssues[track.id];
+                    if (!issue) return null;
+                    return (
+                      <div key={track.id} className="mt-2 text-xs text-red-700">
+                        <p>
+                          {track.title}：{issue.error}
+                        </p>
+                        <button
+                          type="button"
+                          disabled={
+                            generateResources.isPending ||
+                            recheckGeneration.isPending
+                          }
+                          onClick={() => {
+                            if (issue.status === 'ambiguous') {
+                              recheckGeneration.mutate(issue);
+                            } else {
+                              generateResources.mutate([track.id]);
+                            }
+                          }}
+                          className="mt-2 inline-flex items-center gap-2 font-semibold underline disabled:opacity-50"
+                        >
+                          <RefreshCw
+                            className="h-3.5 w-3.5"
+                            aria-hidden="true"
+                          />
+                          {issue.status === 'ambiguous'
+                            ? `重新检查 ${track.id === 'retail' ? 'Retail' : 'Recruitment'} 状态`
+                            : `只重试 ${track.id === 'retail' ? 'Retail' : 'Recruitment'}`}
+                        </button>
+                      </div>
+                    );
+                  },
                 )}
               </div>
             ) : null}
@@ -624,17 +678,24 @@ export function LeadMagnetDashboard() {
                       </p>
                       <button
                         type="button"
-                        disabled={generateResources.isPending}
+                        disabled={
+                          generateResources.isPending || hasAmbiguousGeneration
+                        }
                         onClick={() => setReplaceTrack(track.id)}
                         className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-md border border-emerald-300 bg-white px-3 text-xs font-semibold text-emerald-800 disabled:opacity-50"
                       >
                         <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                        重新生成 {track.id === 'retail' ? 'Retail' : 'Recruitment'}
+                        重新生成{' '}
+                        {track.id === 'retail' ? 'Retail' : 'Recruitment'}
                       </button>
                     </div>
-                  ) : generationErrors[track.id] ? (
-                    <p role="status" className="mt-3 text-xs font-semibold text-red-700">
-                      {track.id === 'retail' ? 'Retail' : 'Recruitment'} 生成失败，可单独重试。
+                  ) : generationIssues[track.id] ? (
+                    <p
+                      role="status"
+                      className="mt-3 text-xs font-semibold text-red-700"
+                    >
+                      {track.id === 'retail' ? 'Retail' : 'Recruitment'}{' '}
+                      生成失败，可单独重试。
                     </p>
                   ) : null}
                 </div>
@@ -709,7 +770,19 @@ export function LeadMagnetDashboard() {
             {[retailResource, recruitmentResource]
               .filter(Boolean)
               .map((resource) => (
-                <LeadMagnetWorkingLoopCard key={resource!.id} resource={resource!} track={resource!.track ?? (resource === retailResource ? 'retail' : 'recruitment')} onChanged={() => void queryClient.invalidateQueries({ queryKey: ['lead-magnet'] })} />
+                <LeadMagnetWorkingLoopCard
+                  key={resource!.id}
+                  resource={resource!}
+                  track={
+                    resource!.track ??
+                    (resource === retailResource ? 'retail' : 'recruitment')
+                  }
+                  onChanged={() =>
+                    void queryClient.invalidateQueries({
+                      queryKey: ['lead-magnet'],
+                    })
+                  }
+                />
               ))}
           </div>
         </section>
@@ -780,7 +853,9 @@ export function LeadMagnetDashboard() {
         title="确认替换这条引流资源？"
         description="成功后会产生新的 canonical ID，并替换当前 track。另一条 track 不会改变。"
         onRequestClose={() => {
-          if (!generateResources.isPending) setReplaceTrack(null);
+          if (!generateResources.isPending && !hasAmbiguousGeneration) {
+            setReplaceTrack(null);
+          }
         }}
         className="max-w-md"
       >
@@ -791,7 +866,7 @@ export function LeadMagnetDashboard() {
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              disabled={generateResources.isPending}
+              disabled={generateResources.isPending || hasAmbiguousGeneration}
               onClick={() => setReplaceTrack(null)}
               className="min-h-11 rounded-md border px-4"
             >
@@ -799,7 +874,11 @@ export function LeadMagnetDashboard() {
             </button>
             <button
               type="button"
-              disabled={generateResources.isPending || !replaceTrack}
+              disabled={
+                generateResources.isPending ||
+                hasAmbiguousGeneration ||
+                !replaceTrack
+              }
               onClick={() => {
                 if (!replaceTrack) return;
                 const confirmedTrack = replaceTrack;

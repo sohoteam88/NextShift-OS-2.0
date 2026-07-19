@@ -172,6 +172,47 @@ test.describe('E3B mounted working loops', () => {
     });
   }
 
+  test('E3B-LEAD-COMMIT-RESPONSE-LOSS: initial generation reconciles the canonical track without a second POST', async ({ page }) => {
+    await shell(page);
+    const tracks: Record<'retail' | 'recruitment', ReturnType<typeof lead> | null> = { retail: null, recruitment: lead('recruitment') };
+    let postCount = 0;
+    await page.route('**/api/v1/lead-magnet**', async (route) => {
+      const request = route.request(); const pathname = new URL(request.url()).pathname;
+      if (pathname.endsWith('/generate')) {
+        postCount += 1;
+        tracks.retail = { ...lead('retail'), id: 'lm-retail-committed-after-response-loss', title: 'Committed retail' };
+        await route.abort('connectionreset'); return;
+      }
+      await route.fulfill({ json: { data: tracks.retail, trackLeadMagnets: tracks } });
+    });
+    await page.goto('/lead-magnet');
+    await page.getByRole('button', { name: '生成缺少的资源' }).click();
+    const committed = page.locator('[data-canonical-id="lm-retail-committed-after-response-loss"]');
+    await expect(committed).toContainText('Committed retail'); expect(postCount).toBe(1);
+    await page.reload(); await expect(committed).toContainText('Committed retail'); expect(postCount).toBe(1);
+  });
+
+  test('E3B-LEAD-REPLACEMENT-RECONCILIATION: replacement response loss adopts the new exact ID once', async ({ page }) => {
+    await shell(page);
+    const tracks = { retail: lead('retail'), recruitment: lead('recruitment') };
+    let postCount = 0;
+    await page.route('**/api/v1/lead-magnet**', async (route) => {
+      const request = route.request(); const pathname = new URL(request.url()).pathname;
+      if (pathname.endsWith('/generate')) {
+        postCount += 1;
+        tracks.retail = { ...lead('retail'), id: 'lm-retail-replacement-after-response-loss', title: 'Reconciled replacement' };
+        await route.abort('connectionreset'); return;
+      }
+      await route.fulfill({ json: { data: tracks.retail, trackLeadMagnets: tracks } });
+    });
+    await page.goto('/lead-magnet');
+    await page.getByRole('button', { name: '重新生成 Retail' }).click();
+    await page.getByRole('button', { name: '确认并生成新版本' }).click();
+    const replacement = page.locator('[data-canonical-id="lm-retail-replacement-after-response-loss"]');
+    await expect(replacement).toContainText('Reconciled replacement'); expect(postCount).toBe(1);
+    await page.reload(); await expect(replacement).toBeVisible(); expect(postCount).toBe(1);
+  });
+
   test('Webinar reopens exact identity, edits same ID, copies current sections and preserves accessible delete cancel', async ({ page }) => {
     await page.route('**/api/v1/webinar-center', async (route) => { const method = route.request().method(); if (method === 'PATCH') { const patch = route.request().postDataJSON(); await route.fulfill({ json: { data: { ...webinar, topic: { ...webinar.topic, title: patch.title }, updatedAt: '2026-07-19T01:00:00.000Z', status: 'saved' } } }); } else await route.fulfill({ json: { data: webinar } }); });
     await page.goto('/webinar-center');
@@ -255,5 +296,42 @@ test.describe('E3B mounted working loops', () => {
     await page.reload();
     await expect(replacement).toContainText('Regenerated webinar');
     await expect(page.locator('[data-canonical-id="webinar-e2e"]')).toHaveCount(0);
+  });
+
+  test('E3B-WEBINAR-COMMIT-RESPONSE-LOSS: replacement reconciles and reopens the committed canonical ID', async ({ page }) => {
+    let current = structuredClone(webinar); let postCount = 0;
+    await page.route('**/api/v1/webinar-center**', async (route) => {
+      const request = route.request(); const pathname = new URL(request.url()).pathname;
+      if (pathname.endsWith('/generate')) {
+        postCount += 1;
+        current = { ...structuredClone(webinar), id: 'webinar-committed-after-response-loss', topic: { ...webinar.topic, title: 'Committed webinar' }, loomScript: 'Committed script' };
+        await route.abort('connectionreset'); return;
+      }
+      await route.fulfill({ json: { data: current } });
+    });
+    await page.goto('/webinar-center');
+    await page.getByRole('button', { name: '重新生成 Webinar' }).click();
+    await page.getByRole('button', { name: '确认生成新 Webinar' }).click();
+    const committed = page.locator('[data-canonical-id="webinar-committed-after-response-loss"]');
+    await expect(committed).toContainText('Committed webinar'); await expect(committed).toContainText('Committed script'); expect(postCount).toBe(1);
+    await page.reload(); await expect(committed).toContainText('Committed webinar'); expect(postCount).toBe(1);
+  });
+
+  test('E3B-AMBIGUOUS-RECONCILIATION-FAIL-CLOSED: failed rechecks expose no second generation action', async ({ page }) => {
+    let postCount = 0; let reconciliationFails = false;
+    await page.route('**/api/v1/webinar-center**', async (route) => {
+      const request = route.request(); const pathname = new URL(request.url()).pathname;
+      if (pathname.endsWith('/generate')) { postCount += 1; reconciliationFails = true; await route.abort('connectionreset'); return; }
+      if (reconciliationFails) { await route.fulfill({ status: 503, json: { error: 'unavailable' } }); return; }
+      await route.fulfill({ json: { data: webinar } });
+    });
+    await page.goto('/webinar-center');
+    await page.getByRole('button', { name: '重新生成 Webinar' }).click();
+    await page.getByRole('button', { name: '确认生成新 Webinar' }).click();
+    await expect(page.getByRole('button', { name: '重新检查状态' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '重新生成 Webinar' })).toBeDisabled();
+    await page.getByRole('button', { name: '重新检查状态' }).click();
+    await expect(page.getByRole('button', { name: '重新检查状态' })).toBeVisible(); expect(postCount).toBe(1);
+    await expect(page.locator('[data-canonical-id="webinar-e2e"]')).toContainText('Webinar title');
   });
 });

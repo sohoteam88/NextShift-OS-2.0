@@ -35,7 +35,7 @@ vi.mock('@/modules/brand-dna/services/BrandContextProvider', () => ({ getBrandCo
 
 import { writeClipboardText } from '@/lib/clipboard';
 import { leadMagnetDeleteSchema, leadMagnetPatchSchema } from '@/modules/lead-magnet/input';
-import { generateLeadMagnetTracks } from '@/modules/lead-magnet/leadMagnetGeneration';
+import { generateLeadMagnetTracks, reconcileLeadMagnetTrack } from '@/modules/lead-magnet/leadMagnetGeneration';
 import { leadMagnetService } from '@/modules/lead-magnet/leadMagnetService';
 import type { LeadMagnetConfig } from '@/modules/lead-magnet/types';
 import { productionPlanService } from '@/modules/video/services/production-plan-service';
@@ -46,6 +46,7 @@ import { generateFullWebinar } from '@/modules/webinar-center/webinarGenerators'
 import { webinarDeleteSchema, webinarPatchSchema } from '@/modules/webinar-center/input';
 import { webinarService } from '@/modules/webinar-center/webinarService';
 import type { WebinarPackage } from '@/modules/webinar-center/types';
+import { generateWebinarWithReconciliation, reconcileWebinarGeneration } from '@/modules/webinar-center/webinarGeneration';
 
 const user = { id: 'user-a', tenantId: 'tenant-a', email: 'member@example.test', role: 'member' as const, name: 'Member', preferredLanguage: 'zh', status: 'active' as const };
 const exactWhere = { id: 'video-1', tenantId: user.tenantId, userId: user.id };
@@ -241,6 +242,75 @@ describe('E3B stable GAP executable fixtures', () => {
       expect(calls).toEqual(['retail', 'recruitment', failedTrack]);
     },
   );
+
+  it('E3B-LEAD-COMMIT-RESPONSE-LOSS: reconciles a committed track without a second POST', async () => {
+    const previous = lead('retail', 'lm-retail-before');
+    const committed = lead('retail', 'lm-retail-committed');
+    let canonical = previous; let postCount = 0; let getCount = 0;
+    const request = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') { postCount += 1; canonical = committed; throw new TypeError('response connection lost after commit'); }
+      getCount += 1;
+      return new Response(JSON.stringify({ data: canonical, trackLeadMagnets: { retail: canonical, recruitment: null } }), { status: 200 });
+    });
+    const [outcome] = await generateLeadMagnetTracks(
+      [{ track: 'retail', type: 'guide', previousId: previous.id }], request as typeof fetch,
+    );
+    expect(outcome).toMatchObject({ status: 'success', source: 'reconciliation', previousId: previous.id, data: { id: committed.id } });
+    expect(postCount).toBe(1); expect(getCount).toBe(1);
+  });
+
+  it('E3B-LEAD-REPLACEMENT-RECONCILIATION: adopts the exact replacement after a malformed success response', async () => {
+    const previous = lead('recruitment', 'lm-recruitment-before');
+    const committed = lead('recruitment', 'lm-recruitment-committed');
+    let postCount = 0;
+    const request = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') { postCount += 1; return new Response('{malformed', { status: 200 }); }
+      return new Response(JSON.stringify({ data: null, trackLeadMagnets: { retail: null, recruitment: committed } }), { status: 200 });
+    });
+    const [outcome] = await generateLeadMagnetTracks(
+      [{ track: 'recruitment', type: 'checklist', previousId: previous.id }], request as typeof fetch,
+    );
+    expect(outcome).toMatchObject({ status: 'success', source: 'reconciliation', data: { id: committed.id } });
+    expect(postCount).toBe(1);
+  });
+
+  it.each([[null, 'initial'], ['webinar-before', 'replacement']] as const)(
+    'E3B-WEBINAR-COMMIT-RESPONSE-LOSS: reconciles %s generation without duplicate POST (%s)',
+    async (previousId, _mode) => {
+      const committed = { ...generateFullWebinar(brand as never), id: `webinar-committed-${previousId ?? 'initial'}` };
+      let postCount = 0; let getCount = 0;
+      const request = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        if (init?.method === 'POST') { postCount += 1; throw new TypeError('response connection lost after commit'); }
+        getCount += 1; return new Response(JSON.stringify({ data: committed }), { status: 200 });
+      });
+      const outcome = await generateWebinarWithReconciliation(previousId, request as typeof fetch);
+      expect(outcome).toMatchObject({ status: 'success', source: 'reconciliation', previousId, data: { id: committed.id } });
+      expect(postCount).toBe(1); expect(getCount).toBe(1);
+    },
+  );
+
+  it('E3B-AMBIGUOUS-RECONCILIATION-FAIL-CLOSED: failed canonical checks never issue a second generation POST', async () => {
+    let leadPostCount = 0;
+    const leadRequest = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') { leadPostCount += 1; throw new TypeError('response lost'); }
+      return new Response(JSON.stringify({ error: 'unavailable' }), { status: 503 });
+    });
+    const [leadOutcome] = await generateLeadMagnetTracks(
+      [{ track: 'retail', type: 'guide', previousId: 'lm-before' }], leadRequest as typeof fetch,
+    );
+    expect(leadOutcome?.status).toBe('ambiguous');
+    await expect(reconcileLeadMagnetTrack('retail', 'lm-before', leadRequest as typeof fetch)).resolves.toMatchObject({ status: 'ambiguous' });
+    expect(leadPostCount).toBe(1);
+
+    let webinarPostCount = 0;
+    const webinarRequest = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') { webinarPostCount += 1; return new Response('{malformed', { status: 200 }); }
+      return new Response(JSON.stringify({ error: 'unavailable' }), { status: 503 });
+    });
+    await expect(generateWebinarWithReconciliation('webinar-before', webinarRequest as typeof fetch)).resolves.toMatchObject({ status: 'ambiguous' });
+    await expect(reconcileWebinarGeneration('webinar-before', webinarRequest as typeof fetch)).resolves.toMatchObject({ status: 'ambiguous' });
+    expect(webinarPostCount).toBe(1);
+  });
 
   it('E3-GAP-WEBINAR-01: generation has stable identity and a failed replacement preserves the existing package', async () => {
     const existing = generateFullWebinar(brand as never); metadata = { ...metadata, webinar: existing };
