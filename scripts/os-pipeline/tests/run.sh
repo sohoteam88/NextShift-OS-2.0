@@ -165,6 +165,16 @@ jq '.waves[0].tasks[0].evidence.recovered=true | del(.waves[0].tasks[0].evidence
 if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/bad-recovery-timestamp.json" >/dev/null 2>&1; then fail "recovered task without recovery timestamp accepted"; fi
 pass=$((pass + 1))
 
+# Lifecycle dependency states are validated independently of action selection.
+fresh
+set_task E2 completed
+if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/manifest.json" >/dev/null 2>&1; then fail "completed task with incomplete task dependency accepted"; fi
+pass=$((pass + 1))
+fresh
+set_task E2 running
+if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/manifest.json" >/dev/null 2>&1; then fail "running task with incomplete task dependency accepted"; fi
+pass=$((pass + 1))
+
 # Initial selection and restart-safe task transition.
 fresh
 assert_eq "$(task)" E1 "initial selection"

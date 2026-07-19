@@ -1,0 +1,132 @@
+{
+  "schema": "nextshift.os3.8.task-dispatch",
+  "version": 1,
+  "task_id": "E3B",
+  "wave_id": "W3",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "task_verification_policy": "actual_checks_required",
+  "task_branch": "feature/os-3.8-e3b-proven-pattern-gaps",
+  "base_branch": "planning/os-3.8-product-usability",
+  "base_sha": "1dfec3f2a9ce85d3b14f55669e343ba24d0508c8",
+  "authorized_base_sha": "1dfec3f2a9ce85d3b14f55669e343ba24d0508c8",
+  "planning_sha_at_adoption": "688470906eea6970a0eebf8938472315d867e74c",
+  "pr_number": 103,
+  "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/103",
+  "verified_head_sha": "e588d3c44691ecde9350f7149dfc713540ba70a1",
+  "merge_sha": "688470906eea6970a0eebf8938472315d867e74c",
+  "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-D/E3B_IMPLEMENTATION_REPORT.md",
+  "implementation_report_sha256": "13b244cf4e0280ce2a8018455d5a2ef7f1f0321ea57cce0d8317d227b0ec088c",
+  "completion_matrix": "docs/nextshift-os-3/os-3-8/3.8-D/E3B_COMPLETION_MATRIX.json",
+  "completion_matrix_sha256": "0bff49b23bd656493fa6859a7bf1116f582a79ef8cea684200692dd83f3c2300",
+  "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/E3B_DISPATCH.json",
+  "report_exists_at_exact_head": true,
+  "report_in_pr_diff": true,
+  "completion_matrix_exists_at_exact_head": true,
+  "completion_matrix_in_pr_diff": true,
+  "checks": "passed",
+  "github_actions_run_id": 29676575619,
+  "check_runs": [
+    {
+      "name": "Type Check + Lint + Build",
+      "job_id": 88164972379,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "e588d3c44691ecde9350f7149dfc713540ba70a1",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29676575619/job/88164972379"
+    },
+    {
+      "name": "Tests",
+      "job_id": 88165290758,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "e588d3c44691ecde9350f7149dfc713540ba70a1",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29676575619/job/88165290758"
+    },
+    {
+      "name": "E2E Secret Check",
+      "job_id": 88165424907,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "e588d3c44691ecde9350f7149dfc713540ba70a1",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29676575619/job/88165424907"
+    },
+    {
+      "name": "E2E Tests",
+      "job_id": 88165431498,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "e588d3c44691ecde9350f7149dfc713540ba70a1",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29676575619/job/88165431498"
+    }
+  ],
+  "changed_files": [
+    "docs/nextshift-os-3/os-3-8/3.8-D/E3B_COMPLETION_MATRIX.json",
+    "docs/nextshift-os-3/os-3-8/3.8-D/E3B_IMPLEMENTATION_REPORT.md",
+    "src/__tests__/integration/e3b-lead-magnet-postgres.test.ts",
+    "src/__tests__/services/e3a-capability-revalidation.test.ts",
+    "src/__tests__/services/e3b-proven-pattern-gaps.test.ts",
+    "src/app/api/v1/lead-magnet/route.ts",
+    "src/app/api/v1/webinar-center/route.ts",
+    "src/components/ui/AccessibleDialog.tsx",
+    "src/components/ui/ClipboardButton.tsx",
+    "src/lib/clipboard.ts",
+    "src/modules/content-library/components/AccessibleDialog.tsx",
+    "src/modules/lead-magnet/components/LeadMagnetDashboard.tsx",
+    "src/modules/lead-magnet/components/LeadMagnetWorkingLoopCard.tsx",
+    "src/modules/lead-magnet/input.ts",
+    "src/modules/lead-magnet/leadMagnetGeneration.ts",
+    "src/modules/lead-magnet/leadMagnetService.ts",
+    "src/modules/video/components/DeleteVideoProjectButton.tsx",
+    "src/modules/video/components/MasterScriptEditor.tsx",
+    "src/modules/video/components/ProductionPlanView.tsx",
+    "src/modules/video/components/SubtitleView.tsx",
+    "src/modules/video/components/VideoProjectDetail.tsx",
+    "src/modules/video/components/VideoProjectsList.tsx",
+    "src/modules/video/services/production-plan-service.ts",
+    "src/modules/video/services/video-finalize-service.ts",
+    "src/modules/video/services/video-project-service.ts",
+    "src/modules/webinar-center/components/WebinarDashboard.tsx",
+    "src/modules/webinar-center/input.ts",
+    "src/modules/webinar-center/types.ts",
+    "src/modules/webinar-center/webinarGeneration.ts",
+    "src/modules/webinar-center/webinarGenerators.ts",
+    "src/modules/webinar-center/webinarService.ts",
+    "tests/e2e/e3a-capability-revalidation.spec.ts",
+    "tests/e2e/e3b-proven-pattern-gaps.spec.ts"
+  ],
+  "changed_files_evidence": {
+    "source": "github_exact_pr_diff",
+    "count": 33,
+    "canonicalization": "lexicographically_sorted_compact_json_array",
+    "sha256": "26ca1f15e60175d6f4c66ca70c80a377bb34e5ffbf65902abed0c3fb0cb869de"
+  },
+  "architecture_review": {
+    "review_id": 4730287342,
+    "verdict": "PASS",
+    "reviewed_sha": "e588d3c44691ecde9350f7149dfc713540ba70a1",
+    "review_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/103#pullrequestreview-4730287342",
+    "exact_head_pass_review_count": 1
+  },
+  "capability_matrix": {
+    "pass": 18,
+    "gap": 0,
+    "not_applicable": 0,
+    "total": 18
+  },
+  "stable_gap_closure": {
+    "closed": 11,
+    "total": 11
+  },
+  "merge_ancestry": {
+    "merge_sha_in_planning_history": true,
+    "verified_against_planning_sha": "688470906eea6970a0eebf8938472315d867e74c"
+  },
+  "execution_mode": "manual_codex_desktop",
+  "adoption_mode": "manual_governance_backfill",
+  "adoption_reason": "E3B completed through the approved classic Codex evidence workflow; PR #103 was exact-head reviewed, passed all required checks, and was merged before governance evidence persistence.",
+  "recovered": true,
+  "github_merged_at": "2026-07-19T07:01:31Z",
+  "verified_at": "2026-07-19T07:09:51Z",
+  "recovered_at": "2026-07-19T07:09:51Z",
+  "adopted_at": "2026-07-19T07:09:51Z"
+}

@@ -336,4 +336,39 @@ while IFS= read -r dependency; do
   fi
 done < <(jq -r '.waves[] | .tasks[]?.depends_on[]?' "$MANIFEST_PATH")
 
+# A task may claim execution progress only after every declared prerequisite
+# reaches the terminal state required by that prerequisite's authority type.
+# There are no implicit ID- or wave-specific exceptions: task dependencies
+# require completed, Architecture Review checkpoints require passed, and human
+# approval gates require approved. Unknown, missing, duplicate, or incompatible
+# dependency authorities fail closed.
+jq -e '
+  [.waves[].tasks[]] as $tasks |
+  [.waves[].checkpoint] as $checkpoints |
+  [.waves[].human_gate? | select(. != null)] as $human_gates |
+  def dependency_satisfied($dependency_id):
+    ([ $tasks[] | select(.id == $dependency_id) ]) as $task_matches |
+    ([ $checkpoints[] | select(.id == $dependency_id) ]) as $checkpoint_matches |
+    ([ $human_gates[] | select(.id == $dependency_id) ]) as $human_gate_matches |
+    (($task_matches | length) + ($checkpoint_matches | length) + ($human_gate_matches | length)) == 1 and
+    (if ($task_matches | length) == 1 then
+       $task_matches[0].status == "completed"
+     elif ($checkpoint_matches | length) == 1 then
+       $checkpoint_matches[0].status == "passed"
+     else
+       $human_gate_matches[0].status == "approved"
+     end);
+  all($tasks[];
+    . as $task |
+    if ($task.status == "running" or $task.status == "completed") then
+      all($task.depends_on[]?; . as $dependency_id | dependency_satisfied($dependency_id))
+    else
+      true
+    end
+  )
+' "$MANIFEST_PATH" >/dev/null || {
+  echo "ERROR: running/completed task has an unsatisfied or incompatible dependency" >&2
+  exit 1
+}
+
 echo "manifest valid: $MANIFEST_PATH"
