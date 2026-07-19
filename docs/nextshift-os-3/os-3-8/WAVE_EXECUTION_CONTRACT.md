@@ -10,7 +10,7 @@ Owner: ChatGPT Work — Chief Product Architect / Architecture Review Board
 
 Machine authority: [OS 3.8 Pipeline Manifest](PIPELINE_MANIFEST.json)
 
-Product authority: [OS 3.8 Blueprint](../../OS_3_8_BLUEPRINT.md)
+Product authority: [OS 3.8 Blueprint](../OS_3_8_BLUEPRINT.md)
 
 ---
 
@@ -170,4 +170,3 @@ Wave mode is ready when:
 ## 13. Stop Condition
 
 This contract authorizes only the one-time pipeline Wave-mode upgrade and OS 3.8 execution orchestration. It does not authorize product implementation, production deployment, release tagging, or weakening existing safety guards.
-

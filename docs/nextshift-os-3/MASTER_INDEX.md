@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-15
+Last Updated: 2026-07-19
 
 ---
 
@@ -43,6 +43,10 @@ For first-time contributors:
 13f. [OS 3.8 Pipeline Upgrade Execution Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md)
 13g. [OS 3.8 E1 Implementation Contract — Wave W1](os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md)
 13h. [OS 3.8 E1 Execution Task — Wave W1](os-3-8/3.8-A/EXECUTION_TASK.md)
+13i. [OS 3.8 Product Usability Recovery RC Package](releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md)
+13j. [OS 3.8 Final Audit Request](../../audit/OS38_FINAL_CODE_REVIEW_REQUEST.md)
+13k. [OS 3.8 Final Audit Report](../../audit/OS38_FINAL_CODE_REVIEW_REPORT.md)
+13l. [OS 3.8 Release Preparation Approval](os-3-8/approvals/STEVEN_RELEASE_PREPARATION_APPROVAL.md)
 14. [Decision Engine v1.0 - Released](decision-engine-v1/README.md)
 15. [Conversation Engine v1.0 - Released](conversation-engine-v1/README.md)
 16. [Creative Studio v1.0 - Released](creative-studio-v1/README.md)
@@ -378,6 +382,8 @@ Core documents:
 - [OS 3.5 Business Discussion Release Candidate](releases/OS_3_5_BUSINESS_DISCUSSION/README.md)
 - [OS 3.5 Release Manifest](releases/OS_3_5_BUSINESS_DISCUSSION/RELEASE_MANIFEST.md)
 - [OS 3.5 Final Verification](releases/OS_3_5_BUSINESS_DISCUSSION/FINAL_VERIFICATION.md)
+- [OS 3.8 Release Manifest](releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/RELEASE_MANIFEST.md)
+- [OS 3.8 Final Verification](releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/FINAL_VERIFICATION.md)
 - [Developer Platform](developer-platform/README.md)
 - [Developer Platform Review](developer-platform/review/DEVELOPER_PLATFORM_REVIEW.md)
 - [Automation Workflow Review](developer-platform/review/AUTOMATION_WORKFLOW_REVIEW.md)

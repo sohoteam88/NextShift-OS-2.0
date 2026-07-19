@@ -41,6 +41,9 @@ Original release identifiers should remain in release metadata or release manife
 | AI Engineering Foundation v1.0 | [docs/nextshift-os-3/ai/releases/AI_ENGINEERING_FOUNDATION_v1.0/README.md](../docs/nextshift-os-3/ai/releases/AI_ENGINEERING_FOUNDATION_v1.0/README.md) | `AI_ENGINEERING_FOUNDATION_v1.0` | `releases/ai-engineering-foundation/v1.0/` |
 | Engineering Standards v1.0 | [docs/nextshift-os-3/engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md](../docs/nextshift-os-3/engineering/releases/ENGINEERING_STANDARDS_v1.0/README.md) | `ENGINEERING_STANDARDS_v1.0` | `releases/engineering-standards/v1.0/` |
 | Engineering Standards v1.1 | [docs/nextshift-os-3/engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md](../docs/nextshift-os-3/engineering/releases/ENGINEERING_STANDARDS_v1.1/README.md) | `ENGINEERING_STANDARDS_v1.1` | `releases/engineering-standards/v1.1/` |
+| OS 3.8 Product Usability Recovery RC | [docs/nextshift-os-3/releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md](../docs/nextshift-os-3/releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md) | `OS_3_8_PRODUCT_USABILITY_RECOVERY` | `releases/nextshift-os/v3.8.0/` |
+
+The OS 3.8 entry is **prepared / awaiting Release PR Review**, not released. Production remains v3.7.0; no OS 3.8 tag, GitHub Release, deployment, or production migration has occurred.
 
 ## Project Release References
 

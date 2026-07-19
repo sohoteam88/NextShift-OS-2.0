@@ -367,15 +367,20 @@ The restart-safe state machine, artifact paths, task order, and gates are author
 - [x] Steven approved the complete OS 3.8 Blueprint scope and ordering.
 - [x] Steven approved Amendment A: isolated member, team-admin, and platform-admin spaces, implemented through U3A/U3ADR/U3B before E3A.
 - [x] Invite-link environment hardening and audit A-1/A-3 remain deferred unless directly touched or proven to be a release blocker.
-- [ ] Steven approves the U2 one-page IA after AR-W2.
-- [ ] Steven approves OS 3.8 release after final independent Audit and release evidence.
+- [x] Steven approved the U2 one-page IA after AR-W2; the canonical approval is recorded in `os-3-8/approvals/STEVEN_IA_APPROVAL.md`.
+- [x] Engineering task loop and independent Final Audit completed with `PASS`.
+- [x] Release Preparation approved for a governance PR and, after its review and merge, a separate planning-to-main Release PR.
+- [ ] Production migration approval.
+- [ ] Deployment approval.
+- [ ] Tag approval.
+- [ ] Production release approval.
 
 ## 20. Authorization Record
 
 Blueprint decision: **APPROVED** by Steven through merged PR #78.
 
-Wave governance decision: awaiting Steven merge of the Wave contract/bootstrap documentation PR.
+Engineering delivery: all Manifest tasks are `completed`, AR-W1/AR-W2/AR-W3 are `passed`, STEVEN-IA is `approved`, and the independent Final Audit is `pass`.
 
-Product implementation authorization: **BLOCKED** until the one-time Pipeline Upgrade PR is implemented, reviewed, and merged.
+Current stage: **Release Preparation**. The RC documentation and Release Preparation governance approval may be reviewed. A planning-to-main Release PR may be created only after this governance PR is reviewed and merged.
 
-After the Pipeline bootstrap passes, it may execute only the tasks and order encoded in `os-3-8/PIPELINE_MANIFEST.json`. It must pause at every Architecture Review or Steven gate, and it may not release or deploy automatically.
+Production release remains **BLOCKED**. Production migration, deployment, tagging, GitHub Release creation, and production traffic switching each require separate approval; none is authorized by Final Audit PASS or Release Preparation approval.
