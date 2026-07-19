@@ -1,15 +1,14 @@
 import { Prisma } from '@prisma/client';
-import prisma from '@/lib/prisma';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { AIVideoPromptResult, BRollItem, MasterScript } from '../types';
 import { aiVideoPromptService } from './ai-video-prompt-service';
 import { brollService } from './broll-service';
 import { shotListService } from './shot-list-service';
+import { requireOwnedVideoProject, updateOwnedVideoProject } from './video-project-service';
 
 export const productionPlanService = {
   async generateProductionPlan(user: AuthUser, projectId: string) {
-    const project = await prisma.videoProject.findFirst({ where: { id: projectId, tenantId: user.tenantId } });
-    if (!project) throw new Error('Project not found');
+    const project = await requireOwnedVideoProject(user, projectId);
 
     const script = project.masterScript as unknown as MasterScript;
     if (!script?.scenes?.length) throw new Error('Master script not ready');
@@ -39,9 +38,7 @@ export const productionPlanService = {
       ]);
     }
 
-    await prisma.videoProject.update({
-      where: { id: projectId },
-      data: {
+    await updateOwnedVideoProject(user, projectId, {
         shotList: shotList as unknown as Prisma.InputJsonValue,
         brollList: brollList as unknown as Prisma.InputJsonValue,
         veoPrompt: veoResult?.combined ?? null,
@@ -53,7 +50,6 @@ export const productionPlanService = {
           },
         } as unknown as Prisma.InputJsonValue,
         status: 'shot_planned',
-      },
     });
 
     return { shotList, brollList, veoPrompts: veoResult, minimaxPrompts: minimaxResult, aiScenes };

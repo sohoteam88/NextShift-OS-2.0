@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { Check, Copy, ExternalLink, Sparkles } from 'lucide-react';
+import { ExternalLink, Sparkles } from 'lucide-react';
 import type { AIVideoPromptResult, BRollItem, ShotListItem } from '../types';
+import { ClipboardButton } from '@/components/ui/ClipboardButton';
 
 type Props = {
   shotList: ShotListItem[];
@@ -27,24 +28,6 @@ const SOURCE: Record<string, { label: string; icon: string }> = {
   ai_generated: { label: 'AI 生成', icon: '✨' },
   screen_recording: { label: '录屏', icon: '📱' },
 };
-
-function CopyButton({ text, label = '复制' }: { text: string; label?: string }) {
-  const [copied, setCopied] = React.useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        void navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1200);
-      }}
-      className="inline-flex h-8 items-center gap-1 rounded-[var(--radius-md)] border border-[var(--color-border)] px-2 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)]"
-    >
-      {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-      {copied ? '已复制' : label}
-    </button>
-  );
-}
 
 function searchUrl(site: 'pexels' | 'mixkit', terms: string[]) {
   const q = encodeURIComponent(terms[0] ?? '');
@@ -133,7 +116,7 @@ export function ProductionPlanView({ shotList, brollList, veoPrompts, minimaxPro
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => setPromptTool('veo')} className={`rounded-full border px-3 py-1 text-sm ${promptTool === 'veo' ? 'border-[var(--color-primary)] bg-blue-50 text-[var(--color-primary)]' : 'border-[var(--color-border)]'}`}>Google Veo</button>
             <button type="button" onClick={() => setPromptTool('minimax')} className={`rounded-full border px-3 py-1 text-sm ${promptTool === 'minimax' ? 'border-[var(--color-primary)] bg-blue-50 text-[var(--color-primary)]' : 'border-[var(--color-border)]'}`}>MiniMax</button>
-            {combined ? <CopyButton text={combined} label={`复制全部 ${promptTool === 'veo' ? 'Veo' : 'MiniMax'} 提示词`} /> : null}
+            {combined ? <ClipboardButton sessionKey={`combined:${promptTool}`} text={combined} label={`复制全部 ${promptTool === 'veo' ? 'Veo' : 'MiniMax'} 提示词`} /> : null}
             <a href={promptTool === 'veo' ? 'https://labs.google/veo' : 'https://hailuoai.video/'} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1 rounded-[var(--radius-md)] border border-[var(--color-border)] px-2 text-xs font-medium text-[var(--color-text)]">
               打开工具 <ExternalLink className="h-3.5 w-3.5" />
             </a>
@@ -143,7 +126,7 @@ export function ProductionPlanView({ shotList, brollList, veoPrompts, minimaxPro
             <div key={item.scene_number} className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <h3 className="font-semibold text-[var(--color-text)]">Scene {item.scene_number}</h3>
-                <CopyButton text={item.prompt} />
+                <ClipboardButton sessionKey={`${promptTool}:${item.scene_number}`} text={item.prompt} />
               </div>
               <p className="whitespace-pre-wrap rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3 text-sm text-[var(--color-text)]">{item.prompt}</p>
               <p className="mt-2 text-xs text-[var(--color-text-muted)]">宽高比：{item.aspect_ratio} · 时长：{item.duration_hint}</p>

@@ -6,7 +6,6 @@ import {
   AlertCircle,
   ArrowRight,
   Check,
-  ClipboardCheck,
   FileText,
   Fingerprint,
   Gift,
@@ -25,6 +24,7 @@ import type {
 } from '@/modules/content-engine/types';
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import type { LeadMagnetConfig, LeadMagnetTrack } from '../types';
+import { LeadMagnetWorkingLoopCard } from './LeadMagnetWorkingLoopCard';
 
 type BrandProfile = Record<string, unknown>;
 
@@ -664,54 +664,7 @@ export function LeadMagnetDashboard() {
             {[retailResource, recruitmentResource]
               .filter(Boolean)
               .map((resource) => (
-                <div
-                  key={resource!.id}
-                  className="rounded-[var(--radius-md)] border border-[var(--color-border)] p-4"
-                >
-                  <h3 className="text-base font-semibold text-[var(--color-text)]">
-                    {resource!.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-[var(--color-text-muted)]">
-                    {resource!.promise}
-                  </p>
-                  <div className="mt-4 space-y-2">
-                    {(resource!.sections ?? []).slice(0, 3).map((section) => (
-                      <div
-                        key={section.id}
-                        className="rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3"
-                      >
-                        <p className="text-sm font-semibold text-[var(--color-text)]">
-                          {section.title}
-                        </p>
-                        <p className="mt-1 text-xs leading-5 text-[var(--color-text-muted)]">
-                          {section.body}
-                        </p>
-                      </div>
-                    ))}
-                    {(resource!.checklistItems ?? [])
-                      .slice(0, 5)
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-start gap-2 text-sm text-[var(--color-text-muted)]"
-                        >
-                          <ClipboardCheck
-                            className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
-                            aria-hidden="true"
-                          />
-                          <span>{item.text}</span>
-                        </div>
-                      ))}
-                  </div>
-                  <div className="mt-4 rounded-[var(--radius-md)] border border-blue-100 bg-blue-50 p-3">
-                    <p className="text-xs font-semibold text-blue-700">
-                      WhatsApp 跟进开场白
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-blue-950">
-                      {resource!.cta.whatsappCta}
-                    </p>
-                  </div>
-                </div>
+                <LeadMagnetWorkingLoopCard key={resource!.id} resource={resource!} track={resource!.track ?? (resource === retailResource ? 'retail' : 'recruitment')} onChanged={() => void queryClient.invalidateQueries({ queryKey: ['lead-magnet'] })} />
               ))}
           </div>
         </section>
