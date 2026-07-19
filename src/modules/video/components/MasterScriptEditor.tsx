@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Loader2, Pencil } from 'lucide-react';
 import type { MasterScript, ScriptScene } from '../types';
+import { ClipboardButton } from '@/components/ui/ClipboardButton';
 
 type Props = {
   projectId: string;
@@ -52,6 +53,7 @@ function SceneCard({
           <Pencil className="h-4 w-4" />
           调整这个场景
         </button>
+        <ClipboardButton sessionKey={`${projectId}:${scene.scene_number}`} text={[scene.visual, scene.text_overlay, scene.voiceover].join('\n')} label="复制当前场景" />
       </div>
       <div className="space-y-2 text-sm">
         <p><span className="font-medium text-[var(--color-text)]">画面：</span>{scene.visual}</p>
@@ -84,10 +86,11 @@ function SceneCard({
 }
 
 export function MasterScriptEditor({ projectId, script, onSceneUpdated }: Props) {
+  const currentScript = [script.title, ...script.scenes.flatMap((scene) => [`Scene ${scene.scene_number}`, scene.visual, scene.text_overlay, scene.voiceover])].join('\n');
   return (
     <section className="space-y-4">
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">主脚本：{script.title}</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3"><h2 className="text-lg font-semibold text-[var(--color-text)]">主脚本：{script.title}</h2><ClipboardButton sessionKey={projectId} text={currentScript} label="复制当前主脚本" /></div>
         <p className="mt-1 text-sm text-[var(--color-text-muted)]">总时长：{script.total_duration} · 节奏：{script.pacing_notes}</p>
       </div>
       {script.scenes.map((scene) => (

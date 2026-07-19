@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 const prismaMocks = vi.hoisted(() => ({
+  $transaction: vi.fn(),
+  $queryRaw: vi.fn(),
   user: {
     findUnique: vi.fn(),
     update: vi.fn(),
@@ -11,6 +13,7 @@ const prismaMocks = vi.hoisted(() => ({
     findFirst: vi.fn(),
     findMany: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
     deleteMany: vi.fn(),
     count: vi.fn(),
   },
@@ -73,6 +76,7 @@ describe('E3A capability revalidation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userMetadata = {};
+    prismaMocks.$transaction.mockImplementation(async (callback: (tx: typeof prismaMocks) => Promise<unknown>) => callback(prismaMocks));
     prismaMocks.user.findUnique.mockImplementation(async ({ where }: { where: { id: string } }) => (
       where.id === user.id ? { metadata: userMetadata } : null
     ));
@@ -84,10 +88,20 @@ describe('E3A capability revalidation', () => {
       userMetadata = data.metadata;
       return { id: where.id, metadata: userMetadata };
     });
+    prismaMocks.$queryRaw.mockImplementation(async (query: { values?: unknown[] }) => {
+      const json = query.values?.find((value) => typeof value === 'string' && value.startsWith('{') && value.includes('"id"'));
+      if (typeof json === 'string') {
+        const value = JSON.parse(json) as Record<string, unknown>;
+        if (value.track === 'retail' || value.track === 'recruitment') {
+          userMetadata = { ...userMetadata, ...(value.track === 'retail' ? { lead_magnet: value } : {}), lead_magnet_tracks: { ...((userMetadata.lead_magnet_tracks as Record<string, unknown>) ?? {}), [value.track]: value } };
+        } else if ('topic' in value) userMetadata = { ...userMetadata, webinar: value };
+      }
+      return [{ id: user.id }];
+    });
   });
 
   describe('latest planning baseline delta after U3B', () => {
-    it('keeps the capability gaps unchanged while adding fail-closed publish guards', () => {
+    it('pins the post-E3B authorities while retaining deleted-tenant publish guards', () => {
       const leadMagnetPublish = readFileSync(
         'src/app/api/v1/lead-magnet/publish/route.ts',
         'utf8',
@@ -124,16 +138,14 @@ describe('E3A capability revalidation', () => {
         );
       }
 
-      expect(leadMagnetServiceSource).toContain(
-        'const user = await prisma.user.findUnique',
-      );
-      expect(leadMagnetServiceSource).toContain(
-        'await prisma.user.update',
-      );
-      expect(webinarDashboard).not.toContain('gen.isError');
-      expect(masterScriptEditor).not.toContain('navigator.clipboard');
-      expect(productionPlan).toContain('navigator.clipboard.writeText');
-      expect(subtitleView).toContain('navigator.clipboard.writeText');
+      expect(leadMagnetServiceSource).toContain('jsonb_set');
+      expect(webinarDashboard).toContain('regenerationIssue');
+      expect(webinarDashboard).toContain('重新生成 Webinar');
+      expect(webinarDashboard).toContain('重试重新生成');
+      expect(webinarDashboard).toContain('重新检查状态');
+      expect(masterScriptEditor).toContain('ClipboardButton');
+      expect(productionPlan).toContain('ClipboardButton');
+      expect(subtitleView).toContain('ClipboardButton');
     });
   });
 
@@ -161,24 +173,15 @@ describe('E3A capability revalidation', () => {
         where: { id: user.id },
         select: { metadata: true },
       });
-      expect(prismaMocks.user.update).toHaveBeenCalledTimes(2);
+      expect(prismaMocks.$transaction).toHaveBeenCalledTimes(2);
+      expect(prismaMocks.$queryRaw).toHaveBeenCalledTimes(4);
     });
 
-    it('reproduces the mounted concurrent two-track lost update from a shared metadata snapshot', async () => {
+    it('preserves both tracks under concurrent atomic writes', async () => {
       userMetadata = {
         unrelated_preference: { locale: 'zh-MY' },
         lead_magnet_tracks: {},
       };
-      const pendingReads: Array<() => void> = [];
-      prismaMocks.user.findUnique.mockImplementation(({ where }: { where: { id: string } }) => (
-        new Promise((resolve) => {
-          expect(where.id).toBe(user.id);
-          pendingReads.push(() => resolve({ metadata: structuredClone(userMetadata) }));
-          if (pendingReads.length === 2) {
-            queueMicrotask(() => pendingReads.splice(0).forEach((release) => release()));
-          }
-        })
-      ));
       const retail = { ...generateLeadMagnet(brandContext as never, 'guide'), track: 'retail' as const };
       const recruitment = { ...generateLeadMagnet(brandContext as never, 'checklist'), track: 'recruitment' as const };
 
@@ -191,35 +194,34 @@ describe('E3A capability revalidation', () => {
       ));
       const reopened = await leadMagnetService.getTracks(user.id);
 
-      expect(prismaMocks.user.update).toHaveBeenCalledTimes(2);
-      expect(reopened.retail).toBeNull();
+      expect(prismaMocks.$transaction).toHaveBeenCalledTimes(2);
+      expect(prismaMocks.$queryRaw).toHaveBeenCalledTimes(4);
+      expect(reopened.retail?.id).toBe(retail.id);
       expect(reopened.recruitment?.id).toBe(recruitment.id);
       expect(userMetadata.unrelated_preference).toEqual({ locale: 'zh-MY' });
     });
   });
 
   describe('Webinar singleton lifecycle', () => {
-    it('deterministically exposes the missing canonical record identity', () => {
+    it('generates a canonical record identity and timestamps', () => {
       const generated = generateFullWebinar(brandContext as never);
 
       expect(generated.status).toBe('generated');
       expect(generated.topic.title).toContain('Steven');
-      expect(generated).not.toHaveProperty('id');
-      expect(generated).not.toHaveProperty('createdAt');
-      expect(generated).not.toHaveProperty('updatedAt');
+      expect(generated.id).toMatch(/^webinar-/);
+      expect(generated.createdAt).toBeTruthy();
+      expect(generated.updatedAt).toBeTruthy();
     });
 
-    it('round-trips the singleton through the authenticated user metadata without inventing an ID', async () => {
+    it('round-trips the same singleton identity through user metadata', async () => {
       const generated = generateFullWebinar(brandContext as never);
 
       await webinarService.save(user.id, generated);
       const reopened = await webinarService.get(user.id);
 
       expect(reopened).toEqual(generated);
-      expect(reopened).not.toHaveProperty('id');
-      expect(prismaMocks.user.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: user.id },
-      }));
+      expect(reopened?.id).toBe(generated.id);
+      expect(prismaMocks.$queryRaw).toHaveBeenCalled();
     });
   });
 
@@ -267,7 +269,7 @@ describe('E3A capability revalidation', () => {
       });
     });
 
-    it('reproduces the owner-boundary gap on exact-project reopen', async () => {
+    it('binds exact-project reopen to tenant and owner', async () => {
       prismaMocks.videoProject.findFirst.mockResolvedValue({
         id: 'video-project-owned-by-another-member',
         tenantId: user.tenantId,
@@ -278,11 +280,11 @@ describe('E3A capability revalidation', () => {
 
       expect(reopened).toEqual(expect.objectContaining({ userId: 'user-b' }));
       expect(prismaMocks.videoProject.findFirst).toHaveBeenCalledWith({
-        where: { id: 'video-project-owned-by-another-member', tenantId: user.tenantId },
+        where: { id: 'video-project-owned-by-another-member', tenantId: user.tenantId, userId: user.id },
       });
     });
 
-    it('reproduces the same owner-boundary gap before a scene update is persisted', async () => {
+    it('binds scene persistence to tenant and owner', async () => {
       const originalScene = {
         scene_number: 1,
         time_range: '0-5s',
@@ -300,7 +302,7 @@ describe('E3A capability revalidation', () => {
         masterScript: { scenes: [originalScene], cta: originalScene },
       });
       masterScriptMocks.regenerateScene.mockResolvedValue(replacement);
-      prismaMocks.videoProject.update.mockResolvedValue({ id: 'video-project-owned-by-another-member' });
+      prismaMocks.videoProject.updateMany.mockResolvedValue({ count: 1 });
 
       await videoProjectService.regenerateScene(
         user,
@@ -310,10 +312,10 @@ describe('E3A capability revalidation', () => {
       );
 
       expect(prismaMocks.videoProject.findFirst).toHaveBeenCalledWith({
-        where: { id: 'video-project-owned-by-another-member', tenantId: user.tenantId },
+        where: { id: 'video-project-owned-by-another-member', tenantId: user.tenantId, userId: user.id },
       });
-      expect(prismaMocks.videoProject.update).toHaveBeenCalledWith(expect.objectContaining({
-        where: { id: 'video-project-owned-by-another-member' },
+      expect(prismaMocks.videoProject.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'video-project-owned-by-another-member', tenantId: user.tenantId, userId: user.id },
       }));
     });
   });

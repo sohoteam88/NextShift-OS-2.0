@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import type { AIVideoPromptResult, BRollItem, CapCutScript, MasterScript, PlatformAdaptation, PlatformType, ShotListItem, VideoHook, VideoProductionInput, VideoStrategy } from '../types';
 import { VideoStrategyStep } from './VideoStrategyStep';
@@ -10,6 +11,7 @@ import { ProductionPlanView } from './ProductionPlanView';
 import { CapCutGuideView } from './CapCutGuideView';
 import { SubtitleView } from './SubtitleView';
 import { PlatformAdaptationView } from './PlatformAdaptationView';
+import { DeleteVideoProjectButton } from './DeleteVideoProjectButton';
 
 type Project = {
   id: string;
@@ -39,6 +41,7 @@ type Project = {
 };
 
 export function VideoProjectDetail({ projectId }: { projectId: string }) {
+  const router = useRouter();
   const [project, setProject] = React.useState<Project | null>(null);
   const [selectedHook, setSelectedHook] = React.useState<VideoHook | null>(null);
   const [script, setScript] = React.useState<MasterScript | null>(null);
@@ -174,7 +177,7 @@ export function VideoProjectDetail({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-5">
-      <Link href="/video" className="text-sm font-medium text-[var(--color-primary)] hover:underline">← 返回视频项目</Link>
+      <div className="flex items-center justify-between gap-3"><Link href="/video" className="text-sm font-medium text-[var(--color-primary)] hover:underline">← 返回视频项目</Link><DeleteVideoProjectButton projectId={project.id} onDeleted={() => router.replace('/video')} /></div>
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm">
         <div className="mb-3">
           <h1 className="text-xl font-semibold text-[var(--color-text)]">{project.topic}</h1>

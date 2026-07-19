@@ -8,6 +8,7 @@ import { platformAdaptationService } from './platform-adaptation-service';
 import { subtitleService } from './subtitle-service';
 
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import { requireOwnedVideoProject, updateOwnedVideoProject } from './video-project-service';
 
 /** @deprecated Use getBrandContext() directly. Maps to legacy shape. */
 async function getBrandProfile(userId: string): Promise<Record<string, unknown> | null> {
@@ -18,8 +19,7 @@ async function getBrandProfile(userId: string): Promise<Record<string, unknown> 
 
 export const videoFinalizeService = {
   async finalize(user: AuthUser, projectId: string, additionalPlatforms: PlatformType[] = []) {
-    const project = await prisma.videoProject.findFirst({ where: { id: projectId, tenantId: user.tenantId } });
-    if (!project) throw new Error('Project not found');
+    const project = await requireOwnedVideoProject(user, projectId);
 
     const script = project.masterScript as unknown as MasterScript;
     const strategy = project.strategy as unknown as VideoStrategy;
@@ -33,9 +33,7 @@ export const videoFinalizeService = {
     const subtitleSrt = subtitleService.generateSRT(script);
     const existingAdaptations = (project.platformAdaptations as Record<string, unknown> | null) ?? {};
 
-    await prisma.videoProject.update({
-      where: { id: projectId },
-      data: {
+    await updateOwnedVideoProject(user, projectId, {
         capcutScript: capcutScript as unknown as Prisma.InputJsonValue,
         subtitleSrt,
         platformAdaptations: {
@@ -43,7 +41,6 @@ export const videoFinalizeService = {
           posting_adaptations: platformAdaptations,
         } as unknown as Prisma.InputJsonValue,
         status: 'ready',
-      },
     });
 
     return { capcutScript, subtitleSrt, platformAdaptations };
@@ -54,8 +51,7 @@ export const videoFinalizeService = {
     projectId: string,
     input: { create_performance_record?: boolean; platform?: string } = {},
   ) {
-    const project = await prisma.videoProject.findFirst({ where: { id: projectId, tenantId: user.tenantId } });
-    if (!project) throw new Error('Project not found');
+    const project = await requireOwnedVideoProject(user, projectId);
 
     let performanceId = project.performanceId;
     if (input.create_performance_record && !performanceId) {
@@ -73,10 +69,8 @@ export const videoFinalizeService = {
       performanceId = performance.id;
     }
 
-    const updated = await prisma.videoProject.update({
-      where: { id: projectId },
-      data: { status: 'published', performanceId },
-    });
+    await updateOwnedVideoProject(user, projectId, { status: 'published', performanceId });
+    const updated = await requireOwnedVideoProject(user, projectId);
 
     if (project.calendarId) {
       await prisma.contentCalendar.updateMany({
