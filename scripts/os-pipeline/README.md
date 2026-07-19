@@ -433,16 +433,23 @@ fails closed.
 The final audit becomes eligible only when every task is completed/superseded,
 every wave checkpoint has passed with a reviewed SHA, and every human gate is
 approved with matching canonical evidence. One `--cycle` transaction creates
-`audit/OS38_FINAL_CODE_REVIEW_REQUEST.md`, records the exact final reviewed
-product SHA and `requested_at`, and changes `final_audit.status` from `pending`
-to `running`.
+`audit/OS38_FINAL_CODE_REVIEW_REQUEST.md`. The last wave checkpoint reviewed
+SHA must be a valid commit and an ancestor of the synchronized planning HEAD;
+it is a prerequisite, not the Final Audit target. The transaction records the
+current planning HEAD immediately before the request commit as
+`requested_product_sha`, records `requested_at`, and changes
+`final_audit.status` from `pending` to `running`. This makes the independent
+audit cover the complete repository state, including reviewed product,
+Prisma/migrations, Pipeline changes, governance documents, and checkpoint
+results merged after the last Architecture Review.
 
 The request contains:
 
 ```text
 AUDIT_ID=AUDIT-OS3.8
 BASELINE_SHA=<first wave start SHA>
-REQUESTED_PRODUCT_SHA=<exact final reviewed product SHA>
+LAST_CHECKPOINT_REVIEWED_SHA=<last passed wave checkpoint SHA>
+REQUESTED_PRODUCT_SHA=<synchronized planning HEAD before this request commit>
 REQUESTED_AT=<UTC timestamp>
 REPORT_PATH=audit/OS38_FINAL_CODE_REVIEW_REPORT.md
 RELEASE_GATE=BLOCKED
@@ -467,7 +474,10 @@ scripts/os-pipeline/run-pipeline.sh \
 
 The source checksum is rechecked inside the state transaction. The runner also
 revalidates every wave/gate, the canonical request, the requested SHA, and the
-absence of unauthorized product changes. It then copies the result to the
+absence of any repository change after the canonical request commit. The sole
+commit between `REQUESTED_PRODUCT_SHA` and result recording must be the request
+commit, and that commit must change exactly the Manifest and canonical request
+artifact. It then copies the result to the
 Manifest-configured report path and atomically records `pass` or `fail`, the
 same `requested_at`, the matching `reviewed_sha`, and `completed_at`.
 
@@ -524,12 +534,22 @@ Expected pipeline-specific coverage is:
   verify/merge, regenerated checkpoint, source-review archival, attempt limits,
   branch-only/open/merged recovery, and two reviewed failures to
   `needs_human`.
-- `tests/governance-integration.sh`: **8 named Group D real-Git fixtures**:
+- `tests/governance-integration.sh`: **18 named Group D real-Git fixtures**:
   `steven_ia_transaction`, `steven_ia_duplicate_rejected`,
   `final_audit_request_once`, `final_audit_running_clean_wait`,
   `final_audit_pass_persistence`, `final_audit_wrong_sha_rejected`,
   `final_audit_product_change_rejected`, and
-  `final_audit_cannot_release`.
+  `final_audit_cannot_release`, plus ten Final Audit target-contract fixtures:
+  `final_audit_targets_current_planning_head`,
+  `final_audit_checkpoint_sha_must_be_ancestor`,
+  `final_audit_includes_reviewed_pipeline_changes_after_checkpoint`,
+  `final_audit_request_sha_matches_pre_request_head`,
+  `final_audit_request_commit_not_part_of_requested_sha`,
+  `final_audit_result_must_match_requested_planning_sha`,
+  `final_audit_code_change_after_request_rejected`,
+  `final_audit_request_duplicate_clean_stop_or_rejected_without_mutation`,
+  `final_audit_request_push_failure_rolls_back`, and
+  `final_audit_request_keeps_release_gate_blocked`.
 - `tests/safety-integration.sh`: **14 named Round 5 real-Git fixtures** covering
   normal task merged/running crash recovery and ambiguous identity, exact-head
   merge races, Wave checkpoint PASS persistence and stale-product rejection,

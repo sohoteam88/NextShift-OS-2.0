@@ -826,19 +826,25 @@ final_audit_prerequisites_satisfied() {
   done < <(jq -r '.waves[] | select(.human_gate != null) | [.human_gate.id,.human_gate.approval_artifact,.human_gate.approved_by,.human_gate.approved_at,.human_gate.approved_reviewed_sha,.checkpoint.reviewed_sha] | @tsv' "$MANIFEST_PATH")
 }
 assert_final_audit_fresh() {
-  local requested_sha="$1" phase="$2" request_relative approval_relative changed
+  local requested_sha="$1" request_relative manifest_relative repo_root manifest_root changed changed_count
   [[ "${PIPELINE_TEST_MODE:-0}" == "1" ]] && return
-  git -C "$REPO_DIR" merge-base --is-ancestor "$requested_sha" HEAD || die "final audit reviewed SHA is not an ancestor of planning HEAD"
+  [[ "$requested_sha" =~ ^[0-9a-f]{40}$ ]] || die "final audit requested SHA is invalid"
+  git -C "$REPO_DIR" merge-base --is-ancestor "$requested_sha" HEAD || die "final audit requested SHA is not an ancestor of planning HEAD"
   request_relative="$(jq -r '.final_audit.request' "$MANIFEST_PATH")"
-  approval_relative="$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approval_artifact' "$MANIFEST_PATH")"
+  repo_root="$(cd "$REPO_DIR" && pwd -P)"; manifest_root="$(cd "$(dirname "$MANIFEST_PATH")" && pwd -P)"
+  manifest_relative="${manifest_root#"$repo_root"/}/$(basename "$MANIFEST_PATH")"
+  changed_count="$(git -C "$REPO_DIR" rev-list --count "$requested_sha..HEAD")"
+  [[ "$changed_count" == 1 && "$(git -C "$REPO_DIR" rev-parse HEAD^)" == "$requested_sha" ]] ||
+    die "final audit repository state changed after the canonical request commit"
   while IFS= read -r changed; do
     [[ -z "$changed" ]] && continue
     case "$changed" in
-      docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json|docs/nextshift-os-3/os-3-8/reviews/*|docs/nextshift-os-3/os-3-8/runs/*|"$approval_relative") ;;
-      "$request_relative") [[ "$phase" == result ]] || die "final audit request already existed before request transaction" ;;
+      "$manifest_relative"|"$request_relative") ;;
       *) die "final audit is stale: unauthorized product/code change after reviewed SHA ($changed)" ;;
     esac
   done < <(git -C "$REPO_DIR" diff --name-only "$requested_sha...HEAD")
+  [[ "$(git -C "$REPO_DIR" diff --name-only "$requested_sha...HEAD" | LC_ALL=C sort)" == "$(printf '%s\n' "$manifest_relative" "$request_relative" | LC_ALL=C sort)" ]] ||
+    die "final audit request commit does not contain exactly the canonical Manifest and request artifact"
 }
 expected_repository() {
   local repo="${1:-$REPO_DIR}" remote_url
@@ -1802,32 +1808,41 @@ record_steven_ia() {
 
 # shellcheck disable=SC2329
 transaction_final_audit_request() {
-  local status product_sha request_relative report_relative request requested_at baseline_sha
+  local status checkpoint_sha requested_product_sha request_relative report_relative request requested_at baseline_sha
   final_audit_prerequisites_satisfied || die "final audit prerequisites are no longer satisfied"
   status="$(jq -r '.final_audit.status' "$MANIFEST_PATH")"
   [[ "$status" == pending ]] || die "final audit request requires pending status"
-  product_sha="$(jq -r '.waves[-1].checkpoint.reviewed_sha // empty' "$MANIFEST_PATH")"
-  [[ "$product_sha" =~ ^[0-9a-f]{40}$ ]] || die "final reviewed product SHA is invalid"
-  assert_final_audit_fresh "$product_sha" request
+  checkpoint_sha="$(jq -r '.waves[-1].checkpoint.reviewed_sha // empty' "$MANIFEST_PATH")"
+  [[ "$checkpoint_sha" =~ ^[0-9a-f]{40}$ ]] || die "final checkpoint reviewed SHA is invalid"
+  git -C "$REPO_DIR" cat-file -e "$checkpoint_sha^{commit}" 2>/dev/null || die "final checkpoint reviewed SHA is not a Git commit"
+  requested_product_sha="$(git -C "$REPO_DIR" rev-parse HEAD)"
+  [[ "$requested_product_sha" =~ ^[0-9a-f]{40}$ ]] || die "current synchronized planning HEAD is invalid"
+  git -C "$REPO_DIR" merge-base --is-ancestor "$checkpoint_sha" "$requested_product_sha" ||
+    die "final checkpoint reviewed SHA is not an ancestor of current planning HEAD"
   request_relative="$(jq -r '.final_audit.request' "$MANIFEST_PATH")"; report_relative="$(jq -r '.final_audit.report' "$MANIFEST_PATH")"
   if ! safe_relative_path "$request_relative" || ! safe_relative_path "$report_relative"; then die "final audit artifact path is invalid"; fi
   request="$(artifact_path "$request_relative")"; [[ ! -e "$request" ]] || die "final audit request already exists"
   requested_at="$(date -u +%FT%TZ)"; baseline_sha="$(jq -r '.waves[0].start_sha // empty' "$MANIFEST_PATH")"
   [[ "$baseline_sha" =~ ^[0-9a-f]{40}$ ]] || die "final audit baseline SHA is invalid"
+  if [[ "${PIPELINE_TEST_MODE:-0}" != "1" ]]; then
+    transaction_own_path "$MANIFEST_PATH"
+    transaction_own_path "$request_relative"
+  fi
   mkdir -p "$(dirname "$request")"
   cat >"$request" <<EOF
 # OS 3.8 Final Audit Request
 
 AUDIT_ID=$(jq -r '.final_audit.id' "$MANIFEST_PATH")
 BASELINE_SHA=$baseline_sha
-REQUESTED_PRODUCT_SHA=$product_sha
+LAST_CHECKPOINT_REVIEWED_SHA=$checkpoint_sha
+REQUESTED_PRODUCT_SHA=$requested_product_sha
 REQUESTED_AT=$requested_at
 REPORT_PATH=$report_relative
 RELEASE_GATE=BLOCKED
 
-Review the exact product range ending at REQUESTED_PRODUCT_SHA. Write exactly one VERDICT=PASS or VERDICT=FAIL and one REVIEWED_SHA matching that SHA. PASS_WITH_CONDITION is not PASS. Release, tag, and deploy remain blocked.
+Review the complete repository state at REQUESTED_PRODUCT_SHA. It includes product code, database changes, Pipeline code, governance documents, checkpoint results, and every reviewed change merged before this request. Write exactly one VERDICT=PASS or VERDICT=FAIL and one REVIEWED_SHA matching that SHA. PASS_WITH_CONDITION is not PASS. Release, tag, and deploy remain blocked.
 EOF
-  jq --arg sha "$product_sha" --arg requested_at "$requested_at" '
+  jq --arg sha "$requested_product_sha" --arg requested_at "$requested_at" '
     .final_audit.status="running" |
     .final_audit.requested_product_sha=$sha |
     .final_audit.requested_at=$requested_at |
@@ -1874,7 +1889,7 @@ transaction_final_audit_result() {
   [[ "$requested_sha" =~ ^[0-9a-f]{40}$ && "$FINAL_AUDIT_REVIEWED_SHA" == "$requested_sha" ]] || die "final audit result SHA does not match the requested product SHA"
   [[ -f "$request" ]] || die "canonical final audit request is missing"
   grep -Fqx "REQUESTED_PRODUCT_SHA=$requested_sha" "$request" || die "final audit request SHA does not match Manifest"
-  assert_final_audit_fresh "$requested_sha" result
+  assert_final_audit_fresh "$requested_sha"
   [[ ! -e "$report" ]] || die "canonical final audit report already exists before terminal transition"
   mkdir -p "$(dirname "$report")"; cp "$FINAL_AUDIT_SOURCE" "$report"
   completed_at="$(date -u +%FT%TZ)"
