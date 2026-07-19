@@ -122,6 +122,22 @@ set_gate() {
   fi
 }
 complete_wave_tasks() { local wave="$1"; local id; while IFS= read -r id; do set_task "$id" completed; done < <(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .tasks[].id' "$TMP_DIR/manifest.json"); }
+prepare_final_ready() {
+  local tmp="$TMP_DIR/state.json"
+  FINAL_TEST_SHA="$(git -C "$PIPELINE_DIR/../.." rev-parse HEAD)"
+  complete_wave_tasks W1; complete_wave_tasks W2; complete_wave_tasks W3
+  set_checkpoint AR-W1 passed; set_checkpoint AR-W2 passed; set_checkpoint AR-W3 passed; set_gate STEVEN-IA approved
+  jq --arg sha "$FINAL_TEST_SHA" '
+    .waves |= map(
+      .start_sha=$sha |
+      .checkpoint.requested_end_sha=$sha |
+      .checkpoint.reviewed_sha=$sha |
+      if .human_gate then .human_gate.approved_reviewed_sha=$sha else . end
+    )
+  ' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
+  sed -i.bak "s/^AR_W2_REVIEWED_SHA=.*/AR_W2_REVIEWED_SHA=$FINAL_TEST_SHA/" "$TMP_DIR/STEVEN_IA_APPROVAL.md"
+  rm -f "$TMP_DIR/STEVEN_IA_APPROVAL.md.bak"
+}
 valid_evidence() {
   jq -n --arg n "${1:-1}" '{
     pr_url:("https://github.com/sohoteam88/NextShift-OS-2.0/pull/" + $n),
@@ -238,26 +254,22 @@ assert_eq "$(action)" needs_human "reviewed failure at max attempts blocks a thi
 
 # The final audit runs only once after all human controls pass and never opens release.
 fresh
-complete_wave_tasks W1; complete_wave_tasks W2; complete_wave_tasks W3
-set_checkpoint AR-W1 passed; set_checkpoint AR-W2 passed; set_checkpoint AR-W3 passed; set_gate STEVEN-IA approved
-jq '.waves |= map(.start_sha="0123456789012345678901234567890123456789")' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
+prepare_final_ready
 assert_eq "$(action)" final_audit "all waves select the final audit once"
 run --cycle
 assert_eq "$(action)" awaiting_final_audit "running final audit is a clean wait"
-grep -Fqx 'REQUESTED_PRODUCT_SHA=0123456789012345678901234567890123456789' "$TMP_DIR/OS38_FINAL_CODE_REVIEW_REQUEST.md" || fail "final audit request did not pin product SHA"
+grep -Fqx "REQUESTED_PRODUCT_SHA=$FINAL_TEST_SHA" "$TMP_DIR/OS38_FINAL_CODE_REVIEW_REQUEST.md" || fail "final audit request did not pin current repository SHA"
 pass=$((pass + 1))
-printf 'VERDICT=PASS_WITH_CONDITION\nREVIEWED_SHA=0123456789012345678901234567890123456789\n' >"$TMP_DIR/conditional-audit-result.md"
+printf 'VERDICT=PASS_WITH_CONDITION\nREVIEWED_SHA=%s\n' "$FINAL_TEST_SHA" >"$TMP_DIR/conditional-audit-result.md"
 if run --record-final-audit PASS "$TMP_DIR/conditional-audit-result.md" >/dev/null 2>&1; then fail "PASS_WITH_CONDITION was accepted as PASS"; fi
 pass=$((pass + 1))
-printf 'VERDICT=PASS\nREVIEWED_SHA=0123456789012345678901234567890123456789\n' >"$TMP_DIR/final-audit-source.md"
+printf 'VERDICT=PASS\nREVIEWED_SHA=%s\n' "$FINAL_TEST_SHA" >"$TMP_DIR/final-audit-source.md"
 run --record-final-audit PASS "$TMP_DIR/final-audit-source.md"
 assert_eq "$(action)" complete "final audit PASS completes state"
 assert_eq "$(jq -r '.release_gate.status' "$TMP_DIR/manifest.json")" blocked "final audit cannot release"
 run --record-final-audit PASS "$TMP_DIR/final-audit-source.md"
 fresh
-complete_wave_tasks W1; complete_wave_tasks W2; complete_wave_tasks W3
-set_checkpoint AR-W1 passed; set_checkpoint AR-W2 passed; set_checkpoint AR-W3 passed; set_gate STEVEN-IA approved
-jq '.waves |= map(.start_sha="0123456789012345678901234567890123456789")' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
+prepare_final_ready
 run --cycle
 if run --record-final-audit PASS "$TMP_DIR/missing-audit-result.md" >/dev/null 2>&1; then fail "missing external final audit result accepted"; fi
 pass=$((pass + 1))
