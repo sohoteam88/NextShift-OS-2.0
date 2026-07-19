@@ -147,6 +147,7 @@ test.describe('E3B mounted working loops', () => {
         const editor = page.getByRole('dialog');
         await editor.getByRole('textbox', { name: '标题', exact: true }).fill('Edited Retail title');
         await editor.getByRole('button', { name: '保存' }).click();
+        await expect(card.getByText('保存成功。', { exact: true })).toBeVisible();
         await page.keyboard.press('Escape');
         await expect(editor).toBeHidden();
         const callCount = attempts.length;
@@ -237,7 +238,9 @@ test.describe('E3B mounted working loops', () => {
     await page.getByRole('button', { name: '重新生成 Webinar' }).click();
     await expect(page.getByRole('dialog')).toContainText('新的 canonical ID');
     await page.getByRole('button', { name: '确认生成新 Webinar' }).click();
-    await expect(page.getByRole('alert')).toContainText('deterministic regeneration failure');
+    await expect(oldCard.getByRole('alert')).toContainText(
+      'deterministic regeneration failure',
+    );
     await expect(oldCard).toContainText('Webinar title');
     await expect(oldCard).toContainText('Current script');
 
