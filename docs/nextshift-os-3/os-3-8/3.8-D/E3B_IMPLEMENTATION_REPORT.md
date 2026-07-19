@@ -37,7 +37,7 @@ The machine-readable mapping is `E3B_COMPLETION_MATRIX.json`: PASS 18 / GAP 0 / 
 
 ## Changed files
 
-The delivery contains 30 files: 18 existing implementation files, 10 new shared/input/test/UI files, the completion matrix, and this report. The exact list is the PR diff. No Manifest, Pipeline, `runs/*`, Architecture Review artifact, Prisma schema/migration, workflow, production configuration, or release-state file changed.
+The delivery contains 31 files across the scoped Video, Lead Magnet, Webinar, shared UI, executable evidence, completion matrix, and this report. The exact list is the PR diff. No Manifest, Pipeline, `runs/*`, Architecture Review artifact, Prisma schema/migration, workflow, production configuration, or release-state file changed.
 
 ## Validation
 
