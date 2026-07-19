@@ -803,6 +803,23 @@ external_source_path() {
   [[ "$source_path" != "$repo_path" && "$source_path" != "$repo_path/"* ]] || return 1
   printf '%s\n' "$source_path"
 }
+approval_control_field_matches_once() {
+  local artifact="$1" field="$2" expected="$3" count
+  count="$(awk -F= -v field="$field" '$1 == field { count++ } END { print count + 0 }' "$artifact")"
+  [[ "$count" == 1 ]] || return 1
+  grep -Fqx "$field=$expected" "$artifact"
+}
+steven_ia_artifact_matches() {
+  local artifact="$1" gate_id="$2" approver="$3" approved_at="$4" approved_sha="$5" checkpoint_sha="$6"
+  [[ -f "$artifact" && ! -L "$artifact" ]] || return 1
+  [[ "$approved_sha" == "$checkpoint_sha" ]] || return 1
+  ! grep -Eq '^(GATE|APPROVER)=' "$artifact" || return 1
+  approval_control_field_matches_once "$artifact" HUMAN_GATE "$gate_id" || return 1
+  approval_control_field_matches_once "$artifact" DECISION APPROVED || return 1
+  approval_control_field_matches_once "$artifact" APPROVED_BY "$approver" || return 1
+  approval_control_field_matches_once "$artifact" APPROVED_AT "$approved_at" || return 1
+  approval_control_field_matches_once "$artifact" AR_W2_REVIEWED_SHA "$approved_sha"
+}
 final_audit_prerequisites_satisfied() {
   local gate_id artifact_relative approver approved_at approved_sha checkpoint_sha artifact
   jq -e '
@@ -817,12 +834,7 @@ final_audit_prerequisites_satisfied() {
     [[ -z "$gate_id" ]] && continue
     safe_relative_path "$artifact_relative" || return 1
     artifact="$(artifact_path "$artifact_relative")"
-    [[ "$approved_sha" == "$checkpoint_sha" && -f "$artifact" ]] || return 1
-    grep -Fqx "GATE=$gate_id" "$artifact" || return 1
-    grep -Fqx 'DECISION=APPROVED' "$artifact" || return 1
-    grep -Fqx "APPROVER=$approver" "$artifact" || return 1
-    grep -Fqx "APPROVED_AT=$approved_at" "$artifact" || return 1
-    grep -Fqx "AR_W2_REVIEWED_SHA=$approved_sha" "$artifact" || return 1
+    steven_ia_artifact_matches "$artifact" "$gate_id" "$approver" "$approved_at" "$approved_sha" "$checkpoint_sha" || return 1
   done < <(jq -r '.waves[] | select(.human_gate != null) | [.human_gate.id,.human_gate.approval_artifact,.human_gate.approved_by,.human_gate.approved_at,.human_gate.approved_reviewed_sha,.checkpoint.reviewed_sha] | @tsv' "$MANIFEST_PATH")
 }
 assert_final_audit_fresh() {
@@ -1772,12 +1784,13 @@ transaction_record_steven_ia() {
   artifact_relative="$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approval_artifact' "$MANIFEST_PATH")"
   safe_relative_path "$artifact_relative" || die "STEVEN-IA approval artifact path is invalid"
   artifact="$(artifact_path "$artifact_relative")"
-  printf -v expected 'GATE=STEVEN-IA\nDECISION=APPROVED\nAPPROVER=%s\nAPPROVED_AT=%s\nAR_W2_REVIEWED_SHA=%s' "$STEVEN_IA_APPROVER" "$STEVEN_IA_APPROVED_AT" "$reviewed_sha"
+  printf -v expected 'HUMAN_GATE=STEVEN-IA\nDECISION=APPROVED\nAPPROVED_BY=%s\nAPPROVED_AT=%s\nAR_W2_REVIEWED_SHA=%s' "$STEVEN_IA_APPROVER" "$STEVEN_IA_APPROVED_AT" "$reviewed_sha"
   if [[ "$status" == approved ]]; then
     approved_by="$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approved_by // empty' "$MANIFEST_PATH")"
     approved_at="$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approved_at // empty' "$MANIFEST_PATH")"
     approved_sha="$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approved_reviewed_sha // empty' "$MANIFEST_PATH")"
-    if [[ "$approved_by" == "$STEVEN_IA_APPROVER" && "$approved_at" == "$STEVEN_IA_APPROVED_AT" && "$approved_sha" == "$reviewed_sha" && -f "$artifact" && "$(cat "$artifact")" == "$expected" ]]; then
+    if [[ "$approved_by" == "$STEVEN_IA_APPROVER" && "$approved_at" == "$STEVEN_IA_APPROVED_AT" && "$approved_sha" == "$reviewed_sha" ]] &&
+      steven_ia_artifact_matches "$artifact" STEVEN-IA "$STEVEN_IA_APPROVER" "$STEVEN_IA_APPROVED_AT" "$reviewed_sha" "$reviewed_sha"; then
       STATE_TRANSACTION_NOOP=1
       return
     fi
