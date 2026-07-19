@@ -26,7 +26,7 @@ test.describe('E3B mounted working loops', () => {
     const card = page.locator('[data-canonical-id="lm-retail"]');
     await card.getByRole('button', { name: '编辑' }).click();
     const editor = page.getByRole('dialog');
-    const title = editor.getByLabel('标题', { exact: true });
+    const title = editor.getByRole('textbox', { name: '标题', exact: true });
     await title.fill('Current edited title');
     await expect(title).toBeFocused();
     await editor.getByRole('button', { name: '保存' }).click();
@@ -48,7 +48,7 @@ test.describe('E3B mounted working loops', () => {
     await expect(page.locator('[data-canonical-id="webinar-e2e"]')).toBeVisible();
     await page.getByRole('button', { name: '编辑' }).click();
     const editor = page.getByRole('dialog');
-    const title = editor.getByLabel('标题', { exact: true });
+    const title = editor.getByRole('textbox', { name: '标题', exact: true });
     await title.fill('Edited webinar');
     await editor.getByRole('button', { name: '保存' }).click();
     await expect(page.getByText('保存成功。')).toBeVisible();

@@ -25,7 +25,7 @@ test.describe('OS 3.8 E3A mounted capability surfaces', () => {
 
     await page.goto('/webinar-center');
     await expect(page.getByRole('heading', { name: '线上讲座中心' })).toBeVisible();
-    const generateWebinar = page.getByRole('button', { name: '生成完整Webinar' });
+    const generateWebinar = page.getByRole('button', { name: /^生成完整\s*Webinar$/ });
     const generatedStatus = page.getByText('已保存', { exact: true });
     await expect(generateWebinar.or(generatedStatus)).toBeVisible();
     if (await generateWebinar.isVisible()) {
