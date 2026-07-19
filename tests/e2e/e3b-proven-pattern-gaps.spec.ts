@@ -22,11 +22,44 @@ test.describe('E3B mounted working loops', () => {
   test('Lead Magnet keeps current edits, same ID copy, save feedback and isolated delete dialog', async ({ page }) => {
     await shell(page); const retail = lead('retail'); const recruitment = lead('recruitment');
     await page.route('**/api/v1/lead-magnet', async (route) => { const method = route.request().method(); if (method === 'PATCH') { const patch = route.request().postDataJSON(); await route.fulfill({ json: { data: { ...retail, ...patch, cta: { ...retail.cta, whatsappCta: patch.whatsappCta }, updatedAt: '2026-07-19T01:00:00.000Z' } } }); } else if (method === 'DELETE') await route.fulfill({ json: { data: { deleted: true } } }); else await route.fulfill({ json: { data: retail, trackLeadMagnets: { retail, recruitment } } }); });
-    await page.goto('/lead-magnet'); const card = page.locator('[data-canonical-id="lm-retail"]'); await card.getByRole('button', { name: '编辑' }).click(); const title = page.getByRole('dialog').getByLabel('标题'); await title.fill('Current edited title'); await expect(title).toBeFocused(); await page.getByRole('dialog').getByRole('button', { name: '保存' }).click(); await expect(card).toContainText('Current edited title'); await card.getByRole('button', { name: '复制当前内容' }).click(); await expect(card).toContainText('复制成功'); await card.getByRole('button', { name: '删除' }).click(); await expect(page.getByRole('dialog')).toContainText('另一条 track'); await page.keyboard.press('Escape'); await expect(page.locator('[data-canonical-id="lm-recruitment"]')).toBeVisible();
+    await page.goto('/lead-magnet');
+    const card = page.locator('[data-canonical-id="lm-retail"]');
+    await card.getByRole('button', { name: '编辑' }).click();
+    const editor = page.getByRole('dialog');
+    const title = editor.getByLabel('标题', { exact: true });
+    await title.fill('Current edited title');
+    await expect(title).toBeFocused();
+    await editor.getByRole('button', { name: '保存' }).click();
+    await expect(card).toContainText('Current edited title');
+    await expect(page.getByText('保存成功。')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(editor).toBeHidden();
+    await card.getByRole('button', { name: '复制当前内容' }).click();
+    await expect(card).toContainText('复制成功');
+    await card.getByRole('button', { name: '删除' }).click();
+    await expect(page.getByRole('dialog')).toContainText('另一条 track');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-canonical-id="lm-recruitment"]')).toBeVisible();
   });
 
   test('Webinar reopens exact identity, edits same ID, copies current sections and preserves accessible delete cancel', async ({ page }) => {
     await page.route('**/api/v1/webinar-center', async (route) => { const method = route.request().method(); if (method === 'PATCH') { const patch = route.request().postDataJSON(); await route.fulfill({ json: { data: { ...webinar, topic: { ...webinar.topic, title: patch.title }, updatedAt: '2026-07-19T01:00:00.000Z', status: 'saved' } } }); } else await route.fulfill({ json: { data: webinar } }); });
-    await page.goto('/webinar-center'); await expect(page.locator('[data-canonical-id="webinar-e2e"]')).toBeVisible(); await page.getByRole('button', { name: '编辑' }).click(); const title = page.getByRole('dialog').getByLabel('标题'); await title.fill('Edited webinar'); await page.getByRole('dialog').getByRole('button', { name: '保存' }).click(); await page.getByRole('button', { name: '复制当前讲稿' }).click(); await expect(page.getByText('复制成功。')).toBeVisible(); const trigger = page.getByRole('button', { name: '删除' }); await trigger.click(); await page.keyboard.press('Escape'); await expect(trigger).toBeFocused(); await expect(page.locator('[data-canonical-id="webinar-e2e"]')).toBeVisible();
+    await page.goto('/webinar-center');
+    await expect(page.locator('[data-canonical-id="webinar-e2e"]')).toBeVisible();
+    await page.getByRole('button', { name: '编辑' }).click();
+    const editor = page.getByRole('dialog');
+    const title = editor.getByLabel('标题', { exact: true });
+    await title.fill('Edited webinar');
+    await editor.getByRole('button', { name: '保存' }).click();
+    await expect(page.getByText('保存成功。')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(editor).toBeHidden();
+    await page.getByRole('button', { name: '复制当前讲稿' }).click();
+    await expect(page.getByText('复制成功。')).toBeVisible();
+    const trigger = page.getByRole('button', { name: '删除' });
+    await trigger.click();
+    await page.keyboard.press('Escape');
+    await expect(trigger).toBeFocused();
+    await expect(page.locator('[data-canonical-id="webinar-e2e"]')).toBeVisible();
   });
 });
