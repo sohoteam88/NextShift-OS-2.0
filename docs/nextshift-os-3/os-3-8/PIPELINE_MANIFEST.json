@@ -831,9 +831,63 @@
           "depends_on": [
             "U3B"
           ],
-          "status": "pending",
-          "verification": null,
-          "evidence": null
+          "status": "completed",
+          "verification": {
+            "status": "passed",
+            "task_id": "E3A",
+            "task_verification_policy": "actual_checks_required",
+            "repository": "sohoteam88/NextShift-OS-2.0",
+            "base_branch": "planning/os-3.8-product-usability",
+            "task_branch": "test/os-3.8-e3a-capability-revalidation",
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/95",
+            "verified_head_sha": "282279da57903a4f8449ea84c597e62d51cef0eb",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-D/E3A_IMPLEMENTATION_REPORT.md",
+            "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/E3A_DISPATCH.json",
+            "report_exists_at_exact_head": true,
+            "report_in_pr_diff": true,
+            "checks": "passed",
+            "architecture_review": {
+              "review_id": 4729630644,
+              "verdict": "PASS",
+              "reviewed_sha": "282279da57903a4f8449ea84c597e62d51cef0eb"
+            },
+            "verified_at": "2026-07-19T01:20:53Z"
+          },
+          "evidence": {
+            "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/95",
+            "merge_sha": "2b3016e942839f8141d7fa784a2954d4a4c1d4e8",
+            "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-D/E3A_IMPLEMENTATION_REPORT.md",
+            "verification": {
+              "status": "passed",
+              "task_id": "E3A",
+              "task_verification_policy": "actual_checks_required",
+              "repository": "sohoteam88/NextShift-OS-2.0",
+              "base_branch": "planning/os-3.8-product-usability",
+              "task_branch": "test/os-3.8-e3a-capability-revalidation",
+              "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/95",
+              "verified_head_sha": "282279da57903a4f8449ea84c597e62d51cef0eb",
+              "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-D/E3A_IMPLEMENTATION_REPORT.md",
+              "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/E3A_DISPATCH.json",
+              "report_exists_at_exact_head": true,
+              "report_in_pr_diff": true,
+              "checks": "passed",
+              "architecture_review": {
+                "review_id": 4729630644,
+                "verdict": "PASS",
+                "reviewed_sha": "282279da57903a4f8449ea84c597e62d51cef0eb"
+              },
+              "verified_at": "2026-07-19T01:20:53Z"
+            },
+            "validation": {
+              "checks": "passed",
+              "head_sha": "282279da57903a4f8449ea84c597e62d51cef0eb"
+            },
+            "recovered": true,
+            "recovered_at": "2026-07-19T01:20:53Z",
+            "github_merged_at": "2026-07-19T01:13:13Z",
+            "execution_mode": "manual_codex_desktop",
+            "adoption_mode": "manual_governance_backfill"
+          }
         },
         {
           "id": "E3B",

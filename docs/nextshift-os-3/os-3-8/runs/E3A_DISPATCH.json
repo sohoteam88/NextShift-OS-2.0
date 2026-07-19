@@ -1,0 +1,166 @@
+{
+  "schema": "nextshift.os3.8.task-dispatch",
+  "version": 1,
+  "task_id": "E3A",
+  "wave_id": "W3",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "task_verification_policy": "actual_checks_required",
+  "task_branch": "test/os-3.8-e3a-capability-revalidation",
+  "base_branch": "planning/os-3.8-product-usability",
+  "base_sha": "40bdce7c2ef6bd2b8c2a529aaaffd24796d67c14",
+  "authorized_base_sha": "40bdce7c2ef6bd2b8c2a529aaaffd24796d67c14",
+  "planning_sha_at_adoption": "2b3016e942839f8141d7fa784a2954d4a4c1d4e8",
+  "pr_number": 95,
+  "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/95",
+  "verified_head_sha": "282279da57903a4f8449ea84c597e62d51cef0eb",
+  "merge_sha": "2b3016e942839f8141d7fa784a2954d4a4c1d4e8",
+  "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-D/E3A_IMPLEMENTATION_REPORT.md",
+  "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/E3A_DISPATCH.json",
+  "report_exists_at_exact_head": true,
+  "report_in_pr_diff": true,
+  "checks": "passed",
+  "github_actions_run_id": 29652354442,
+  "check_runs": [
+    {
+      "name": "Type Check + Lint + Build",
+      "job_id": 88100718749,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "282279da57903a4f8449ea84c597e62d51cef0eb",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29652354442/job/88100718749"
+    },
+    {
+      "name": "Tests",
+      "job_id": 88101097112,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "282279da57903a4f8449ea84c597e62d51cef0eb",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29652354442/job/88101097112"
+    },
+    {
+      "name": "E2E Secret Check",
+      "job_id": 88101276875,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "282279da57903a4f8449ea84c597e62d51cef0eb",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29652354442/job/88101276875"
+    },
+    {
+      "name": "E2E Tests",
+      "job_id": 88101283530,
+      "status": "completed",
+      "conclusion": "success",
+      "head_sha": "282279da57903a4f8449ea84c597e62d51cef0eb",
+      "url": "https://github.com/sohoteam88/NextShift-OS-2.0/actions/runs/29652354442/job/88101283530"
+    }
+  ],
+  "canonical_evidence": [
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-D/E3A_CAPABILITY_REVALIDATION.md",
+      "sha256": "ed8a5a0170ffdfc1d88c3348af14826c44a314c315c0fc7ea575dd5765999096",
+      "exists_at_exact_head": true,
+      "in_pr_diff": true
+    },
+    {
+      "path": "docs/nextshift-os-3/os-3-8/3.8-D/E3A_IMPLEMENTATION_REPORT.md",
+      "sha256": "11e8d19c9dbdf744c149d6d8c2d617c11e54d95afccf3c3d94ca5cedbc080f0a",
+      "exists_at_exact_head": true,
+      "in_pr_diff": true
+    },
+    {
+      "path": "src/__tests__/services/e3a-capability-revalidation.test.ts",
+      "sha256": "cd0fc4808276195403e1db2cde1d807c2d2f0a17ecae2a85b55b213c6cee0752",
+      "exists_at_exact_head": true,
+      "in_pr_diff": true
+    },
+    {
+      "path": "tests/e2e/e3a-capability-revalidation.spec.ts",
+      "sha256": "456bcc87ea9c7c6a78bd4ecb5bbc89bcaf71279ccfd33081530a286a75d60553",
+      "exists_at_exact_head": true,
+      "in_pr_diff": true
+    }
+  ],
+  "changed_files": [
+    "docs/nextshift-os-3/os-3-8/3.8-D/E3A_CAPABILITY_REVALIDATION.md",
+    "docs/nextshift-os-3/os-3-8/3.8-D/E3A_IMPLEMENTATION_REPORT.md",
+    "src/__tests__/services/e3a-capability-revalidation.test.ts",
+    "tests/e2e/e3a-capability-revalidation.spec.ts"
+  ],
+  "changed_files_evidence": {
+    "source": "github_exact_pr_diff",
+    "count": 4,
+    "canonicalization": "lexicographically_sorted_compact_json_array",
+    "sha256": "46fae7f7af6104309479344ab77bbc1b036e916937aef65be1ba3981a9e195a6"
+  },
+  "architecture_review": {
+    "review_id": 4729630644,
+    "verdict": "PASS",
+    "reviewed_sha": "282279da57903a4f8449ea84c597e62d51cef0eb",
+    "authorized_base_sha": "40bdce7c2ef6bd2b8c2a529aaaffd24796d67c14",
+    "review_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/95#pullrequestreview-4729630644",
+    "exact_head_pass_review_count": 1
+  },
+  "capability_matrix": {
+    "pass": 1,
+    "gap": 17,
+    "not_applicable": 0,
+    "total": 18
+  },
+  "stable_gap_ids": [
+    "E3-GAP-VIDEO-01",
+    "E3-GAP-VIDEO-02",
+    "E3-GAP-VIDEO-03",
+    "E3-GAP-LEAD-MAGNET-01",
+    "E3-GAP-LEAD-MAGNET-02",
+    "E3-GAP-LEAD-MAGNET-03",
+    "E3-GAP-LEAD-MAGNET-04",
+    "E3-GAP-WEBINAR-01",
+    "E3-GAP-WEBINAR-02",
+    "E3-GAP-WEBINAR-03",
+    "E3-GAP-WEBINAR-04"
+  ],
+  "u3b_dependency": {
+    "task_status": "completed",
+    "product_pr": 100,
+    "product_head_sha": "bbcb6fcc8e0bcc77edc1ee369dd5cf8ba7f2a90d",
+    "product_merge_sha": "2444010463c2b75957c5b75125b3d55beb80f4f3",
+    "product_architecture_review_id": 4728613523,
+    "governance_pr": 101,
+    "governance_head_sha": "97d828c6b4bc8d3eece9f856ea258795f7c0eded",
+    "governance_merge_sha": "40bdce7c2ef6bd2b8c2a529aaaffd24796d67c14",
+    "governance_architecture_review_id": 4728847357,
+    "verified_in_planning_history": true
+  },
+  "u3adr_gate": {
+    "gate_id": "U3-AUDITLOG-ADR",
+    "gate_task_id": "U3ADR",
+    "consumer_task_id": "U3B",
+    "status": "completed",
+    "approval_state": "approved",
+    "freshness_state": "fresh",
+    "selected_option": "A_OPTIONAL_TENANT_WITH_SCOPE",
+    "policy_version": "2026-07-17.pr96-round5-v3",
+    "canonical_gate_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json",
+    "canonical_gate_sha256": "3f8f16939fab2a200fde4b909a657762e49607522f8c8e64d31bc1df81ec0b2e",
+    "policy_sha256": "ac3ea1acb9770bfca02cc6daed245dd245400e51d0ea68a7ff61f7f3e5da9bfb",
+    "decision_artifact": "docs/nextshift-os-3/os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json",
+    "decision_artifact_sha256": "e8eef7412d33385cfbd43b7e9a09240becfb82b477a8ab517874fc5a35d49ebc",
+    "protected_paths_sha256": "b0560d71feb2177f769448b84ef16432714b518d8545dd801eafce637ae40dbf",
+    "decision_sha": "5ab3aead887f6c2c9cc29a0b4b5196a0f8e122f8",
+    "review_id": 4721441810,
+    "verdict": "PASS"
+  },
+  "merge_ancestry": {
+    "merge_sha_in_planning_history": true,
+    "verified_against_planning_sha": "2b3016e942839f8141d7fa784a2954d4a4c1d4e8"
+  },
+  "evidence_identity_sha256": "e01f80572403142904fbf43261c23a0bcfa2b9c46f6d1a81c52157d648af3f19",
+  "execution_mode": "manual_codex_desktop",
+  "adoption_mode": "manual_governance_backfill",
+  "adoption_reason": "E3A completed through the approved classic Codex evidence workflow; PR #95 was exact-head reviewed, passed all required checks, and was merged before governance evidence persistence.",
+  "recovered": true,
+  "github_merged_at": "2026-07-19T01:13:13Z",
+  "verified_at": "2026-07-19T01:20:53Z",
+  "recovered_at": "2026-07-19T01:20:53Z",
+  "adopted_at": "2026-07-19T01:20:53Z"
+}
