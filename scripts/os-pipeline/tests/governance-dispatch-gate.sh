@@ -101,17 +101,27 @@ completed_task() {
 }
 
 configure_manifest() {
-  local policy="$1" u1b u3 u3a
+  local policy="$1" u1b u3 u3a e3a e3b
   u1b="$(jq -c '.waves[]|select(.id=="W3")|.tasks[]|select(.id=="U1B")' "$SOURCE_MANIFEST")"
   u3="$(jq -c '.waves[]|select(.id=="W3")|.tasks[]|select(.id=="U3")' "$SOURCE_MANIFEST")"
+  e3a="$(jq -c '.waves[]|select(.id=="W3")|.tasks[]|select(.id=="E3A")' "$SOURCE_MANIFEST")"
+  e3b="$(jq -c '.waves[]|select(.id=="W3")|.tasks[]|select(.id=="E3B")' "$SOURCE_MANIFEST")"
   u1b="$(completed_task "$u1b" U1B docs/fixture.md https://github.com/sohoteam88/NextShift-OS-2.0/pull/97)"
   u3a="$(completed_task "$u3" U3A docs/governance/U3ADR_DECISION.json https://github.com/sohoteam88/NextShift-OS-2.0/pull/98)"
-  jq --argjson policy "$policy" --argjson u1b "$u1b" --argjson u3a "$u3a" '
+  e3a="$(jq -c '.status="pending" | .depends_on=["U3B"] | .verification=null | .evidence=null' <<<"$e3a")"
+  e3b="$(jq -c '.status="pending" | .depends_on=["E3A"] | .verification=null | .evidence=null' <<<"$e3b")"
+  jq --argjson policy "$policy" --argjson u1b "$u1b" --argjson u3a "$u3a" --argjson e3a "$e3a" --argjson e3b "$e3b" '
     .waves |= map(if .id=="W3" then
       .status="running" | .tasks=[$u1b,$u3a,
         {id:"U3ADR",verification_policy:"actual_checks_required",title:"U3 ADR",blueprint_section:"fixture",contract:$policy.decision_artifact,execution_task:null,depends_on:["U3A"],status:"pending",verification:null,evidence:null,governance_gate:{gate_id:$policy.gate_id,artifact:"docs/gates/U3_GATE.json",policy:$policy}},
         {id:"U3B",verification_policy:"actual_checks_required",title:"U3B",blueprint_section:"fixture",contract:"docs/fixture.md",execution_task:null,depends_on:["U3ADR"],status:"blocked",verification:null,evidence:null,dispatch_gate:{gate_id:$policy.gate_id,task_id:"U3ADR",artifact:"docs/gates/U3_GATE.json",required_status:"approved",required_verdict:"PASS",reviewed_sha_must_equal_decision_sha:true,required_freshness_state:"fresh",option_c_proof_required:true,blocked_reason:"fixture"}},
-        (.tasks[]|select(.id=="E3A")|.depends_on=["U3B"]),(.tasks[]|select(.id=="E3B"))]
+        $e3a,$e3b] |
+      .checkpoint.status="pending" |
+      .checkpoint.requested_end_sha=null |
+      .checkpoint.reviewed_sha=null |
+      .checkpoint.remediation_attempts=0 |
+      .checkpoint.active_remediation=null |
+      .checkpoint.remediation_block=null
     else . end)
   ' "$SOURCE_MANIFEST" >"$MANIFEST"
 }
@@ -216,6 +226,7 @@ assert_zero_side_effects() {
   [[ -z "$(git -C "$STATE" ls-files --others --exclude-standard)" ]] || fail "$label left untracked files"
   [[ ! -e "$(git -C "$STATE" rev-parse --git-common-dir)/os-pipeline-state.lock" ]] || fail "$label left state lock"
   [[ ! -e "$STATE/docs/nextshift-os-3/os-3-8/runs/U3B_DISPATCH.json" ]] || fail "$label wrote dispatch artifact"
+  [[ -z "$(git -C "$STATE" for-each-ref --format='%(refname)' 'refs/heads/chore/*')" ]] || fail "$label created local task branch"
   [[ -z "$(git --git-dir="$ORIGIN" for-each-ref --format='%(refname)' 'refs/heads/chore/*')" ]] || fail "$label created task branch"
   ! grep -q '^pr create' "$FAKE_GH_LOG" || fail "$label created PR"
 }
@@ -241,6 +252,55 @@ expect_adoption_rejected() {
 expect_dispatch_rejected() {
   local label="$1"; snapshot; set +e; pipeline --dispatch >"$CONTROL/$label.log" 2>&1; rc=$?; set -e
   (( rc != 0 )) || fail "$label unexpectedly dispatched"; assert_zero_side_effects "$label"; pass "$label"
+}
+
+set_fixture_task_state() {
+  local id="$1" status="$2" source replacement
+  source="$(jq -c --arg id "$id" '.waves[].tasks[] | select(.id == $id)' "$MANIFEST")"
+  if [[ "$status" == completed ]]; then
+    replacement="$(completed_task "$source" "$id" "docs/fixture-$id.md" "https://github.com/sohoteam88/NextShift-OS-2.0/pull/199")"
+  else
+    replacement="$(jq -c --arg status "$status" '.status=$status | .verification=null | .evidence=null' <<<"$source")"
+  fi
+  jq --arg id "$id" --argjson replacement "$replacement" '
+    .waves |= map(.tasks |= map(if .id == $id then $replacement else . end))
+  ' "$MANIFEST" >"$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
+}
+
+commit_fixture_manifest() {
+  local message="$1"
+  git -C "$STATE" add "$MANIFEST"
+  git -C "$STATE" commit -m "$message" >/dev/null
+  git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null
+}
+
+expect_manifest_validation_rejected() {
+  local label="$1" rc
+  snapshot
+  set +e
+  PIPELINE_VALIDATION_ROOT="$STATE" "$STATE/validate-manifest.sh" --manifest "$MANIFEST" >"$CONTROL/$label.log" 2>&1
+  rc=$?
+  set -e
+  (( rc != 0 )) || fail "$label unexpectedly validated"
+  assert_zero_side_effects "$label"
+  pass "$label"
+}
+
+expect_gate_rejection_without_fallthrough() {
+  local label="$1" rc
+  snapshot
+  set +e
+  pipeline --dispatch >"$CONTROL/$label.log" 2>&1
+  rc=$?
+  set -e
+  (( rc != 0 )) || fail "$label unexpectedly dispatched"
+  assert_zero_side_effects "$label"
+  assert_eq "$(jq -r '.waves[].tasks[]|select(.id=="E3A")|.status' "$MANIFEST")" pending "$label changed E3A"
+  assert_eq "$(jq -r '.waves[].tasks[]|select(.id=="E3B")|.status' "$MANIFEST")" pending "$label changed E3B"
+  assert_eq "$(jq -r '.waves[].checkpoint|select(.id=="AR-W3")|.status' "$MANIFEST")" pending "$label changed AR-W3"
+  [[ ! -e "$STATE/docs/nextshift-os-3/os-3-8/reviews/W3_ARCHITECTURE_REVIEW_REQUEST.md" ]] || fail "$label wrote checkpoint request"
+  [[ -z "$(find "$STATE/docs/nextshift-os-3/os-3-8/runs" -type f -name '*_DISPATCH.json' -print 2>/dev/null)" ]] || fail "$label wrote a dispatch artifact"
+  pass "$label"
 }
 
 adopt_cmd() { pipeline --adopt-governance-gate U3ADR U3B "$ENVELOPE" https://github.com/sohoteam88/NextShift-OS-2.0/pull/99; }
@@ -270,6 +330,24 @@ setup_case duplicate adopted; before="$(git -C "$STATE" rev-parse HEAD)"; adopt_
 
 # Existing production dispatch-gate regressions, now using policy-bound gates.
 setup_case current_pending; expect_dispatch_rejected u3b_current_pending_gate_rejected
+
+# The fixture must never inherit the repository's current downstream lifecycle.
+# These real-Git cases prove the generic validator rejects impossible progress.
+setup_case completed_dependency; set_fixture_task_state E3A completed; commit_fixture_manifest invalid-completed-dependency; expect_manifest_validation_rejected completed_downstream_task_with_incomplete_dependency_rejected
+setup_case running_dependency; set_fixture_task_state E3A running; commit_fixture_manifest invalid-running-dependency; expect_manifest_validation_rejected running_downstream_task_with_incomplete_dependency_rejected
+
+# Each scenario starts from a fresh bare remote and explicitly pending E3A/E3B
+# plus pending AR-W3. A rejected U3B gate must not fall through to any later
+# selector or cause any command/repository side effect.
+setup_case no_e3a_fallthrough; expect_gate_rejection_without_fallthrough u3b_gate_rejection_cannot_select_or_dispatch_e3a
+setup_case no_e3b_fallthrough; expect_gate_rejection_without_fallthrough u3b_gate_rejection_cannot_select_or_dispatch_e3b
+setup_case no_checkpoint_fallthrough; expect_gate_rejection_without_fallthrough u3b_gate_rejection_cannot_generate_checkpoint_request
+setup_case no_codex_fallthrough; expect_gate_rejection_without_fallthrough u3b_gate_rejection_cannot_call_codex
+setup_case no_branch_fallthrough; expect_gate_rejection_without_fallthrough u3b_gate_rejection_cannot_create_or_push_branch
+setup_case no_pr_fallthrough; expect_gate_rejection_without_fallthrough u3b_gate_rejection_cannot_create_pr
+setup_case no_dispatch_artifact_fallthrough; expect_gate_rejection_without_fallthrough u3b_gate_rejection_cannot_write_dispatch_artifact
+setup_case no_manifest_fallthrough; expect_gate_rejection_without_fallthrough u3b_gate_rejection_cannot_mutate_or_commit_manifest
+
 setup_case adopted_missing adopted; rm -f "$GATE"; git -C "$STATE" add -A; git -C "$STATE" commit -m missing >/dev/null; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_dispatch_rejected u3b_gate_artifact_missing_rejected
 setup_case adopted_nonpass adopted; jq '.architecture_review.verdict="FAIL"' "$GATE" >"$GATE.tmp" && mv "$GATE.tmp" "$GATE"; git -C "$STATE" add "$GATE"; git -C "$STATE" commit -m nonpass >/dev/null; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_dispatch_rejected u3b_gate_nonpass_rejected
 setup_case adopted_sha adopted; jq '.architecture_review.reviewed_sha="1111111111111111111111111111111111111111"' "$GATE" >"$GATE.tmp" && mv "$GATE.tmp" "$GATE"; git -C "$STATE" add "$GATE"; git -C "$STATE" commit -m mismatch >/dev/null; git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null; expect_dispatch_rejected u3b_reviewed_decision_sha_mismatch_rejected

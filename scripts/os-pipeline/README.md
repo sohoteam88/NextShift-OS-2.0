@@ -279,6 +279,15 @@ validates the gate at three independent boundaries:
 3. the final locked task-start transaction revalidates the gate and the same
    digest before `pending → running` and dispatch-artifact persistence.
 
+The Manifest validator also enforces lifecycle dependencies generically. A
+task may be `running` or `completed` only when every declared prerequisite has
+reached the terminal state for its authority type: a normal task must be
+`completed`, an Architecture Review checkpoint must be `passed`, and a human
+approval gate must be `approved`. Unknown, missing, duplicate, or incompatible
+dependency authorities fail closed. A `superseded` task is an explicit
+governance cancellation and does not claim execution progress; it also never
+satisfies another task's dependency implicitly.
+
 Authorization has three separate layers. The immutable gate policy comes only
 from the synchronized planning Manifest and defines the gate/task/consumer
 identity, option allowlist, required decisions, protected paths, review and
@@ -503,7 +512,9 @@ Expected pipeline-specific coverage is:
 
 - Bash syntax and ShellCheck: **10 Pipeline/test shell files**, with zero
   ShellCheck issues.
-- `tests/run.sh`: **40 state-machine/Manifest assertions**.
+- `tests/run.sh`: **42 state-machine/Manifest assertions**, including generic
+  rejection of running or completed downstream tasks whose declared task
+  dependency is incomplete.
 - `tests/git-integration.sh`: a real temporary bare-Git
   **E1 → Codex outcome → exact PR verification → merge → planning
   reconciliation → E1 completion → automatic E2 selection/completion → AR-W1
@@ -532,7 +543,7 @@ Expected pipeline-specific coverage is:
   cases covering U1A/U2 authorization, rejection for every actual-check task,
   missing/unknown policies, forged/mismatched/cross-task evidence, caller
   non-authority, recovery revalidation, and exact PR #84 U1A evidence.
-- `tests/governance-dispatch-gate.sh`: **39 named real-Git production-path
+- `tests/governance-dispatch-gate.sh`: **49 named real-Git production-path
   fixtures**. Twenty-one policy/candidate/rollback fixtures prove immutable
   option and protected-path policy, reviewed decision/digest binding, required
   ADR completeness (including separate rejection of decisions that predate
@@ -540,11 +551,15 @@ Expected pipeline-specific coverage is:
   idempotency, plus an explicit idempotency-decision identity mismatch),
   transport-envelope non-authority, candidate-before-write,
   locked drift rejection, byte-identical post-write/push rollback, atomic
-  adoption, and duplicate clean stop. Eighteen retained dispatch-gate fixtures
+  adoption, and duplicate clean stop. Twenty-eight dispatch/lifecycle fixtures
   cover pending/missing/non-PASS/mismatched/stale/unknown/manual gates,
   gate-ID/partial-schema rejection, Option C proof, dependency evidence, valid
   exact-PASS dispatch, selection-to-lock and planning-head TOCTOU, duplicate/
-  stale/valid adoption, and zero Codex/branch/PR/dispatch/state side effects.
+  stale/valid adoption, state-independent pending E3A/E3B/AR-W3 setup, generic
+  rejection of running/completed downstream tasks with incomplete dependencies,
+  and named proof that a rejected U3B gate cannot select E3A/E3B, generate a
+  checkpoint, invoke Codex, create or push a branch, create a PR, write dispatch
+  evidence, or mutate/commit the Manifest.
 
 The real-Git fixtures use temporary bare remotes/worktrees plus fake GitHub and
 Codex commands. They do not contact GitHub, execute real E1/E2 product work,
