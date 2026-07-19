@@ -139,7 +139,9 @@ describe('E3A capability revalidation', () => {
       }
 
       expect(leadMagnetServiceSource).toContain('jsonb_set');
-      expect(webinarDashboard).toContain('generate.isError');
+      expect(webinarDashboard).toContain('regenerationError');
+      expect(webinarDashboard).toContain('重新生成 Webinar');
+      expect(webinarDashboard).toContain('重试重新生成');
       expect(masterScriptEditor).toContain('ClipboardButton');
       expect(productionPlan).toContain('ClipboardButton');
       expect(subtitleView).toContain('ClipboardButton');

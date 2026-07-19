@@ -48,26 +48,55 @@ export const webinarService = {
     return normalized;
   },
   async update(userId: string, id: string, patch: { title?: string; promise?: string; subtitle?: string; loomScript?: string; registrationHeadline?: string; registrationCta?: string }) {
-    const current = await this.get(userId);
-    if (!current || current.id !== id) throw new AppError('NOT_FOUND', 404, 'Webinar not found');
-    const next: WebinarPackage = {
-      ...current,
-      topic: { ...current.topic, ...(patch.title !== undefined ? { title: patch.title } : {}), ...(patch.promise !== undefined ? { promise: patch.promise } : {}), ...(patch.subtitle !== undefined ? { subtitle: patch.subtitle } : {}) },
-      ...(patch.loomScript !== undefined ? { loomScript: patch.loomScript } : {}),
-      registrationPage: { ...current.registrationPage, ...(patch.registrationHeadline !== undefined ? { headline: patch.registrationHeadline } : {}), ...(patch.registrationCta !== undefined ? { cta: patch.registrationCta } : {}) },
-      updatedAt: new Date().toISOString(),
-      status: 'saved',
-    };
-    const json = JSON.stringify(next);
-    await withLockedUser(userId, async (tx) => {
+    return withLockedUser(userId, async (tx) => {
+      // Compute the patch only after acquiring the user-row lock. Disjoint
+      // patches merge against the latest committed package; same-field writes
+      // follow explicit serialized last-committer-wins semantics.
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { metadata: true },
+      });
+      const metadata = (user?.metadata as Record<string, unknown>) ?? {};
+      const current =
+        metadata.webinar && typeof metadata.webinar === 'object'
+          ? (metadata.webinar as WebinarPackage)
+          : null;
+      if (!current || current.id !== id) {
+        throw new AppError('NOT_FOUND', 404, 'Webinar not found');
+      }
+
+      const next: WebinarPackage = {
+        ...current,
+        topic: {
+          ...current.topic,
+          ...(patch.title !== undefined ? { title: patch.title } : {}),
+          ...(patch.promise !== undefined ? { promise: patch.promise } : {}),
+          ...(patch.subtitle !== undefined ? { subtitle: patch.subtitle } : {}),
+        },
+        ...(patch.loomScript !== undefined
+          ? { loomScript: patch.loomScript }
+          : {}),
+        registrationPage: {
+          ...current.registrationPage,
+          ...(patch.registrationHeadline !== undefined
+            ? { headline: patch.registrationHeadline }
+            : {}),
+          ...(patch.registrationCta !== undefined
+            ? { cta: patch.registrationCta }
+            : {}),
+        },
+        updatedAt: new Date().toISOString(),
+        status: 'saved',
+      };
+      const json = JSON.stringify(next);
       const rows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
         UPDATE "users" SET "metadata" = jsonb_set(COALESCE("metadata", '{}'::jsonb), '{webinar}', ${json}::jsonb, true), "updated_at" = NOW()
         WHERE "id" = ${userId}::uuid AND "metadata" #>> '{webinar,id}' = ${id}
         RETURNING "id"
       `);
       if (rows.length !== 1) throw new AppError('NOT_FOUND', 404, 'Webinar not found');
+      return next;
     });
-    return next;
   },
   async delete(userId: string, id: string) {
     await withLockedUser(userId, async (tx) => {

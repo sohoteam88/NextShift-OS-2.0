@@ -283,30 +283,57 @@ export const leadMagnetService = {
   },
 
   async updateTrack(userId: string, track: LeadMagnetTrack, id: string, patch: { title?: string; promise?: string; description?: string; whatsappCta?: string }) {
-    const current = (await this.getTracks(userId))[track];
-    if (!current || current.id !== id) throw new AppError('NOT_FOUND', 404, 'Lead magnet not found');
-    const persisted: LeadMagnetConfig = {
-      ...current,
-      ...(patch.title !== undefined ? { title: patch.title } : {}),
-      ...(patch.promise !== undefined ? { promise: patch.promise } : {}),
-      ...(patch.description !== undefined ? { description: patch.description } : {}),
-      cta: { ...current.cta, ...(patch.whatsappCta !== undefined ? { whatsappCta: patch.whatsappCta } : {}) },
-      updatedAt: new Date().toISOString(),
-    };
-    const json = JSON.stringify(persisted);
-    const idPath = track === 'retail' ? Prisma.sql`'{lead_magnet_tracks,retail,id}'` : Prisma.sql`'{lead_magnet_tracks,recruitment,id}'`;
-    const nextMetadata = track === 'retail'
-      ? Prisma.sql`jsonb_set(jsonb_set(COALESCE("metadata", '{}'::jsonb), '{lead_magnet_tracks,retail}', ${json}::jsonb, true), '{lead_magnet}', ${json}::jsonb, true)`
-      : Prisma.sql`jsonb_set(COALESCE("metadata", '{}'::jsonb), '{lead_magnet_tracks,recruitment}', ${json}::jsonb, true)`;
-    await withLockedUser(userId, async (tx) => {
+    return withLockedUser(userId, async (tx) => {
+      // The row lock is the concurrency authority: every patch is computed from
+      // the latest committed canonical object. Disjoint patches merge; if two
+      // patches target the same field, the last lock holder to commit wins.
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { metadata: true },
+      });
+      const metadata = (user?.metadata as Record<string, unknown>) ?? {};
+      const stored =
+        metadata.lead_magnet_tracks &&
+        typeof metadata.lead_magnet_tracks === 'object'
+          ? (metadata.lead_magnet_tracks as Record<string, unknown>)
+          : {};
+      const current = isLeadMagnetConfig(stored[track])
+        ? stored[track]
+        : null;
+      if (!current || current.id !== id) {
+        throw new AppError('NOT_FOUND', 404, 'Lead magnet not found');
+      }
+
+      const persisted: LeadMagnetConfig = {
+        ...current,
+        ...(patch.title !== undefined ? { title: patch.title } : {}),
+        ...(patch.promise !== undefined ? { promise: patch.promise } : {}),
+        ...(patch.description !== undefined
+          ? { description: patch.description }
+          : {}),
+        cta: {
+          ...current.cta,
+          ...(patch.whatsappCta !== undefined
+            ? { whatsappCta: patch.whatsappCta }
+            : {}),
+        },
+        updatedAt: new Date().toISOString(),
+      };
+      const json = JSON.stringify(persisted);
+      const idPath = track === 'retail'
+        ? Prisma.sql`'{lead_magnet_tracks,retail,id}'`
+        : Prisma.sql`'{lead_magnet_tracks,recruitment,id}'`;
+      const nextMetadata = track === 'retail'
+        ? Prisma.sql`jsonb_set(jsonb_set(COALESCE("metadata", '{}'::jsonb), '{lead_magnet_tracks,retail}', ${json}::jsonb, true), '{lead_magnet}', ${json}::jsonb, true)`
+        : Prisma.sql`jsonb_set(COALESCE("metadata", '{}'::jsonb), '{lead_magnet_tracks,recruitment}', ${json}::jsonb, true)`;
       const rows = await tx.$queryRaw<Array<{ id: string }>>(Prisma.sql`
         UPDATE "users" SET "metadata" = ${nextMetadata}, "updated_at" = NOW()
         WHERE "id" = ${userId}::uuid AND "metadata" #>> ${idPath} = ${id}
         RETURNING "id"
       `);
       if (rows.length !== 1) throw new AppError('NOT_FOUND', 404, 'Lead magnet not found');
+      return persisted;
     });
-    return persisted;
   },
 
   async deleteTrack(userId: string, track: LeadMagnetTrack, id: string) {

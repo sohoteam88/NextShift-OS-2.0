@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -23,7 +24,9 @@ import type {
   ContentTrack,
 } from '@/modules/content-engine/types';
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
+import { AccessibleDialog } from '@/components/ui/AccessibleDialog';
 import type { LeadMagnetConfig, LeadMagnetTrack } from '../types';
+import { generateLeadMagnetTracks } from '../leadMagnetGeneration';
 import { LeadMagnetWorkingLoopCard } from './LeadMagnetWorkingLoopCard';
 
 type BrandProfile = Record<string, unknown>;
@@ -242,6 +245,10 @@ function ReadinessGate({
 
 export function LeadMagnetDashboard() {
   const queryClient = useQueryClient();
+  const [generationErrors, setGenerationErrors] = useState<
+    Partial<Record<LeadMagnetTrack, string>>
+  >({});
+  const [replaceTrack, setReplaceTrack] = useState<LeadMagnetTrack | null>(null);
   const brandProfileQuery = useQuery({
     queryKey: ['brand-builder-profile'],
     queryFn: async () => {
@@ -272,37 +279,50 @@ export function LeadMagnetDashboard() {
   });
 
   const generateResources = useMutation({
-    mutationFn: async () => {
-      const responses = await Promise.all(
-        TRACKS.map(async (track) => {
-          const response = await fetch('/api/v1/lead-magnet/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: track.recommendedType,
-              track: track.id,
-            }),
-          });
-
-          if (!response.ok) {
-            const payload = (await response.json().catch(() => ({}))) as {
-              error?: { message?: string };
-              message?: string;
-            };
-            throw new Error(
-              payload.error?.message ??
-                payload.message ??
-                '引流资源暂时无法生成。',
-            );
-          }
-
-          return response.json() as Promise<{ data: LeadMagnetConfig }>;
+    mutationFn: async (requestedTracks: LeadMagnetTrack[]) => {
+      const outcomes = await generateLeadMagnetTracks(
+        requestedTracks.map((trackId) => {
+          const track = TRACKS.find((candidate) => candidate.id === trackId);
+          if (!track) throw new Error('未知的引流资源方向。');
+          return { track: track.id, type: track.recommendedType };
         }),
       );
 
-      return responses.map((response) => response.data);
+      return { requestedTracks, outcomes };
     },
-    onSuccess: () => {
+    onSuccess: ({ requestedTracks, outcomes }) => {
+      const successes = outcomes.filter(
+        (outcome): outcome is { track: LeadMagnetTrack; data: LeadMagnetConfig } =>
+          'data' in outcome,
+      );
+      setGenerationErrors((current) => {
+        const next = { ...current };
+        for (const track of requestedTracks) delete next[track];
+        for (const outcome of outcomes) {
+          if ('error' in outcome) next[outcome.track] = outcome.error;
+        }
+        return next;
+      });
+      if (successes.length > 0) {
+        queryClient.setQueryData<LeadMagnetResponse>(
+          ['lead-magnet'],
+          (current) => {
+            const tracks: Record<
+              LeadMagnetTrack,
+              LeadMagnetConfig | null
+            > = {
+              retail: current?.trackLeadMagnets?.retail ?? current?.data ?? null,
+              recruitment:
+                current?.trackLeadMagnets?.recruitment ?? null,
+            };
+            for (const outcome of successes) tracks[outcome.track] = outcome.data;
+            return {
+              data: tracks.retail,
+              trackLeadMagnets: tracks,
+            };
+          },
+        );
+      }
       void queryClient.invalidateQueries({ queryKey: ['lead-magnet'] });
       void queryClient.invalidateQueries({
         queryKey: ['dashboard-projection'],
@@ -339,6 +359,10 @@ export function LeadMagnetDashboard() {
     trackLeadMagnets.retail ?? leadMagnetQuery.data?.data ?? null;
   const recruitmentResource = trackLeadMagnets.recruitment ?? null;
   const hasGeneratedResources = Boolean(retailResource && recruitmentResource);
+  const hasAnyGeneratedResource = Boolean(retailResource || recruitmentResource);
+  const missingTracks = TRACKS.filter((track) =>
+    track.id === 'retail' ? !retailResource : !recruitmentResource,
+  ).map((track) => track.id);
   const brandSummary = [
     {
       label: 'Brand DNA',
@@ -455,7 +479,7 @@ export function LeadMagnetDashboard() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => generateResources.mutate()}
+                  onClick={() => generateResources.mutate(missingTracks)}
                   disabled={generateResources.isPending}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-6 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-60"
                 >
@@ -469,7 +493,9 @@ export function LeadMagnetDashboard() {
                     </>
                   ) : (
                     <>
-                      生成引流资源{' '}
+                      {missingTracks.length === 2
+                        ? '生成引流资源'
+                        : '生成缺少的资源'}{' '}
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </>
                   )}
@@ -483,23 +509,29 @@ export function LeadMagnetDashboard() {
               </Link>
             </div>
 
-            {generateResources.isError ? (
+            {Object.keys(generationErrors).length > 0 ? (
               <div className="mt-4 rounded-[var(--radius-md)] border border-red-100 bg-red-50 p-4">
                 <p className="text-sm font-semibold text-red-800">
-                  引流资源暂时无法生成。
+                  部分引流资源尚未生成。
                 </p>
-                <p className="mt-1 text-xs leading-5 text-red-700">
-                  {(generateResources.error as Error).message}{' '}
-                  你可以重试，或回到 AI COO 继续当前任务。
-                </p>
-                <button
-                  type="button"
-                  onClick={() => generateResources.mutate()}
-                  className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-red-700"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-                  重试
-                </button>
+                {TRACKS.filter((track) => generationErrors[track.id]).map(
+                  (track) => (
+                    <div key={track.id} className="mt-2 text-xs text-red-700">
+                      <p>
+                        {track.title}：{generationErrors[track.id]}
+                      </p>
+                      <button
+                        type="button"
+                        disabled={generateResources.isPending}
+                        onClick={() => generateResources.mutate([track.id])}
+                        className="mt-2 inline-flex items-center gap-2 font-semibold underline disabled:opacity-50"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                        只重试 {track.id === 'retail' ? 'Retail' : 'Recruitment'}
+                      </button>
+                    </div>
+                  ),
+                )}
               </div>
             ) : null}
           </div>
@@ -590,7 +622,20 @@ export function LeadMagnetDashboard() {
                       <p className="mt-1 text-xs leading-5 text-emerald-800">
                         {resource.promise}
                       </p>
+                      <button
+                        type="button"
+                        disabled={generateResources.isPending}
+                        onClick={() => setReplaceTrack(track.id)}
+                        className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-md border border-emerald-300 bg-white px-3 text-xs font-semibold text-emerald-800 disabled:opacity-50"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                        重新生成 {track.id === 'retail' ? 'Retail' : 'Recruitment'}
+                      </button>
                     </div>
+                  ) : generationErrors[track.id] ? (
+                    <p role="status" className="mt-3 text-xs font-semibold text-red-700">
+                      {track.id === 'retail' ? 'Retail' : 'Recruitment'} 生成失败，可单独重试。
+                    </p>
                   ) : null}
                 </div>
               );
@@ -652,7 +697,7 @@ export function LeadMagnetDashboard() {
         </div>
       </section>
 
-      {hasGeneratedResources ? (
+      {hasAnyGeneratedResource ? (
         <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-600" aria-hidden="true" />
@@ -729,6 +774,45 @@ export function LeadMagnetDashboard() {
           </Link>
         </div>
       </section>
+
+      <AccessibleDialog
+        open={Boolean(replaceTrack)}
+        title="确认替换这条引流资源？"
+        description="成功后会产生新的 canonical ID，并替换当前 track。另一条 track 不会改变。"
+        onRequestClose={() => {
+          if (!generateResources.isPending) setReplaceTrack(null);
+        }}
+        className="max-w-md"
+      >
+        <div className="space-y-4 p-5">
+          <p className="text-sm leading-6 text-[var(--color-text-muted)]">
+            如果当前资源已经编辑，请先确认你确实要放弃现有版本。此操作不会自动覆盖，只有点击确认后才会生成替代版本。
+          </p>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              disabled={generateResources.isPending}
+              onClick={() => setReplaceTrack(null)}
+              className="min-h-11 rounded-md border px-4"
+            >
+              保留现有版本
+            </button>
+            <button
+              type="button"
+              disabled={generateResources.isPending || !replaceTrack}
+              onClick={() => {
+                if (!replaceTrack) return;
+                const confirmedTrack = replaceTrack;
+                setReplaceTrack(null);
+                generateResources.mutate([confirmedTrack]);
+              }}
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-blue-600 px-4 text-white disabled:opacity-50"
+            >
+              确认并生成新版本
+            </button>
+          </div>
+        </div>
+      </AccessibleDialog>
     </div>
   );
 }

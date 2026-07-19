@@ -35,6 +35,7 @@ vi.mock('@/modules/brand-dna/services/BrandContextProvider', () => ({ getBrandCo
 
 import { writeClipboardText } from '@/lib/clipboard';
 import { leadMagnetDeleteSchema, leadMagnetPatchSchema } from '@/modules/lead-magnet/input';
+import { generateLeadMagnetTracks } from '@/modules/lead-magnet/leadMagnetGeneration';
 import { leadMagnetService } from '@/modules/lead-magnet/leadMagnetService';
 import type { LeadMagnetConfig } from '@/modules/lead-magnet/types';
 import { productionPlanService } from '@/modules/video/services/production-plan-service';
@@ -183,6 +184,63 @@ describe('E3B stable GAP executable fixtures', () => {
     const reopened = await leadMagnetService.getTracks(user.id);
     expect(reopened.retail?.id).toBe(second.id); expect(reopened.recruitment?.id).toBe(recruitment.id); expect(metadata.unrelated).toEqual({ locale: 'zh-MY' });
   });
+
+  it.each([
+    ['retail', 'recruitment'],
+    ['recruitment', 'retail'],
+  ] as const)(
+    'E3B-LEAD-PARTIAL-RETRY: preserves successful %s and retries only failed %s',
+    async (successfulTrack, failedTrack) => {
+      const canonical: Partial<Record<'retail' | 'recruitment', LeadMagnetConfig>> = {};
+      const calls: Array<'retail' | 'recruitment'> = [];
+      let firstFailure = true;
+      const request = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as {
+          track: 'retail' | 'recruitment';
+        };
+        calls.push(body.track);
+        if (body.track === failedTrack && firstFailure) {
+          firstFailure = false;
+          return new Response(JSON.stringify({ message: 'deterministic failure' }), {
+            status: 500,
+          });
+        }
+        const data = lead(body.track, `lm-${body.track}-${calls.length}`);
+        canonical[body.track] = data;
+        return new Response(JSON.stringify({ data }), { status: 200 });
+      });
+
+      const first = await generateLeadMagnetTracks(
+        [
+          { track: 'retail', type: 'guide' },
+          { track: 'recruitment', type: 'checklist' },
+        ],
+        request as typeof fetch,
+      );
+      const successful = first.find(
+        (outcome) => outcome.track === successfulTrack && 'data' in outcome,
+      );
+      expect(successful && 'data' in successful ? successful.data.id : null).toBe(
+        canonical[successfulTrack]?.id,
+      );
+      const successfulSnapshot = structuredClone(canonical[successfulTrack]);
+
+      const retry = await generateLeadMagnetTracks(
+        [
+          {
+            track: failedTrack,
+            type: failedTrack === 'retail' ? 'guide' : 'checklist',
+          },
+        ],
+        request as typeof fetch,
+      );
+      expect(retry).toHaveLength(1);
+      expect(retry[0]?.track).toBe(failedTrack);
+      expect(canonical[successfulTrack]).toEqual(successfulSnapshot);
+      expect(canonical[failedTrack]?.id).toMatch(`lm-${failedTrack}-`);
+      expect(calls).toEqual(['retail', 'recruitment', failedTrack]);
+    },
+  );
 
   it('E3-GAP-WEBINAR-01: generation has stable identity and a failed replacement preserves the existing package', async () => {
     const existing = generateFullWebinar(brand as never); metadata = { ...metadata, webinar: existing };
