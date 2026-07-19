@@ -148,12 +148,17 @@ test.describe('E3B mounted working loops', () => {
         await editor.getByRole('textbox', { name: '标题', exact: true }).fill('Edited Retail title');
         await editor.getByRole('button', { name: '保存' }).click();
         await page.keyboard.press('Escape');
+        await expect(editor).toBeHidden();
         const callCount = attempts.length;
-        await card.getByRole('button', { name: '重新生成 Retail' }).click();
+        const regenerateRetail = page.getByRole('button', {
+          name: '重新生成 Retail',
+          exact: true,
+        });
+        await regenerateRetail.click();
         await expect(page.getByRole('dialog')).toContainText('新的 canonical ID');
         await page.getByRole('button', { name: '保留现有版本' }).click();
         expect(attempts).toHaveLength(callCount);
-        await card.getByRole('button', { name: '重新生成 Retail' }).click();
+        await regenerateRetail.click();
         await page.getByRole('button', { name: '确认并生成新版本' }).click();
         await expect(page.locator('[data-canonical-id="lm-retail-generated-2"]')).toBeVisible();
         expect(attempts).toEqual([
