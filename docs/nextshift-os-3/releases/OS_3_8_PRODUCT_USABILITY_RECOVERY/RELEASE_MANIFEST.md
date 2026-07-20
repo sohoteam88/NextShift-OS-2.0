@@ -2,7 +2,7 @@
 
 Proposal version: `v3.8.0`
 
-Status: **Release PR #109 open / awaiting Architecture Review**
+Status: **Release PR #109 open; live state is GitHub-authoritative**
 Last updated: 2026-07-20
 
 ---
@@ -16,8 +16,8 @@ Last updated: 2026-07-20
 | Package path | `docs/nextshift-os-3/releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/` |
 | Source branch | `planning/os-3.8-product-usability` |
 | R1A preparation baseline SHA | `c579ef41ca204bedb0e141473579bea938edf333` |
-| Release PR stage | [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) is open from `planning/os-3.8-product-usability` to `main` and awaiting Architecture Review |
-| Release PR exact head authority | GitHub PR #109 metadata plus its exact-head Architecture Review; deliberately not self-referenced inside this commit |
+| Release PR stage | [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) is open; its live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence |
+| Release PR exact head authority | GitHub PR #109 metadata plus exact-head review evidence; no future planning or merge SHA is self-referenced inside this commit |
 | Main baseline SHA | `76b573cdbf2f1bec31fe5770c080941469479d25` |
 | Main state | Pre-OS-3.8 merge baseline; planning has not been merged to main |
 | Current production | `v3.7.0` at `28c077f115a4e43c5e11e1097ae06b8744043643` |
@@ -72,7 +72,13 @@ Production migration requires separate explicit approval. This package does not 
 ## Authorization Boundary
 
 - The Release Preparation governance PR was reviewed and merged.
-- Planning-to-main Release PR #109 is open and awaiting Architecture Review.
+- Planning-to-main Release PR #109 is open; its live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence.
 - A Release PR is not production release approval.
 - Production migration, deployment, tagging, GitHub Release creation, and production traffic changes remain unauthorized.
 - `auto_tag=false`, `auto_deploy=false`, and `auto_release=false`; the release gate remains `BLOCKED`.
+
+## Known v3.8.1 Follow-up
+
+`PIPELINE_MANIFEST.json` still carries redundant `wave.status=running` values for W1 and W3. Task completion, checkpoint PASS results, human-gate approval, and Final Audit evidence remain the current validator's authoritative completion state, so this metadata mismatch is not a v3.8 release blocker.
+
+For v3.8.1, unify the wave-status transition and make the validator enforce consistency between `wave.status` and task, checkpoint, human-gate, and Final Audit state. This release-lifecycle metadata finalization does not modify the Manifest or Pipeline.
