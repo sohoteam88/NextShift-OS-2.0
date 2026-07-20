@@ -2,7 +2,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-release_sha="${1:-}"
+action="${1:-}"
+requested_sha="${2:-}"
 manifest="$repo_root/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
 
 fail() {
@@ -56,7 +57,11 @@ reject_unknown_controls() {
   done <"$file"
 }
 
-[[ "$release_sha" =~ ^[0-9a-f]{40}$ ]] || fail 'release SHA must be a full lowercase 40-character Git SHA'
+case "$action" in
+  deploy | rollback) ;;
+  *) fail "unsupported production action: $action" ;;
+esac
+[[ "$requested_sha" =~ ^[0-9a-f]{40}$ ]] || fail 'requested SHA must be a full lowercase 40-character Git SHA'
 [[ -f "$manifest" && ! -L "$manifest" ]] || fail 'canonical Pipeline Manifest must be a regular, non-symlink file'
 "$repo_root/scripts/os-pipeline/validate-manifest.sh" --manifest "$manifest" >/dev/null
 
@@ -73,7 +78,11 @@ review_id="$(jq -r '.release_gate.review_id // empty' "$manifest")"
 
 [[ "$gate_id" == 'OS3.8-FINAL-RELEASE' ]] || fail 'unexpected Final Release gate identity'
 [[ "$gate_status" == 'approved' ]] || fail 'canonical Final Release gate is not approved'
-[[ "$approved_release_sha" == "$release_sha" ]] || fail 'Manifest Final Release approval is stale or bound to a different release SHA'
+[[ "$approved_release_sha" =~ ^[0-9a-f]{40}$ ]] || fail 'Manifest approved release SHA is invalid'
+[[ "$(git -C "$repo_root" rev-parse "$approved_release_sha^{commit}" 2>/dev/null || true)" == "$approved_release_sha" ]] || \
+  fail 'Manifest approved release SHA does not resolve exactly'
+git -C "$repo_root" merge-base --is-ancestor "$approved_release_sha" refs/remotes/origin/main || \
+  fail 'Manifest approved release SHA is not contained in origin/main'
 [[ "$approved_by" == 'Steven' ]] || fail 'Manifest Final Release approver must be Steven'
 [[ "$approved_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'Manifest Final Release approval timestamp is invalid'
 [[ "$review_id" =~ ^[1-9][0-9]*$ ]] || fail 'Manifest Final Release review identity is invalid'
@@ -93,24 +102,47 @@ reject_unknown_controls "$approval" "$approval_fields"
 [[ "$(control_value "$approval" DECISION)" == 'APPROVED' ]] || fail 'Final Release decision is not APPROVED'
 [[ "$(control_value "$approval" APPROVER)" == 'Steven' ]] || fail 'Final Release Approval approver mismatch'
 [[ "$(control_value "$approval" APPROVED_AT)" == "$approved_at" ]] || fail 'Final Release Approval timestamp mismatch'
-[[ "$(control_value "$approval" RELEASE_SHA)" == "$release_sha" ]] || fail 'Final Release Approval release SHA mismatch'
+[[ "$(control_value "$approval" RELEASE_SHA)" == "$approved_release_sha" ]] || fail 'Final Release Approval release SHA mismatch'
 [[ "$(control_value "$approval" REVIEW_ID)" == "$review_id" ]] || fail 'Final Release Approval review identity mismatch'
-[[ "$(control_value "$approval" REVIEWED_SHA)" == "$release_sha" ]] || fail 'Final Release Approval reviewed SHA mismatch'
+[[ "$(control_value "$approval" REVIEWED_SHA)" == "$approved_release_sha" ]] || fail 'Final Release Approval reviewed SHA mismatch'
 [[ "$(control_value "$approval" PRODUCTION_READINESS_EVIDENCE)" == "$evidence_path" ]] || fail 'Final Release Approval readiness path mismatch'
 [[ "$(control_value "$approval" PRODUCTION_READINESS_EVIDENCE_SHA256)" == "$evidence_sha" ]] || fail 'Final Release Approval readiness digest mismatch'
 verification_id="$(control_value "$approval" PRODUCTION_READINESS_VERIFICATION_ID)"
 [[ "$verification_id" =~ ^OS38-PR-[0-9]{8}T[0-9]{6}Z$ ]] || fail 'Production Readiness verification identity is invalid'
 
-evidence_fields=$'EVIDENCE_ID\nSTATUS\nRELEASE_SHA\nVERIFICATION_ID\nVERIFIED_AT\nMIGRATION_REHEARSAL\nBACKUP_SHA256\nRESTORE_VERIFIED_AT\nROLLBACK_IMAGE_SHA'
+evidence_fields=$'EVIDENCE_ID\nSTATUS\nRELEASE_SHA\nVERIFICATION_ID\nVERIFIED_AT\nMIGRATION_REHEARSAL\nMIGRATION_IMAGE_REHEARSAL\nMIGRATION_IMAGE_DIGEST\nMIGRATION_IMAGE_REVISION\nBACKUP_SHA256\nRESTORE_VERIFIED_AT\nROLLBACK_IMAGE_SHA\nPRODUCTION_ENVIRONMENT\nREQUIRED_REVIEWER\nENVIRONMENT_PROTECTION\nENVIRONMENT_VERIFICATION_ID\nENVIRONMENT_VERIFIED_AT'
 reject_unknown_controls "$evidence" "$evidence_fields"
 [[ "$(control_value "$evidence" EVIDENCE_ID)" == 'OS3.8-PRODUCTION-READINESS' ]] || fail 'Production Readiness evidence identity mismatch'
 [[ "$(control_value "$evidence" STATUS)" == 'READY' ]] || fail 'Production Readiness evidence is not READY'
-[[ "$(control_value "$evidence" RELEASE_SHA)" == "$release_sha" ]] || fail 'Production Readiness evidence release SHA mismatch'
+[[ "$(control_value "$evidence" RELEASE_SHA)" == "$approved_release_sha" ]] || fail 'Production Readiness evidence release SHA mismatch'
 [[ "$(control_value "$evidence" VERIFICATION_ID)" == "$verification_id" ]] || fail 'Production Readiness verification identity mismatch'
-[[ "$(control_value "$evidence" VERIFIED_AT)" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'Production Readiness verification timestamp is invalid'
+verified_at="$(control_value "$evidence" VERIFIED_AT)"
+[[ "$verified_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'Production Readiness verification timestamp is invalid'
 [[ "$(control_value "$evidence" MIGRATION_REHEARSAL)" == 'PASS' ]] || fail 'Production migration rehearsal evidence is not PASS'
+[[ "$(control_value "$evidence" MIGRATION_IMAGE_REHEARSAL)" == 'PASS' ]] || fail 'exact-release migration image rehearsal evidence is not PASS'
+[[ "$(control_value "$evidence" MIGRATION_IMAGE_DIGEST)" =~ ^sha256:[0-9a-f]{64}$ ]] || fail 'migration image digest evidence is invalid'
+[[ "$(control_value "$evidence" MIGRATION_IMAGE_REVISION)" == "$approved_release_sha" ]] || fail 'migration image revision evidence does not match the approved release'
 [[ "$(control_value "$evidence" BACKUP_SHA256)" =~ ^[0-9a-f]{64}$ ]] || fail 'logical backup checksum evidence is invalid'
 [[ "$(control_value "$evidence" RESTORE_VERIFIED_AT)" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'isolated restore verification timestamp is invalid'
-[[ "$(control_value "$evidence" ROLLBACK_IMAGE_SHA)" =~ ^[0-9a-f]{40}$ ]] || fail 'rollback image evidence is invalid'
+rollback_image_sha="$(control_value "$evidence" ROLLBACK_IMAGE_SHA)"
+[[ "$rollback_image_sha" =~ ^[0-9a-f]{40}$ ]] || fail 'rollback image evidence is invalid'
+[[ "$(control_value "$evidence" PRODUCTION_ENVIRONMENT)" == 'production' ]] || fail 'Production Environment evidence must name production'
+[[ "$(control_value "$evidence" REQUIRED_REVIEWER)" == 'Steven' ]] || fail 'Production Environment required reviewer evidence mismatch'
+[[ "$(control_value "$evidence" ENVIRONMENT_PROTECTION)" == 'PASS' ]] || fail 'Production Environment protection evidence is not PASS'
+environment_verification_id="$(control_value "$evidence" ENVIRONMENT_VERIFICATION_ID)"
+[[ "$environment_verification_id" =~ ^OS38-ENV-[0-9]{8}T[0-9]{6}Z$ ]] || fail 'Production Environment verification identity is invalid'
+environment_verified_at="$(control_value "$evidence" ENVIRONMENT_VERIFIED_AT)"
+[[ "$environment_verified_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'Production Environment verification timestamp is invalid'
+[[ "$environment_verified_at" == "$verified_at" ]] || fail 'Production Environment protection evidence is stale'
 
-printf 'PASS: Final Release Approval and Production Readiness evidence authorize exact release %s\n' "$release_sha"
+case "$action" in
+  deploy)
+    [[ "$requested_sha" == "$approved_release_sha" ]] || fail 'deploy SHA does not match the approved release SHA'
+    ;;
+  rollback)
+    [[ "$requested_sha" == "$rollback_image_sha" ]] || fail 'rollback target is not the exact image authorized by readiness evidence'
+    ;;
+esac
+
+printf 'PASS: Final Release Approval authorizes %s target %s for approved release %s\n' \
+  "$action" "$requested_sha" "$approved_release_sha"

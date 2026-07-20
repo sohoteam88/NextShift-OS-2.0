@@ -169,6 +169,8 @@ require_block_count "$rollback_job" 1 'test "$image_revision" = "${{ env.RELEASE
 require_block_count "$rollback_job" 1 'docker tag "$target_image" nextshift-app:latest' 'rollback exact retag'
 grep -Fq 'nextshift-app:previous' <<<"$rollback_job" && \
   fail 'mutable previous tag must not be authoritative for rollback'
+grep -Eq 'docker build|nextshift-migrations:|run-os38-production-migrations|migrate deploy|docker run' <<<"$rollback_job" && \
+  fail 'rollback must never build an image or execute a migration'
 
 require_block_count "$(cat "$request_validator")" 1 "[[ \"\$control_plane_ref\" == 'refs/heads/main' ]]" 'main-only control plane'
 require_block_count "$(cat "$request_validator")" 1 '[[ "$control_plane_sha" =~ ^[0-9a-f]{40}$ ]]' 'control-plane SHA format'
@@ -176,11 +178,13 @@ require_block_count "$(cat "$request_validator")" 1 "git fetch --no-tags origin 
 require_block_count "$(cat "$request_validator")" 1 '[[ "$current_main_sha" == "$control_plane_sha" ]]' 'control-plane freshness'
 require_block_count "$(cat "$request_validator")" 1 'git merge-base --is-ancestor "$release_sha" refs/remotes/origin/main' 'release main ancestry'
 require_block_count "$(cat "$request_validator")" 1 'validate-final-release-approval.sh' 'Final Release Approval gate invocation'
+require_block_count "$(cat "$request_validator")" 1 '"$approval_validator" "$action" "$release_sha"' 'action-aware Final Release Approval invocation'
 require_block_count "$(cat "$approval_validator")" 1 "[[ \"\$gate_status\" == 'approved' ]]" 'Manifest approved terminal release gate'
 require_block_count "$(cat "$approval_validator")" 1 "[[ \"\$approved_by\" == 'Steven' ]]" 'Steven Final Release authority'
 require_block_count "$(cat "$approval_validator")" 1 "[[ \"\$(control_value \"\$approval\" DECISION)\" == 'APPROVED' ]]" 'Final Release APPROVED decision'
 require_block_count "$(cat "$approval_validator")" 1 'Final Release Approval artifact digest mismatch' 'approval artifact digest binding'
 require_block_count "$(cat "$approval_validator")" 1 'Production Readiness evidence artifact digest mismatch' 'readiness evidence digest binding'
+require_block_count "$(cat "$approval_validator")" 1 '[[ "$requested_sha" == "$rollback_image_sha" ]]' 'rollback readiness image binding'
 
 grep -Eq 'github\.event_name|github\.event\.workflow_run|workflows:[[:space:]]*\[' "$workflow" && \
   fail 'CI or another GitHub event must not trigger production deployment'

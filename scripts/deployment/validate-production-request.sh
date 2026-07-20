@@ -42,7 +42,7 @@ git merge-base --is-ancestor "$release_sha" refs/remotes/origin/main || \
 approval_validator="$repo_root/scripts/deployment/validate-final-release-approval.sh"
 [[ -f "$approval_validator" && ! -L "$approval_validator" && -x "$approval_validator" ]] || \
   fail 'Final Release Approval validator must be an executable, non-symlink file'
-"$approval_validator" "$release_sha"
+"$approval_validator" "$action" "$release_sha"
 
 printf 'PASS: production request is bound to main control plane %s and release %s\n' \
   "$control_plane_sha" "$release_sha"

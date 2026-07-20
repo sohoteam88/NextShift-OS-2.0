@@ -9,7 +9,7 @@ Production deployment secrets must use the `PROD_` prefix and must not reuse E2E
 `Deploy to Production` has no `push`, `pull_request`, `schedule`, or `workflow_run` trigger. A successful CI run cannot start a production action. Both deploy and rollback are available only through an explicit `workflow_dispatch` request, run in the `production` GitHub Environment, and require:
 
 - `action`: `deploy` or `rollback`;
-- `release_sha`: an exact 40-character commit SHA contained in `origin/main`;
+- `release_sha`: for deploy, the exact approved release SHA; for rollback, the exact rollback-image SHA frozen in Production Readiness evidence. Both must be full 40-character commits contained in `origin/main`;
 - `confirmation`: exactly `DEPLOY_PRODUCTION` for deploy or `ROLLBACK_PRODUCTION` for rollback.
 
 The workflow validates the SHA before the production job, checks out that exact SHA, and validates it against `origin/main` again before any build, migration, deploy, or rollback command. Deploy builds and labels the application and migration images from that same SHA.
@@ -18,10 +18,10 @@ The workflow control plane is separately bound to the exact current `main` commi
 
 Manual workflow dispatch and GitHub Environment approval are execution safeguards; neither is Steven Final Release Approval. Before either production job can start, the request validator requires all of the following from the exact `main` control-plane tree:
 
-- `PIPELINE_MANIFEST.json` has `release_gate.status=approved`, bound to the requested release SHA and Steven;
+- `PIPELINE_MANIFEST.json` has `release_gate.status=approved`, bound to the current approved release SHA and Steven;
 - the canonical `STEVEN_FINAL_RELEASE_APPROVAL.md` exists as a regular, non-symlink Git file and has the exact SHA-256 recorded by the Manifest;
 - the approval contains one authoritative `APPROVED` decision, Steven as approver, the exact release/review identity, and the canonical Production Readiness evidence identity;
-- the canonical Production Readiness evidence exists as a regular, non-symlink Git file, matches its recorded SHA-256, says `STATUS=READY`, and binds the exact release SHA, migration rehearsal, repository-external logical-backup checksum, isolated restore verification and exact rollback image.
+- the canonical Production Readiness evidence exists as a regular, non-symlink Git file, matches its recorded SHA-256, says `STATUS=READY`, and binds the approved release SHA, exact-release migration-image rehearsal/digest/revision, repository-external logical-backup checksum, isolated restore verification, exact rollback image, and a fresh `production` GitHub Environment protection snapshot requiring Steven.
 
 Missing, blocked, duplicate, stale, mismatched, untracked or symlink authority fails before Docker build, SCP, SSH, migration or deployment. The current repository deliberately has `release_gate.status=blocked` and contains no Final Release Approval or READY evidence artifact, so it is not deployable. This PR does not create either artifact or unlock the gate.
 
@@ -42,6 +42,21 @@ PRODUCTION_READINESS_VERIFICATION_ID=<exact evidence ID>
 ```
 
 This is a validation contract only. A separate, reviewed governance change must create the genuine artifacts and approved Manifest state.
+
+The future readiness artifact must additionally contain exactly one of each of the following controls. `ENVIRONMENT_VERIFIED_AT` must equal the enclosing readiness `VERIFIED_AT`, so an older Environment snapshot cannot be carried into a newer READY decision.
+
+```text
+MIGRATION_IMAGE_REHEARSAL=PASS
+MIGRATION_IMAGE_DIGEST=sha256:<64 lowercase hex>
+MIGRATION_IMAGE_REVISION=<approved release SHA>
+PRODUCTION_ENVIRONMENT=production
+REQUIRED_REVIEWER=Steven
+ENVIRONMENT_PROTECTION=PASS
+ENVIRONMENT_VERIFICATION_ID=OS38-ENV-<UTC compact timestamp>
+ENVIRONMENT_VERIFIED_AT=<same UTC as readiness VERIFIED_AT>
+```
+
+This remediation does not create or configure the GitHub Environment. A future Production Readiness rehearsal must build and execute the immutable migration image from the exact release SHA before it may record `READY`.
 
 ## VPS Access Secrets
 
@@ -98,7 +113,7 @@ The production VPS still owns runtime-only secrets in `/home/deploy/nextshift/.e
 
 GitHub Actions must not print these values. The deploy workflow builds a dedicated migration image from the exact release SHA using a digest-pinned Node base, lockfile-resolved Prisma CLI and pinned Bash/psql packages. It records the migration image ID and archive checksum, then revalidates the archive checksum, image digest, OCI revision and toolchain labels after loading the image on the VPS. The VPS performs no `apk`, npm, npx, Corepack or other network installation during migration.
 
-The migration image runs the complete OS 3.8 entrypoint. It acquires the database advisory lock, validates the Prisma and Supabase ledgers, applies the Content migration, the U3B audit migration and the additive audit-table RLS migration in deterministic order, and requires final catalog assertions before the application image can be retagged or started. A production migration failure is fail closed; it does not authorize deleting, resetting or rebuilding the production database.
+The migration image runs the complete OS 3.8 entrypoint. It acquires the database advisory lock, validates the Prisma and Supabase ledgers, and applies the Content migration first. On a fresh install, the U3B audit schema, additive RLS hardening, and both Supabase ledger records commit in one transaction so no externally visible U3B state can precede RLS/revocation. If U3B is already fully committed, only the additive RLS migration runs. Partial catalog/ledger states fail closed. Final catalog assertions must pass before the application image can be retagged or started. A production migration failure is fail closed; it does not authorize deleting, resetting or rebuilding the production database.
 
 ## Rollback
 
@@ -111,7 +126,7 @@ To roll back:
 1. Open the `Deploy to Production` workflow in GitHub Actions.
 2. Run `workflow_dispatch`.
 3. Select `rollback`.
-4. Enter the exact target image SHA, which must be a full SHA contained in `origin/main`, as `release_sha`.
+4. Enter the exact target image SHA recorded as `ROLLBACK_IMAGE_SHA` in the approved release's Production Readiness evidence. It must also be a full SHA contained in `origin/main`.
 5. Enter `ROLLBACK_PRODUCTION` as the confirmation.
 
-The rollback job requires `nextshift-app:<release_sha>` to exist and verifies that its OCI revision label exactly matches `release_sha` before retagging it as `latest`, recreating the app service, and running `scripts/deploy-smoke.sh`. A missing, unlabeled, or mismatched image fails closed.
+The Final Release Approval remains bound to the current approved release; it is not rebound to the older rollback commit. The rollback job requires `nextshift-app:<release_sha>` to exist and verifies that its OCI revision label exactly matches `release_sha` before retagging it as `latest`, recreating the app service, and running `scripts/deploy-smoke.sh`. It never builds an image or runs a migration. A missing, unlabeled, mismatched, or non-evidenced image fails closed.

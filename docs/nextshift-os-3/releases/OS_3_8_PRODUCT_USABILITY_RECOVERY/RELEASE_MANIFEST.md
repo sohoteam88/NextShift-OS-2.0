@@ -70,7 +70,7 @@ These repository changes are part of the RC source but **have not been executed 
 
 Production migration requires separate explicit approval. This package does not grant or execute it.
 
-The repository production entrypoint is [`scripts/deployment/run-os38-production-migrations.sh`](../../../../scripts/deployment/run-os38-production-migrations.sh). It binds the exact release SHA, validates the Prisma and Supabase ledgers, acquires one database advisory lock, applies the Prisma migration before the U3B Supabase migration and the additive audit-table RLS migration, skips the separate partial-index installer when the authoritative U3B migration owns that index, and requires RLS, privilege, policy and other catalog assertions before application deployment may begin. Its disposable PostgreSQL rehearsal is evidence only; no production database has been contacted or changed.
+The repository production entrypoint is [`scripts/deployment/run-os38-production-migrations.sh`](../../../../scripts/deployment/run-os38-production-migrations.sh). It binds the exact release SHA, validates the Prisma and Supabase ledgers, acquires one database advisory lock, and applies the Prisma migration first. For a fresh database, U3B creation, additive audit-table RLS/revocation, and both Supabase ledger entries share one transaction. For a complete existing U3B install, only the additive RLS migration runs. Partial catalog/ledger combinations fail closed. The separate partial-index installer remains skipped when the authoritative U3B migration owns that index, and final RLS, privilege, policy and other catalog assertions must pass before application deployment may begin. Its disposable PostgreSQL rehearsal is evidence only; no production database has been contacted or changed.
 
 The migration entrypoint runs from the dedicated [`scripts/deployment/Dockerfile.migrations`](../../../../scripts/deployment/Dockerfile.migrations) artifact built from the exact release SHA. The workflow verifies its archive checksum, image digest, OCI revision and pinned Node/pnpm/Prisma/Bash/psql labels after transfer; it performs no production-host network installation. A failed migration prevents application retag/start and does not authorize an automatic database reset or rebuild.
 
@@ -81,6 +81,8 @@ The migration entrypoint runs from the dedicated [`scripts/deployment/Dockerfile
 - A Release PR is not production release approval.
 - Production Readiness is `NOT READY`; merging source to `main` did not execute a production action.
 - The canonical Final Release gate remains `blocked`; the genuine Final Release Approval and `READY` evidence artifacts do not yet exist.
+- Future READY evidence must bind the `production` GitHub Environment, Steven as required reviewer, a fresh environment verification identity/timestamp, and a successful exact-release migration-image digest/revision rehearsal. No Environment configuration is created by this repository remediation.
+- Deploy remains bound to the approved release SHA. Rollback remains under that approval but may target only the exact `ROLLBACK_IMAGE_SHA` recorded by its readiness evidence; rollback performs no build or migration.
 - Production migration, deployment, tagging, GitHub Release creation, and production traffic changes remain unauthorized.
 - `auto_tag=false`, `auto_deploy=false`, and `auto_release=false`; the release gate remains `BLOCKED`.
 

@@ -86,6 +86,19 @@ expect_reject missing_supabase_migration_rejected
 new_fixture deterministic_order
 expect_accept migration_order_is_deterministic
 
+new_fixture fresh_atomic
+expect_accept fresh_u3b_and_rls_install_is_atomic
+
+new_fixture default_grants
+expect_accept supabase_default_grants_removed_before_first_commit
+
+new_fixture additive_existing
+expect_accept existing_u3b_without_rls_is_hardened_additively
+
+new_fixture partial_ledger
+perl -0pi -e 's/partial U3B\/RLS ledger state detected before fresh installation/partial state accepted/' "$fixture_runner"
+expect_reject partial_u3b_rls_ledger_state_rejected
+
 new_fixture failure_order
 perl -0pi -e 's#(            docker run --rm \\\n)#            docker compose --env-file .env.production -f docker-compose.prod.yml up -d app\n$1#' "$fixture_deploy"
 expect_reject migration_failure_prevents_deploy
@@ -168,6 +181,8 @@ psql_url="postgresql://postgres@127.0.0.1:$postgres_port/os38_readiness"
 "$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
 CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  GRANT ALL PRIVILEGES ON TABLES TO anon, authenticated;
 DROP TABLE IF EXISTS "audit_operational_alerts" CASCADE;
 DROP TABLE IF EXISTS "audit_event_outbox" CASCADE;
 DROP FUNCTION IF EXISTS enforce_audit_operational_alert_retention() CASCADE;
@@ -222,6 +237,16 @@ printf '%s\n' "$release_sha" >"$fixture_marker"
 OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
   "$runner" "$release_sha" "$fixture_marker" >/dev/null
 
+fresh_ledger_xmin_count="$("$psql_bin" -X -qAt "$psql_url" -c \
+  "SELECT count(DISTINCT xmin::text) FROM supabase_migrations.schema_migrations WHERE version IN ('20260717135456','20260720134506');")"
+[[ "$fresh_ledger_xmin_count" == 1 ]] || fail 'fresh U3B and RLS ledger rows were not committed by one transaction'
+pass fresh_u3b_and_rls_install_is_atomic
+
+fresh_privilege_count="$("$psql_bin" -X -qAt "$psql_url" -c \
+  "SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public' AND table_name IN ('audit_event_outbox','audit_operational_alerts') AND grantee IN ('anon','authenticated');")"
+[[ "$fresh_privilege_count" == 0 ]] || fail 'Supabase-style default table grants survived the first U3B/RLS commit'
+pass supabase_default_grants_removed_before_first_commit
+
 index_oid_before="$("$psql_bin" -X -qAt "$psql_url" -c \
   "SELECT 'public.audit_logs_idempotency_key_unique'::regclass::oid;")"
 OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
@@ -266,5 +291,39 @@ for role in anon authenticated; do
 done
 pass audit_tables_anon_authenticated_access_rejected
 
-[[ "$pass_count" == 22 ]] || fail "expected 22 named fixtures, got $pass_count"
+# Exercise the supported upgrade path where U3B is already committed but the
+# additive RLS migration has not yet been applied.
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
+DELETE FROM supabase_migrations.schema_migrations WHERE version='20260720134506';
+COMMENT ON TABLE public.audit_event_outbox IS NULL;
+COMMENT ON TABLE public.audit_operational_alerts IS NULL;
+ALTER TABLE public.audit_event_outbox DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_operational_alerts DISABLE ROW LEVEL SECURITY;
+GRANT ALL PRIVILEGES ON TABLE public.audit_event_outbox, public.audit_operational_alerts TO anon, authenticated;
+SQL
+OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null
+additive_state="$("$psql_bin" -X -qAt "$psql_url" <<'SQL'
+SELECT concat_ws('|',
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260717135456'),
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260720134506'),
+  (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('audit_event_outbox','audit_operational_alerts') AND c.relrowsecurity),
+  (SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public' AND table_name IN ('audit_event_outbox','audit_operational_alerts') AND grantee IN ('anon','authenticated'))
+);
+SQL
+)"
+[[ "$additive_state" == '1|1|2|0' ]] || fail "existing U3B additive RLS hardening failed: $additive_state"
+pass existing_u3b_without_rls_is_hardened_additively
+
+# A ledger/catalog combination from different lifecycle points must never be
+# repaired by guessing which migration succeeded.
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  "DELETE FROM supabase_migrations.schema_migrations WHERE version='20260717135456';"
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'partial U3B/RLS ledger state was accepted'
+fi
+pass partial_u3b_rls_ledger_state_rejected
+
+[[ "$pass_count" == 30 ]] || fail "expected 30 named fixtures, got $pass_count"
 printf 'PASS: %s production-readiness fixtures\n' "$pass_count"

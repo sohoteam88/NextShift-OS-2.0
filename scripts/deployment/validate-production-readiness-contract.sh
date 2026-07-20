@@ -84,6 +84,12 @@ require_count "$migration_runner" 1 'Supabase migration ledger authority is miss
 require_count "$migration_runner" 1 'partial-index installer skipped because the Supabase migration owns the index' 'partial-index single authority'
 require_count "$migration_runner" 1 'post-migration catalog assertions failed' 'catalog assertion gate'
 require_count "$migration_runner" 1 'audit-table RLS migration ledger/catalog drift detected' 'audit RLS ledger/catalog gate'
+require_count "$migration_runner" 1 'u3b-and-rls-apply.sql' 'fresh U3B and RLS atomic transaction'
+require_count "$migration_runner" 1 'partial U3B/RLS ledger state detected before fresh installation' 'partial fresh-install ledger rejection'
+require_order "$migration_runner" \
+  'cat "$u3b_migration"' \
+  'cat "$audit_rls_migration"' \
+  'fresh U3B/RLS migration order'
 require_count "$migration_runner" 2 "c.relname IN ('audit_event_outbox','audit_operational_alerts') AND c.relrowsecurity" 'audit-table RLS catalog assertions'
 require_count "$migration_runner" 2 "grantee IN ('anon','authenticated')" 'audit-table privilege catalog assertions'
 require_count "$migration_runner" 2 "tablename IN ('audit_event_outbox','audit_operational_alerts')" 'no client-facing audit policy assertions'
@@ -99,6 +105,20 @@ grep -Eq '(psql|prisma db execute).*install-audit-idempotency-authority\.sql' "$
   fail 'partial-index installer must not be executed after the authoritative Supabase migration'
 grep -Eq '(^|[[:space:]])npx([[:space:]]|$)' "$migration_runner" && \
   fail 'production migration runner must not download Prisma through npx'
+
+for readiness_control in \
+  PRODUCTION_ENVIRONMENT \
+  REQUIRED_REVIEWER \
+  ENVIRONMENT_PROTECTION \
+  ENVIRONMENT_VERIFICATION_ID \
+  ENVIRONMENT_VERIFIED_AT \
+  MIGRATION_IMAGE_REHEARSAL \
+  MIGRATION_IMAGE_DIGEST \
+  MIGRATION_IMAGE_REVISION; do
+  require_count "$approval_validator" 2 "$readiness_control" 'immutable Production Readiness evidence control'
+done
+require_count "$approval_validator" 1 'rollback target is not the exact image authorized by readiness evidence' 'rollback evidence binding'
+require_count "$approval_validator" 1 'Production Environment protection evidence is stale' 'environment freshness binding'
 
 require_count "$migration_dockerfile" 1 'node:22.23.1-alpine3.23@sha256:16e22a550f3863206a3f701448c45f7912c6896a62de43add43bb9c86130c3e2' 'digest-pinned Node migration base'
 require_count "$migration_dockerfile" 1 'bash=5.3.3-r1' 'pinned Bash migration runtime'

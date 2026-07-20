@@ -37,10 +37,11 @@ The release gate remains BLOCKED.
 ## Repository Readiness Contract
 
 - Main CI now requires all four jobs, including E2E Secret Check and E2E Tests, on a `main` push.
-- Production execution remains manual-only and additionally fails closed unless the canonical Manifest release gate, Final Release Approval and Production Readiness evidence all authorize the same exact release SHA.
+- Production execution remains manual-only. Deploy requires the requested SHA to equal the canonical approved release; rollback keeps that approval bound to the approved release and separately requires the requested target to equal the exact rollback image frozen in readiness evidence.
 - No genuine Final Release Approval or READY evidence artifact exists yet; this is intentional and keeps the current workflow non-deployable.
 - OS 3.8 migrations run only inside a release-built migration image whose archive checksum, image digest, OCI revision and pinned toolchain labels are revalidated before database access.
-- The additive audit-table hardening migration enables RLS and removes `anon`/`authenticated` privileges without changing the reviewed U3B migration history.
+- A future READY artifact must bind a fresh `production` GitHub Environment protection snapshot requiring Steven, plus a successful exact-release migration-image rehearsal. Neither evidence exists yet.
+- On a fresh database, U3B creation and the additive audit-table RLS/revocation migration commit atomically with both ledger rows. An existing complete U3B install receives only the additive hardening; partial ledger/catalog state is rejected.
 - Before any separately authorized production migration, a repository-external logical backup, checksum and successful isolated restore verification remain mandatory.
 
 ## Not Executed

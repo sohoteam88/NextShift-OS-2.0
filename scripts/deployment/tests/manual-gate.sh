@@ -71,6 +71,10 @@ setup_request_repository() {
   printf 'initial\n' >"$request_repo/release.txt"
   git -C "$request_repo" add release.txt
   git -C "$request_repo" commit --quiet -m initial
+  request_rollback_sha="$(git -C "$request_repo" rev-parse HEAD)"
+  printf 'approved release\n' >>"$request_repo/release.txt"
+  git -C "$request_repo" add release.txt
+  git -C "$request_repo" commit --quiet -m 'approved release'
   request_release_sha="$(git -C "$request_repo" rev-parse HEAD)"
   git -C "$request_repo" remote add origin "$request_remote"
   mkdir -p \
@@ -98,9 +102,17 @@ setup_request_repository() {
     'VERIFICATION_ID=OS38-PR-20260720T120000Z' \
     'VERIFIED_AT=2026-07-20T12:00:00Z' \
     'MIGRATION_REHEARSAL=PASS' \
+    'MIGRATION_IMAGE_REHEARSAL=PASS' \
+    'MIGRATION_IMAGE_DIGEST=sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' \
+    "MIGRATION_IMAGE_REVISION=$request_release_sha" \
     'BACKUP_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' \
     'RESTORE_VERIFIED_AT=2026-07-20T11:30:00Z' \
-    'ROLLBACK_IMAGE_SHA=1111111111111111111111111111111111111111' >"$request_evidence"
+    "ROLLBACK_IMAGE_SHA=$request_rollback_sha" \
+    'PRODUCTION_ENVIRONMENT=production' \
+    'REQUIRED_REVIEWER=Steven' \
+    'ENVIRONMENT_PROTECTION=PASS' \
+    'ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260720T120000Z' \
+    'ENVIRONMENT_VERIFIED_AT=2026-07-20T12:00:00Z' >"$request_evidence"
   request_evidence_sha="$(shasum -a 256 "$request_evidence" | awk '{print $1}')"
   printf '%s\n' \
     'APPROVAL_ID=OS3.8-FINAL-RELEASE-APPROVAL' \
@@ -152,6 +164,16 @@ refresh_request_approval_digest() {
   jq --arg approval_sha "$request_approval_sha" \
     '.release_gate.approval_sha256=$approval_sha' "$request_manifest" >"$request_manifest.tmp"
   mv "$request_manifest.tmp" "$request_manifest"
+}
+
+refresh_request_evidence_and_approval_digests() {
+  request_evidence_sha="$(shasum -a 256 "$request_evidence" | awk '{print $1}')"
+  perl -pi -e "s/^PRODUCTION_READINESS_EVIDENCE_SHA256=.*/PRODUCTION_READINESS_EVIDENCE_SHA256=$request_evidence_sha/" \
+    "$request_approval"
+  jq --arg evidence_sha "$request_evidence_sha" \
+    '.release_gate.readiness_evidence_sha256=$evidence_sha' "$request_manifest" >"$request_manifest.tmp"
+  mv "$request_manifest.tmp" "$request_manifest"
+  refresh_request_approval_digest
 }
 
 advance_request_main() {
@@ -278,11 +300,11 @@ expect_request_reject stale_main_control_plane_sha_rejected \
 
 environment_wait_sha="$request_main_sha"
 (cd "$request_repo" && "$request_validator" \
-  rollback ROLLBACK_PRODUCTION "$request_release_sha" refs/heads/main "$environment_wait_sha") >/dev/null || \
+  rollback ROLLBACK_PRODUCTION "$request_rollback_sha" refs/heads/main "$environment_wait_sha") >/dev/null || \
   fail 'control plane should be valid before environment-wait drift'
 advance_request_main environment-wait-drift
 expect_request_reject main_drift_after_environment_wait_rejected \
-  rollback ROLLBACK_PRODUCTION "$request_release_sha" refs/heads/main "$environment_wait_sha"
+  rollback ROLLBACK_PRODUCTION "$request_rollback_sha" refs/heads/main "$environment_wait_sha"
 
 production_marker="$fixture_root/production-job-entered"
 if (cd "$request_repo" && "$request_validator" deploy DEPLOY_PRODUCTION "$request_release_sha" refs/heads/feature "$request_main_sha" && touch "$production_marker") >/dev/null 2>&1; then
@@ -371,6 +393,58 @@ for effect in build scp ssh migration; do
 done
 pass no_build_scp_ssh_or_migration_without_approval
 
+# Round 2 B1: approval remains bound to the approved release while rollback is
+# restricted to the exact rollback image frozen in readiness evidence.
+setup_request_repository rollback-approved
+expect_request_accept approved_release_can_rollback_to_evidenced_exact_image \
+  rollback ROLLBACK_PRODUCTION "$request_rollback_sha" refs/heads/main "$request_main_sha"
+[[ "$(grep '^RELEASE_SHA=' "$request_approval")" == "RELEASE_SHA=$request_release_sha" ]] || \
+  fail 'rollback fixture rebound Final Release Approval to the old release'
+pass rollback_does_not_require_approval_rebound_to_old_release
+expect_request_reject rollback_target_not_in_readiness_evidence_rejected \
+  rollback ROLLBACK_PRODUCTION "$request_release_sha" refs/heads/main "$request_main_sha"
+
+read_fixture_paths rollback_migration
+perl -0pi -e 's/(      - name: Rollback on VPS)/      - name: Build migration image\n        run: docker build -t nextshift-migrations:test .\n$1/' "$fixture_workflow"
+expect_contract_reject rollback_never_builds_or_runs_migration "$fixture_workflow" "$fixture_helper"
+
+# Round 2 M2: READY evidence must freeze the protected production Environment
+# and its required reviewer in the same immutable, digest-bound artifact.
+setup_request_repository missing-environment
+perl -ni -e 'print unless /^PRODUCTION_ENVIRONMENT=/' "$request_evidence"
+refresh_request_evidence_and_approval_digests
+commit_request_fixture 'fixture: remove production environment evidence'
+expect_request_reject missing_production_environment_evidence_rejected \
+  deploy DEPLOY_PRODUCTION "$request_release_sha" refs/heads/main "$request_main_sha"
+
+setup_request_repository missing-reviewer
+perl -ni -e 'print unless /^REQUIRED_REVIEWER=/' "$request_evidence"
+refresh_request_evidence_and_approval_digests
+commit_request_fixture 'fixture: remove environment reviewer evidence'
+expect_request_reject missing_required_reviewer_evidence_rejected \
+  deploy DEPLOY_PRODUCTION "$request_release_sha" refs/heads/main "$request_main_sha"
+
+setup_request_repository wrong-environment
+perl -pi -e 's/^PRODUCTION_ENVIRONMENT=.*/PRODUCTION_ENVIRONMENT=staging/' "$request_evidence"
+refresh_request_evidence_and_approval_digests
+commit_request_fixture 'fixture: wrong production environment name'
+expect_request_reject wrong_environment_name_rejected \
+  deploy DEPLOY_PRODUCTION "$request_release_sha" refs/heads/main "$request_main_sha"
+
+setup_request_repository stale-environment
+perl -pi -e 's/^ENVIRONMENT_VERIFIED_AT=.*/ENVIRONMENT_VERIFIED_AT=2026-07-19T12:00:00Z/' "$request_evidence"
+refresh_request_evidence_and_approval_digests
+commit_request_fixture 'fixture: stale environment protection evidence'
+expect_request_reject stale_environment_protection_evidence_rejected \
+  deploy DEPLOY_PRODUCTION "$request_release_sha" refs/heads/main "$request_main_sha"
+
+setup_request_repository duplicate-environment
+printf '%s\n' 'ENVIRONMENT_PROTECTION=PASS' >>"$request_evidence"
+refresh_request_evidence_and_approval_digests
+commit_request_fixture 'fixture: duplicate environment protection authority'
+expect_request_reject duplicate_environment_protection_evidence_rejected \
+  deploy DEPLOY_PRODUCTION "$request_release_sha" refs/heads/main "$request_main_sha"
+
 # M1: build, load, and rollback all use the exact SHA and OCI revision label.
 read_fixture_paths deploy_label
 expect_contract_accept deploy_image_contains_exact_revision_label "$fixture_workflow" "$fixture_helper"
@@ -408,5 +482,5 @@ helper_symlink="$fixture_root/helper-symlink.sh"
 ln -s "$request_validator" "$helper_symlink"
 expect_contract_reject fixture_symlink_rejected "$canonical_workflow" "$helper_symlink"
 
-[[ "$pass_count" == 45 ]] || fail "expected 45 named fixtures, got $pass_count"
+[[ "$pass_count" == 54 ]] || fail "expected 54 named fixtures, got $pass_count"
 printf 'PASS: %s production deployment manual-gate fixtures\n' "$pass_count"

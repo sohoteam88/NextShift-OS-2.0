@@ -56,7 +56,7 @@ cleanup() {
     rm -f "$lock_status"
   fi
   if [[ -n "$lock_directory" && -d "$lock_directory" ]]; then
-    rmdir "$lock_directory" 2>/dev/null || true
+    rm -rf "$lock_directory"
   fi
 }
 trap cleanup EXIT INT TERM
@@ -190,22 +190,6 @@ SELECT
 SQL
 )"
 
-if [[ "$u3b_ledger_count" == 0 && "$u3b_catalog_count" == 0 ]]; then
-  u3b_apply_sql="$lock_directory/u3b-apply.sql"
-  {
-    printf '%s\n' '\set ON_ERROR_STOP on' 'BEGIN;'
-    cat "$u3b_migration"
-    printf '%s\n' \
-      "COMMENT ON TYPE \"AuditScope\" IS 'nextshift:supabase-migration:20260717135456:sha256=$u3b_sha';" \
-      "INSERT INTO supabase_migrations.schema_migrations(version, statements, name) VALUES ('20260717135456', ARRAY['nextshift sha256=$u3b_sha'], 'u3b_three_space_audit');" \
-      'COMMIT;'
-  } >"$u3b_apply_sql"
-  psql -X -q -v ON_ERROR_STOP=1 "$psql_url" -f "$u3b_apply_sql"
-  rm -f "$u3b_apply_sql"
-elif [[ "$u3b_ledger_count" != 1 || "$u3b_catalog_count" != 4 ]]; then
-  fail 'U3B migration ledger/catalog drift detected'
-fi
-
 audit_rls_ledger_count="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
   "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version = '20260720134506';")"
 audit_rls_catalog_state="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
@@ -220,6 +204,33 @@ SELECT concat_ws('|',
 );
 SQL
 )"
+
+if [[ "$u3b_ledger_count" == 0 && "$u3b_catalog_count" == 0 ]]; then
+  [[ "$audit_rls_ledger_count" == 0 && "$audit_rls_catalog_state" == '0|0|0' ]] || \
+    fail 'partial U3B/RLS ledger state detected before fresh installation'
+  u3b_apply_sql="$lock_directory/u3b-and-rls-apply.sql"
+  {
+    printf '%s\n' '\set ON_ERROR_STOP on' 'BEGIN;'
+    cat "$u3b_migration"
+    printf '%s\n' \
+      "COMMENT ON TYPE \"AuditScope\" IS 'nextshift:supabase-migration:20260717135456:sha256=$u3b_sha';" \
+      "INSERT INTO supabase_migrations.schema_migrations(version, statements, name) VALUES ('20260717135456', ARRAY['nextshift sha256=$u3b_sha'], 'u3b_three_space_audit');"
+    cat "$audit_rls_migration"
+    printf '%s\n' \
+      "COMMENT ON TABLE audit_event_outbox IS 'nextshift:supabase-migration:20260720134506:sha256=$audit_rls_sha';" \
+      "COMMENT ON TABLE audit_operational_alerts IS 'nextshift:supabase-migration:20260720134506:sha256=$audit_rls_sha';" \
+      "INSERT INTO supabase_migrations.schema_migrations(version, statements, name) VALUES ('20260720134506', ARRAY['nextshift sha256=$audit_rls_sha'], 'harden_audit_internal_tables_rls');" \
+      'COMMIT;'
+  } >"$u3b_apply_sql"
+  psql -X -q -v ON_ERROR_STOP=1 "$psql_url" -f "$u3b_apply_sql"
+  rm -f "$u3b_apply_sql"
+  u3b_ledger_count=1
+  u3b_catalog_count=4
+  audit_rls_ledger_count=1
+  audit_rls_catalog_state='2|0|0'
+elif [[ "$u3b_ledger_count" != 1 || "$u3b_catalog_count" != 4 ]]; then
+  fail 'U3B migration ledger/catalog drift detected'
+fi
 
 if [[ "$audit_rls_ledger_count" == 0 ]]; then
   [[ "$audit_rls_catalog_state" =~ ^[0-2]\|[0-9]+\|0$ ]] || \
