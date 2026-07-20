@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-19
+Last Updated: 2026-07-20
 
 ---
 
@@ -26,7 +26,7 @@ It summarizes project state for AI assistants and human contributors without rep
 | Current Planning Branch | `planning/os-3.8-product-usability` |
 | Repository Default Branch | `main` |
 | Production Status | OS 3.7 deployed and verified: version commit `28c077f`, environment `production`, health HTTP 200 `ok` |
-| OS 3.8 Candidate | RC package prepared; Final Audit PASS; Release Preparation approved; release gate BLOCKED |
+| OS 3.8 Candidate | Engineering complete; Final Audit PASS; Release Preparation approved; planning-to-main Release PR #109 open; release gate BLOCKED |
 
 Canonical navigation:
 
@@ -104,7 +104,7 @@ Components:
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
 | Developer Platform | OS 3.2 Developer Platform audit PASS; records remain historical release preparation artifacts | [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md) |
-| Current Capability Focus | OS 3.8 engineering complete; Final Audit PASS; Release Preparation governance review | [OS 3.8 RC Package](releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md) |
+| Current Capability Focus | OS 3.8 engineering complete; Final Audit PASS; Release Preparation approved; planning-to-main Release PR #109 open | [OS 3.8 RC Package](releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -115,11 +115,11 @@ Product planning and capability scope remain governed by the canonical capabilit
 | Field | Current State |
 | --- | --- |
 | Active Planning Branch | `planning/os-3.8-product-usability` |
-| Active Milestone | OS 3.8 Product Usability Recovery — Release Preparation |
-| Current Phase | RC package prepared; Release Preparation governance review |
-| Current Focus | Review and merge the Release Preparation governance PR before creating a separate planning-to-main Release PR |
-| Current Blockers | Production migration, deployment, tag, and production release approvals remain separate and unissued |
-| Current Priorities | Release Preparation governance review → separate Release PR review → explicit production approvals |
+| Active Milestone | OS 3.8 Product Usability Recovery — Release PR review |
+| Current Phase | Planning-to-main Release PR review and explicit merge authorization |
+| Current Focus | Exact-head review of Release PR #109; live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence |
+| Current Blockers | PR #109 merge authorization, Production Readiness, production migration, deployment, tag, and release each require separate explicit authorization |
+| Current Priorities | Exact-head Release Review → Steven explicit merge approval → post-merge `main` verification → Production Readiness → separate production approval |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -170,12 +170,13 @@ The `v3.4.0` release tag has been created and pushed.
 
 ## 7. Next Recommended Actions
 
-1. Review the [OS 3.8 RC Package](releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md) and Release Preparation governance PR.
-2. Merge that governance PR only after exact-head review.
-3. Create a separate `planning/os-3.8-product-usability` → `main` Release PR only after the governance PR merges.
-4. Keep production migration, deployment, tag, and production release blocked until Steven separately approves each action.
-5. Do not claim OS 3.8 is production current; production remains v3.7.0.
-6. Keep the two Minor and two Observation findings as v3.8.1 follow-up so the audited product SHA is not silently changed.
+1. Review Release PR [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) at its exact GitHub head.
+2. Merge only after an exact-head PASS and Steven's explicit merge approval.
+3. After merge, verify the exact `main` merge SHA and its GitHub CI results.
+4. Keep workflow dispatch, production migration, deployment, rollback, tag creation, and GitHub Release blocked until separately approved.
+5. Continue to state that production current remains `v3.7.0` until production deployment is separately completed and verified.
+
+Non-blocking Final Audit observations and release-governance metadata alignment remain v3.8.1 follow-up work; they do not alter the audited OS 3.8 release evidence.
 
 ---
 
