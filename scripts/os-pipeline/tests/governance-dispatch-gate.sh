@@ -122,8 +122,44 @@ configure_manifest() {
       .checkpoint.remediation_attempts=0 |
       .checkpoint.active_remediation=null |
       .checkpoint.remediation_block=null
-    else . end)
+    else . end) |
+    .final_audit.status="pending" |
+    .final_audit.requested_product_sha=null |
+    .final_audit.requested_at=null |
+    .final_audit.reviewed_sha=null |
+    .final_audit.completed_at=null |
+    .release_gate.status="blocked" |
+    .release_gate.auto_tag=false |
+    .release_gate.auto_deploy=false |
+    .execution_policy.auto_release=false |
+    .execution_policy.auto_deploy=false
   ' "$SOURCE_MANIFEST" >"$MANIFEST"
+}
+
+assert_historical_adoption_fixture_state() {
+  local label="$1"
+  jq -e '
+    .final_audit.status == "pending" and
+    .final_audit.requested_product_sha == null and
+    .final_audit.requested_at == null and
+    .final_audit.reviewed_sha == null and
+    .final_audit.completed_at == null and
+    .release_gate.status == "blocked" and
+    .release_gate.auto_tag == false and
+    .release_gate.auto_deploy == false and
+    .execution_policy.auto_release == false and
+    .execution_policy.auto_deploy == false and
+    ([.waves[].tasks[] | select(.id == "U3ADR") | .status] == ["pending"]) and
+    ([.waves[].tasks[] | select(.id == "U3B") | .status] == ["blocked"]) and
+    ([.waves[].tasks[] | select(.id == "E3A" or .id == "E3B") | .status] == ["pending", "pending"]) and
+    ([.waves[].checkpoint | select(.id == "AR-W3") | .status] == ["pending"])
+  ' "$MANIFEST" >/dev/null || fail "$label historical timeline normalization is invalid"
+  PIPELINE_VALIDATION_ROOT="$STATE" "$STATE/validate-manifest.sh" --manifest "$MANIFEST" >/dev/null ||
+    fail "$label candidate Manifest failed canonical validation before adoption"
+  assert_eq "$(git -C "$STATE" rev-parse HEAD)" "$(git --git-dir="$ORIGIN" rev-parse "$PLANNING_BRANCH")" \
+    "$label fixture local/remote mismatch before adoption"
+  [[ -z "$(git -C "$STATE" status --short)" ]] || fail "$label fixture dirty before adoption"
+  [[ -z "$(git -C "$STATE" ls-files --others --exclude-standard)" ]] || fail "$label fixture has untracked files before adoption"
 }
 
 write_decision() {
@@ -180,6 +216,10 @@ setup_case() {
   git -C "$STATE" add "$DECISION" "$PROOF"; git -C "$STATE" commit -m decision >/dev/null; DECISION_SHA="$(git -C "$STATE" rev-parse HEAD)"; write_envelope
   git -C "$STATE" push origin "$PLANNING_BRANCH" >/dev/null
   write_fake_tools; : >"$FAKE_GH_LOG"; : >"$CODEX_COUNT"
+  assert_historical_adoption_fixture_state "$name"
+  if [[ "$name" == valid_atomic ]]; then
+    pass terminal_final_audit_state_normalized_for_valid_atomic_adoption_fixture
+  fi
   cat >"$CONTROL/advance-remote.sh" <<ADVANCE
 #!/usr/bin/env bash
 set -euo pipefail
@@ -325,7 +365,7 @@ setup_case candidate_invalid_real; snapshot; set +e; PIPELINE_INJECT_CANDIDATE_I
 setup_case locked_drift; snapshot; set +e; PIPELINE_INJECT_LOCKED_SOURCE_DRIFT=1 adopt_cmd >"$CONTROL/post_candidate_locked_drift_rejected.log" 2>&1; rc=$?; set -e; (( rc != 0 )) || fail 'locked drift succeeded'; assert_zero_side_effects post_candidate_locked_drift_rejected; pass post_candidate_locked_drift_rejected
 setup_case post_write; snapshot; set +e; PIPELINE_INJECT_POST_WRITE_VALIDATION_FAILURE=1 adopt_cmd >"$CONTROL/post_write_validation_failure_rolls_back.log" 2>&1; rc=$?; set -e; (( rc != 0 )) || fail 'post-write injection succeeded'; assert_zero_side_effects post_write_validation_failure_rolls_back; pass post_write_validation_failure_rolls_back
 setup_case push_failure; printf '#!/usr/bin/env bash\nexit 1\n' >"$ORIGIN/hooks/pre-receive"; chmod +x "$ORIGIN/hooks/pre-receive"; expect_adoption_rejected push_failure_restores_clean_worktree adopt_cmd
-setup_case valid_atomic; before="$(git -C "$STATE" rev-parse HEAD)"; adopt_cmd >"$CONTROL/valid.log" 2>&1 || { tail -80 "$CONTROL/valid.log"; fail 'valid policy-bound adoption failed'; }; [[ "$(git -C "$STATE" rev-parse HEAD)" != "$before" ]] || fail 'valid adoption created no commit'; assert_eq "$(git -C "$STATE" rev-parse HEAD)" "$(git --git-dir="$ORIGIN" rev-parse "$PLANNING_BRANCH")" 'valid adoption local/remote mismatch'; assert_eq "$(jq -r '.waves[].tasks[]|select(.id=="U3B")|.status' "$MANIFEST")" pending 'consumer not pending'; pass valid_policy_bound_adoption_atomic
+setup_case valid_atomic; before="$(git -C "$STATE" rev-parse HEAD)"; adopt_cmd >"$CONTROL/valid.log" 2>&1 || { tail -80 "$CONTROL/valid.log"; fail 'valid policy-bound adoption failed'; }; [[ "$(git -C "$STATE" rev-parse HEAD)" != "$before" ]] || fail 'valid adoption created no commit'; assert_eq "$(git -C "$STATE" rev-parse HEAD)" "$(git --git-dir="$ORIGIN" rev-parse "$PLANNING_BRANCH")" 'valid adoption local/remote mismatch'; assert_eq "$(jq -r '.waves[].tasks[]|select(.id=="U3ADR")|.status' "$MANIFEST")" completed 'gate task not completed'; assert_eq "$(jq -r '.waves[].tasks[]|select(.id=="U3B")|.status' "$MANIFEST")" pending 'consumer not pending'; PIPELINE_VALIDATION_ROOT="$STATE" "$STATE/validate-manifest.sh" --manifest "$MANIFEST" >/dev/null || fail 'valid adoption Manifest failed canonical validation'; assert_eq "$(wc -l <"$CODEX_COUNT" | tr -d ' ')" 0 'valid adoption invoked Codex'; [[ -z "$(git -C "$STATE" status --short)" ]] || fail 'valid adoption left dirty worktree'; [[ -z "$(git -C "$STATE" ls-files --others --exclude-standard)" ]] || fail 'valid adoption left untracked files'; [[ ! -e "$STATE/docs/nextshift-os-3/os-3-8/runs/U3B_DISPATCH.json" ]] || fail 'valid adoption wrote dispatch artifact'; [[ -z "$(git --git-dir="$ORIGIN" for-each-ref --format='%(refname)' 'refs/heads/chore/*')" ]] || fail 'valid adoption created product branch'; ! grep -q '^pr create' "$FAKE_GH_LOG" || fail 'valid adoption created PR'; pass valid_policy_bound_adoption_atomic
 setup_case duplicate adopted; before="$(git -C "$STATE" rev-parse HEAD)"; adopt_cmd >"$CONTROL/duplicate.log" 2>&1 || fail 'duplicate adoption failed'; assert_eq "$(git -C "$STATE" rev-parse HEAD)" "$before" 'duplicate adoption committed'; [[ -z "$(git -C "$STATE" status --short)" ]] || fail 'duplicate adoption dirty'; pass duplicate_policy_bound_adoption_clean_stop
 
 # Existing production dispatch-gate regressions, now using policy-bound gates.

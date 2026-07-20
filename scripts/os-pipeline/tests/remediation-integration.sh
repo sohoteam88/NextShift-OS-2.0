@@ -190,7 +190,15 @@ create_fixture() {
         .checkpoint.remediation_attempts=0 | .checkpoint.active_remediation=null | .checkpoint.remediation_block=null |
         if .human_gate then .human_gate.status="pending" | .human_gate.approved_by=null | .human_gate.approved_at=null | .human_gate.approved_reviewed_sha=null else . end
       end
-    )
+    ) |
+    .final_audit.status="pending" |
+    .final_audit.requested_product_sha=null |
+    .final_audit.requested_at=null |
+    .final_audit.reviewed_sha=null |
+    .final_audit.completed_at=null |
+    .release_gate.status="blocked" |
+    .release_gate.auto_tag=false |
+    .release_gate.auto_deploy=false
   ' "$SEED/$MANIFEST_REL" >"$SEED/manifest.tmp"
   mv "$SEED/manifest.tmp" "$SEED/$MANIFEST_REL"
   git -C "$SEED" add .
@@ -242,6 +250,38 @@ create_fixture() {
   git -C "$STATE" config user.email fixture@example.test
   git -C "$STATE" config user.name fixture
   write_fake_tools
+
+  assert_eq "$(jq -r '.final_audit.status' "$MANIFEST")" pending \
+    'terminal source Final Audit status must be normalized'
+  assert_eq "$(jq -r '.final_audit.requested_product_sha' "$MANIFEST")" null \
+    'normalized Final Audit requested product SHA'
+  assert_eq "$(jq -r '.final_audit.requested_at' "$MANIFEST")" null \
+    'normalized Final Audit requested timestamp'
+  assert_eq "$(jq -r '.final_audit.reviewed_sha' "$MANIFEST")" null \
+    'normalized Final Audit reviewed SHA'
+  assert_eq "$(jq -r '.final_audit.completed_at' "$MANIFEST")" null \
+    'normalized Final Audit completion timestamp'
+  assert_eq "$(jq -r '.release_gate.status' "$MANIFEST")" blocked \
+    'normalized fixture release gate status'
+  assert_eq "$(jq -r '.release_gate.auto_tag' "$MANIFEST")" false \
+    'normalized fixture auto-tag safety'
+  assert_eq "$(jq -r '.release_gate.auto_deploy' "$MANIFEST")" false \
+    'normalized fixture auto-deploy safety'
+  assert_eq "$(jq -r '.waves[0].checkpoint.status' "$MANIFEST")" changes_requested \
+    'historical remediation checkpoint status'
+  jq -e '.waves[0].checkpoint.requested_end_sha | test("^[0-9a-f]{40}$")' "$MANIFEST" >/dev/null || \
+    fail 'historical remediation checkpoint requested SHA is invalid'
+  assert_eq "$(jq -r '.waves[0].checkpoint.remediation_attempts' "$MANIFEST")" 0 \
+    'historical remediation attempt count'
+  assert_eq "$(jq -r '.waves[0].checkpoint.active_remediation // null' "$MANIFEST")" null \
+    'historical remediation active reservation must start empty'
+  "$ROOT/scripts/os-pipeline/validate-manifest.sh" --manifest "$MANIFEST" >/dev/null || \
+    fail 'normalized remediation fixture failed canonical validation before reservation'
+  assert_eq "$(plan_action)" remediation \
+    'normalized remediation fixture plan before reservation'
+  if [[ "$name" == failure ]]; then
+    pass 'terminal_final_audit_state_normalized_for_remediation_fixture'
+  fi
 }
 
 run_cycle() {

@@ -782,7 +782,10 @@ fixture_pipeline_generated_approval_uses_canonical_fields() {
 }
 
 fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites() {
-  local real_case real_remote real_state real_manifest real_request real_artifact real_lock
+  local real_case real_remote real_state real_manifest real_request real_report real_artifact real_lock
+  local manifest_tmp approval_snapshot approval_sha_before approval_sha_after checkpoint_reviewed_sha
+  local source_approval source_manifest_sha source_request_sha source_report_sha source_approval_sha
+  local normalized_head request_commit request_files
   real_case="$TMP/real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites"
   real_remote="$real_case/origin.git"
   real_state="$real_case/state"
@@ -793,8 +796,69 @@ fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites()
   git -C "$real_state" config user.name fixture
   real_manifest="$real_state/$MANIFEST_REL"
   real_request="$real_state/$(jq -r '.final_audit.request' "$real_manifest")"
+  real_report="$real_state/$(jq -r '.final_audit.report' "$real_manifest")"
   real_artifact="$real_state/$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approval_artifact' "$real_manifest")"
+  source_approval="$ROOT/$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approval_artifact' "$SOURCE_MANIFEST")"
   [[ -f "$real_artifact" && ! -L "$real_artifact" ]] || fail 'real repository STEVEN-IA artifact is not a regular file'
+  approval_snapshot="$real_case/control/approval-before-normalization.md"
+  cp "$real_artifact" "$approval_snapshot"
+  approval_sha_before="$(shasum -a 256 "$real_artifact" | awk '{print $1}')"
+  source_manifest_sha="$(shasum -a 256 "$SOURCE_MANIFEST" | awk '{print $1}')"
+  source_request_sha="$(shasum -a 256 "$ROOT/$(jq -r '.final_audit.request' "$SOURCE_MANIFEST")" | awk '{print $1}')"
+  source_report_sha="$(shasum -a 256 "$ROOT/$(jq -r '.final_audit.report' "$SOURCE_MANIFEST")" | awk '{print $1}')"
+  source_approval_sha="$(shasum -a 256 "$source_approval" | awk '{print $1}')"
+  checkpoint_reviewed_sha="$(jq -r '[.waves[].checkpoint.reviewed_sha][-1]' "$real_manifest")"
+
+  manifest_tmp="$real_case/control/manifest-normalized.json"
+  jq '
+    .final_audit.status="pending" |
+    .final_audit.requested_product_sha=null |
+    .final_audit.requested_at=null |
+    .final_audit.reviewed_sha=null |
+    .final_audit.completed_at=null |
+    .release_gate.status="blocked" |
+    .release_gate.auto_tag=false |
+    .release_gate.auto_deploy=false |
+    .execution_policy.auto_release=false |
+    .execution_policy.auto_deploy=false
+  ' "$real_manifest" >"$manifest_tmp"
+  mv "$manifest_tmp" "$real_manifest"
+  rm -f "$real_request" "$real_report"
+
+  jq -e '
+    all(.waves[].tasks[]; .status == "completed" or .status == "superseded") and
+    all(.waves[].checkpoint; .status == "passed") and
+    all(.waves[].human_gate?; . == null or .status == "approved") and
+    .final_audit.status == "pending" and
+    .final_audit.requested_product_sha == null and
+    .final_audit.requested_at == null and
+    .final_audit.reviewed_sha == null and
+    .final_audit.completed_at == null and
+    .release_gate.status == "blocked" and
+    .release_gate.auto_tag == false and
+    .release_gate.auto_deploy == false and
+    .execution_policy.auto_release == false and
+    .execution_policy.auto_deploy == false
+  ' "$real_manifest" >/dev/null || fail 'real repository fixture normalization produced invalid prerequisites'
+  cmp -s "$approval_snapshot" "$real_artifact" || fail 'fixture normalization changed STEVEN-IA approval bytes'
+  approval_sha_after="$(shasum -a 256 "$real_artifact" | awk '{print $1}')"
+  assert_eq "$approval_sha_after" "$approval_sha_before" 'fixture normalization approval checksum'
+  grep -Fqx 'HUMAN_GATE=STEVEN-IA' "$real_artifact" || fail 'real approval lacks HUMAN_GATE'
+  grep -Fqx 'DECISION=APPROVED' "$real_artifact" || fail 'real approval lacks approved decision'
+  grep -Fq 'APPROVED_BY=' "$real_artifact" || fail 'real approval lacks APPROVED_BY'
+  grep -Fq 'APPROVED_AT=' "$real_artifact" || fail 'real approval lacks APPROVED_AT'
+  grep -Fq 'AR_W2_REVIEWED_SHA=' "$real_artifact" || fail 'real approval lacks AR_W2_REVIEWED_SHA'
+  ! grep -Eq '^(GATE|APPROVER)=' "$real_artifact" || fail 'real approval contains legacy authority aliases'
+
+  "$ROOT/scripts/os-pipeline/validate-manifest.sh" --manifest "$real_manifest" >/dev/null || \
+    fail 'normalized real repository fixture failed canonical Manifest validation'
+  git -C "$real_state" add -- "$MANIFEST_REL" "$(jq -r '.final_audit.request' "$real_manifest")" "$(jq -r '.final_audit.report' "$real_manifest")"
+  git -C "$real_state" commit -m 'fixture normalize terminal Final Audit state' >/dev/null
+  normalized_head="$(git -C "$real_state" rev-parse HEAD)"
+  git -C "$real_state" push origin planning/os-3.8-product-usability >/dev/null
+  assert_eq "$(git -C "$real_state" rev-parse HEAD)" "$(git --git-dir="$real_remote" rev-parse refs/heads/planning/os-3.8-product-usability)" \
+    'normalized fixture local/remote synchronization'
+
   PATH="$BIN:$PATH" \
   FIXTURE_GH_CALLS="$GH_CALLS" \
   PIPELINE_ALLOW_LOCAL_TEST_REMOTE=1 \
@@ -807,15 +871,40 @@ fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites()
     sed -n '1,240p' "$real_case/control/request.log" >&2
     fail 'real repository STEVEN-IA artifact did not satisfy Final Audit prerequisites'
   }
+  request_commit="$(git -C "$real_state" rev-parse HEAD)"
   assert_eq "$(jq -r '.final_audit.status' "$real_manifest")" running 'real artifact Final Audit status'
+  assert_eq "$(jq -r '.final_audit.requested_product_sha' "$real_manifest")" "$normalized_head" \
+    'real artifact requested product SHA'
+  assert_eq "$(git -C "$real_state" rev-parse HEAD^)" "$normalized_head" \
+    'Final Audit request commit parent'
+  [[ "$request_commit" != "$normalized_head" ]] || fail 'Final Audit request commit became its own requested SHA'
   assert_eq "$(jq -r '.release_gate.status' "$real_manifest")" blocked 'real artifact release gate'
+  assert_eq "$(jq -r '.release_gate.auto_tag' "$real_manifest")" false 'real artifact auto-tag safety'
+  assert_eq "$(jq -r '.release_gate.auto_deploy' "$real_manifest")" false 'real artifact auto-deploy safety'
+  assert_eq "$(jq -r '.execution_policy.auto_release' "$real_manifest")" false 'real artifact auto-release safety'
+  assert_eq "$(jq -r '.execution_policy.auto_deploy' "$real_manifest")" false 'real artifact execution auto-deploy safety'
+  assert_eq "$(jq -r '[.waves[].checkpoint.reviewed_sha][-1]' "$real_manifest")" "$checkpoint_reviewed_sha" \
+    'real artifact checkpoint reviewed SHA preservation'
   [[ -f "$real_request" ]] || fail 'real artifact fixture did not create its fixture-only request'
+  grep -Fqx "REQUESTED_PRODUCT_SHA=$normalized_head" "$real_request" || \
+    fail 'real artifact request does not bind the normalized pre-request HEAD'
+  request_files="$(git -C "$real_state" diff-tree --no-commit-id --name-only -r "$request_commit" | LC_ALL=C sort)"
+  assert_eq "$request_files" "$(printf '%s\n' "$MANIFEST_REL" "$(jq -r '.final_audit.request' "$real_manifest")" | LC_ALL=C sort)" \
+    'real artifact request commit paths'
+  cmp -s "$approval_snapshot" "$real_artifact" || fail 'Final Audit request changed STEVEN-IA approval bytes'
+  assert_eq "$(shasum -a 256 "$real_artifact" | awk '{print $1}')" "$approval_sha_before" \
+    'Final Audit request approval checksum'
   assert_eq "$(git -C "$real_state" rev-parse HEAD)" "$(git --git-dir="$real_remote" rev-parse refs/heads/planning/os-3.8-product-usability)" 'real artifact local/remote synchronization'
   [[ -z "$(git -C "$real_state" status --porcelain)" ]] || fail 'real artifact fixture worktree is dirty'
   real_lock="$(git -C "$real_state" rev-parse --git-common-dir)/os-pipeline-state.lock"
   [[ "$real_lock" = /* ]] || real_lock="$real_state/$real_lock"
   [[ ! -e "$real_lock" ]] || fail 'real artifact fixture state lock was not released'
-  pass real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites
+  assert_eq "$(jq -r '.final_audit.status' "$SOURCE_MANIFEST")" pass 'source repository Final Audit status'
+  assert_eq "$(shasum -a 256 "$SOURCE_MANIFEST" | awk '{print $1}')" "$source_manifest_sha" 'source Manifest checksum'
+  assert_eq "$(shasum -a 256 "$ROOT/$(jq -r '.final_audit.request' "$SOURCE_MANIFEST")" | awk '{print $1}')" "$source_request_sha" 'source request checksum'
+  assert_eq "$(shasum -a 256 "$ROOT/$(jq -r '.final_audit.report' "$SOURCE_MANIFEST")" | awk '{print $1}')" "$source_report_sha" 'source report checksum'
+  assert_eq "$(shasum -a 256 "$source_approval" | awk '{print $1}')" "$source_approval_sha" 'source approval checksum'
+  pass terminal_real_repository_manifest_normalized_for_final_audit_prerequisite_fixture
 }
 
 fixture_steven_ia_transaction
