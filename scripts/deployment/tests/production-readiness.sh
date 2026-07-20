@@ -127,7 +127,14 @@ psql_bin="$(command -v psql || true)"
 
 "$initdb_bin" -D "$fixture_root/postgres" -A trust -U postgres >/dev/null
 postgres_port=$((52000 + ($$ % 5000)))
-"$pg_ctl_bin" -D "$fixture_root/postgres" -o "-h 127.0.0.1 -p $postgres_port" -w start >/dev/null
+postgres_log="$fixture_root/postgres.log"
+if ! "$pg_ctl_bin" -D "$fixture_root/postgres" \
+  -l "$postgres_log" \
+  -o "-h 127.0.0.1 -k $fixture_root -p $postgres_port" \
+  -w start >/dev/null; then
+  sed -n '1,120p' "$postgres_log" >&2
+  fail 'disposable PostgreSQL server failed to start'
+fi
 postgres_started=true
 "$createdb_bin" -h 127.0.0.1 -p "$postgres_port" -U postgres os38_readiness
 fixture_url="postgresql://postgres@127.0.0.1:$postgres_port/os38_readiness?schema=public"
