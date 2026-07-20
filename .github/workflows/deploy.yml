@@ -128,6 +128,7 @@ jobs:
             --build-arg NEXT_PUBLIC_BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             -t nextshift-app:$IMAGE_TAG .
           docker save nextshift-app:$IMAGE_TAG | gzip > image.tar.gz
+          printf '%s\n' "$IMAGE_TAG" > os38-release-sha.txt
 
       - name: Copy exact release artifacts to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -135,7 +136,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "image.tar.gz,docker-compose.prod.yml,prisma,scripts/deploy-smoke.sh"
+          source: "image.tar.gz,docker-compose.prod.yml,os38-release-sha.txt,prisma,supabase,scripts/deploy-smoke.sh,scripts/deployment,scripts/u3b-admin-migration"
           target: "/home/deploy/nextshift"
 
       - name: Migrate and deploy exact release SHA
@@ -145,6 +146,7 @@ jobs:
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            set -euo pipefail
             cd /home/deploy/nextshift
             if docker image inspect nextshift-app:latest >/dev/null 2>&1; then
               docker tag nextshift-app:latest nextshift-app:previous
@@ -153,13 +155,14 @@ jobs:
             docker image inspect nextshift-app:${{ env.IMAGE_TAG }} >/dev/null
             image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' nextshift-app:${{ env.IMAGE_TAG }})"
             test "$image_revision" = "${{ env.IMAGE_TAG }}"
-            docker tag nextshift-app:${{ env.IMAGE_TAG }} nextshift-app:latest
             docker run --rm \
               --env-file .env.production \
-              -v "$PWD/prisma:/app/prisma:ro" \
+              -e OS38_MIGRATION_MODE=production \
+              -v "$PWD:/app:ro" \
               -w /app \
               node:22-alpine \
-              sh -lc 'npx --yes prisma@6.19.3 migrate deploy --schema /app/prisma/schema.prisma'
+              sh -lc 'apk add --no-cache bash postgresql-client && bash /app/scripts/deployment/run-os38-production-migrations.sh "${{ env.IMAGE_TAG }}" /app/os38-release-sha.txt'
+            docker tag nextshift-app:${{ env.IMAGE_TAG }} nextshift-app:latest
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d app
             chmod +x scripts/deploy-smoke.sh
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh

@@ -2,7 +2,7 @@
 
 Proposal version: `v3.8.0`
 
-Status: **Release PR #109 open; live state is GitHub-authoritative**
+Status: **Merged to `main`; Production Readiness NOT READY**
 Last updated: 2026-07-20
 
 ---
@@ -16,10 +16,10 @@ Last updated: 2026-07-20
 | Package path | `docs/nextshift-os-3/releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/` |
 | Source branch | `planning/os-3.8-product-usability` |
 | R1A preparation baseline SHA | `c579ef41ca204bedb0e141473579bea938edf333` |
-| Release PR stage | [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) is open; its live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence |
-| Release PR exact head authority | GitHub PR #109 metadata plus exact-head review evidence; no future planning or merge SHA is self-referenced inside this commit |
-| Main baseline SHA | `76b573cdbf2f1bec31fe5770c080941469479d25` |
-| Main state | Pre-OS-3.8 merge baseline; planning has not been merged to main |
+| Release PR stage | [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) merged |
+| Release PR merge / current main SHA | `eabbcc3266b3bbddaaa8cf89ecf051592c8a7433` |
+| Previous main baseline SHA | `76b573cdbf2f1bec31fe5770c080941469479d25` |
+| Main state | OS 3.8 source merged; Production Readiness remains `NOT READY` |
 | Current production | `v3.7.0` at `28c077f115a4e43c5e11e1097ae06b8744043643` |
 | Audited product SHA | `0e77a4182ee4a12582084ed504cf1c939b46ccd5` |
 | Final Audit request commit | `746a44acf51c50194826c2b0326fccb1d30c5446` |
@@ -69,11 +69,14 @@ These repository changes are part of the RC source but **have not been executed 
 
 Production migration requires separate explicit approval. This package does not grant or execute it.
 
+The repository production entrypoint is [`scripts/deployment/run-os38-production-migrations.sh`](../../../../scripts/deployment/run-os38-production-migrations.sh). It binds the exact release SHA, validates the Prisma and Supabase ledgers, acquires one database advisory lock, applies the Prisma migration before the U3B Supabase migration, skips the separate partial-index installer when the authoritative U3B migration owns that index, and requires catalog assertions before application deployment may begin. Its disposable PostgreSQL rehearsal is evidence only; no production database has been contacted or changed.
+
 ## Authorization Boundary
 
 - The Release Preparation governance PR was reviewed and merged.
-- Planning-to-main Release PR #109 is open; its live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence.
+- Planning-to-main Release PR #109 is merged at `eabbcc3266b3bbddaaa8cf89ecf051592c8a7433`.
 - A Release PR is not production release approval.
+- Production Readiness is `NOT READY`; merging source to `main` did not execute a production action.
 - Production migration, deployment, tagging, GitHub Release creation, and production traffic changes remain unauthorized.
 - `auto_tag=false`, `auto_deploy=false`, and `auto_release=false`; the release gate remains `BLOCKED`.
 

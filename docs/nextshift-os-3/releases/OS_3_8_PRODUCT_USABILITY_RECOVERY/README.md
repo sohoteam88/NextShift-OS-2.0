@@ -2,7 +2,7 @@
 
 Proposal version: `v3.8.0`
 
-Status: **Release PR #109 open; live state is GitHub-authoritative**
+Status: **Merged to `main`; Production Readiness NOT READY**
 Last updated: 2026-07-20
 
 ---
@@ -11,7 +11,7 @@ Last updated: 2026-07-20
 
 This documentation-only package prepares OS 3.8 for Release PR review. The release restores a usable content loop, converges navigation, separates member, tenant-admin, and platform-admin spaces, and closes the proven Video, Lead Magnet, and Webinar gaps.
 
-The immutable R1A preparation baseline is `c579ef41ca204bedb0e141473579bea938edf333`; it is not the current Release PR exact head. Release PR [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) is open from `planning/os-3.8-product-usability` to `main`; its live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence. No future planning or merge SHA is self-embedded in this package. `main` remains the pre-OS-3.8 merge baseline at `76b573cdbf2f1bec31fe5770c080941469479d25`. The independent Final Audit reviewed product SHA `0e77a4182ee4a12582084ed504cf1c939b46ccd5` and returned `PASS`.
+The immutable R1A preparation baseline is `c579ef41ca204bedb0e141473579bea938edf333`. Release PR [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) was merged to `main` at `eabbcc3266b3bbddaaa8cf89ecf051592c8a7433`. The independent Final Audit reviewed product SHA `0e77a4182ee4a12582084ed504cf1c939b46ccd5` and returned `PASS`.
 
 This package is not a release, deployment, tag, production migration, or statement that OS 3.8 is production current. Production remains **v3.7.0** at `28c077f115a4e43c5e11e1097ae06b8744043643`, and the production release gate remains **BLOCKED**.
 
@@ -29,14 +29,14 @@ This package is not a release, deployment, tag, production migration, or stateme
 ## Current Decision
 
 ```text
-Release PR #109 is open; its live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence.
+Release PR #109 is merged at main SHA eabbcc3266b3bbddaaa8cf89ecf051592c8a7433.
+Production Readiness remains NOT READY until the separately governed environment, backup/restore, migration, rollback-image, deployment, and release gates are satisfied.
 The release gate remains BLOCKED.
 ```
 
 ## Not Executed
 
-- Release PR #109 was created, but it has not been merged.
-- No merge to `main` was performed.
+- OS 3.8 has not been deployed to production; production remains `v3.7.0`.
 - No production migration was run.
 - No deployment or production traffic change was performed.
 - No `v3.8.0` tag or GitHub Release was created.
