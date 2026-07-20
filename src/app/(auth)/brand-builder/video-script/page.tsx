@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-export default async function VideoScriptPage() {
-  redirect('/video');
-}
+export default createCompatibilityRedirect('/video');

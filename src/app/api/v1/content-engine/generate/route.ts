@@ -4,11 +4,12 @@ import { apiHandler } from '@/lib/api-handler';
 import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import { contentEngineService } from '@/modules/content-engine/contentEngineService';
+import { CONTENT_ENGINE_PLATFORMS } from '@/modules/content-engine/types';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 import { resolveRequestWorkspaceContext } from '@/modules/workspace/request-workspace-context';
 
 const GenSchema = z.object({
-  platform: z.enum(['facebook', 'instagram', 'tiktok', 'xhs', 'threads', 'email', 'blog']),
+  platform: z.enum(CONTENT_ENGINE_PLATFORMS),
   format: z.enum(['text_post', 'carousel', 'reel', 'short_video', 'story', 'email', 'blog']),
   funnelStage: z.enum(['awareness', 'consideration', 'conversion', 'retention']),
   pillarName: z.string().optional(),

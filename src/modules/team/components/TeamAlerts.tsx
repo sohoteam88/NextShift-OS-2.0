@@ -84,7 +84,7 @@ export function TeamAlerts({ alerts }: Props) {
       router.push('/admin/approvals');
       return;
     }
-    router.push(`/team/members?member=${alert.member.id}`);
+    router.push(`/admin/team/members?member=${alert.member.id}`);
   }
 
   if (!visible.length) {

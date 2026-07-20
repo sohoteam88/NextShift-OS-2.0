@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -9,19 +9,45 @@ import {
   BookOpen,
   CalendarDays,
   Check,
+  Copy,
   FileText,
   Fingerprint,
   Loader2,
   MessageCircle,
   PenLine,
   RefreshCw,
+  Save,
   Sparkles,
   Target,
 } from 'lucide-react';
-import type {
-  ContentCalendar,
-  ContentTrack,
+import {
+  CONTENT_COMMAND_CENTER_PLATFORMS,
+  CONTENT_UPDATE_LIMITS,
+  isContentCommandCenterPlatform,
+  type ContentCalendar,
+  type ContentCommandCenterPlatform,
+  type ContentTrack,
+  type GeneratedPost,
 } from '@/modules/content-engine/types';
+import {
+  applyPersistedContent,
+  canSaveDraft,
+  contentEditStartedProperties,
+  contentPatchPayload,
+  isDraftDirty,
+  reconcilePersistedEditorDraft,
+  toEditableContentDraft,
+  type ContentEditStartedProperties,
+  type EditableContentDraft,
+} from '@/modules/content-engine/contentDraftEditor';
+import {
+  fetchTelemetryUserId,
+  trackContentCopied,
+  trackContentEditStarted,
+  trackContentGenerated,
+  trackContentLoopCompleted,
+  trackContentSaved,
+} from '@/lib/telemetry/tracker';
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import type { RevenueDriverResolvedIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 
@@ -30,7 +56,19 @@ type BrandProfile = Record<string, unknown>;
 type ContentEngineResponse = {
   data: {
     trackCalendars?: Record<ContentTrack, ContentCalendar | null>;
+    lastPost?: GeneratedPost | null;
   };
+};
+
+type PersistedContent = {
+  id: string;
+  title: string | null;
+  body: string;
+  platform: string | null;
+  type: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const CONTENT_MIX = [
@@ -42,6 +80,18 @@ const CONTENT_MIX = [
 ];
 
 const PLATFORMS = ['Facebook', 'Instagram', 'TikTok', '小红书'];
+
+const POST_PLATFORM_LABELS: Record<ContentCommandCenterPlatform, string> = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  xhs: '小红书',
+};
+
+const POST_PLATFORMS = CONTENT_COMMAND_CENTER_PLATFORMS.map((value) => ({
+  value,
+  label: POST_PLATFORM_LABELS[value],
+}));
 
 type OutputTabId =
   | 'calendar'
@@ -136,6 +186,14 @@ function uniqueValues(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
+async function responseError(response: Response, fallback: string) {
+  const payload = (await response.json().catch(() => ({}))) as {
+    error?: { message?: string };
+    message?: string;
+  };
+  return payload.error?.message ?? payload.message ?? fallback;
+}
+
 function BrandDNAGate({ isError }: { isError: boolean }) {
   return (
     <div className="mx-auto max-w-5xl pb-12">
@@ -197,6 +255,17 @@ export function ContentCommandCenter() {
   const queryClient = useQueryClient();
   const [activeOutputTab, setActiveOutputTab] =
     useState<OutputTabId>('calendar');
+  const [selectedPlatform, setSelectedPlatform] =
+    useState<ContentCommandCenterPlatform>('facebook');
+  const [editorDraft, setEditorDraft] = useState<EditableContentDraft | null>(null);
+  const [savedDraft, setSavedDraft] = useState<EditableContentDraft | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<'idle' | 'success' | 'error'>('idle');
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [pendingEditStarted, setPendingEditStarted] =
+    useState<ContentEditStartedProperties | null>(null);
+  const savedAfterEditRef = useRef<string | null>(null);
+  const trackedEditingRef = useRef<string | null>(null);
+  const reportedEditingRef = useRef<string | null>(null);
   const handleIntentResolved = useCallback((resolution: RevenueDriverResolvedIntent) => {
     const outputTab = resolution.state.outputTab as OutputTabId | undefined;
     if (outputTab && OUTPUTS.some((output) => output.id === outputTab)) {
@@ -219,6 +288,93 @@ export function ContentCommandCenter() {
       const response = await fetch('/api/v1/content-engine');
       if (!response.ok) throw new Error('Failed to load content engine');
       return response.json() as Promise<ContentEngineResponse>;
+    },
+  });
+
+  const telemetryUserQuery = useQuery({
+    queryKey: ['telemetry-user-id'],
+    queryFn: fetchTelemetryUserId,
+    staleTime: 5 * 60_000,
+  });
+
+  const generatePost = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/v1/content-engine/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform: selectedPlatform,
+          format: 'text_post',
+          funnelStage: 'awareness',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await responseError(response, '内容暂时无法生成。'));
+      }
+
+      return response.json() as Promise<{ data: GeneratedPost }>;
+    },
+    onMutate: () => {
+      setCopyFeedback('idle');
+      setCopyError(null);
+    },
+    onSuccess: ({ data: post }) => {
+      const draft = toEditableContentDraft(post);
+      setEditorDraft(draft);
+      setSavedDraft(draft);
+      if (isContentCommandCenterPlatform(draft.platform)) {
+        setSelectedPlatform(draft.platform);
+      }
+      savedAfterEditRef.current = null;
+      trackedEditingRef.current = null;
+      reportedEditingRef.current = null;
+      setPendingEditStarted(null);
+      const userId = telemetryUserQuery.data;
+      if (userId) {
+        trackContentGenerated(userId, {
+          contentId: draft.id,
+          platform: draft.platform,
+          contentType: draft.format,
+        });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
+      void queryClient.invalidateQueries({ queryKey: ['content-library'] });
+    },
+  });
+
+  const saveDraft = useMutation({
+    mutationFn: async (draft: EditableContentDraft) => {
+      const response = await fetch(`/api/v1/ai/content/${draft.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contentPatchPayload(draft)),
+      });
+
+      if (!response.ok) {
+        throw new Error(await responseError(response, '草稿暂时无法保存。'));
+      }
+
+      const payload = (await response.json()) as { data: PersistedContent };
+      return payload.data;
+    },
+    onSuccess: (content, draft) => {
+      const saved = applyPersistedContent(draft, content);
+      setSavedDraft(saved);
+      setEditorDraft((currentDraft) =>
+        reconcilePersistedEditorDraft(currentDraft, draft, saved),
+      );
+      savedAfterEditRef.current = saved.id;
+      const userId = telemetryUserQuery.data;
+      if (userId) {
+        trackContentSaved(userId, {
+          contentId: saved.id,
+          platform: saved.platform,
+          contentType: saved.format,
+        });
+      }
+      void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
+      void queryClient.invalidateQueries({ queryKey: ['content-library'] });
     },
   });
 
@@ -257,6 +413,124 @@ export function ContentCommandCenter() {
       });
     },
   });
+
+  const lastPost = contentQuery.data?.data.lastPost ?? null;
+  const isDirty = isDraftDirty(editorDraft, savedDraft);
+
+  useEffect(() => {
+    if (
+      editorDraft ||
+      !lastPost ||
+      lastPost.format !== 'text_post' ||
+      !isContentCommandCenterPlatform(lastPost.platform)
+    ) {
+      return;
+    }
+    const draft = toEditableContentDraft(lastPost);
+    setEditorDraft(draft);
+    setSavedDraft(draft);
+    setSelectedPlatform(lastPost.platform);
+    trackedEditingRef.current = null;
+    reportedEditingRef.current = null;
+    setPendingEditStarted(null);
+  }, [editorDraft, lastPost]);
+
+  useEffect(() => {
+    if (!pendingEditStarted || !telemetryUserQuery.data) return;
+    if (reportedEditingRef.current === pendingEditStarted.contentId) {
+      setPendingEditStarted(null);
+      return;
+    }
+
+    reportedEditingRef.current = pendingEditStarted.contentId;
+    trackContentEditStarted(telemetryUserQuery.data, pendingEditStarted);
+    setPendingEditStarted(null);
+  }, [pendingEditStarted, telemetryUserQuery.data]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    const confirmLinkNavigation = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest('a[href]');
+      if (!link || link.getAttribute('target') === '_blank' || event.defaultPrevented) return;
+      if (!window.confirm('你有未保存的内容，确定要离开吗？')) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    window.addEventListener('beforeunload', beforeUnload);
+    document.addEventListener('click', confirmLinkNavigation, true);
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnload);
+      document.removeEventListener('click', confirmLinkNavigation, true);
+    };
+  }, [isDirty]);
+
+  function handleGeneratePost() {
+    if (
+      isDirty &&
+      !window.confirm('重新生成会保留当前草稿，但未保存的编辑不会自动写入。确定继续吗？')
+    ) {
+      return;
+    }
+    generatePost.mutate();
+  }
+
+  function updateEditorDraft(field: 'title' | 'body', value: string) {
+    if (!editorDraft) return;
+    const editStarted = contentEditStartedProperties(
+      trackedEditingRef.current,
+      editorDraft,
+    );
+    if (editStarted) {
+      trackedEditingRef.current = editStarted.contentId;
+      const userId = telemetryUserQuery.data;
+      if (userId) {
+        reportedEditingRef.current = editStarted.contentId;
+        trackContentEditStarted(userId, editStarted);
+      } else {
+        setPendingEditStarted(editStarted);
+      }
+    }
+    setCopyFeedback('idle');
+    setCopyError(null);
+    setEditorDraft({ ...editorDraft, [field]: value });
+  }
+
+  async function handleCopy() {
+    if (!editorDraft?.body.trim()) return;
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('此浏览器不支持复制功能。');
+      }
+      await navigator.clipboard.writeText(editorDraft.body);
+      setCopyFeedback('success');
+      setCopyError(null);
+      const userId = telemetryUserQuery.data;
+      if (userId) {
+        const properties = {
+          contentId: editorDraft.id,
+          platform: editorDraft.platform,
+          contentType: editorDraft.format,
+        };
+        trackContentCopied(userId, properties);
+        if (savedAfterEditRef.current === editorDraft.id && !isDirty) {
+          trackContentLoopCompleted(userId, properties);
+        }
+      }
+    } catch (error) {
+      setCopyFeedback('error');
+      setCopyError(error instanceof Error ? error.message : '内容无法复制，请重试。');
+    }
+  }
 
   if (brandProfileQuery.isLoading || contentQuery.isLoading) {
     return <LoadingState />;
@@ -507,6 +781,198 @@ export function ContentCommandCenter() {
             </div>
           </aside>
         </div>
+      </section>
+
+      <section
+        aria-labelledby="content-post-editor-heading"
+        className="rounded-[var(--radius-lg)] border border-blue-200 bg-white p-5 shadow-sm md:p-6"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+              可编辑内容草稿
+            </div>
+            <h2
+              id="content-post-editor-heading"
+              className="mt-3 text-xl font-bold text-[var(--color-text)]"
+            >
+              生成、编辑并保存一篇贴文
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-text-muted)]">
+              选择平台后生成草稿。你可以先修改标题和正文，再保存同一份草稿并复制当前版本。
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+          <div>
+            <label
+              htmlFor="content-post-platform"
+              className="block text-sm font-semibold text-[var(--color-text)]"
+            >
+              发布平台
+            </label>
+            <select
+              id="content-post-platform"
+              value={selectedPlatform}
+              onChange={(event) =>
+                setSelectedPlatform(
+                  event.target.value as ContentCommandCenterPlatform,
+                )
+              }
+              disabled={generatePost.isPending}
+              className="mt-2 h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-[var(--color-surface)] md:max-w-sm"
+            >
+              {POST_PLATFORMS.map((platform) => (
+                <option key={platform.value} value={platform.value}>
+                  {platform.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={handleGeneratePost}
+            disabled={generatePost.isPending}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {generatePost.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                正在生成贴文
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                生成贴文
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="mt-4" aria-live="polite" role="status">
+          {generatePost.isPending ? (
+            <p className="text-sm text-blue-700">正在创建可编辑草稿…</p>
+          ) : null}
+          {generatePost.isError ? (
+            <div className="rounded-[var(--radius-md)] border border-red-100 bg-red-50 p-4 text-sm text-red-800">
+              <p className="font-semibold">贴文暂时无法生成。</p>
+              <p className="mt-1 text-xs leading-5 text-red-700">
+                {(generatePost.error as Error).message}
+              </p>
+              <button
+                type="button"
+                onClick={handleGeneratePost}
+                className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-red-700 hover:text-red-800"
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                重试生成
+              </button>
+            </div>
+          ) : null}
+          {copyFeedback === 'success' ? (
+            <p className="text-sm font-semibold text-emerald-700">已复制当前编辑版本。</p>
+          ) : null}
+          {copyFeedback === 'error' ? (
+            <p className="text-sm font-semibold text-red-700">{copyError}</p>
+          ) : null}
+        </div>
+
+        {editorDraft ? (
+          <div className="mt-5 space-y-4 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:p-5">
+            <div>
+              <label
+                htmlFor="content-post-title"
+                className="block text-sm font-semibold text-[var(--color-text)]"
+              >
+                贴文标题
+              </label>
+              <input
+                id="content-post-title"
+                value={editorDraft.title}
+                onChange={(event) => updateEditorDraft('title', event.target.value)}
+                maxLength={CONTENT_UPDATE_LIMITS.title}
+                className="mt-2 h-11 w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="content-post-body"
+                className="block text-sm font-semibold text-[var(--color-text)]"
+              >
+                贴文正文
+              </label>
+              <textarea
+                id="content-post-body"
+                value={editorDraft.body}
+                onChange={(event) => updateEditorDraft('body', event.target.value)}
+                maxLength={CONTENT_UPDATE_LIMITS.body}
+                rows={12}
+                className="mt-2 w-full resize-y rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white p-3 text-sm leading-6 text-[var(--color-text)] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <div className="flex flex-col gap-3 border-t border-[var(--color-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-xs" aria-live="polite">
+                {saveDraft.isPending ? (
+                  <span className="font-semibold text-blue-700">正在保存草稿…</span>
+                ) : saveDraft.isError ? (
+                  <span className="font-semibold text-red-700">
+                    保存失败：{(saveDraft.error as Error).message}。你的编辑仍保留在这里。
+                  </span>
+                ) : isDirty ? (
+                  <span className="font-semibold text-amber-700">有未保存的编辑。</span>
+                ) : savedDraft ? (
+                  <span className="font-semibold text-emerald-700">
+                    草稿已保存{editorDraft.updatedAt ? ` · ${new Date(editorDraft.updatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                  </span>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {saveDraft.isError ? (
+                  <button
+                    type="button"
+                    onClick={() => editorDraft && saveDraft.mutate(editorDraft)}
+                    disabled={saveDraft.isPending}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                    重试保存
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => editorDraft && saveDraft.mutate(editorDraft)}
+                  disabled={!canSaveDraft(editorDraft, isDirty, saveDraft.isPending)}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saveDraft.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Save className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  保存草稿
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleCopy()}
+                  disabled={!editorDraft.body.trim()}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-text)] hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Copy className="h-4 w-4" aria-hidden="true" />
+                  复制当前正文
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 rounded-[var(--radius-md)] border border-dashed border-blue-200 bg-blue-50/50 p-4">
+            <p className="text-sm font-semibold text-[var(--color-text)]">还没有可编辑贴文</p>
+            <p className="mt-1 text-sm leading-6 text-[var(--color-text-muted)]">
+              选择平台并点击「生成贴文」，系统会创建一份可保存、可重新打开的草稿。
+            </p>
+          </div>
+        )}
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">

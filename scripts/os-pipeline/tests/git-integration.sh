@@ -14,7 +14,24 @@ git -C "$SEED" config user.email fixture@example.test
 git -C "$SEED" config user.name fixture
 mkdir -p "$SEED/docs/nextshift-os-3/os-3-8" "$SEED/scripts/os-pipeline"
 cp "$ROOT/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" "$SEED/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
-jq '.base_branch="planning"' "$SEED/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" >"$SEED/manifest.json" && mv "$SEED/manifest.json" "$SEED/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
+jq '
+  .base_branch="planning" |
+  .waves |= map(if .id == "W3" then
+    .tasks |= map(select(.id != "U3A" and .id != "U3ADR" and .id != "U3B")) |
+    .tasks |= map(if .id == "E3A" then .depends_on = ["U3"] else . end)
+  else . end) |
+  .waves |= map(
+    .status="pending" | .start_sha=null |
+    .tasks |= map(.status="pending" | .verification=null | .evidence=null) |
+    .checkpoint.status="pending" | .checkpoint.requested_end_sha=null |
+    .checkpoint.reviewed_sha=null | .checkpoint.remediation_attempts=0 |
+    .checkpoint.active_remediation=null | .checkpoint.remediation_block=null |
+    if .human_gate then .human_gate.status="pending" | .human_gate.approved_by=null | .human_gate.approved_at=null | .human_gate.approved_reviewed_sha=null else . end
+  ) |
+  .final_audit.status="pending" | .final_audit.requested_product_sha=null |
+  .final_audit.requested_at=null | .final_audit.reviewed_sha=null | .final_audit.completed_at=null |
+  .release_gate.status="blocked"
+' "$SEED/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" >"$SEED/manifest.json" && mv "$SEED/manifest.json" "$SEED/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
 mkdir -p "$SEED/docs/nextshift-os-3/os-3-8/3.8-A"
 cp "$ROOT/docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md" "$ROOT/docs/nextshift-os-3/os-3-8/3.8-A/EXECUTION_TASK.md" "$SEED/docs/nextshift-os-3/os-3-8/3.8-A/"
 cp "$ROOT/scripts/os-pipeline/run-pipeline.sh" "$ROOT/scripts/os-pipeline/validate-manifest.sh" "$SEED/scripts/os-pipeline/"
@@ -64,7 +81,7 @@ if [[ "${1:-}" == "api" ]]; then
     --arg merge_sha "$merge_sha" \
     --arg url "https://github.com/${pr_owner}/${pr_repo}/pull/${pr_number}" \
     --arg body "Implementation-Report: ${IMPLEMENTATION_REPORT:-docs/fixture-report.md}" \
-    '{state:$state,merged:$merged,base:{ref:$base,sha:$base_sha,repo:{full_name:"fixture/NextShift-OS-2.0"}},head:{ref:$head_ref,sha:$head_sha,repo:{full_name:"fixture/NextShift-OS-2.0"}},merge_commit_sha:(if $merge_sha=="" then null else $merge_sha end),html_url:$url,body:$body}'
+    '{state:$state,merged:$merged,changed_files:1,base:{ref:$base,sha:$base_sha,repo:{full_name:"fixture/NextShift-OS-2.0"}},head:{ref:$head_ref,sha:$head_sha,repo:{full_name:"fixture/NextShift-OS-2.0"}},merge_commit_sha:(if $merge_sha=="" then null else $merge_sha end),html_url:$url,body:$body}'
   exit 0
 fi
 if [[ "$*" == *"pr view"* && "$*" == *"mergeCommit"* ]]; then

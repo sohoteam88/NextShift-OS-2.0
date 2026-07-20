@@ -28,7 +28,7 @@ export function MemberInvitePanel({ role }: { role: Role }) {
   const invitesQuery = useQuery({
     queryKey: ['member-invites'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/member/invite');
+      const res = await fetch('/api/v1/admin/member-invites');
       if (!res.ok) throw new Error('Failed to load invites');
       return res.json() as Promise<{ data: InviteItem[] }>;
     },
@@ -38,7 +38,7 @@ export function MemberInvitePanel({ role }: { role: Role }) {
 
   const createInvite = useMutation({
     mutationFn: async () => {
-      const res = await fetch('/api/v1/member/invite', { method: 'POST' });
+      const res = await fetch('/api/v1/admin/member-invites', { method: 'POST' });
       if (!res.ok) {
         const payload = await res.json().catch(() => null);
         throw new Error(payload?.error?.message ?? 'Failed to create invite');

@@ -503,6 +503,30 @@ const boundaryOverrides = [
     },
   },
   {
+    files: ['src/modules/content-library/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'warn',
+        {
+          patterns: [
+            {
+              group: [
+                '@/modules/*',
+                '!@/modules/content-library',
+                '!@/modules/content-library/**',
+                '!@/modules/ai',
+                '!@/modules/ai/**',
+                '!@/modules/auth',
+                '!@/modules/auth/**',
+              ],
+              message: 'Module code should avoid cross-module imports unless routed through approved shared layers such as @/lib, @/components, @/modules/ai, @/modules/auth, or its own module boundary.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/modules/content-performance/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [

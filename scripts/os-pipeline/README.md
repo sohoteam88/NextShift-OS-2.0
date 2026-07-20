@@ -93,8 +93,48 @@ git diff --check
 It then waits up to 30 minutes for required GitHub checks, retrying every 30
 seconds only while checks have not registered. A failed check, forbidden path,
 repository/base/head mismatch, missing report at the exact PR head, or report
-absent from the PR diff fails closed. Product-task verification has no
-docs-only bypass.
+absent from the PR diff fails closed.
+
+The only zero-check outcome is the strict
+`not_required_paths_ignored` contract. It is neither PASS nor a generic
+`skipped`/`not_triggered` state. The runner derives it from GitHub's exact PR
+metadata and file list only when the diff is non-empty, every file matches the
+frozen `.github/workflows/ci.yml` `pull_request.paths-ignore` policy
+(`docs/**`, `audit/**`, `**/*.md`, or `platform/status.md`), and the exact PR
+head has zero check runs. Source, tests, scripts, Prisma, and workflow paths are
+always rejected even if a future broad pattern could match them. Any existing
+check run—failed, pending, cancelled, skipped, neutral, or successful—routes to
+normal check verification and cannot use the exemption.
+
+Every Manifest task must declare exactly one verification policy. A missing or
+unknown policy is invalid and fails closed:
+
+| Task | Verification policy |
+| --- | --- |
+| E1, E2, U1B, U3, E3A, E3B | `actual_checks_required` |
+| U1A, U2 | `paths_ignored_zero_checks_allowed` |
+
+`actual_checks_required` accepts only `checks="passed"`.
+`paths_ignored_zero_checks_allowed` may still record actual passed checks, but
+it is the only policy that can authorize the strict zero-check decision.
+Remediation PRs always require actual passed checks regardless of task policy.
+
+The structured evidence binds the Manifest task ID and exact task verification
+policy in addition to the repository, PR URL, base branch and SHA, head SHA,
+workflow path and blob SHA, exact GitHub changed-file list, zero run count,
+policy decision, and verification timestamp. Metadata, task policy, diff, check
+runs, and workflow policy are fetched again before persistence, merge, and
+merged/running recovery. Caller input, environment variables, task outcomes,
+PR bodies, labels, and branch names cannot grant or transfer the exemption.
+Evidence for U1A cannot be reused for U2, or vice versa.
+
+An operator can evaluate the same contract read-only, without changing the
+Manifest, merging, committing, or pushing:
+
+```bash
+scripts/os-pipeline/run-pipeline.sh \
+  --evaluate-pr-check-requirement TASK_ID PR_URL EXPECTED_HEAD_SHA EXPECTED_BASE_SHA
+```
 
 After those checks and before merge, a short state transaction writes the
 exact repository, base, task branch, PR URL, verified head SHA, implementation
@@ -225,6 +265,87 @@ Operator recovery procedure:
 Temporary worktrees and external control directories are diagnostic evidence.
 Remove them only after their PR and Manifest state have been reconciled.
 
+## Governance dispatch gates
+
+A task with `dispatch_gate` is never eligible from `depends_on` alone. Its
+dependency must be a completed task with a matching `governance_gate`, exact
+verification/evidence, and a canonical gate artifact. The production runner
+validates the gate at three independent boundaries:
+
+1. `select_action()` validates before returning the gated task;
+2. a short state transaction synchronizes planning, acquires the common-dir
+   lock, reloads the Manifest, and authorizes the exact gate digest before any
+   branch or Codex work; and
+3. the final locked task-start transaction revalidates the gate and the same
+   digest before `pending → running` and dispatch-artifact persistence.
+
+The Manifest validator also enforces lifecycle dependencies generically. A
+task may be `running` or `completed` only when every declared prerequisite has
+reached the terminal state for its authority type: a normal task must be
+`completed`, an Architecture Review checkpoint must be `passed`, and a human
+approval gate must be `approved`. Unknown, missing, duplicate, or incompatible
+dependency authorities fail closed. A `superseded` task is an explicit
+governance cancellation and does not claim execution progress; it also never
+satisfies another task's dependency implicitly.
+
+Authorization has three separate layers. The immutable gate policy comes only
+from the synchronized planning Manifest and defines the gate/task/consumer
+identity, option allowlist, required decisions, protected paths, review and
+freshness rules, Option C proof contract, decision artifact, and canonical
+policy version/digest. A machine-readable decision artifact at the reviewed
+Git SHA selects one allowed option and resolves every required decision while
+binding the policy and protected-path digests. The external adoption envelope
+is transport-only: it identifies the decision SHA, review, PR, canonical
+decision path, and decision blob digest. It cannot select an option, amend an
+allowlist, remove a protected path, assert freshness, or define completion.
+
+The runner reads the decision with `git show DECISION_SHA:DECISION_ARTIFACT`,
+requires it in the reviewed PR diff, and binds one exact PASS Architecture
+Review to that SHA. The decision SHA and merge SHA must be in current planning
+history. Changes to trusted protected paths after the decision make the gate
+stale. Option C additionally requires its policy-designated proof at the same
+reviewed SHA and PR diff, with the decision artifact recording the exact proof
+SHA-256.
+
+The current U3ADR policy requires six exact decision IDs. In addition to audit
+scope/storage, target mapping, failure durability, and tenant-deletion
+retention, it requires (1) terminal deleted-tenant enforcement across the
+shared auth/session, tenant-resolution, webhook, automation, publishing,
+AI/workforce, and queued-execution authorities and (2) a dedicated database
+idempotency key plus payload digest for the final `AuditLog` row. Those current
+and future authority roots are protected paths. Removing either decision,
+renaming it, changing the policy digest, or changing an authority after review
+causes adoption and U3B dispatch to fail closed.
+
+Missing, partial, unknown, stale, symlinked, SHA-mismatched, or manually
+toggled evidence fails closed. Environment variables, task outcomes, PR body,
+labels, and `u3b_dispatch_authorized` by itself are never authority. A failure
+occurring before locked authorization creates no task branch, PR, dispatch
+artifact, task transition, or Codex invocation.
+
+Adopt an independently reviewed and already merged gate from a regular JSON
+source outside the repository:
+
+```bash
+scripts/os-pipeline/run-pipeline.sh \
+  --adopt-governance-gate U3ADR U3B /path/outside/repository/gate-result.json \
+  https://github.com/OWNER/REPOSITORY/pull/NUMBER
+```
+
+Before touching the worktree, the command builds an external candidate tree
+containing the proposed canonical gate and Manifest transition, then runs the
+same validator and cross-field rules used for repository state. Inside
+`state_transaction`, it resynchronizes, rebuilds every source/policy/decision/
+proof/protected-path digest, requires the locked bundle to equal the candidate,
+and validates a fresh candidate again. Only then are same-directory temporary
+files flushed and renamed into place for one Manifest+gate commit and push.
+The transaction snapshots only those two owned paths. A post-write validator,
+commit, or push failure restores their original bytes, removes transaction
+temporaries, releases the common-dir lock, and requires a clean unchanged local
+HEAD; it never resets or stashes unrelated work. An identical adoption is a
+clean stop, while a different or stale adoption is rejected. Governance
+adoption tasks are not eligible for ordinary Codex product dispatch.
+
 ## Architecture Review checkpoints
 
 When every task in a wave is `completed` or `superseded`, `--cycle` (or
@@ -297,31 +418,41 @@ The transaction commits the Manifest approval and this canonical artifact
 together:
 
 ```text
-GATE=STEVEN-IA
+HUMAN_GATE=STEVEN-IA
 DECISION=APPROVED
-APPROVER=stevenmacmini
+APPROVED_BY=stevenmacmini
 APPROVED_AT=2026-07-15T12:00:00Z
 AR_W2_REVIEWED_SHA=<AR-W2 reviewed SHA>
 ```
 
 An identical replay is a clean no-op. A different or incomplete duplicate
-fails closed.
+fails closed. Each required control field must appear exactly once, the
+artifact must be a regular non-symlink repository file, and the legacy
+`GATE=` / `APPROVER=` aliases are rejected rather than treated as a second
+authority schema.
 
 ## Final Audit
 
 The final audit becomes eligible only when every task is completed/superseded,
 every wave checkpoint has passed with a reviewed SHA, and every human gate is
 approved with matching canonical evidence. One `--cycle` transaction creates
-`audit/OS38_FINAL_CODE_REVIEW_REQUEST.md`, records the exact final reviewed
-product SHA and `requested_at`, and changes `final_audit.status` from `pending`
-to `running`.
+`audit/OS38_FINAL_CODE_REVIEW_REQUEST.md`. The last wave checkpoint reviewed
+SHA must be a valid commit and an ancestor of the synchronized planning HEAD;
+it is a prerequisite, not the Final Audit target. The transaction records the
+current planning HEAD immediately before the request commit as
+`requested_product_sha`, records `requested_at`, and changes
+`final_audit.status` from `pending` to `running`. This makes the independent
+audit cover the complete repository state, including reviewed product,
+Prisma/migrations, Pipeline changes, governance documents, and checkpoint
+results merged after the last Architecture Review.
 
 The request contains:
 
 ```text
 AUDIT_ID=AUDIT-OS3.8
 BASELINE_SHA=<first wave start SHA>
-REQUESTED_PRODUCT_SHA=<exact final reviewed product SHA>
+LAST_CHECKPOINT_REVIEWED_SHA=<last passed wave checkpoint SHA>
+REQUESTED_PRODUCT_SHA=<synchronized planning HEAD before this request commit>
 REQUESTED_AT=<UTC timestamp>
 REPORT_PATH=audit/OS38_FINAL_CODE_REVIEW_REPORT.md
 RELEASE_GATE=BLOCKED
@@ -346,7 +477,10 @@ scripts/os-pipeline/run-pipeline.sh \
 
 The source checksum is rechecked inside the state transaction. The runner also
 revalidates every wave/gate, the canonical request, the requested SHA, and the
-absence of unauthorized product changes. It then copies the result to the
+absence of any repository change after the canonical request commit. The sole
+commit between `REQUESTED_PRODUCT_SHA` and result recording must be the request
+commit, and that commit must change exactly the Manifest and canonical request
+artifact. It then copies the result to the
 Manifest-configured report path and atomically records `pass` or `fail`, the
 same `requested_at`, the matching `reviewed_sha`, and `completed_at`.
 
@@ -377,6 +511,8 @@ scripts/os-pipeline/tests/git-integration.sh
 scripts/os-pipeline/tests/remediation-integration.sh
 scripts/os-pipeline/tests/governance-integration.sh
 scripts/os-pipeline/tests/safety-integration.sh
+scripts/os-pipeline/tests/docs-only-ci-policy.sh
+scripts/os-pipeline/tests/governance-dispatch-gate.sh
 
 git diff --check
 pnpm type-check
@@ -387,9 +523,11 @@ pnpm build
 
 Expected pipeline-specific coverage is:
 
-- Bash syntax and ShellCheck: **8 Pipeline/test shell files**, with zero
+- Bash syntax and ShellCheck: **10 Pipeline/test shell files**, with zero
   ShellCheck issues.
-- `tests/run.sh`: **40 state-machine/Manifest assertions**.
+- `tests/run.sh`: **42 state-machine/Manifest assertions**, including generic
+  rejection of running or completed downstream tasks whose declared task
+  dependency is incomplete.
 - `tests/git-integration.sh`: a real temporary bare-Git
   **E1 → Codex outcome → exact PR verification → merge → planning
   reconciliation → E1 completion → automatic E2 selection/completion → AR-W1
@@ -399,12 +537,32 @@ Expected pipeline-specific coverage is:
   verify/merge, regenerated checkpoint, source-review archival, attempt limits,
   branch-only/open/merged recovery, and two reviewed failures to
   `needs_human`.
-- `tests/governance-integration.sh`: **8 named Group D real-Git fixtures**:
+- `tests/governance-integration.sh`: **31 named Group D real-Git fixtures**:
   `steven_ia_transaction`, `steven_ia_duplicate_rejected`,
   `final_audit_request_once`, `final_audit_running_clean_wait`,
   `final_audit_pass_persistence`, `final_audit_wrong_sha_rejected`,
   `final_audit_product_change_rejected`, and
-  `final_audit_cannot_release`.
+  `final_audit_cannot_release`, plus ten Final Audit target-contract fixtures:
+  `final_audit_targets_current_planning_head`,
+  `final_audit_checkpoint_sha_must_be_ancestor`,
+  `final_audit_includes_reviewed_pipeline_changes_after_checkpoint`,
+  `final_audit_request_sha_matches_pre_request_head`,
+  `final_audit_request_commit_not_part_of_requested_sha`,
+  `final_audit_result_must_match_requested_planning_sha`,
+  `final_audit_code_change_after_request_rejected`,
+  `final_audit_request_duplicate_clean_stop_or_rejected_without_mutation`,
+  `final_audit_request_push_failure_rolls_back`, and
+  `final_audit_request_keeps_release_gate_blocked`; plus thirteen STEVEN-IA
+  artifact-contract fixtures: `canonical_human_gate_artifact_accepted`,
+  `legacy_gate_key_rejected`, `legacy_approver_key_rejected`,
+  `mixed_canonical_and_legacy_authority_rejected`,
+  `duplicate_human_gate_field_rejected`,
+  `duplicate_approved_by_field_rejected`,
+  `mismatched_human_gate_id_rejected`, `mismatched_approved_by_rejected`,
+  `mismatched_approved_at_rejected`, `mismatched_reviewed_sha_rejected`,
+  `approval_artifact_symlink_rejected`,
+  `pipeline_generated_approval_uses_canonical_fields`, and
+  `real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites`.
 - `tests/safety-integration.sh`: **14 named Round 5 real-Git fixtures** covering
   normal task merged/running crash recovery and ambiguous identity, exact-head
   merge races, Wave checkpoint PASS persistence and stale-product rejection,
@@ -413,6 +571,28 @@ Expected pipeline-specific coverage is:
   symlink rejection, and invalid/missing/out-of-PR implementation reports. The
   invalid-report fixture contains independent invalid, missing-at-head, and
   absent-from-diff subcases.
+- `tests/docs-only-ci-policy.sh`: **34 named docs-only CI policy fixtures**—the
+  original 18 exact-diff/check/workflow/validator cases plus 16 task-policy
+  cases covering U1A/U2 authorization, rejection for every actual-check task,
+  missing/unknown policies, forged/mismatched/cross-task evidence, caller
+  non-authority, recovery revalidation, and exact PR #84 U1A evidence.
+- `tests/governance-dispatch-gate.sh`: **49 named real-Git production-path
+  fixtures**. Twenty-one policy/candidate/rollback fixtures prove immutable
+  option and protected-path policy, reviewed decision/digest binding, required
+  ADR completeness (including separate rejection of decisions that predate
+  tenant-deletion retention, terminal operational deactivation, or final-row
+  idempotency, plus an explicit idempotency-decision identity mismatch),
+  transport-envelope non-authority, candidate-before-write,
+  locked drift rejection, byte-identical post-write/push rollback, atomic
+  adoption, and duplicate clean stop. Twenty-eight dispatch/lifecycle fixtures
+  cover pending/missing/non-PASS/mismatched/stale/unknown/manual gates,
+  gate-ID/partial-schema rejection, Option C proof, dependency evidence, valid
+  exact-PASS dispatch, selection-to-lock and planning-head TOCTOU, duplicate/
+  stale/valid adoption, state-independent pending E3A/E3B/AR-W3 setup, generic
+  rejection of running/completed downstream tasks with incomplete dependencies,
+  and named proof that a rejected U3B gate cannot select E3A/E3B, generate a
+  checkpoint, invoke Codex, create or push a branch, create a PR, write dispatch
+  evidence, or mutate/commit the Manifest.
 
 The real-Git fixtures use temporary bare remotes/worktrees plus fake GitHub and
 Codex commands. They do not contact GitHub, execute real E1/E2 product work,

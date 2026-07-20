@@ -21,7 +21,7 @@ export function StageManagerDialog({ open, onClose, stages }: Props) {
   async function handleSaveOrder() {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/crm/pipeline-stages/reorder', {
+      const res = await fetch('/api/v1/admin/crm/pipeline-stages/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stage_ids: items.map((s) => s.id) }),
@@ -40,7 +40,7 @@ export function StageManagerDialog({ open, onClose, stages }: Props) {
     if (!newName.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/crm/pipeline-stages', {
+      const res = await fetch('/api/v1/admin/crm/pipeline-stages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName.trim(), color: newColor }),
@@ -61,7 +61,7 @@ export function StageManagerDialog({ open, onClose, stages }: Props) {
   async function handleDelete(id: string) {
     setLoading(true);
     try {
-      const res = await fetch(`/api/v1/crm/pipeline-stages/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/v1/admin/crm/pipeline-stages/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { error?: { message?: string } }).error?.message ?? '删除失败');

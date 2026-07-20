@@ -7,10 +7,27 @@ import prisma from '@/lib/prisma';
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { ContentPillar } from '@/modules/brand-dna/types';
-import type { GeneratedPost, ContentCalendar, ContentCalendarItem, Platform, ContentFormat, FunnelStage, ContentTrack } from './types';
+import {
+  CONTENT_COMMAND_CENTER_PLATFORMS,
+  isContentCommandCenterPlatform,
+  type GeneratedPost,
+  type ContentCalendar,
+  type ContentCalendarItem,
+  type Platform,
+  type ContentFormat,
+  type FunnelStage,
+  type ContentStatus,
+  type ContentTrack,
+} from './types';
 import { generateContentPillars, generateCalendar, generatePost } from './contentGenerators';
 
 const CONTENT_TRACKS: ContentTrack[] = ['retail', 'recruitment'];
+const CONTENT_EDITOR_STATUSES: ContentStatus[] = [
+  'draft',
+  'generated',
+  'copied',
+  'published',
+];
 
 function isContentCalendar(value: unknown): value is ContentCalendar {
   return Boolean(value && typeof value === 'object' && Array.isArray((value as Partial<ContentCalendar>).items));
@@ -153,8 +170,9 @@ export const contentEngineService = {
 
     const post = generatePost(ctx, pillar, platform, format, funnelStage);
 
-    // Save to Content model
-    await prisma.content.create({
+    // Save to the canonical Content model and return its identity. The client
+    // must PATCH this record rather than using the temporary generator ID.
+    const content = await prisma.content.create({
       data: {
         tenantId,
         ownerId: userId,
@@ -169,14 +187,58 @@ export const contentEngineService = {
       },
     });
 
-    return post;
+    return {
+      ...post,
+      id: content.id,
+      title: content.title ?? post.title,
+      body: content.body,
+      platform,
+      format,
+      status: 'draft',
+      createdAt: content.createdAt.toISOString(),
+      updatedAt: content.updatedAt.toISOString(),
+    };
   },
 
   async getLastPost(userId: string): Promise<GeneratedPost | null> {
-    // Read from Content model (canonical source)
-    const content = await prisma.content.findFirst({ where: { ownerId: userId }, orderBy: { createdAt: 'desc' } });
-    if (!content) return null;
-    return { id: content.id, pillar: '', pillarEmoji: '', title: content.title ?? '', hook: '', body: content.body, cta: '', hashtags: [], platform: (content.platform as GeneratedPost['platform']) ?? 'instagram', format: (content.type as GeneratedPost['format']) ?? 'text_post', funnelStage: 'awareness', status: (content.status as GeneratedPost['status']) ?? 'generated', qualityScore: 75, createdAt: content.createdAt.toISOString() };
+    // The shared Content table also stores legacy `post`, `whatsapp`, and
+    // `xiaohongshu` records. Only hydrate the latest record whose persisted
+    // type/platform/status are compatible with the E1 Command Center editor.
+    const content = await prisma.content.findFirst({
+      where: {
+        ownerId: userId,
+        type: 'text_post',
+        platform: { in: [...CONTENT_COMMAND_CENTER_PLATFORMS] },
+        status: { in: CONTENT_EDITOR_STATUSES },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    });
+    if (
+      !content ||
+      content.type !== 'text_post' ||
+      !isContentCommandCenterPlatform(content.platform) ||
+      !isContentStatus(content.status)
+    ) {
+      return null;
+    }
+
+    return {
+      id: content.id,
+      pillar: '',
+      pillarEmoji: '',
+      title: content.title ?? '',
+      hook: '',
+      body: content.body,
+      cta: '',
+      hashtags: [],
+      platform: content.platform,
+      format: 'text_post',
+      funnelStage: 'awareness',
+      status: content.status,
+      qualityScore: 75,
+      createdAt: content.createdAt.toISOString(),
+      updatedAt: content.updatedAt.toISOString(),
+    };
   },
 
   async getPublishedCount(userId: string): Promise<number> {
@@ -197,4 +259,8 @@ function resolveContentTrack(track: ContentTrack, workspaceContext?: WorkspaceCo
   return CONTENT_TRACKS.includes(configuredTrack as ContentTrack)
     ? configuredTrack as ContentTrack
     : track;
+}
+
+function isContentStatus(value: string): value is ContentStatus {
+  return CONTENT_EDITOR_STATUSES.some((status) => status === value);
 }

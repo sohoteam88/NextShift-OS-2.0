@@ -66,10 +66,10 @@ export function TeamDashboard() {
         </section>
 
         <section className="space-y-3">
-          <Link href="/team" className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:bg-[var(--color-surface)]">
+          <Link href="/ai-workforce" className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:bg-[var(--color-surface)]">
             <Users className="h-5 w-5 text-[var(--color-primary)]" /><span className="text-sm font-semibold">团队看板</span>
           </Link>
-          <Link href="/team/members" className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:bg-[var(--color-surface)]">
+          <Link href="/ai-workforce" className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-4 shadow-sm hover:bg-[var(--color-surface)]">
             <UserPlus className="h-5 w-5 text-[var(--color-primary)]" /><span className="text-sm font-semibold">邀请成员</span>
           </Link>
           {engine.showFull && (

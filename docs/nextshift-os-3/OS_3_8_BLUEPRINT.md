@@ -92,6 +92,7 @@ This gate unlocks seed-user acquisition. It does not automatically authorize Sta
 | P0 | U2 — Information Architecture Decision | One-page route map classified as Keep / Merge / Hide | Blueprint approval; Steven decision before U3 |
 | P1 | U1 — Dead-code Inventory and Removal | Duplicate/orphan surfaces are proven before removal | E1 stable; inventory before delete |
 | P1 | U3 — Navigation Convergence | Navigation follows the approved U2 map | Steven approves U2 |
+| P1 | U3A/U3ADR/U3B — Administration Space Separation | Freeze the complete admin inventory, resolve the AuditLog ADR gate, then migrate team and platform administration into isolated page/API namespaces | U3 complete; Steven Amendment A approved |
 | P1 | E3 — Pattern Extension | Verified gaps in Video, Lead Magnet, and Webinar use the same working loop | E1/E2 pattern stable; current-state revalidation |
 
 ## 6. Workstream E1 — Editable Content Output
@@ -210,9 +211,21 @@ Required outcomes:
 - redirects and bookmarks are tested;
 - mobile and desktop navigation agree.
 
+### 10.1 Amendment A — Three-Space Administration Isolation
+
+Steven approved Amendment A on 2026-07-17. The member IA keeps the seven desktop destinations and five-slot mobile projection, while administration is split into two isolated backends:
+
+- `/admin/*` and `/api/v1/admin/*` are tenant administration for `leader`/`operator`, with route-level least privilege and session-derived tenant scope only;
+- `/superadmin/*` and `/api/v1/superadmin/*` are platform administration for `platform_admin` only;
+- member-facing navigation exposes no administration links;
+- legacy platform page GET routes use terminal one-hop 301 redirects; mutation APIs never rely on 301/302;
+- every superadmin write is audited, and platform-global audit storage requires a separate ADR before any Prisma change.
+
+The implementation is split into U3A (Admin Space Inventory and Security Contract), U3ADR (exact-head Architecture Review of the machine-readable [AuditLog ADR decision](os-3-8/3.8-C/U3_AUDITLOG_ADR_DECISION.json) followed by production-runner adoption into the canonical [gate](os-3-8/3.8-C/U3_AUDITLOG_ADR_GATE.json)), and U3B (Three-Space Admin Migration). The proposed decision selects Option A: nullable audit tenant plus explicit tenant/platform scope, a database-enforced scope/tenant invariant with deterministic backfill and partial indexes, PLATFORM-scoped tenant-deletion tombstones retained for 24+ months, deleted tenants as a terminal fail-closed state across sessions/APIs/workers, a dedicated append-only `AuditEventOutbox` for failure events outside rolled-back business transactions, and a nullable dedicated `AuditLog` idempotency key/payload digest with database uniqueness and conflict alerting. All six required decisions remain subject to exact-head PASS and separate adoption. Historical U3 evidence remains completed and immutable. U3B remains Manifest `blocked` while the gate is missing, pending, non-PASS, stale, SHA-mismatched, or missing any required decision or option-C proof; only a separate exact-head PASS governance adoption may transition it to pending. E3A remains blocked until U3B completes.
+
 ## 11. Workstream E3 — Pattern Extension
 
-E3 begins with a fresh capability matrix against `main` because Video already demonstrates editing and draft saving.
+E3 begins only after U3B completes. It starts with a fresh capability matrix against the authorized planning baseline because Video already demonstrates editing and draft saving.
 
 For each of Video, Lead Magnet, and Webinar:
 
@@ -296,7 +309,7 @@ Before product implementation starts, Codex must complete the one-time [Pipeline
 | --- | --- | --- | --- |
 | W1 — Content Working Loop | E1 editable/save/copy loop → E2 Content Library | After each task PR passes required verification, the Pipeline merges it into the planning branch and selects the next pending task | AR-W1 cumulative Architecture Review after E2 |
 | W2 — Product Structure Decision | U1A dead-code inventory → U2 one-page IA | U2 starts automatically after the inventory task passes | AR-W2 cumulative Architecture Review, then Steven approves the complete IA map |
-| W3 — Convergence and Extension | U1B approved removals → U3 navigation → E3A capability revalidation → E3B proven gap fixes | Each task advances only after required verification; E3B scope is derived from E3A evidence | AR-W3 cumulative Architecture Review |
+| W3 — Convergence and Extension | U1B approved removals → U3 navigation → U3A admin-space inventory/security contract → U3ADR AuditLog decision gate → U3B three-space admin migration → E3A capability revalidation → E3B proven gap fixes | U3ADR requires fresh exact-head PASS evidence before U3B; E3A is blocked on U3B and E3B scope is derived from E3A evidence | AR-W3 cumulative Architecture Review |
 | Final | Full verification → independent technical Audit → release evidence | No automatic release or deployment | One Claude Code Audit, then explicit Steven release approval |
 
 Rules:
@@ -352,16 +365,22 @@ The restart-safe state machine, artifact paths, task order, and gates are author
 - [x] Steven approved E3 as revalidation-first, with fixes only for proven gaps.
 - [x] Steven approved reuse of canonical `Content` with no Prisma change by default.
 - [x] Steven approved the complete OS 3.8 Blueprint scope and ordering.
+- [x] Steven approved Amendment A: isolated member, team-admin, and platform-admin spaces, implemented through U3A/U3ADR/U3B before E3A.
 - [x] Invite-link environment hardening and audit A-1/A-3 remain deferred unless directly touched or proven to be a release blocker.
-- [ ] Steven approves the U2 one-page IA after AR-W2.
-- [ ] Steven approves OS 3.8 release after final independent Audit and release evidence.
+- [x] Steven approved the U2 one-page IA after AR-W2; the canonical approval is recorded in `os-3-8/approvals/STEVEN_IA_APPROVAL.md`.
+- [x] Engineering task loop and independent Final Audit completed with `PASS`.
+- [x] Release Preparation approved for a governance PR and, after its review and merge, a separate planning-to-main Release PR.
+- [ ] Production migration approval.
+- [ ] Deployment approval.
+- [ ] Tag approval.
+- [ ] Production release approval.
 
 ## 20. Authorization Record
 
 Blueprint decision: **APPROVED** by Steven through merged PR #78.
 
-Wave governance decision: awaiting Steven merge of the Wave contract/bootstrap documentation PR.
+Engineering delivery: all Manifest tasks are `completed`, AR-W1/AR-W2/AR-W3 are `passed`, STEVEN-IA is `approved`, and the independent Final Audit is `pass`.
 
-Product implementation authorization: **BLOCKED** until the one-time Pipeline Upgrade PR is implemented, reviewed, and merged.
+Current stage: **Release Preparation**. The RC documentation and Release Preparation governance approval may be reviewed. A planning-to-main Release PR may be created only after this governance PR is reviewed and merged.
 
-After the Pipeline bootstrap passes, it may execute only the tasks and order encoded in `os-3-8/PIPELINE_MANIFEST.json`. It must pause at every Architecture Review or Steven gate, and it may not release or deploy automatically.
+Production release remains **BLOCKED**. Production migration, deployment, tagging, GitHub Release creation, and production traffic switching each require separate approval; none is authorized by Final Audit PASS or Release Preparation approval.

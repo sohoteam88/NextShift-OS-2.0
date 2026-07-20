@@ -12,9 +12,10 @@ This status registry provides the current platform state for repository navigati
 
 | Field | Current Value |
 | --- | --- |
-| Active planning branch | `planning/os-3.3-runtime-platform` |
-| Current release status | `v3.7.0` released to production at `28c077f`; version endpoint and `/api/health` verified, C-3 closed |
-| Last Updated | 2026-07-15 |
+| Active planning branch | `planning/os-3.8-product-usability` |
+| Current release status | OS 3.8 RC prepared; Final Audit PASS; Release Preparation approved; release gate BLOCKED |
+| Production release | `v3.7.0` remains current at `28c077f115a4e43c5e11e1097ae06b8744043643` |
+| Last Updated | 2026-07-19 |
 | Production verification | commit `28c077f115a4e43c5e11e1097ae06b8744043643`; environment `production`; build `2026-07-15T02:18:35Z`; health HTTP 200 `ok` with no-store/no-cache |
 | Current repository architecture project | Repository Architecture Reset v1.0 |
 | Current RAR migration unit | MU-001 Platform Registry Migration |
@@ -41,6 +42,8 @@ This status registry provides the current platform state for repository navigati
 | Blueprint status | [docs/nextshift-os-3/BLUEPRINT_STATUS.md](../docs/nextshift-os-3/BLUEPRINT_STATUS.md) |
 | OS 3.6 release candidate | [docs/nextshift-os-3/RC_3.6.md](../docs/nextshift-os-3/RC_3.6.md) |
 | OS 3.7 release package | [docs/nextshift-os-3/releases/OS_3_7_COMMAND_CENTER_TWIN/README.md](../docs/nextshift-os-3/releases/OS_3_7_COMMAND_CENTER_TWIN/README.md) |
+| OS 3.8 Release Candidate package | [docs/nextshift-os-3/releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md](../docs/nextshift-os-3/releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md) |
+| OS 3.8 Final Audit | [audit/OS38_FINAL_CODE_REVIEW_REPORT.md](../audit/OS38_FINAL_CODE_REVIEW_REPORT.md) |
 | Master roadmap | [docs/nextshift-os-3/MASTER_ROADMAP_2026-07.md](../docs/nextshift-os-3/MASTER_ROADMAP_2026-07.md) |
 | Product usability audit | [docs/nextshift-os-3/reviews/PRODUCT_USABILITY_AUDIT_2026-07.md](../docs/nextshift-os-3/reviews/PRODUCT_USABILITY_AUDIT_2026-07.md) |
 

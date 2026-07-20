@@ -1,6 +1,7 @@
 // Webinar Generators — all deterministic, from BrandContext
 import type { BrandContext } from '@/modules/brand-dna/types';
 import type { WebinarPackage, WebinarStrategy, WebinarTopic, WebinarOutline, SlideOutline, RegistrationPage, ReplayPage, FollowupMessage } from './types';
+import { randomUUID } from 'node:crypto';
 
 export function generateStrategy(ctx: BrandContext): WebinarStrategy {
   return {
@@ -99,7 +100,9 @@ export function generateFullWebinar(ctx: BrandContext): WebinarPackage {
   const strategy = generateStrategy(ctx);
   const topic = generateTopic(ctx);
   const outline = generateOutline(ctx, topic);
+  const now = new Date().toISOString();
   return {
+    id: `webinar-${randomUUID()}`, createdAt: now, updatedAt: now,
     strategy, topic, outline,
     loomScript: generateLoomScript(outline, ctx),
     slideOutline: generateSlideOutline(),

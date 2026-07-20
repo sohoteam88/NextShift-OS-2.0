@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-export default function SocialSetupPage() {
-  redirect('/brand-builder/step/accounts');
-}
+export default createCompatibilityRedirect('/brand-builder');

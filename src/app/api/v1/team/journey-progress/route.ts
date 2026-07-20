@@ -7,7 +7,7 @@ import { toJourneyProgressViewModel } from '@/modules/journey/view-models/Journe
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['leader', 'operator', 'platform_admin']);
+  requireRoleApi(user, ['leader', 'operator']);
 
   const members = await prisma.user.findMany({
     where:

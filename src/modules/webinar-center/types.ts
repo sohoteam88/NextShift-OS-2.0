@@ -1,4 +1,5 @@
 export interface WebinarPackage {
+  id: string; createdAt: string; updatedAt: string;
   strategy: WebinarStrategy; topic: WebinarTopic; outline: WebinarOutline;
   loomScript: string; slideOutline: SlideOutline[]; registrationPage: RegistrationPage;
   replayPage: ReplayPage; followupSequence: FollowupMessage[]; qualityScore: number; status: 'draft'|'generated'|'saved';

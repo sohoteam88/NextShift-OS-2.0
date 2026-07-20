@@ -4,7 +4,7 @@ Version: 1.0
 
 Status: Current
 
-Last Updated: 2026-07-15
+Last Updated: 2026-07-20
 
 ---
 
@@ -23,9 +23,10 @@ It summarizes project state for AI assistants and human contributors without rep
 | Project Name | NextShift OS |
 | Current Version | `v3.7.0` production (`28c077f`) |
 | Current Release | OS 3.7 Command Center + Business Twin released; production verification PASS and C-3 closed |
-| Current Planning Branch | `agent/os-3-8-a-stop-a` |
+| Current Planning Branch | `planning/os-3.8-product-usability` |
 | Repository Default Branch | `main` |
 | Production Status | OS 3.7 deployed and verified: version commit `28c077f`, environment `production`, health HTTP 200 `ok` |
+| OS 3.8 Candidate | Engineering complete; Final Audit PASS; Release Preparation approved; planning-to-main Release PR #109 open; release gate BLOCKED |
 
 Canonical navigation:
 
@@ -44,6 +45,9 @@ Canonical navigation:
 - [OS 3.7 Command Center + Business Twin Release Package](releases/OS_3_7_COMMAND_CENTER_TWIN/README.md)
 - [Product Usability Audit 2026-07](reviews/PRODUCT_USABILITY_AUDIT_2026-07.md)
 - [OS 3.8 Product Usability Recovery Blueprint — Approved](OS_3_8_BLUEPRINT.md)
+- [OS 3.8 Product Usability Recovery RC Package](releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md)
+- [OS 3.8 Final Audit Report](../../audit/OS38_FINAL_CODE_REVIEW_REPORT.md)
+- [OS 3.8 Release Preparation Approval](os-3-8/approvals/STEVEN_RELEASE_PREPARATION_APPROVAL.md)
 - [OS 3.8 Wave Pipeline Manifest](os-3-8/PIPELINE_MANIFEST.json)
 - [OS 3.8 Wave Execution Contract](os-3-8/WAVE_EXECUTION_CONTRACT.md)
 - [OS 3.8 Pipeline Upgrade Execution Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md)
@@ -100,7 +104,7 @@ Components:
 | Workspace Experience Framework | WEF v1.0 released | [Workspace Experience Framework](workspace-experience-framework/README.md) |
 | Runtime Workflows | WF-001 through WF-007 released and audited | [Workflow Status](WORKFLOW_STATUS.md) |
 | Developer Platform | OS 3.2 Developer Platform audit PASS; records remain historical release preparation artifacts | [OS 3.2 Audit Result](releases/OS_3_2_DEVELOPER_PLATFORM/AUDIT_RESULT.md) |
-| Current Capability Focus | OS 3.8 Wave governance and one-time Pipeline bootstrap; product implementation blocked | [Wave Execution Contract](os-3-8/WAVE_EXECUTION_CONTRACT.md) |
+| Current Capability Focus | OS 3.8 engineering complete; Final Audit PASS; Release Preparation approved; planning-to-main Release PR #109 open | [OS 3.8 RC Package](releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/README.md) |
 
 Product planning and capability scope remain governed by the canonical capability, roadmap, and platform project documents.
 
@@ -110,12 +114,12 @@ Product planning and capability scope remain governed by the canonical capabilit
 
 | Field | Current State |
 | --- | --- |
-| Active Planning Branch | `agent/os-3-8-a-stop-a` |
-| Active Milestone | OS 3.8 Product Usability Recovery — planning |
-| Current Phase | OS 3.8 Wave governance / Pipeline bootstrap |
-| Current Focus | Merge Wave governance, then Codex opens a separate Pipeline Upgrade PR; no E1 implementation yet |
-| Current Blockers | Dogfood gate not yet passable because the core generate → edit → save → copy/publish workflow is incomplete |
-| Current Priorities | PR #79 merge → Pipeline Upgrade PR → W1 E1 → E2 → one AR-W1 checkpoint |
+| Active Planning Branch | `planning/os-3.8-product-usability` |
+| Active Milestone | OS 3.8 Product Usability Recovery — Release PR review |
+| Current Phase | Planning-to-main Release PR review and explicit merge authorization |
+| Current Focus | Exact-head review of Release PR #109; live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence |
+| Current Blockers | PR #109 merge authorization, Production Readiness, production migration, deployment, tag, and release each require separate explicit authorization |
+| Current Priorities | Exact-head Release Review → Steven explicit merge approval → post-merge `main` verification → Production Readiness → separate production approval |
 
 Use [STD-006 Project Execution Orchestration Standard](engineering/STD-006_PROJECT_EXECUTION_ORCHESTRATION_STANDARD_v1.0.md) to determine the next lifecycle artifact instead of restarting completed phases.
 
@@ -166,12 +170,13 @@ The `v3.4.0` release tag has been created and pushed.
 
 ## 7. Next Recommended Actions
 
-1. Review and merge Draft PR #79 containing the OS 3.8 Wave governance artifacts.
-2. Give the [Pipeline Upgrade Execution Task](os-3-8/PIPELINE_UPGRADE_EXECUTION_TASK.md) to Codex and require a separate draft bootstrap PR.
-3. Review and merge the bootstrap PR before starting any OS 3.8 product task.
-4. Run W1 through the Pipeline: E1 then E2, with task-level verification and one cumulative AR-W1 stop after E2.
-5. Do not start Stage B expansion or seed-user acquisition until the Dogfood gate passes.
-6. Do not modify production deployment, Prisma, env files, release tags, or release state without explicit approval.
+1. Review Release PR [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) at its exact GitHub head.
+2. Merge only after an exact-head PASS and Steven's explicit merge approval.
+3. After merge, verify the exact `main` merge SHA and its GitHub CI results.
+4. Keep workflow dispatch, production migration, deployment, rollback, tag creation, and GitHub Release blocked until separately approved.
+5. Continue to state that production current remains `v3.7.0` until production deployment is separately completed and verified.
+
+Non-blocking Final Audit observations and release-governance metadata alignment remain v3.8.1 follow-up work; they do not alter the audited OS 3.8 release evidence.
 
 ---
 

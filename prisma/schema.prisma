@@ -8,6 +8,11 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum AuditScope {
+  TENANT
+  PLATFORM
+}
+
 model Tenant {
   id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name              String
@@ -490,11 +495,14 @@ model Content {
   promptUsed    String?  @map("prompt_used")
   status        String   @default("draft")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   owner         User     @relation(fields: [ownerId], references: [id])
 
   @@index([tenantId])
   @@index([ownerId])
+  @@index([tenantId, ownerId, updatedAt, id])
+  @@index([tenantId, updatedAt, id])
   @@map("contents")
 }
 
@@ -600,20 +608,82 @@ model BrandInterview {
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  tenantId   String   @map("tenant_id") @db.Uuid
+  id         String     @id @default(cuid())
+  tenantId   String?    @map("tenant_id") @db.Uuid
+  scope      AuditScope @default(TENANT)
   actorId    String?  @map("actor_id") @db.Uuid
   action     String
   targetType String?  @map("target_type")
   targetId   String?  @map("target_id") @db.Uuid
   metadata   Json     @default("{}")
+  // PostgreSQL partial uniqueness is installed by the reviewed U3B SQL
+  // authority; Prisma cannot represent `WHERE idempotency_key IS NOT NULL`.
+  idempotencyKey String? @map("idempotency_key")
+  payloadDigest  String? @map("payload_digest")
+  retentionUntil DateTime? @map("retention_until") @db.Timestamptz(6)
+  legalHold      Boolean   @default(false) @map("legal_hold")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, createdAt])
+  @@index([scope, createdAt])
   @@index([actorId])
   @@map("audit_logs")
+}
+
+model AuditEventOutbox {
+  id             String    @id @default(cuid())
+  idempotencyKey String    @map("idempotency_key")
+  payloadDigest  String    @map("payload_digest")
+  payload        Json
+  correlationId  String    @map("correlation_id")
+  status         String    @default("pending")
+  attemptCount   Int       @default(0) @map("attempt_count")
+  nextAttemptAt  DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  claimToken     String?   @map("claim_token")
+  claimedAt      DateTime? @map("claimed_at") @db.Timestamptz(6)
+  deliveredAt    DateTime? @map("delivered_at") @db.Timestamptz(6)
+  deliveredAuditLogId String? @map("delivered_audit_log_id")
+  deadLetteredAt DateTime? @map("dead_lettered_at") @db.Timestamptz(6)
+  failureCode    String?   @map("failure_code")
+  lastError      String?   @map("last_error")
+  alertedAt      DateTime? @map("alerted_at") @db.Timestamptz(6)
+  retentionUntil DateTime  @map("retention_until") @db.Timestamptz(6)
+  legalHold      Boolean   @default(false) @map("legal_hold")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([idempotencyKey, payloadDigest])
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([correlationId, createdAt])
+  @@map("audit_event_outbox")
+}
+
+model AuditOperationalAlert {
+  id             String    @id @default(cuid())
+  outboxEventId  String    @unique @map("outbox_event_id")
+  correlationId  String    @map("correlation_id")
+  alertType      String    @map("alert_type")
+  severity       String    @default("critical")
+  payloadDigest  String    @map("payload_digest")
+  payload        Json
+  status         String    @default("pending")
+  attemptCount   Int       @default(0) @map("attempt_count")
+  nextAttemptAt  DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  claimToken     String?   @map("claim_token")
+  claimedAt      DateTime? @map("claimed_at") @db.Timestamptz(6)
+  deliveredAt    DateTime? @map("delivered_at") @db.Timestamptz(6)
+  deliveryReceipt String?  @map("delivery_receipt")
+  lastError      String?   @map("last_error")
+  retentionUntil DateTime  @map("retention_until") @db.Timestamptz(6)
+  legalHold      Boolean   @default(false) @map("legal_hold")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, nextAttemptAt, createdAt])
+  @@index([correlationId, createdAt])
+  @@map("audit_operational_alerts")
 }
 
 model PostPerformance {

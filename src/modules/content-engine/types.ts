@@ -1,6 +1,51 @@
 import type { ContentPillar } from '@/modules/brand-dna/types';
 
-export type Platform = 'facebook' | 'instagram' | 'tiktok' | 'xhs' | 'threads' | 'email' | 'blog';
+/** Platforms supported by Content Engine generation. */
+export const CONTENT_ENGINE_PLATFORMS = [
+  'facebook',
+  'instagram',
+  'tiktok',
+  'xhs',
+  'threads',
+  'email',
+  'blog',
+] as const;
+
+export type Platform = (typeof CONTENT_ENGINE_PLATFORMS)[number];
+
+/**
+ * The E1 Command Center editor deliberately exposes only its four contracted
+ * post platforms. Shared Content records support additional identifiers, but
+ * those records must not be hydrated into this editor implicitly.
+ */
+export const CONTENT_COMMAND_CENTER_PLATFORMS = [
+  'facebook',
+  'instagram',
+  'tiktok',
+  'xhs',
+] as const satisfies readonly Platform[];
+
+export type ContentCommandCenterPlatform =
+  (typeof CONTENT_COMMAND_CENTER_PLATFORMS)[number];
+
+export function isContentCommandCenterPlatform(
+  value: string | null,
+): value is ContentCommandCenterPlatform {
+  return CONTENT_COMMAND_CENTER_PLATFORMS.some(
+    (platform) => platform === value,
+  );
+}
+
+/**
+ * Shared editor/API limits. A 200-character title matches the repository's
+ * existing title boundary; 20,000 characters supports long-form drafts while
+ * keeping PATCH request bodies bounded.
+ */
+export const CONTENT_UPDATE_LIMITS = {
+  title: 200,
+  body: 20_000,
+} as const;
+
 export type ContentFormat = 'text_post' | 'carousel' | 'reel' | 'short_video' | 'story' | 'email' | 'blog';
 export type FunnelStage = 'awareness' | 'consideration' | 'conversion' | 'retention';
 export type ContentStatus = 'draft' | 'generated' | 'copied' | 'published';
@@ -21,6 +66,12 @@ export interface GeneratedPost {
   status: ContentStatus;
   qualityScore: number;
   createdAt: string;
+  /**
+   * The Content model does not yet persist a separate updatedAt column. For
+   * generated drafts this is the persisted creation time; the editor records
+   * a successful save locally after a PATCH response.
+   */
+  updatedAt: string;
 }
 
 export interface ContentCalendar {

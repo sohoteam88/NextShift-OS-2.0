@@ -6,7 +6,7 @@ const TARGET_TYPE = 'business_memory';
 
 type AppendBusinessMemoryEventInput = {
   type: BusinessMemoryEventType;
-  tenantId: string;
+  tenantId: string | null;
   userId: string;
   title: string;
   summary: string;
@@ -20,12 +20,15 @@ function metadataRecord(value: Prisma.JsonValue): Record<string, unknown> {
 
 function toMemoryEvent(row: {
   id: string;
-  tenantId: string;
+  tenantId: string | null;
   actorId: string | null;
   action: string;
   metadata: Prisma.JsonValue;
   createdAt: Date;
 }): BusinessMemoryEvent {
+  if (!row.tenantId) {
+    throw new Error('Business memory events must be tenant-scoped');
+  }
   const metadata = metadataRecord(row.metadata);
 
   return {

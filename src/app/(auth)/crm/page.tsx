@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   CalendarClock,
@@ -26,6 +26,11 @@ import { LeadScoreBadge } from '@/modules/crm/components/LeadScoreBadge';
 import { LeadTable } from '@/modules/crm/components/LeadTable';
 import { WhatsAppButton } from '@/modules/crm/components/WhatsAppButton';
 import { AddLeadDialog } from '@/modules/crm/components/AddLeadDialog';
+import { CRMDashboard } from '@/modules/crm/components/CRMDashboard';
+import { LeadDashboard } from '@/modules/lead-engine/components/LeadDashboard';
+import { SalesDashboard } from '@/modules/sales-engine/components/SalesDashboard';
+import { CapabilityViewNavigation } from '@/components/navigation/CapabilityViewNavigation';
+import { resolveCrmView } from '@/lib/navigation/merged-capability-views';
 import { useSetFollowup } from '@/modules/crm/hooks/use-followup';
 import { useLeads, type LeadFilters, type LeadRow } from '@/modules/crm/hooks/use-leads';
 import { useTags } from '@/modules/crm/hooks/use-tags';
@@ -92,7 +97,7 @@ function sortPriority(a: LeadRow, b: LeadRow) {
   return score(b) - score(a);
 }
 
-export default function CrmPage() {
+function CrmMissionSurface() {
   const router = useRouter();
   const [filters, setFilters] = useState<LeadFilters>({
     page: 1,
@@ -437,6 +442,28 @@ export default function CrmPage() {
       </section>
 
       <AddLeadDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+    </div>
+  );
+}
+
+const crmViews = [
+  { id: 'mission', label: 'Lead Mission', href: '/crm' },
+  { id: 'dashboard', label: '客户转化', href: '/crm?view=dashboard' },
+  { id: 'leads', label: '引流获客', href: '/crm?view=leads' },
+  { id: 'sales', label: '销售成交', href: '/crm?view=sales' },
+] as const;
+
+export default function CrmPage() {
+  const activeView = resolveCrmView(useSearchParams().get('view'));
+  let content = <CrmMissionSurface />;
+  if (activeView === 'dashboard') content = <CRMDashboard />;
+  else if (activeView === 'leads') content = <LeadDashboard />;
+  else if (activeView === 'sales') content = <SalesDashboard />;
+
+  return (
+    <div className="space-y-6">
+      <CapabilityViewNavigation activeId={activeView} items={crmViews} label="CRM views" />
+      {content}
     </div>
   );
 }

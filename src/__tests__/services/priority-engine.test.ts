@@ -26,7 +26,7 @@ describe('COO-003 Priority Engine', () => {
     ['NO_CONVERSION', 'Generate Webinar Conversion System', 'CONVERSION', 'WEBINAR', '/webinar-center', 'High'],
     ['NO_CUSTOMERS', 'Convert Existing Leads', 'CONVERSION', 'CUSTOMERS', '/leads', 'High'],
     ['NO_RETENTION', 'Build Retention System', 'RETENTION', 'RETENTION', '/crm', 'High'],
-    ['NO_TEAM', 'Create SOP', 'SCALE', 'TEAM', '/team/growth', 'Normal'],
+    ['NO_TEAM', 'Create SOP', 'SCALE', 'TEAM', '/ai-workforce', 'Normal'],
     ['BUSINESS_HEALTHY', 'Optimize Growth', 'OPTIMIZATION', 'OPTIMIZATION', '/dashboard', 'Normal'],
     ['NO_SYSTEM', 'Restore Business Signals', 'SYSTEM', 'SYSTEM', '/dashboard', 'High'],
   ] as const)('maps %s to exactly one priority action', (bottleneck, action, category, missionType, route, urgency) => {

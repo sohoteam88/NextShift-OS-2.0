@@ -88,24 +88,56 @@ jq -e '
     (test("[\\x00-\\x1f\\x7f]") | not);
   def uint: type == "number" and . >= 0 and floor == .;
   def ghpr: type == "string" and test("^https://github\\.com/[^/]+/[^/]+/pull/[0-9]+$");
-  def task_verification($base; $id):
-    type == "object" and .status == "passed" and .checks == "passed" and
+  def ignored_ci_path:
+    ((startswith("src/") or startswith("tests/") or startswith("scripts/") or
+     startswith("prisma/") or startswith(".github/workflows/")) | not) and
+    (startswith("docs/") or startswith("audit/") or endswith(".md") or . == "platform/status.md");
+  def zero_check_evidence($verification; $id; $policy):
+    type == "object" and
+    .decision == "not_required_paths_ignored" and
+    .task_id == $id and .task_verification_policy == $policy and
+    $policy == "paths_ignored_zero_checks_allowed" and
+    .repository == $verification.repository and .pr_url == $verification.pr_url and
+    .base_branch == $verification.base_branch and (.base_sha | sha40) and
+    .head_sha == $verification.verified_head_sha and
+    .workflow_path == ".github/workflows/ci.yml" and (.workflow_blob_sha | sha40) and
+    (.changed_files | type == "array" and length > 0 and length == (unique | length) and
+      all(.[]; (rel and ignored_ci_path))) and
+    .github_check_runs == 0 and .ignored_paths_verified == true and (.verified_at | utc);
+  def task_verification($base; $id; $policy):
+    . as $verification |
+    type == "object" and .status == "passed" and
+    (.checks | IN("passed", "not_required_paths_ignored")) and
     (.repository | type == "string" and length > 0) and .base_branch == $base and
     (.task_branch | type == "string" and length > 0) and (.pr_url | ghpr) and
     (.verified_head_sha | sha40) and (.implementation_report | rel) and
     .dispatch_artifact == ("docs/nextshift-os-3/os-3-8/runs/" + $id + "_DISPATCH.json") and
     (.dispatch_artifact | rel) and .report_exists_at_exact_head == true and
-    .report_in_pr_diff == true and (.verified_at | utc);
-  def task_evidence($base; $id):
+    .report_in_pr_diff == true and (.verified_at | utc) and
+    (if .checks == "passed" then
+     ((.checks_evidence? // null) == null)
+     else
+      $policy == "paths_ignored_zero_checks_allowed" and
+      (.checks_evidence | zero_check_evidence($verification; $id; $policy)) and
+      .checks_evidence.verified_at == .verified_at
+     end);
+  def task_evidence($base; $id; $policy):
     type == "object" and
     (.pr_url | type == "string" and test("^https://github\\.com/sohoteam88/NextShift-OS-2\\.0/pull/[0-9]+$")) and
     (.merge_sha | sha40) and (.implementation_report | rel) and
     (.recovered | type == "boolean") and
-    (.validation | type == "object" and .checks == "passed" and (.head_sha | sha40)) and
-    (.verification | task_verification($base; $id)) and
+    (.validation | type == "object" and
+      (.checks | IN("passed", "not_required_paths_ignored")) and (.head_sha | sha40)) and
+    (.verification | task_verification($base; $id; $policy)) and
     .verification.pr_url == .pr_url and
     .verification.implementation_report == .implementation_report and
     .verification.verified_head_sha == .validation.head_sha and
+    .verification.checks == .validation.checks and
+    (if .verification.checks == "passed" then
+      ((.validation.checks_evidence? // null) == null)
+     else
+      .validation.checks_evidence == .verification.checks_evidence
+     end) and
     (if .recovered then
       ((.merged_at? // null) == null) and (.recovered_at | utc)
      else
@@ -135,10 +167,11 @@ jq -e '
   all(.waves[];
     all(.tasks[];
       . as $task |
+      (.verification_policy | IN("actual_checks_required", "paths_ignored_zero_checks_allowed")) and
       if .status == "completed" then
-        (.verification | task_verification($base; $task.id)) and (.evidence | task_evidence($base; $task.id)) and .verification == .evidence.verification
+        (.verification | task_verification($base; $task.id; $task.verification_policy)) and (.evidence | task_evidence($base; $task.id; $task.verification_policy)) and .verification == .evidence.verification
       elif .status == "running" then
-        ((.evidence? // null) == null) and (((.verification? // null) == null) or (.verification | task_verification($base; $task.id)))
+        ((.evidence? // null) == null) and (((.verification? // null) == null) or (.verification | task_verification($base; $task.id; $task.verification_policy)))
       else
         ((.evidence? // null) == null) and ((.verification? // null) == null)
       end
@@ -185,6 +218,115 @@ jq -e '
   exit 1
 }
 
+# Generic governance/dispatch-gate schema and dependency invariants. Gate names
+# and task IDs are data; the validator does not special-case U3ADR or U3B.
+jq -e '
+  def rel:
+    type == "string" and length > 0 and
+    (startswith("/") | not) and (startswith("-") | not) and (endswith("/") | not) and
+    (contains("//") | not) and (contains("\\") | not) and
+    (test("(^|/)\\.\\.?(/|$)") | not) and (test("(^|/)\\.git(/|$)") | not) and
+    (test("[\\x00-\\x1f\\x7f]") | not);
+  def governance_contract:
+    type == "object" and
+    ((keys_unsorted - ["gate_id","artifact","policy"]) | length == 0) and
+    (.gate_id | type == "string" and length > 0) and (.artifact | rel) and
+    (.policy | type == "object") and
+    (((.policy | keys_unsorted) - ["schema_version","gate_id","gate_task_id","consumer_task_id","policy_version","decision_artifact","allowed_selected_options","required_decisions","protected_paths","review","freshness","option_c"]) | length == 0) and
+    .policy.schema_version == 1 and .policy.gate_id == .gate_id and
+    (.policy.gate_task_id | type == "string" and length > 0) and (.policy.consumer_task_id | type == "string" and length > 0) and
+    (.policy.policy_version | type == "string" and length > 0) and (.policy.decision_artifact | rel) and
+    (.policy.allowed_selected_options | type == "array" and length > 0 and length == (unique | length)) and
+    all(.policy.allowed_selected_options[]; type == "string" and length > 0) and
+    (.policy.required_decisions | type == "array" and length > 0 and length == (unique | length)) and
+    all(.policy.required_decisions[]; type == "string" and length > 0) and
+    (.policy.protected_paths | type == "array" and length > 0 and length == (unique | length)) and all(.policy.protected_paths[]; rel) and
+    .policy.review == {required_verdict:"PASS",reviewed_sha_must_equal_decision_sha:true} and
+    .policy.freshness == {reject_protected_path_changes_after_review:true} and
+    (.policy.option_c | type == "object") and .policy.option_c.proof_required == true and
+      (.policy.option_c.selected_option | type == "string" and length > 0) and
+      (.policy.option_c.selected_option as $option | .policy.allowed_selected_options | index($option) != null) and (.policy.option_c.proof_artifact | rel);
+  def dispatch_contract:
+    type == "object" and
+    ((keys_unsorted - ["gate_id","task_id","artifact","required_status","required_verdict","reviewed_sha_must_equal_decision_sha","required_freshness_state","option_c_proof_required","blocked_reason"]) | length == 0) and
+    (.gate_id | type == "string" and length > 0) and (.task_id | type == "string" and length > 0) and (.artifact | rel) and
+    .required_status == "approved" and .required_verdict == "PASS" and
+    .reviewed_sha_must_equal_decision_sha == true and .required_freshness_state == "fresh" and
+    .option_c_proof_required == true and
+    (((.blocked_reason? // null) == null) or (.blocked_reason | type == "string" and length > 0));
+  [.waves[].tasks[]] as $tasks |
+  all($tasks[];
+    ((has("governance_gate") | not) or (.governance_gate | governance_contract)) and
+    ((has("dispatch_gate") | not) or (.dispatch_gate | dispatch_contract)) and
+    (if .status == "blocked" then has("dispatch_gate") else true end) and
+    (if has("dispatch_gate") then
+      . as $consumer |
+      ([ $tasks[] | select(.id == $consumer.dispatch_gate.task_id) ] | length) == 1 and
+      ([ $tasks[] | select(.id == $consumer.dispatch_gate.task_id) ][0]) as $dependency |
+      ($consumer.depends_on | index($dependency.id) != null) and
+      ($dependency.governance_gate | governance_contract) and
+      $dependency.governance_gate.policy.gate_task_id == $dependency.id and
+      $dependency.governance_gate.policy.consumer_task_id == $consumer.id and
+      $consumer.dispatch_gate.gate_id == $dependency.governance_gate.gate_id and
+      $consumer.dispatch_gate.artifact == $dependency.governance_gate.artifact and
+      (if $consumer.status == "blocked" then $dependency.status != "completed" else $dependency.status == "completed" end)
+     else true end)
+  )
+' "$MANIFEST_PATH" >/dev/null || {
+  echo "ERROR: manifest contains an invalid governance/dispatch gate contract" >&2
+  exit 1
+}
+
+manifest_repo="${PIPELINE_VALIDATION_ROOT:-$(git -C "$(dirname "$MANIFEST_PATH")" rev-parse --show-toplevel 2>/dev/null || true)}"
+if [[ -n "$manifest_repo" ]]; then manifest_repo="$(cd "$manifest_repo" && pwd -P)"; fi
+while IFS=$'\t' read -r gate_task gate_status artifact_relative; do
+  [[ -n "$gate_task" ]] || continue
+  [[ -n "$manifest_repo" ]] || { echo "ERROR: gated manifest must live in a Git repository" >&2; exit 1; }
+  artifact="$manifest_repo/$artifact_relative"
+  [[ -f "$artifact" && ! -L "$artifact" ]] || { echo "ERROR: governance gate artifact missing or unsafe: $artifact_relative" >&2; exit 1; }
+  artifact_parent="$(cd "$(dirname "$artifact")" && pwd -P)"
+  [[ "$artifact_parent" == "$manifest_repo" || "$artifact_parent" == "$manifest_repo/"* ]] || { echo "ERROR: governance gate artifact escapes repository: $artifact_relative" >&2; exit 1; }
+  expected_gate_id="$(jq -r --arg id "$gate_task" '.waves[].tasks[] | select(.id == $id) | .governance_gate.gate_id' "$MANIFEST_PATH")"
+  trusted_policy="$(jq -c --arg id "$gate_task" '.waves[].tasks[] | select(.id == $id) | .governance_gate.policy' "$MANIFEST_PATH")"
+  policy_digest="$(jq -Sc . <<<"$trusted_policy" | shasum -a 256 | awk '{print $1}')"
+  protected_digest="$(jq -Sc '.protected_paths | sort' <<<"$trusted_policy" | shasum -a 256 | awk '{print $1}')"
+  expected_consumer="$(jq -r '.consumer_task_id' <<<"$trusted_policy")"
+  jq -e --arg task "$gate_task" --arg consumer "$expected_consumer" --arg status "$gate_status" --arg expected_gate_id "$expected_gate_id" --arg policy_digest "$policy_digest" --arg protected_digest "$protected_digest" --argjson policy "$trusted_policy" '
+    . as $gate |
+    .schema_version == 1 and .gate_id == $expected_gate_id and .task_id == $task and .consumer_task_id == $consumer and
+    .policy == $policy and .policy_version == $policy.policy_version and .policy_sha256 == $policy_digest and
+    .protected_paths_sha256 == $protected_digest and
+    (if $status == "completed" then
+      .status == "approved" and (.selected_option | type == "string") and
+      ($policy.allowed_selected_options | index($gate.selected_option) != null) and
+      (.decision_artifact == $policy.decision_artifact) and (.decision_artifact_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+      (.required_decisions | type == "array" and ([.[].id] | sort) == ($policy.required_decisions | sort)) and
+      all(.required_decisions[]; .status == "resolved" and (.decision | type == "string" and length > 0)) and
+      .approval_state == "approved" and .architecture_review.verdict == "PASS" and
+      (.architecture_review.review_id | type == "number" and . > 0 and floor == .) and
+      (.decision_sha | type == "string" and test("^[0-9a-f]{40}$")) and
+      .architecture_review.reviewed_sha == .decision_sha and .freshness.state == "fresh" and
+      .freshness.verified_against_planning_sha == .decision_sha and
+      .freshness.protected_paths_sha256 == $protected_digest and
+      (if .selected_option == $policy.option_c.selected_option then
+        .option_c_proof.path == $policy.option_c.proof_artifact and (.option_c_proof.sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+       else .option_c_proof == null end) and
+      .u3b_dispatch_authorized == true
+     else
+      .status == "pending" and .selected_option == null and .decision_sha == null and .decision_artifact == $policy.decision_artifact and
+      .decision_artifact_sha256 == null and .required_decisions == [] and .option_c_proof == null and
+      .architecture_review == {verdict:null,reviewed_sha:null,review_id:null} and .approval_state == "pending" and
+      .freshness == {state:"unverified",verified_against_planning_sha:null,protected_paths_sha256:$protected_digest} and
+      .u3b_dispatch_authorized == false
+     end)
+  ' "$artifact" >/dev/null || { echo "ERROR: governance gate artifact does not match task state: $gate_task" >&2; exit 1; }
+  if [[ "$gate_status" == completed ]]; then
+    expected_digest="$(jq -r --arg id "$gate_task" '.waves[].tasks[] | select(.id == $id) | .evidence.governance_gate_digest // empty' "$MANIFEST_PATH")"
+    actual_digest="$(shasum -a 256 "$artifact" | awk '{print $1}')"
+    [[ "$expected_digest" =~ ^[0-9a-f]{64}$ && "$expected_digest" == "$actual_digest" ]] || { echo "ERROR: completed governance gate digest is missing or mismatched: $gate_task" >&2; exit 1; }
+  fi
+done < <(jq -r '.waves[].tasks[] | select(has("governance_gate")) | [.id,.status,.governance_gate.artifact] | @tsv' "$MANIFEST_PATH")
+
 all_ids="$(jq -r '[.waves[] | .tasks[]?.id, .checkpoint.id, .human_gate?.id] | .[]? // empty' "$MANIFEST_PATH" | sort -u)"
 while IFS= read -r dependency; do
   [[ -z "$dependency" ]] && continue
@@ -193,5 +335,40 @@ while IFS= read -r dependency; do
     exit 1
   fi
 done < <(jq -r '.waves[] | .tasks[]?.depends_on[]?' "$MANIFEST_PATH")
+
+# A task may claim execution progress only after every declared prerequisite
+# reaches the terminal state required by that prerequisite's authority type.
+# There are no implicit ID- or wave-specific exceptions: task dependencies
+# require completed, Architecture Review checkpoints require passed, and human
+# approval gates require approved. Unknown, missing, duplicate, or incompatible
+# dependency authorities fail closed.
+jq -e '
+  [.waves[].tasks[]] as $tasks |
+  [.waves[].checkpoint] as $checkpoints |
+  [.waves[].human_gate? | select(. != null)] as $human_gates |
+  def dependency_satisfied($dependency_id):
+    ([ $tasks[] | select(.id == $dependency_id) ]) as $task_matches |
+    ([ $checkpoints[] | select(.id == $dependency_id) ]) as $checkpoint_matches |
+    ([ $human_gates[] | select(.id == $dependency_id) ]) as $human_gate_matches |
+    (($task_matches | length) + ($checkpoint_matches | length) + ($human_gate_matches | length)) == 1 and
+    (if ($task_matches | length) == 1 then
+       $task_matches[0].status == "completed"
+     elif ($checkpoint_matches | length) == 1 then
+       $checkpoint_matches[0].status == "passed"
+     else
+       $human_gate_matches[0].status == "approved"
+     end);
+  all($tasks[];
+    . as $task |
+    if ($task.status == "running" or $task.status == "completed") then
+      all($task.depends_on[]?; . as $dependency_id | dependency_satisfied($dependency_id))
+    else
+      true
+    end
+  )
+' "$MANIFEST_PATH" >/dev/null || {
+  echo "ERROR: running/completed task has an unsatisfied or incompatible dependency" >&2
+  exit 1
+}
 
 echo "manifest valid: $MANIFEST_PATH"

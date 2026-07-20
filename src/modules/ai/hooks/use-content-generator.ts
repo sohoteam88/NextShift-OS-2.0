@@ -107,7 +107,7 @@ export function useSavedContent(filters?: { page?: number; limit?: number }) {
       if (!res.ok) throw new Error('Failed to fetch saved content');
       return res.json() as Promise<{
         data: Array<Record<string, unknown>>;
-        meta: { page: number; limit: number; total: number; total_pages: number };
+        meta: { page: number; limit: number; total: number; totalPages: number };
       }>;
     },
   });
@@ -134,6 +134,7 @@ export function useSaveContent() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ai-content'] });
+      qc.invalidateQueries({ queryKey: ['content-library'] });
     },
   });
 }

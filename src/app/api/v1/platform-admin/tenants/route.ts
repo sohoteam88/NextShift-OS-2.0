@@ -34,15 +34,5 @@ export const GET = apiHandler(async (request: NextRequest) => {
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
   requireRoleApi(user, ['platform_admin']);
-  const body = TenantCreateSchema.parse(await request.json());
-  const ownerId = body.ownerId ?? randomUUID();
-  const result = await platformAdminService.createTenant({
-    name: body.name,
-    slug: body.slug,
-    plan: body.plan,
-    ownerId,
-    ownerEmail: body.ownerEmail,
-    ownerName: body.ownerName,
-  });
-  return NextResponse.json({ data: result }, { status: 201 });
+  return NextResponse.json({ error: { code: 'GONE', message: 'Use /api/v1/superadmin/tenants' } }, { status: 410 });
 });

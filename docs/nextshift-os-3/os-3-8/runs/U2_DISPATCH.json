@@ -1,0 +1,94 @@
+{
+  "schema": "nextshift.os3.8.task-dispatch",
+  "version": 1,
+  "task_id": "U2",
+  "wave_id": "W2",
+  "repository": "sohoteam88/NextShift-OS-2.0",
+  "base_branch": "planning/os-3.8-product-usability",
+  "authorized_task_base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
+  "planning_adoption_base_sha": "2e22f478bc092ee729d66e65b490565e3ac1723f",
+  "task_branch": "docs/os-3.8-u2-information-architecture",
+  "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+  "verified_head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+  "merge_sha": "2e22f478bc092ee729d66e65b490565e3ac1723f",
+  "architecture_review": {
+    "review_id": 4712211968,
+    "verdict": "PASS",
+    "reviewed_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0"
+  },
+  "artifacts": {
+    "information_architecture": "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md",
+    "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md"
+  },
+  "changed_files": [
+    "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+    "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
+  ],
+  "verification_policy": "paths_ignored_zero_checks_allowed",
+  "decision": "not_required_paths_ignored",
+  "checks_evidence": {
+    "decision": "not_required_paths_ignored",
+    "task_id": "U2",
+    "task_verification_policy": "paths_ignored_zero_checks_allowed",
+    "repository": "sohoteam88/NextShift-OS-2.0",
+    "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+    "base_branch": "planning/os-3.8-product-usability",
+    "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
+    "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+    "workflow_path": ".github/workflows/ci.yml",
+    "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+    "changed_files": [
+      "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+      "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
+    ],
+    "github_check_runs": 0,
+    "ignored_paths_verified": true,
+    "verified_at": "2026-07-16T09:37:14Z"
+  },
+  "workflow_path": ".github/workflows/ci.yml",
+  "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+  "github_check_runs": 0,
+  "report_exists_at_exact_head": true,
+  "report_in_pr_diff": true,
+  "verification": {
+    "status": "passed",
+    "task_id": "U2",
+    "task_verification_policy": "paths_ignored_zero_checks_allowed",
+    "repository": "sohoteam88/NextShift-OS-2.0",
+    "base_branch": "planning/os-3.8-product-usability",
+    "task_branch": "docs/os-3.8-u2-information-architecture",
+    "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+    "verified_head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+    "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+    "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U2_DISPATCH.json",
+    "report_exists_at_exact_head": true,
+    "report_in_pr_diff": true,
+    "checks": "not_required_paths_ignored",
+    "checks_evidence": {
+      "decision": "not_required_paths_ignored",
+      "task_id": "U2",
+      "task_verification_policy": "paths_ignored_zero_checks_allowed",
+      "repository": "sohoteam88/NextShift-OS-2.0",
+      "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/88",
+      "base_branch": "planning/os-3.8-product-usability",
+      "base_sha": "3a53527c9fe2096e14cce3849c275e6725883916",
+      "head_sha": "7be20e61568577f0c42c3ddc63ff967f8d5892f0",
+      "workflow_path": ".github/workflows/ci.yml",
+      "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+      "changed_files": [
+        "docs/nextshift-os-3/os-3-8/3.8-C/U2_IMPLEMENTATION_REPORT.md",
+        "docs/nextshift-os-3/os-3-8/3.8-C/U2_INFORMATION_ARCHITECTURE.md"
+      ],
+      "github_check_runs": 0,
+      "ignored_paths_verified": true,
+      "verified_at": "2026-07-16T09:37:14Z"
+    },
+    "verified_at": "2026-07-16T09:37:14Z"
+  },
+  "execution_mode": "manual_codex_desktop",
+  "adoption_mode": "manual_governance_backfill",
+  "merged_at": "2026-07-16T09:19:52Z",
+  "recovered_at": "2026-07-16T09:38:11Z",
+  "adopted_at": "2026-07-16T09:38:11Z",
+  "governance_boundary": "U2 documentation adoption does not constitute STEVEN-IA approval and does not authorize U1B or U3."
+}

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Clapperboard, Loader2, Plus } from 'lucide-react';
+import { DeleteVideoProjectButton } from './DeleteVideoProjectButton';
 
 type Project = {
   id: string;
@@ -91,9 +92,7 @@ export function VideoProjectsList() {
                 </p>
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">状态：{STATUS_LABELS[project.status] ?? project.status}</p>
               </div>
-              <Link href={`/video/${project.id}`} className="text-sm font-medium text-[var(--color-primary)] hover:underline">
-                继续编辑 →
-              </Link>
+              <div className="flex items-center gap-2"><Link href={`/video/${project.id}`} className="text-sm font-medium text-[var(--color-primary)] hover:underline">继续编辑 →</Link><DeleteVideoProjectButton projectId={project.id} onDeleted={() => setProjects((items) => items.filter((item) => item.id !== project.id))} /></div>
             </div>
           </div>
         ))}

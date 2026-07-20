@@ -11,7 +11,43 @@ pass=0
 fail() { echo "FAIL: $*" >&2; exit 1; }
 assert_eq() { [[ "$1" == "$2" ]] || fail "$3 (expected $2, got $1)"; pass=$((pass + 1)); }
 fresh() {
-  cp "$SOURCE_MANIFEST" "$TMP_DIR/manifest.json"
+  jq '
+    # The generic state-machine fixture exercises the original product-task
+    # lifecycle. U3A/U3ADR/U3B use real Git/GitHub evidence and are covered by
+    # governance-dispatch-gate.sh; do not manufacture their blocked gate here.
+    .waves |= map(if .id == "W3" then
+      .tasks |= map(select(.id != "U3A" and .id != "U3ADR" and .id != "U3B")) |
+      .tasks |= map(if .id == "E3A" then .depends_on = ["U3"] else . end)
+    else . end) |
+    .waves |= map(
+      .status="pending" | .start_sha=null |
+      .tasks |= map(
+        if .status == "blocked" then
+          .verification=null | .evidence=null
+        else
+          .status="pending" | .verification=null | .evidence=null
+        end
+      ) |
+      .checkpoint.status="pending" |
+      .checkpoint.requested_end_sha=null |
+      .checkpoint.reviewed_sha=null |
+      .checkpoint.remediation_attempts=0 |
+      .checkpoint.active_remediation=null |
+      .checkpoint.remediation_block=null |
+      if .human_gate then
+        .human_gate.status="pending" |
+        .human_gate.approved_by=null |
+        .human_gate.approved_at=null |
+        .human_gate.approved_reviewed_sha=null
+      else . end
+    ) |
+    .final_audit.status="pending" |
+    .final_audit.requested_product_sha=null |
+    .final_audit.requested_at=null |
+    .final_audit.reviewed_sha=null |
+    .final_audit.completed_at=null |
+    .release_gate.status="blocked"
+  ' "$SOURCE_MANIFEST" >"$TMP_DIR/manifest.json"
   rm -f "$TMP_DIR"/*ARCHITECTURE_REVIEW_*.md "$TMP_DIR"/STEVEN_IA_APPROVAL.md "$TMP_DIR"/OS38_FINAL_CODE_REVIEW_REQUEST.md "$TMP_DIR"/OS38_FINAL_CODE_REVIEW_REPORT.md
 }
 run() { PIPELINE_TEST_MODE=1 "$PIPELINE_DIR/run-pipeline.sh" --manifest "$TMP_DIR/manifest.json" "$@"; }
@@ -77,15 +113,31 @@ set_gate() {
   ' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
   if [[ "$id" == "STEVEN-IA" && "$status" == "approved" ]]; then
     printf '%s\n' \
-      'GATE=STEVEN-IA' \
+      'HUMAN_GATE=STEVEN-IA' \
       'DECISION=APPROVED' \
-      'APPROVER=fixture' \
+      'APPROVED_BY=fixture' \
       'APPROVED_AT=2026-07-15T12:00:00Z' \
       'AR_W2_REVIEWED_SHA=0123456789012345678901234567890123456789' \
       >"$TMP_DIR/STEVEN_IA_APPROVAL.md"
   fi
 }
 complete_wave_tasks() { local wave="$1"; local id; while IFS= read -r id; do set_task "$id" completed; done < <(jq -r --arg wave "$wave" '.waves[] | select(.id == $wave) | .tasks[].id' "$TMP_DIR/manifest.json"); }
+prepare_final_ready() {
+  local tmp="$TMP_DIR/state.json"
+  FINAL_TEST_SHA="$(git -C "$PIPELINE_DIR/../.." rev-parse HEAD)"
+  complete_wave_tasks W1; complete_wave_tasks W2; complete_wave_tasks W3
+  set_checkpoint AR-W1 passed; set_checkpoint AR-W2 passed; set_checkpoint AR-W3 passed; set_gate STEVEN-IA approved
+  jq --arg sha "$FINAL_TEST_SHA" '
+    .waves |= map(
+      .start_sha=$sha |
+      .checkpoint.requested_end_sha=$sha |
+      .checkpoint.reviewed_sha=$sha |
+      if .human_gate then .human_gate.approved_reviewed_sha=$sha else . end
+    )
+  ' "$TMP_DIR/manifest.json" >"$tmp" && mv "$tmp" "$TMP_DIR/manifest.json"
+  sed -i.bak "s/^AR_W2_REVIEWED_SHA=.*/AR_W2_REVIEWED_SHA=$FINAL_TEST_SHA/" "$TMP_DIR/STEVEN_IA_APPROVAL.md"
+  rm -f "$TMP_DIR/STEVEN_IA_APPROVAL.md.bak"
+}
 valid_evidence() {
   jq -n --arg n "${1:-1}" '{
     pr_url:("https://github.com/sohoteam88/NextShift-OS-2.0/pull/" + $n),
@@ -127,6 +179,16 @@ if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/bad-dispatch-identi
 pass=$((pass + 1))
 jq '.waves[0].tasks[0].evidence.recovered=true | del(.waves[0].tasks[0].evidence.merged_at,.waves[0].tasks[0].evidence.recovered_at)' "$TMP_DIR/manifest.json" >"$TMP_DIR/bad-recovery-timestamp.json"
 if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/bad-recovery-timestamp.json" >/dev/null 2>&1; then fail "recovered task without recovery timestamp accepted"; fi
+pass=$((pass + 1))
+
+# Lifecycle dependency states are validated independently of action selection.
+fresh
+set_task E2 completed
+if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/manifest.json" >/dev/null 2>&1; then fail "completed task with incomplete task dependency accepted"; fi
+pass=$((pass + 1))
+fresh
+set_task E2 running
+if "$PIPELINE_DIR/validate-manifest.sh" --manifest "$TMP_DIR/manifest.json" >/dev/null 2>&1; then fail "running task with incomplete task dependency accepted"; fi
 pass=$((pass + 1))
 
 # Initial selection and restart-safe task transition.
@@ -192,26 +254,22 @@ assert_eq "$(action)" needs_human "reviewed failure at max attempts blocks a thi
 
 # The final audit runs only once after all human controls pass and never opens release.
 fresh
-complete_wave_tasks W1; complete_wave_tasks W2; complete_wave_tasks W3
-set_checkpoint AR-W1 passed; set_checkpoint AR-W2 passed; set_checkpoint AR-W3 passed; set_gate STEVEN-IA approved
-jq '.waves |= map(.start_sha="0123456789012345678901234567890123456789")' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
+prepare_final_ready
 assert_eq "$(action)" final_audit "all waves select the final audit once"
 run --cycle
 assert_eq "$(action)" awaiting_final_audit "running final audit is a clean wait"
-grep -Fqx 'REQUESTED_PRODUCT_SHA=0123456789012345678901234567890123456789' "$TMP_DIR/OS38_FINAL_CODE_REVIEW_REQUEST.md" || fail "final audit request did not pin product SHA"
+grep -Fqx "REQUESTED_PRODUCT_SHA=$FINAL_TEST_SHA" "$TMP_DIR/OS38_FINAL_CODE_REVIEW_REQUEST.md" || fail "final audit request did not pin current repository SHA"
 pass=$((pass + 1))
-printf 'VERDICT=PASS_WITH_CONDITION\nREVIEWED_SHA=0123456789012345678901234567890123456789\n' >"$TMP_DIR/conditional-audit-result.md"
+printf 'VERDICT=PASS_WITH_CONDITION\nREVIEWED_SHA=%s\n' "$FINAL_TEST_SHA" >"$TMP_DIR/conditional-audit-result.md"
 if run --record-final-audit PASS "$TMP_DIR/conditional-audit-result.md" >/dev/null 2>&1; then fail "PASS_WITH_CONDITION was accepted as PASS"; fi
 pass=$((pass + 1))
-printf 'VERDICT=PASS\nREVIEWED_SHA=0123456789012345678901234567890123456789\n' >"$TMP_DIR/final-audit-source.md"
+printf 'VERDICT=PASS\nREVIEWED_SHA=%s\n' "$FINAL_TEST_SHA" >"$TMP_DIR/final-audit-source.md"
 run --record-final-audit PASS "$TMP_DIR/final-audit-source.md"
 assert_eq "$(action)" complete "final audit PASS completes state"
 assert_eq "$(jq -r '.release_gate.status' "$TMP_DIR/manifest.json")" blocked "final audit cannot release"
 run --record-final-audit PASS "$TMP_DIR/final-audit-source.md"
 fresh
-complete_wave_tasks W1; complete_wave_tasks W2; complete_wave_tasks W3
-set_checkpoint AR-W1 passed; set_checkpoint AR-W2 passed; set_checkpoint AR-W3 passed; set_gate STEVEN-IA approved
-jq '.waves |= map(.start_sha="0123456789012345678901234567890123456789")' "$TMP_DIR/manifest.json" >"$TMP_DIR/state.json" && mv "$TMP_DIR/state.json" "$TMP_DIR/manifest.json"
+prepare_final_ready
 run --cycle
 if run --record-final-audit PASS "$TMP_DIR/missing-audit-result.md" >/dev/null 2>&1; then fail "missing external final audit result accepted"; fi
 pass=$((pass + 1))
@@ -241,10 +299,10 @@ mkdir -p "$TMP_DIR/fake-bin"
 printf '%s\n' '#!/usr/bin/env bash' "printf '%s\\n' \"\${FAKE_PR_JSON:?}\"" >"$TMP_DIR/fake-bin/gh"
 chmod +x "$TMP_DIR/fake-bin/gh"
 bad_base='{"repository":{"nameWithOwner":"sohoteam88/NextShift-OS-2.0"},"baseRefName":"wrong-base","headRefName":"test-task","headRefOid":"deadbeef","url":"https://github.com/sohoteam88/NextShift-OS-2.0/pull/99"}'
-if PATH="$TMP_DIR/fake-bin:$PATH" FAKE_PR_JSON="$bad_base" TASK_BRANCH=test-task run --verify-pr https://github.com/sohoteam88/NextShift-OS-2.0/pull/99 >/dev/null 2>&1; then fail "wrong PR base accepted"; fi
+if PATH="$TMP_DIR/fake-bin:$PATH" FAKE_PR_JSON="$bad_base" TASK_BRANCH=test-task run --verify-pr E1 https://github.com/sohoteam88/NextShift-OS-2.0/pull/99 >/dev/null 2>&1; then fail "wrong PR base accepted"; fi
 pass=$((pass + 1))
 bad_head='{"repository":{"nameWithOwner":"sohoteam88/NextShift-OS-2.0"},"baseRefName":"planning/os-3.8-product-usability","headRefName":"test-task","headRefOid":"deadbeef","url":"https://github.com/sohoteam88/NextShift-OS-2.0/pull/99"}'
-if PATH="$TMP_DIR/fake-bin:$PATH" FAKE_PR_JSON="$bad_head" TASK_BRANCH=test-task run --verify-pr https://github.com/sohoteam88/NextShift-OS-2.0/pull/99 >/dev/null 2>&1; then fail "wrong PR head accepted"; fi
+if PATH="$TMP_DIR/fake-bin:$PATH" FAKE_PR_JSON="$bad_head" TASK_BRANCH=test-task run --verify-pr E1 https://github.com/sohoteam88/NextShift-OS-2.0/pull/99 >/dev/null 2>&1; then fail "wrong PR head accepted"; fi
 pass=$((pass + 1))
 
 echo "PASS: $pass pipeline state assertions"

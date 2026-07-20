@@ -1,12 +1,15 @@
 import { redirect } from 'next/navigation';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
-import { AdminCommandDashboard } from '@/modules/admin/components/AdminCommandDashboard';
+import {
+  buildCompatibilityDestination,
+  type RedirectPageProps,
+} from '@/lib/navigation/compatibility-redirect';
 
-export default async function AdminCommandPage() {
+export default async function AdminCommandPage({ searchParams }: RedirectPageProps) {
   const user = await getAuthUser();
 
   if (!user) redirect('/login');
   if (user.role !== 'platform_admin') redirect('/dashboard');
 
-  return <div className="py-6 px-4"><AdminCommandDashboard /></div>;
+  redirect(buildCompatibilityDestination('/superadmin/command', await searchParams, ['source']));
 }

@@ -333,9 +333,12 @@ model Content {
   generated_by_ai Boolean  @default(false)
   prompt_used     String?
   created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
 
   @@index([tenant_id])
   @@index([owner_id])
+  @@index([tenant_id, owner_id, updated_at, id])
+  @@index([tenant_id, updated_at, id])
 }
 ```
 

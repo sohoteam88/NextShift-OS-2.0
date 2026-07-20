@@ -1,5 +1,3 @@
-import { redirect } from 'next/navigation';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-export default function FunnelBuilderPage() {
-  redirect('/funnel');
-}
+export default createCompatibilityRedirect('/funnel');

@@ -61,7 +61,7 @@ export function adaptReferralSignals(input: ReferralSignalInput): ReferralSignal
       title: 'Prepare a referral path',
       summary: 'Create an invite/referral path before measuring referral conversion.',
       priority: 'medium',
-      route: '/team/growth',
+      route: '/ai-workforce',
       owner: 'growth-loop',
     }],
     generatedAt: input.generatedAt,

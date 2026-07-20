@@ -1,9 +1,3 @@
-import { VideoProductionDashboard } from '@/modules/video-production/components/VideoProductionDashboard';
+import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
 
-export default function VideoProductionPage() {
-  return (
-    <div className="py-6 px-4">
-      <VideoProductionDashboard />
-    </div>
-  );
-}
+export default createCompatibilityRedirect('/video?view=production');

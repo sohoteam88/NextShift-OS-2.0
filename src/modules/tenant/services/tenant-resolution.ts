@@ -12,8 +12,8 @@ export const resolveTenant = cache(async (slug?: string | null) => {
 
   if (!resolvedSlug) return null;
 
-  return prisma.tenant.findUnique({
-    where: { slug: resolvedSlug },
+  return prisma.tenant.findFirst({
+    where: { slug: resolvedSlug, status: { not: 'deleted' } },
     select: {
       id: true,
       name: true,
@@ -46,4 +46,3 @@ export async function getTenantById(tenantId: string) {
     },
   });
 }
-

@@ -2,52 +2,38 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useMemo } from 'react';
+import { useLocale } from 'next-intl';
 import { useOptionalWorkspaceContext } from '../WorkspaceProvider';
-import { getWorkspacePresentationModel } from '../workspace-presentation';
+import {
+  getMemberNavigationLabel,
+  isMemberNavigationActive,
+  MEMBER_PRIMARY_NAVIGATION,
+} from '@/config/canonical-routes';
 import { cn } from '@/lib/cn';
 
 type WorkspaceTopNavigationProps = {
   readonly className?: string;
 };
 
-const PRIMARY_NAVIGATION_MATCHERS = [
-  'dashboard',
-  'journey',
-  'content',
-  'lead_magnet',
-  'offer',
-  'funnel',
-];
-
-function isPrimaryNavigationItem(item: { readonly id: string; readonly capability?: string }) {
-  const searchable = `${item.id} ${item.capability ?? ''}`.toLowerCase();
-  return PRIMARY_NAVIGATION_MATCHERS.some((matcher) => searchable.includes(matcher));
-}
-
 export function WorkspaceTopNavigation({ className }: WorkspaceTopNavigationProps) {
   const workspace = useOptionalWorkspaceContext();
   const pathname = usePathname();
-  const activeWorkspaceType = workspace?.workspaceContext.activeWorkspaceType;
-  const model = useMemo(
-    () => activeWorkspaceType ? getWorkspacePresentationModel(activeWorkspaceType) : null,
-    [activeWorkspaceType],
-  );
-
-  if (!model || model.navigationItems.length === 0) return null;
-
-  const navigationItems = model.navigationItems.filter(isPrimaryNavigationItem).slice(0, 5);
-  const visibleItems = navigationItems.length > 0 ? navigationItems : model.navigationItems.slice(0, 5);
+  const locale = useLocale();
+  const workspaceMode = workspace?.workspaceContext.activeWorkspaceType;
+  const workspaceName = workspace?.workspaces.find(
+    (item) => item.workspaceId === workspace.workspaceContext.activeWorkspaceId,
+  )?.displayName ?? 'Member';
 
   return (
-    <nav className={cn('hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto xl:flex', className)} aria-label={`${model.workspaceName} navigation`}>
-      {visibleItems.map((item) => {
-        const active = pathname === item.route || pathname.startsWith(`${item.route}/`);
+    <nav className={cn('hidden min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto xl:flex', className)} aria-label={`${workspaceName} navigation`}>
+      {MEMBER_PRIMARY_NAVIGATION.map((item) => {
+        const active = isMemberNavigationActive(pathname, item.href);
 
         return (
           <Link
             key={item.id}
-            href={item.route}
+            href={item.href}
+            aria-current={active ? 'page' : undefined}
             className={cn(
               'inline-flex h-10 shrink-0 items-center rounded-[var(--radius-md)] px-2 text-xs font-semibold transition-colors',
               active
@@ -55,7 +41,7 @@ export function WorkspaceTopNavigation({ className }: WorkspaceTopNavigationProp
                 : 'text-[var(--color-text-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]',
             )}
           >
-            {item.label}
+            {getMemberNavigationLabel(item, locale, workspaceMode)}
           </Link>
         );
       })}

@@ -6,7 +6,7 @@ export default async function AdminUsersPage() {
   const user = await getAuthUser();
 
   if (!user) redirect('/login');
-  if (!['operator', 'platform_admin'].includes(user.role)) redirect('/dashboard');
+  if (user.role !== 'operator') redirect('/dashboard');
 
-  return <UserManagementPanel currentUserId={user.id} currentUserRole={user.role as 'operator' | 'platform_admin'} />;
+  return <UserManagementPanel currentUserId={user.id} currentUserRole="operator" />;
 }

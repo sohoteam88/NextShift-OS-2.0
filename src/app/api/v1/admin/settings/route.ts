@@ -14,14 +14,14 @@ export const dynamic = 'force-dynamic';
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
   const data = await adminService.getTenantSettings(user.tenantId);
   return NextResponse.json({ data });
 });
 
 export const PATCH = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['operator', 'platform_admin']);
+  requireRoleApi(user, ['operator']);
   const body = await request.json();
   const input = BodySchema.parse(body);
   const data = await adminService.updateTenantSettings(user.id, user.tenantId, {

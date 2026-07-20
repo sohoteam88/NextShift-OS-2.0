@@ -5,6 +5,20 @@ import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission'
 import type { MasterScript, VideoHook, VideoProductionInput, VideoStrategy } from '../types';
 import { masterScriptService } from './master-script-service';
 import { videoStrategyService } from './video-strategy-service';
+import { AppError } from '@/lib/errors';
+
+const ownerWhere = (user: AuthUser, id: string) => ({ id, tenantId: user.tenantId, userId: user.id });
+
+export async function requireOwnedVideoProject(user: AuthUser, id: string) {
+  const project = await prisma.videoProject.findFirst({ where: ownerWhere(user, id) });
+  if (!project) throw new AppError('NOT_FOUND', 404, 'Video project not found');
+  return project;
+}
+
+export async function updateOwnedVideoProject(user: AuthUser, id: string, data: Prisma.VideoProjectUpdateManyMutationInput) {
+  const result = await prisma.videoProject.updateMany({ where: ownerWhere(user, id), data });
+  if (result.count !== 1) throw new AppError('NOT_FOUND', 404, 'Video project not found');
+}
 
 export const videoProjectService = {
   async startProject(user: AuthUser, input: VideoProductionInput) {
@@ -32,16 +46,12 @@ export const videoProjectService = {
   },
 
   async generateFullScript(user: AuthUser, projectId: string, chosenHook: VideoHook, input: VideoProductionInput) {
-    const project = await prisma.videoProject.findFirst({ where: { id: projectId, tenantId: user.tenantId } });
-    if (!project) throw new Error('Project not found');
+    const project = await requireOwnedVideoProject(user, projectId);
 
     const strategy = project.strategy as unknown as VideoStrategy;
     const masterScript = await masterScriptService.generateScript(user, input, strategy, chosenHook);
 
-    await prisma.videoProject.update({
-      where: { id: projectId },
-      data: { masterScript: masterScript as unknown as Prisma.InputJsonValue, status: 'scripted' },
-    });
+    await updateOwnedVideoProject(user, projectId, { masterScript: masterScript as unknown as Prisma.InputJsonValue, status: 'scripted' });
 
     const scriptedCount = await prisma.videoProject.count({
       where: { tenantId: user.tenantId, userId: user.id, status: { in: ['scripted', 'shot_planned', 'ready', 'published'] } },
@@ -52,8 +62,7 @@ export const videoProjectService = {
   },
 
   async regenerateScene(user: AuthUser, projectId: string, sceneNumber: number, instruction: string) {
-    const project = await prisma.videoProject.findFirst({ where: { id: projectId, tenantId: user.tenantId } });
-    if (!project) throw new Error('Project not found');
+    const project = await requireOwnedVideoProject(user, projectId);
 
     const script = project.masterScript as unknown as MasterScript;
     const newScene = await masterScriptService.regenerateScene(user, script, sceneNumber, instruction);
@@ -64,16 +73,13 @@ export const videoProjectService = {
       cta: script.cta.scene_number === sceneNumber ? newScene : script.cta,
     };
 
-    await prisma.videoProject.update({
-      where: { id: projectId },
-      data: { masterScript: nextScript as unknown as Prisma.InputJsonValue },
-    });
+    await updateOwnedVideoProject(user, projectId, { masterScript: nextScript as unknown as Prisma.InputJsonValue });
 
     return newScene;
   },
 
   async get(user: AuthUser, projectId: string) {
-    return prisma.videoProject.findFirst({ where: { id: projectId, tenantId: user.tenantId } });
+    return prisma.videoProject.findFirst({ where: ownerWhere(user, projectId) });
   },
 
   async list(user: AuthUser, filters?: { status?: string; platform?: string }) {
@@ -89,7 +95,8 @@ export const videoProjectService = {
   },
 
   async delete(user: AuthUser, projectId: string) {
-    await prisma.videoProject.deleteMany({ where: { id: projectId, tenantId: user.tenantId, userId: user.id } });
+    const result = await prisma.videoProject.deleteMany({ where: ownerWhere(user, projectId) });
+    if (result.count !== 1) throw new AppError('NOT_FOUND', 404, 'Video project not found');
     return { deleted: true };
   },
 };

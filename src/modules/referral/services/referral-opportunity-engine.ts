@@ -16,24 +16,24 @@ const CREATOR_OPPORTUNITIES: OpportunityDefinition[] = [
 ];
 
 const SERVICE_OPPORTUNITIES: OpportunityDefinition[] = [
-  { type: 'invite_friend', title: '邀请一位朋友体验', route: '/team/growth', expectedOutcome: 'Introduce one qualified person and track activation.' },
+  { type: 'invite_friend', title: '邀请一位朋友体验', route: '/ai-workforce', expectedOutcome: 'Introduce one qualified person and track activation.' },
   { type: 'client_referral', title: '请求客户转介绍', route: '/customers', expectedOutcome: 'Ask satisfied clients for qualified referrals.' },
   { type: 'testimonial', title: '收集客户见证', route: '/customers', expectedOutcome: 'Create trust proof from client outcomes.' },
   { type: 'review_request', title: '发送评价请求', route: '/customers', expectedOutcome: 'Increase public trust and conversion confidence.' },
 ];
 
 const RETAIL_OPPORTUNITIES: OpportunityDefinition[] = [
-  { type: 'invite_friend', title: '邀请一位朋友体验', route: '/team/growth', expectedOutcome: 'Introduce one qualified person and track activation.' },
+  { type: 'invite_friend', title: '邀请一位朋友体验', route: '/ai-workforce', expectedOutcome: 'Introduce one qualified person and track activation.' },
   { type: 'customer_referral', title: '启动顾客转介绍', route: '/customers', expectedOutcome: 'Turn happy buyers into referral sources.' },
   { type: 'transformation_story', title: '整理转变故事', route: '/content-engine', expectedOutcome: 'Turn product results into shareable proof.' },
   { type: 'repeat_buyer_referral', title: '邀请复购顾客推荐', route: '/customers', expectedOutcome: 'Ask repeat buyers to introduce similar customers.' },
 ];
 
 const TEAM_OPPORTUNITIES: OpportunityDefinition[] = [
-  { type: 'invite_friend', title: '邀请一位朋友体验', route: '/team/growth', expectedOutcome: 'Introduce one qualified person and track activation.' },
-  { type: 'recruit_referral', title: '请求招募转介绍', route: '/team/growth', expectedOutcome: 'Ask active members for warm recruit referrals.' },
-  { type: 'team_success_story', title: '发布团队成功故事', route: '/team/growth', expectedOutcome: 'Turn team wins into duplication proof.' },
-  { type: 'leadership_referral', title: '邀请领导力推荐', route: '/team/growth', expectedOutcome: 'Find high-potential partners through trusted leaders.' },
+  { type: 'invite_friend', title: '邀请一位朋友体验', route: '/ai-workforce', expectedOutcome: 'Introduce one qualified person and track activation.' },
+  { type: 'recruit_referral', title: '请求招募转介绍', route: '/ai-workforce', expectedOutcome: 'Ask active members for warm recruit referrals.' },
+  { type: 'team_success_story', title: '发布团队成功故事', route: '/ai-workforce', expectedOutcome: 'Turn team wins into duplication proof.' },
+  { type: 'leadership_referral', title: '邀请领导力推荐', route: '/ai-workforce', expectedOutcome: 'Find high-potential partners through trusted leaders.' },
 ];
 
 function definitionsFor(mode: InterviewAuthorityBusinessMode) {
@@ -95,7 +95,7 @@ export function nextReferralMilestoneFor(
     return {
       title: 'Create the first referral path',
       target: 'Referral invites created: 1',
-      route: '/team/growth',
+      route: '/ai-workforce',
     };
   }
 

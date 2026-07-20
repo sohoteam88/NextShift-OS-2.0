@@ -6,8 +6,8 @@ export function isAdminRole(role: string) {
   return ADMIN_ROLES.has(role);
 }
 
-export function homeRouteForRole(role: string): '/platform-admin' | '/admin' | '/dashboard' {
-  if (role === 'platform_admin') return '/platform-admin';
+export function homeRouteForRole(role: string): '/superadmin' | '/admin' | '/dashboard' {
+  if (role === 'platform_admin') return '/superadmin';
   if (isAdminRole(role)) return '/admin';
   return '/dashboard';
 }

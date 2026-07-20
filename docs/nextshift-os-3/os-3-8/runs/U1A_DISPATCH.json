@@ -1,0 +1,52 @@
+{
+  "task_id": "U1A",
+  "task_verification_policy": "paths_ignored_zero_checks_allowed",
+  "task_branch": "docs/os-3.8-u1a-dead-code-inventory",
+  "base_branch": "planning/os-3.8-product-usability",
+  "base_sha": "46001c987629df1ac9a602588ee6ee429aa473e3",
+  "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/84",
+  "verified_head_sha": "2d04861c1a490227ec914ccc4968bd0e21590b00",
+  "merge_sha": "99e7bb3eaf431b3b2d3e095e09aa9c83bcddaee4",
+  "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/IMPLEMENTATION_REPORT.md",
+  "inventory": "docs/nextshift-os-3/os-3-8/3.8-C/U1A_DEAD_CODE_INVENTORY.md",
+  "verification": {
+    "status": "passed",
+    "task_id": "U1A",
+    "task_verification_policy": "paths_ignored_zero_checks_allowed",
+    "repository": "sohoteam88/NextShift-OS-2.0",
+    "base_branch": "planning/os-3.8-product-usability",
+    "task_branch": "docs/os-3.8-u1a-dead-code-inventory",
+    "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/84",
+    "verified_head_sha": "2d04861c1a490227ec914ccc4968bd0e21590b00",
+    "implementation_report": "docs/nextshift-os-3/os-3-8/3.8-C/IMPLEMENTATION_REPORT.md",
+    "dispatch_artifact": "docs/nextshift-os-3/os-3-8/runs/U1A_DISPATCH.json",
+    "report_exists_at_exact_head": true,
+    "report_in_pr_diff": true,
+    "checks": "not_required_paths_ignored",
+    "checks_evidence": {
+      "decision": "not_required_paths_ignored",
+      "task_id": "U1A",
+      "task_verification_policy": "paths_ignored_zero_checks_allowed",
+      "repository": "sohoteam88/NextShift-OS-2.0",
+      "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/84",
+      "base_branch": "planning/os-3.8-product-usability",
+      "base_sha": "46001c987629df1ac9a602588ee6ee429aa473e3",
+      "head_sha": "2d04861c1a490227ec914ccc4968bd0e21590b00",
+      "workflow_path": ".github/workflows/ci.yml",
+      "workflow_blob_sha": "2503ff4f50307b31f77b77d3264a9bc738bdc724",
+      "changed_files": [
+        "docs/nextshift-os-3/os-3-8/3.8-C/IMPLEMENTATION_REPORT.md",
+        "docs/nextshift-os-3/os-3-8/3.8-C/U1A_DEAD_CODE_INVENTORY.md"
+      ],
+      "github_check_runs": 0,
+      "ignored_paths_verified": true,
+      "verified_at": "2026-07-16T06:59:19Z"
+    },
+    "verified_at": "2026-07-16T06:59:19Z"
+  },
+  "execution_mode": "manual_codex_desktop",
+  "adoption_mode": "manual_governance_backfill",
+  "adoption_reason": "U1A completed through the approved classic Codex workflow; PR #84 was exact-head reviewed, manually merged, and adopted with task-bound paths-ignore evidence",
+  "adopted_at": "2026-07-16T06:59:46Z",
+  "no_deletion_authorized": true
+}

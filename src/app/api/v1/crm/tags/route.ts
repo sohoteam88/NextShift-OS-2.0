@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi, requireRoleApi } from '@/modules/auth/middleware/require-auth-api';
+import { requireCanonicalMutationPath } from '@/lib/navigation/mutation-compatibility';
 import { tagService } from '@/modules/crm/services/tag-service';
 
 const CreateTagSchema = z.object({
@@ -17,7 +18,8 @@ export const GET = apiHandler(async (request: NextRequest) => {
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['leader', 'operator', 'platform_admin']);
+  requireRoleApi(user, ['leader', 'operator']);
+  requireCanonicalMutationPath(request, '/api/v1/admin/crm/tags');
   const body = await request.json();
   const input = CreateTagSchema.parse(body);
   const tag = await tagService.createTag(user.tenantId, input);

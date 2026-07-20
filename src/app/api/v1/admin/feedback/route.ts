@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  requireRoleApi(user, ['platform_admin', 'operator']);
+  requireRoleApi(user, ['operator']);
 
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
@@ -13,7 +13,7 @@ export const GET = apiHandler(async (request: NextRequest) => {
   const status = searchParams.get('status');
   const type = searchParams.get('type');
 
-  const where: any = {};
+  const where: any = { tenantId: user.tenantId };
   if (status) where.status = status;
   if (type) where.type = type;
 
