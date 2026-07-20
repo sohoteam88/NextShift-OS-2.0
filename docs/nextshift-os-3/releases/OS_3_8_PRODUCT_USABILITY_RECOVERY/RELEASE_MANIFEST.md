@@ -64,12 +64,15 @@ These repository changes are part of the RC source but **have not been executed 
 
 - [`prisma/migrations/20260715220949_add_content_updated_at/migration.sql`](../../../../prisma/migrations/20260715220949_add_content_updated_at/migration.sql)
 - [`supabase/migrations/20260717135456_u3b_three_space_audit.sql`](../../../../supabase/migrations/20260717135456_u3b_three_space_audit.sql)
+- [`supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql`](../../../../supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql)
 - [`scripts/u3b-admin-migration/install-audit-idempotency-authority.sql`](../../../../scripts/u3b-admin-migration/install-audit-idempotency-authority.sql)
 - [`prisma/schema.prisma`](../../../../prisma/schema.prisma), representing the RC schema authority
 
 Production migration requires separate explicit approval. This package does not grant or execute it.
 
-The repository production entrypoint is [`scripts/deployment/run-os38-production-migrations.sh`](../../../../scripts/deployment/run-os38-production-migrations.sh). It binds the exact release SHA, validates the Prisma and Supabase ledgers, acquires one database advisory lock, applies the Prisma migration before the U3B Supabase migration, skips the separate partial-index installer when the authoritative U3B migration owns that index, and requires catalog assertions before application deployment may begin. Its disposable PostgreSQL rehearsal is evidence only; no production database has been contacted or changed.
+The repository production entrypoint is [`scripts/deployment/run-os38-production-migrations.sh`](../../../../scripts/deployment/run-os38-production-migrations.sh). It binds the exact release SHA, validates the Prisma and Supabase ledgers, acquires one database advisory lock, applies the Prisma migration before the U3B Supabase migration and the additive audit-table RLS migration, skips the separate partial-index installer when the authoritative U3B migration owns that index, and requires RLS, privilege, policy and other catalog assertions before application deployment may begin. Its disposable PostgreSQL rehearsal is evidence only; no production database has been contacted or changed.
+
+The migration entrypoint runs from the dedicated [`scripts/deployment/Dockerfile.migrations`](../../../../scripts/deployment/Dockerfile.migrations) artifact built from the exact release SHA. The workflow verifies its archive checksum, image digest, OCI revision and pinned Node/pnpm/Prisma/Bash/psql labels after transfer; it performs no production-host network installation. A failed migration prevents application retag/start and does not authorize an automatic database reset or rebuild.
 
 ## Authorization Boundary
 
@@ -77,6 +80,7 @@ The repository production entrypoint is [`scripts/deployment/run-os38-production
 - Planning-to-main Release PR #109 is merged at `eabbcc3266b3bbddaaa8cf89ecf051592c8a7433`.
 - A Release PR is not production release approval.
 - Production Readiness is `NOT READY`; merging source to `main` did not execute a production action.
+- The canonical Final Release gate remains `blocked`; the genuine Final Release Approval and `READY` evidence artifacts do not yet exist.
 - Production migration, deployment, tagging, GitHub Release creation, and production traffic changes remain unauthorized.
 - `auto_tag=false`, `auto_deploy=false`, and `auto_release=false`; the release gate remains `BLOCKED`.
 

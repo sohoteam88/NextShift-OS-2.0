@@ -6,6 +6,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 ci_workflow="${1:-$repo_root/.github/workflows/ci.yml}"
 deploy_workflow="${2:-$repo_root/.github/workflows/deploy.yml}"
 migration_runner="${3:-$repo_root/scripts/deployment/run-os38-production-migrations.sh}"
+migration_dockerfile="${4:-$repo_root/scripts/deployment/Dockerfile.migrations}"
+approval_validator="$repo_root/scripts/deployment/validate-final-release-approval.sh"
 manual_validator="$repo_root/scripts/deployment/validate-manual-production-workflow.sh"
 
 fail() {
@@ -42,13 +44,13 @@ require_order() {
     fail "$label: '$before' must precede '$after'"
 }
 
-for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner"; do
+for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator"; do
   [[ -f "$contract_file" && ! -L "$contract_file" ]] || \
     fail "contract input must be a regular, non-symlink file: $contract_file"
 done
 
 pnpm exec prettier "$ci_workflow" "$deploy_workflow" >/dev/null
-"$manual_validator" "$deploy_workflow" >/dev/null
+"$manual_validator" "$deploy_workflow" "$repo_root/scripts/deployment/validate-production-request.sh" "$approval_validator" >/dev/null
 
 require_count "$ci_workflow" 1 "    branches: [main, develop, 'planning/**']" 'push branch contract'
 require_count "$ci_workflow" 2 "github.event_name == 'push' && github.ref == 'refs/heads/main'" 'main E2E job contract'
@@ -69,17 +71,22 @@ grep -Fq 'github.event.workflow_run' "$deploy_workflow" && fail 'workflow_run st
 for inventory_path in \
   'prisma/migrations/20260715220949_add_content_updated_at/migration.sql' \
   'supabase/migrations/20260717135456_u3b_three_space_audit.sql' \
+  'supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql' \
   'scripts/u3b-admin-migration/install-audit-idempotency-authority.sql' \
   'prisma/schema.prisma'; do
   require_count "$migration_runner" 1 "$inventory_path" 'OS 3.8 migration inventory'
 done
 
 require_count "$migration_runner" 1 'pg_try_advisory_lock' 'advisory migration lock'
-require_count "$migration_runner" 1 "-v ON_ERROR_STOP=1 \"\$psql_url\" -f" 'transactional Supabase migration'
+require_count "$migration_runner" 2 "-v ON_ERROR_STOP=1 \"\$psql_url\" -f" 'transactional Supabase migrations'
 require_count "$migration_runner" 1 'Prisma migration ledger is incomplete or has checksum drift' 'Prisma ledger drift guard'
 require_count "$migration_runner" 1 'Supabase migration ledger authority is missing or incompatible' 'Supabase ledger drift guard'
 require_count "$migration_runner" 1 'partial-index installer skipped because the Supabase migration owns the index' 'partial-index single authority'
 require_count "$migration_runner" 1 'post-migration catalog assertions failed' 'catalog assertion gate'
+require_count "$migration_runner" 1 'audit-table RLS migration ledger/catalog drift detected' 'audit RLS ledger/catalog gate'
+require_count "$migration_runner" 2 "c.relname IN ('audit_event_outbox','audit_operational_alerts') AND c.relrowsecurity" 'audit-table RLS catalog assertions'
+require_count "$migration_runner" 2 "grantee IN ('anon','authenticated')" 'audit-table privilege catalog assertions'
+require_count "$migration_runner" 2 "tablename IN ('audit_event_outbox','audit_operational_alerts')" 'no client-facing audit policy assertions'
 require_count "$migration_runner" 1 'fixture mode rejects non-local database connections' 'fixture production isolation'
 require_count "$migration_runner" 1 'release marker does not match the requested release SHA' 'exact release marker binding'
 require_order "$migration_runner" \
@@ -90,14 +97,31 @@ grep -Eq '(psql|prisma db execute).*partial_index_installer' "$migration_runner"
   fail 'partial-index installer must not be executed after the authoritative Supabase migration'
 grep -Eq '(psql|prisma db execute).*install-audit-idempotency-authority\.sql' "$migration_runner" && \
   fail 'partial-index installer must not be executed after the authoritative Supabase migration'
+grep -Eq '(^|[[:space:]])npx([[:space:]]|$)' "$migration_runner" && \
+  fail 'production migration runner must not download Prisma through npx'
 
-require_count "$deploy_workflow" 1 'scripts/deployment/run-os38-production-migrations.sh' 'complete migration entrypoint invocation'
+require_count "$migration_dockerfile" 1 'node:22.23.1-alpine3.23@sha256:16e22a550f3863206a3f701448c45f7912c6896a62de43add43bb9c86130c3e2' 'digest-pinned Node migration base'
+require_count "$migration_dockerfile" 1 'bash=5.3.3-r1' 'pinned Bash migration runtime'
+require_count "$migration_dockerfile" 1 'postgresql17-client=17.10-r0' 'pinned psql migration runtime'
+require_count "$migration_dockerfile" 1 'corepack prepare pnpm@10.24.0 --activate' 'pinned pnpm migration runtime'
+require_count "$migration_dockerfile" 1 'pnpm install --frozen-lockfile --prod' 'lockfile-resolved Prisma migration runtime'
+require_count "$migration_dockerfile" 1 'org.opencontainers.image.revision="${RELEASE_SHA}"' 'migration OCI revision label'
+require_count "$migration_dockerfile" 1 'com.nextshift.migration.prisma="6.19.3"' 'migration Prisma version label'
+require_count "$migration_dockerfile" 1 'ENTRYPOINT ["/usr/bin/env", "bash", "/app/scripts/deployment/run-os38-production-migrations.sh"]' 'complete migration entrypoint'
+
 require_count "$deploy_workflow" 1 '          printf '\''%s\n'\'' "$IMAGE_TAG" > os38-release-sha.txt' 'exact release marker creation'
 require_count "$deploy_workflow" 1 '-e OS38_MIGRATION_MODE=production' 'production migration mode'
+require_count "$deploy_workflow" 1 '--file scripts/deployment/Dockerfile.migrations' 'immutable migration image build'
+require_count "$deploy_workflow" 1 'printf '\''%s\n'\'' "$migration_image_digest" > migration-image-digest.txt' 'migration image digest evidence'
+require_count "$deploy_workflow" 1 'sha256sum --check migration-image.tar.gz.sha256' 'migration archive checksum verification'
+require_count "$deploy_workflow" 1 'test "$actual_migration_digest" = "$expected_migration_digest"' 'loaded migration image digest verification'
+require_count "$deploy_workflow" 1 'test "$migration_revision" = "${{ env.IMAGE_TAG }}"' 'migration image revision verification'
+grep -Eq 'node:22-alpine|apk add|npx --yes|npm install|pnpm install' "$deploy_workflow" && \
+  fail 'production VPS migration runtime must not install or download tooling'
 grep -Fq 'migrate deploy --schema /app/prisma/schema.prisma' "$deploy_workflow" && \
   fail 'deploy workflow must not bypass the complete migration entrypoint'
 require_order "$deploy_workflow" \
-  'run-os38-production-migrations.sh' \
+  "            docker run --rm \\" \
   'docker compose --env-file .env.production -f docker-compose.prod.yml up -d app' \
   'migration failure must prevent application deployment'
 

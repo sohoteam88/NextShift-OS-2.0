@@ -6,6 +6,7 @@ validator="$repo_root/scripts/deployment/validate-production-readiness-contract.
 runner="$repo_root/scripts/deployment/run-os38-production-migrations.sh"
 canonical_ci="$repo_root/.github/workflows/ci.yml"
 canonical_deploy="$repo_root/.github/workflows/deploy.yml"
+canonical_migration_dockerfile="$repo_root/scripts/deployment/Dockerfile.migrations"
 fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/nextshift-production-readiness.XXXXXX")"
 pass_count=0
 postgres_started=false
@@ -35,21 +36,23 @@ new_fixture() {
   fixture_ci="$fixture_directory/ci.yml"
   fixture_deploy="$fixture_directory/deploy.yml"
   fixture_runner="$fixture_directory/run-os38-production-migrations.sh"
+  fixture_migration_dockerfile="$fixture_directory/Dockerfile.migrations"
   cp "$canonical_ci" "$fixture_ci"
   cp "$canonical_deploy" "$fixture_deploy"
   cp "$runner" "$fixture_runner"
+  cp "$canonical_migration_dockerfile" "$fixture_migration_dockerfile"
 }
 
 expect_accept() {
   local name="$1"
-  "$validator" "$fixture_ci" "$fixture_deploy" "$fixture_runner" >/dev/null || \
+  "$validator" "$fixture_ci" "$fixture_deploy" "$fixture_runner" "$fixture_migration_dockerfile" >/dev/null || \
     fail "$name should be accepted"
   pass "$name"
 }
 
 expect_reject() {
   local name="$1"
-  if "$validator" "$fixture_ci" "$fixture_deploy" "$fixture_runner" >/dev/null 2>&1; then
+  if "$validator" "$fixture_ci" "$fixture_deploy" "$fixture_runner" "$fixture_migration_dockerfile" >/dev/null 2>&1; then
     fail "$name should be rejected"
   fi
   pass "$name"
@@ -84,7 +87,7 @@ new_fixture deterministic_order
 expect_accept migration_order_is_deterministic
 
 new_fixture failure_order
-perl -0pi -e 's#(sh -lc .*run-os38-production-migrations[^\n]*\n)(            docker tag[^\n]*\n)(            docker compose[^\n]*\n)#$3$1$2#' "$fixture_deploy"
+perl -0pi -e 's#(            docker run --rm \\\n)#            docker compose --env-file .env.production -f docker-compose.prod.yml up -d app\n$1#' "$fixture_deploy"
 expect_reject migration_failure_prevents_deploy
 
 new_fixture double_index
@@ -98,6 +101,25 @@ expect_reject post_migration_catalog_assertions_required
 new_fixture unbound_release
 perl -ni -e 'print unless /release marker does not match the requested release SHA/' "$fixture_runner"
 expect_reject exact_release_sha_bound_to_migration
+
+new_fixture immutable_runtime
+expect_accept production_migration_runtime_has_no_network_install
+
+new_fixture migration_revision
+perl -0pi -e 's/org\.opencontainers\.image\.revision="\$\{RELEASE_SHA\}"/org.opencontainers.image.revision="wrong"/' "$fixture_migration_dockerfile"
+expect_reject migration_image_revision_must_match_release_sha
+
+new_fixture migration_digest
+perl -ni -e 'print unless /test "\$actual_migration_digest" = "\$expected_migration_digest"/' "$fixture_deploy"
+expect_reject migration_image_digest_mismatch_rejected
+
+new_fixture additive_rls_inventory
+perl -0pi -e 's#supabase/migrations/20260720134506_harden_audit_internal_tables_rls\.sql#supabase/migrations/missing-audit-rls.sql#' "$fixture_runner"
+expect_reject additive_rls_migration_inventory_required
+
+new_fixture rls_catalog_drift
+perl -0pi -e 's/ AND c\.relrowsecurity//g' "$fixture_runner"
+expect_reject rls_catalog_drift_rejected
 
 release_sha="$(git -C "$repo_root" rev-parse HEAD)"
 external_marker="$fixture_root/external-release-sha.txt"
@@ -144,6 +166,8 @@ DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
 
 psql_url="postgresql://postgres@127.0.0.1:$postgres_port/os38_readiness"
 "$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
+CREATE ROLE anon NOLOGIN;
+CREATE ROLE authenticated NOLOGIN;
 DROP TABLE IF EXISTS "audit_operational_alerts" CASCADE;
 DROP TABLE IF EXISTS "audit_event_outbox" CASCADE;
 DROP FUNCTION IF EXISTS enforce_audit_operational_alert_retention() CASCADE;
@@ -210,13 +234,37 @@ catalog_result="$("$psql_bin" -X -qAt "$psql_url" <<'SQL'
 SELECT concat_ws('|',
   (SELECT count(*) FROM public._prisma_migrations WHERE migration_name='20260715220949_add_content_updated_at' AND finished_at IS NOT NULL),
   (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260717135456'),
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260720134506'),
   (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname='audit_logs_idempotency_key_unique' AND indexdef LIKE '%WHERE (idempotency_key IS NOT NULL)%'),
-  (SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('audit_event_outbox','audit_operational_alerts'))
+  (SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('audit_event_outbox','audit_operational_alerts')),
+  (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('audit_event_outbox','audit_operational_alerts') AND c.relrowsecurity),
+  (SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public' AND table_name IN ('audit_event_outbox','audit_operational_alerts') AND grantee IN ('anon','authenticated')),
+  (SELECT count(*) FROM pg_policies WHERE schemaname='public' AND tablename IN ('audit_event_outbox','audit_operational_alerts'))
 );
 SQL
 )"
-[[ "$catalog_result" == '1|1|1|2' ]] || fail "unexpected post-migration catalog: $catalog_result"
+[[ "$catalog_result" == '1|1|1|1|2|2|0|0' ]] || fail "unexpected post-migration catalog: $catalog_result"
 pass disposable_postgresql_migration_rehearsal
 
-[[ "$pass_count" == 14 ]] || fail "expected 14 named fixtures, got $pass_count"
+[[ "$("$psql_bin" -X -qAt "$psql_url" -c "SELECT relrowsecurity FROM pg_class WHERE oid='public.audit_event_outbox'::regclass;")" == t ]] || \
+  fail 'audit_event_outbox RLS is not enabled'
+pass audit_outbox_rls_enabled
+
+[[ "$("$psql_bin" -X -qAt "$psql_url" -c "SELECT relrowsecurity FROM pg_class WHERE oid='public.audit_operational_alerts'::regclass;")" == t ]] || \
+  fail 'audit_operational_alerts RLS is not enabled'
+pass audit_alerts_rls_enabled
+
+for role in anon authenticated; do
+  if "$psql_bin" -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
+    "SET ROLE $role; SELECT count(*) FROM public.audit_event_outbox;" >/dev/null 2>&1; then
+    fail "$role unexpectedly accessed audit_event_outbox"
+  fi
+  if "$psql_bin" -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
+    "SET ROLE $role; SELECT count(*) FROM public.audit_operational_alerts;" >/dev/null 2>&1; then
+    fail "$role unexpectedly accessed audit_operational_alerts"
+  fi
+done
+pass audit_tables_anon_authenticated_access_rejected
+
+[[ "$pass_count" == 22 ]] || fail "expected 22 named fixtures, got $pass_count"
 printf 'PASS: %s production-readiness fixtures\n' "$pass_count"

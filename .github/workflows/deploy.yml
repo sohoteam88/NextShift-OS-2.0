@@ -101,8 +101,9 @@ jobs:
       - name: Verify exact release checkout
         run: test "$(git rev-parse HEAD)" = "$IMAGE_TAG"
 
-      - name: Build Docker image
+      - name: Build exact application and migration images
         run: |
+          set -euo pipefail
           docker build \
             --target production \
             --label "org.opencontainers.image.revision=$IMAGE_TAG" \
@@ -127,7 +128,20 @@ jobs:
             --build-arg NEXT_PUBLIC_COMMIT_SHA="$IMAGE_TAG" \
             --build-arg NEXT_PUBLIC_BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             -t nextshift-app:$IMAGE_TAG .
-          docker save nextshift-app:$IMAGE_TAG | gzip > image.tar.gz
+          docker build \
+            --file scripts/deployment/Dockerfile.migrations \
+            --build-arg RELEASE_SHA="$IMAGE_TAG" \
+            --label "org.opencontainers.image.revision=$IMAGE_TAG" \
+            --tag nextshift-migrations:$IMAGE_TAG \
+            .
+          migration_image_digest="$(docker image inspect --format '{{.Id}}' nextshift-migrations:$IMAGE_TAG)"
+          [[ "$migration_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' nextshift-migrations:$IMAGE_TAG)"
+          test "$migration_revision" = "$IMAGE_TAG"
+          docker save nextshift-app:$IMAGE_TAG | gzip -n > image.tar.gz
+          docker save nextshift-migrations:$IMAGE_TAG | gzip -n > migration-image.tar.gz
+          printf '%s\n' "$migration_image_digest" > migration-image-digest.txt
+          sha256sum migration-image.tar.gz > migration-image.tar.gz.sha256
           printf '%s\n' "$IMAGE_TAG" > os38-release-sha.txt
 
       - name: Copy exact release artifacts to VPS
@@ -136,7 +150,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "image.tar.gz,docker-compose.prod.yml,os38-release-sha.txt,prisma,supabase,scripts/deploy-smoke.sh,scripts/deployment,scripts/u3b-admin-migration"
+          source: "image.tar.gz,migration-image.tar.gz,migration-image.tar.gz.sha256,migration-image-digest.txt,docker-compose.prod.yml,os38-release-sha.txt,scripts/deploy-smoke.sh"
           target: "/home/deploy/nextshift"
 
       - name: Migrate and deploy exact release SHA
@@ -155,19 +169,31 @@ jobs:
             docker image inspect nextshift-app:${{ env.IMAGE_TAG }} >/dev/null
             image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' nextshift-app:${{ env.IMAGE_TAG }})"
             test "$image_revision" = "${{ env.IMAGE_TAG }}"
+            sha256sum --check migration-image.tar.gz.sha256
+            expected_migration_digest="$(cat migration-image-digest.txt)"
+            [[ "$expected_migration_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            docker load < migration-image.tar.gz
+            migration_image="nextshift-migrations:${{ env.IMAGE_TAG }}"
+            actual_migration_digest="$(docker image inspect --format '{{.Id}}' "$migration_image")"
+            test "$actual_migration_digest" = "$expected_migration_digest"
+            migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$migration_image")"
+            test "$migration_revision" = "${{ env.IMAGE_TAG }}"
+            test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.prisma" }}' "$migration_image")" = '6.19.3'
+            test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.bash" }}' "$migration_image")" = '5.3.3-r1'
+            test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.psql" }}' "$migration_image")" = '17.10-r0'
             docker run --rm \
               --env-file .env.production \
               -e OS38_MIGRATION_MODE=production \
-              -v "$PWD:/app:ro" \
-              -w /app \
-              node:22-alpine \
-              sh -lc 'apk add --no-cache bash postgresql-client && bash /app/scripts/deployment/run-os38-production-migrations.sh "${{ env.IMAGE_TAG }}" /app/os38-release-sha.txt'
+              -v "$PWD/os38-release-sha.txt:/run/nextshift/os38-release-sha.txt:ro" \
+              "$migration_image" \
+              "${{ env.IMAGE_TAG }}" \
+              /run/nextshift/os38-release-sha.txt
             docker tag nextshift-app:${{ env.IMAGE_TAG }} nextshift-app:latest
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d app
             chmod +x scripts/deploy-smoke.sh
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
             docker image prune -f
-            rm image.tar.gz
+            rm image.tar.gz migration-image.tar.gz migration-image.tar.gz.sha256 migration-image-digest.txt
 
   rollback:
     name: Roll back production to exact release SHA

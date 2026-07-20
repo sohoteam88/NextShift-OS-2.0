@@ -10,11 +10,13 @@ lock_key=38003820260717
 
 content_migration="$repo_root/prisma/migrations/20260715220949_add_content_updated_at/migration.sql"
 u3b_migration="$repo_root/supabase/migrations/20260717135456_u3b_three_space_audit.sql"
+audit_rls_migration="$repo_root/supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql"
 partial_index_installer="$repo_root/scripts/u3b-admin-migration/install-audit-idempotency-authority.sql"
 prisma_schema="$repo_root/prisma/schema.prisma"
 
 content_sha='31ca2c16224aee4184d4cb787428ae365bb5f1bafbac74196fb9f367738ffa5a'
 u3b_sha='cbce822033bb3ced502f2e6f104e275a064dd8516a98190dd8e2d4403622ae66'
+audit_rls_sha='f560a101bc912500cf924a6972b9abe6720b2a248785a4bf7c96ecaeb0521264'
 installer_sha='a97cee2918c934be7a3951732e210ee73365d18320740b98af7d8ff96fd92246'
 schema_sha='e5625065f2462cb6dfd631e327981eb62993b5cc8875fa05fe785810ffbdece5'
 
@@ -69,6 +71,7 @@ trap cleanup EXIT INT TERM
 for inventory_item in \
   "$content_migration" \
   "$u3b_migration" \
+  "$audit_rls_migration" \
   "$partial_index_installer" \
   "$prisma_schema"; do
   [[ -f "$inventory_item" && ! -L "$inventory_item" ]] || \
@@ -77,6 +80,7 @@ done
 
 [[ "$(sha256_file "$content_migration")" == "$content_sha" ]] || fail 'Content migration checksum drift'
 [[ "$(sha256_file "$u3b_migration")" == "$u3b_sha" ]] || fail 'U3B Supabase migration checksum drift'
+[[ "$(sha256_file "$audit_rls_migration")" == "$audit_rls_sha" ]] || fail 'audit-table RLS migration checksum drift'
 [[ "$(sha256_file "$partial_index_installer")" == "$installer_sha" ]] || fail 'partial-index installer checksum drift'
 [[ "$(sha256_file "$prisma_schema")" == "$schema_sha" ]] || fail 'Prisma schema checksum drift'
 
@@ -103,6 +107,7 @@ fi
 
 command -v psql >/dev/null 2>&1 || fail 'psql is required'
 command -v node >/dev/null 2>&1 || fail 'node is required'
+[[ -x "$repo_root/node_modules/.bin/prisma" ]] || fail 'lockfile-installed Prisma CLI is required'
 
 lock_directory="$(mktemp -d "${TMPDIR:-/tmp}/nextshift-os38-migration-lock.XXXXXX")"
 lock_fifo="$lock_directory/input"
@@ -168,11 +173,7 @@ supabase_prior_count="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
   "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version = '202606140001';")"
 [[ "$supabase_prior_count" == 1 ]] || fail 'required prior Supabase migration ledger entry is missing'
 
-if [[ -x "$repo_root/node_modules/.bin/prisma" ]]; then
-  "$repo_root/node_modules/.bin/prisma" migrate deploy --schema "$prisma_schema"
-else
-  npx --yes prisma@6.19.3 migrate deploy --schema "$prisma_schema"
-fi
+"$repo_root/node_modules/.bin/prisma" migrate deploy --schema "$prisma_schema"
 
 applied_content_sha="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
   "SELECT checksum FROM public._prisma_migrations WHERE migration_name = '20260715220949_add_content_updated_at' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
@@ -205,19 +206,58 @@ elif [[ "$u3b_ledger_count" != 1 || "$u3b_catalog_count" != 4 ]]; then
   fail 'U3B migration ledger/catalog drift detected'
 fi
 
+audit_rls_ledger_count="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
+  "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version = '20260720134506';")"
+audit_rls_catalog_state="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
+SELECT concat_ws('|',
+  (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname IN ('audit_event_outbox','audit_operational_alerts') AND c.relrowsecurity),
+  (SELECT count(*) FROM information_schema.role_table_grants
+   WHERE table_schema='public' AND table_name IN ('audit_event_outbox','audit_operational_alerts')
+     AND grantee IN ('anon','authenticated')),
+  (SELECT count(*) FROM pg_policies
+   WHERE schemaname='public' AND tablename IN ('audit_event_outbox','audit_operational_alerts'))
+);
+SQL
+)"
+
+if [[ "$audit_rls_ledger_count" == 0 ]]; then
+  [[ "$audit_rls_catalog_state" =~ ^[0-2]\|[0-9]+\|0$ ]] || \
+    fail 'audit-table RLS pre-migration catalog state is invalid'
+  audit_rls_apply_sql="$lock_directory/audit-rls-apply.sql"
+  {
+    printf '%s\n' '\set ON_ERROR_STOP on' 'BEGIN;'
+    cat "$audit_rls_migration"
+    printf '%s\n' \
+      "COMMENT ON TABLE audit_event_outbox IS 'nextshift:supabase-migration:20260720134506:sha256=$audit_rls_sha';" \
+      "COMMENT ON TABLE audit_operational_alerts IS 'nextshift:supabase-migration:20260720134506:sha256=$audit_rls_sha';" \
+      "INSERT INTO supabase_migrations.schema_migrations(version, statements, name) VALUES ('20260720134506', ARRAY['nextshift sha256=$audit_rls_sha'], 'harden_audit_internal_tables_rls');" \
+      'COMMIT;'
+  } >"$audit_rls_apply_sql"
+  psql -X -q -v ON_ERROR_STOP=1 "$psql_url" -f "$audit_rls_apply_sql"
+  rm -f "$audit_rls_apply_sql"
+elif [[ "$audit_rls_ledger_count" != 1 || "$audit_rls_catalog_state" != '2|0|0' ]]; then
+  fail 'audit-table RLS migration ledger/catalog drift detected'
+fi
+
 post_assertions="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" <<SQL
 SELECT concat_ws('|',
   (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='contents' AND column_name='updated_at' AND is_nullable='NO'),
   (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname IN ('contents_tenant_id_owner_id_updated_at_id_idx','contents_tenant_id_updated_at_id_idx')),
   (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260717135456'),
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260720134506'),
   (SELECT obj_description('public."AuditScope"'::regtype::oid, 'pg_type')),
   (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname='audit_logs_idempotency_key_unique' AND indexdef LIKE '%WHERE (idempotency_key IS NOT NULL)%'),
   (SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('audit_event_outbox','audit_operational_alerts')),
+  (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('audit_event_outbox','audit_operational_alerts') AND c.relrowsecurity),
+  (SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public' AND table_name IN ('audit_event_outbox','audit_operational_alerts') AND grantee IN ('anon','authenticated')),
+  (SELECT count(*) FROM pg_policies WHERE schemaname='public' AND tablename IN ('audit_event_outbox','audit_operational_alerts')),
+  (SELECT count(*) FROM pg_description d JOIN pg_class c ON c.oid=d.objoid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('audit_event_outbox','audit_operational_alerts') AND d.objsubid=0 AND d.description='nextshift:supabase-migration:20260720134506:sha256=$audit_rls_sha'),
   (SELECT count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgname IN ('audit_event_outbox_append_only','platform_audit_append_only','platform_audit_retention_guard','audit_outbox_retention_guard','audit_operational_alert_retention_guard'))
 );
 SQL
 )"
-expected_post_assertions="1|2|1|nextshift:supabase-migration:20260717135456:sha256=$u3b_sha|1|2|5"
+expected_post_assertions="1|2|1|1|nextshift:supabase-migration:20260717135456:sha256=$u3b_sha|1|2|2|0|0|2|5"
 [[ "$post_assertions" == "$expected_post_assertions" ]] || fail 'post-migration catalog assertions failed'
 
 printf 'PASS: OS 3.8 migrations applied for exact release %s; partial-index installer skipped because the Supabase migration owns the index\n' "$release_sha"

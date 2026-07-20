@@ -12,11 +12,36 @@ Production deployment secrets must use the `PROD_` prefix and must not reuse E2E
 - `release_sha`: an exact 40-character commit SHA contained in `origin/main`;
 - `confirmation`: exactly `DEPLOY_PRODUCTION` for deploy or `ROLLBACK_PRODUCTION` for rollback.
 
-The workflow validates the SHA before the production job, checks out that exact SHA, and validates it against `origin/main` again before any build, migration, deploy, or rollback command. Deploy builds and labels the image from that same SHA.
+The workflow validates the SHA before the production job, checks out that exact SHA, and validates it against `origin/main` again before any build, migration, deploy, or rollback command. Deploy builds and labels the application and migration images from that same SHA.
 
 The workflow control plane is separately bound to the exact current `main` commit. Dispatches from branches, tags, or pull-request refs are rejected. If `main` changes while the GitHub Environment approval is pending, the production job fails closed and the operator must create a new dispatch. One immutable `nextshift-production` concurrency lock serializes every deploy and rollback request.
 
-Manual workflow dispatch and GitHub Environment approval are execution safeguards; neither is Steven Release Approval. This change does not create a Release Approval state machine or unlock the repository release gate. Release approval remains a separate governance decision.
+Manual workflow dispatch and GitHub Environment approval are execution safeguards; neither is Steven Final Release Approval. Before either production job can start, the request validator requires all of the following from the exact `main` control-plane tree:
+
+- `PIPELINE_MANIFEST.json` has `release_gate.status=approved`, bound to the requested release SHA and Steven;
+- the canonical `STEVEN_FINAL_RELEASE_APPROVAL.md` exists as a regular, non-symlink Git file and has the exact SHA-256 recorded by the Manifest;
+- the approval contains one authoritative `APPROVED` decision, Steven as approver, the exact release/review identity, and the canonical Production Readiness evidence identity;
+- the canonical Production Readiness evidence exists as a regular, non-symlink Git file, matches its recorded SHA-256, says `STATUS=READY`, and binds the exact release SHA, migration rehearsal, repository-external logical-backup checksum, isolated restore verification and exact rollback image.
+
+Missing, blocked, duplicate, stale, mismatched, untracked or symlink authority fails before Docker build, SCP, SSH, migration or deployment. The current repository deliberately has `release_gate.status=blocked` and contains no Final Release Approval or READY evidence artifact, so it is not deployable. This PR does not create either artifact or unlock the gate.
+
+The future canonical Final Release Approval control fields are:
+
+```text
+APPROVAL_ID=OS3.8-FINAL-RELEASE-APPROVAL
+RELEASE_GATE=OS3.8-FINAL-RELEASE
+DECISION=APPROVED
+APPROVER=Steven
+APPROVED_AT=<UTC>
+RELEASE_SHA=<exact SHA>
+REVIEW_ID=<exact review ID>
+REVIEWED_SHA=<same exact SHA>
+PRODUCTION_READINESS_EVIDENCE=docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md
+PRODUCTION_READINESS_EVIDENCE_SHA256=<exact SHA-256>
+PRODUCTION_READINESS_VERIFICATION_ID=<exact evidence ID>
+```
+
+This is a validation contract only. A separate, reviewed governance change must create the genuine artifacts and approved Manifest state.
 
 ## VPS Access Secrets
 
@@ -71,7 +96,9 @@ The production VPS still owns runtime-only secrets in `/home/deploy/nextshift/.e
 - payment provider secrets
 - Redis configuration
 
-GitHub Actions must not print these values. The deploy workflow runs `prisma migrate deploy` inside a temporary container using the VPS `.env.production` file.
+GitHub Actions must not print these values. The deploy workflow builds a dedicated migration image from the exact release SHA using a digest-pinned Node base, lockfile-resolved Prisma CLI and pinned Bash/psql packages. It records the migration image ID and archive checksum, then revalidates the archive checksum, image digest, OCI revision and toolchain labels after loading the image on the VPS. The VPS performs no `apk`, npm, npx, Corepack or other network installation during migration.
+
+The migration image runs the complete OS 3.8 entrypoint. It acquires the database advisory lock, validates the Prisma and Supabase ledgers, applies the Content migration, the U3B audit migration and the additive audit-table RLS migration in deterministic order, and requires final catalog assertions before the application image can be retagged or started. A production migration failure is fail closed; it does not authorize deleting, resetting or rebuilding the production database.
 
 ## Rollback
 

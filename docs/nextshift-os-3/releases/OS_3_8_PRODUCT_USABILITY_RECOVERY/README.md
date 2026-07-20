@@ -34,6 +34,15 @@ Production Readiness remains NOT READY until the separately governed environment
 The release gate remains BLOCKED.
 ```
 
+## Repository Readiness Contract
+
+- Main CI now requires all four jobs, including E2E Secret Check and E2E Tests, on a `main` push.
+- Production execution remains manual-only and additionally fails closed unless the canonical Manifest release gate, Final Release Approval and Production Readiness evidence all authorize the same exact release SHA.
+- No genuine Final Release Approval or READY evidence artifact exists yet; this is intentional and keeps the current workflow non-deployable.
+- OS 3.8 migrations run only inside a release-built migration image whose archive checksum, image digest, OCI revision and pinned toolchain labels are revalidated before database access.
+- The additive audit-table hardening migration enables RLS and removes `anon`/`authenticated` privileges without changing the reviewed U3B migration history.
+- Before any separately authorized production migration, a repository-external logical backup, checksum and successful isolated restore verification remain mandatory.
+
 ## Not Executed
 
 - OS 3.8 has not been deployed to production; production remains `v3.7.0`.
