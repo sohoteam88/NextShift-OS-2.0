@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: production-${{ inputs.action }}
+  group: nextshift-production
   cancel-in-progress: false
 
 jobs:
@@ -33,10 +33,12 @@ jobs:
     timeout-minutes: 5
     outputs:
       release_sha: ${{ steps.request.outputs.release_sha }}
+      control_plane_sha: ${{ steps.request.outputs.control_plane_sha }}
     steps:
       - name: Checkout workflow revision
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Validate action, confirmation, and release SHA
@@ -45,37 +47,18 @@ jobs:
           ACTION: ${{ inputs.action }}
           CONFIRMATION: ${{ inputs.confirmation }}
           RELEASE_SHA: ${{ inputs.release_sha }}
+          CONTROL_PLANE_REF: ${{ github.ref }}
+          CONTROL_PLANE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-
-          case "$ACTION" in
-            deploy) expected_confirmation='DEPLOY_PRODUCTION' ;;
-            rollback) expected_confirmation='ROLLBACK_PRODUCTION' ;;
-            *) echo "Unsupported production action: $ACTION" >&2; exit 1 ;;
-          esac
-
-          if [[ "$CONFIRMATION" != "$expected_confirmation" ]]; then
-            echo "Confirmation does not match the selected production action." >&2
-            exit 1
-          fi
-
-          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "release_sha must be a full lowercase 40-character Git SHA." >&2
-            exit 1
-          fi
-
-          git fetch --no-tags origin main
-          resolved_sha="$(git rev-parse "$RELEASE_SHA^{commit}")"
-          if [[ "$resolved_sha" != "$RELEASE_SHA" ]]; then
-            echo "release_sha did not resolve to the exact requested commit." >&2
-            exit 1
-          fi
-          if ! git merge-base --is-ancestor "$RELEASE_SHA" origin/main; then
-            echo "release_sha is not contained in origin/main." >&2
-            exit 1
-          fi
-
+          scripts/deployment/validate-production-request.sh \
+            "$ACTION" \
+            "$CONFIRMATION" \
+            "$RELEASE_SHA" \
+            "$CONTROL_PLANE_REF" \
+            "$CONTROL_PLANE_SHA"
           printf 'release_sha=%s\n' "$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          printf 'control_plane_sha=%s\n' "$CONTROL_PLANE_SHA" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy exact release to production
@@ -85,26 +68,44 @@ jobs:
     timeout-minutes: 15
     environment: production
     env:
+      ACTION: ${{ inputs.action }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      CONTROL_PLANE_REF: ${{ github.ref }}
+      CONTROL_PLANE_SHA: ${{ needs.validate-request.outputs.control_plane_sha }}
       IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}
 
     steps:
+      - name: Checkout exact production control plane
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate-request.outputs.control_plane_sha }}
+          fetch-depth: 0
+
+      - name: Revalidate control plane after environment wait
+        run: |
+          set -euo pipefail
+          scripts/deployment/validate-production-request.sh \
+            "$ACTION" \
+            "$CONFIRMATION" \
+            "$IMAGE_TAG" \
+            "$CONTROL_PLANE_REF" \
+            "$CONTROL_PLANE_SHA"
+          test "$(git rev-parse HEAD)" = "$CONTROL_PLANE_SHA"
+
       - name: Checkout exact release SHA
         uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate-request.outputs.release_sha }}
           fetch-depth: 0
 
-      - name: Revalidate exact release SHA on main
-        run: |
-          set -euo pipefail
-          git fetch --no-tags origin main
-          test "$(git rev-parse HEAD)" = "$IMAGE_TAG"
-          git merge-base --is-ancestor "$IMAGE_TAG" origin/main
+      - name: Verify exact release checkout
+        run: test "$(git rev-parse HEAD)" = "$IMAGE_TAG"
 
       - name: Build Docker image
         run: |
           docker build \
             --target production \
+            --label "org.opencontainers.image.revision=$IMAGE_TAG" \
             --build-arg NEXT_PUBLIC_APP_URL="${{ secrets.PROD_NEXT_PUBLIC_APP_URL }}" \
             --build-arg NEXT_PUBLIC_BASE_DOMAIN="${{ secrets.PROD_NEXT_PUBLIC_BASE_DOMAIN }}" \
             --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ secrets.PROD_NEXT_PUBLIC_SUPABASE_URL }}" \
@@ -150,6 +151,8 @@ jobs:
             fi
             docker load < image.tar.gz
             docker image inspect nextshift-app:${{ env.IMAGE_TAG }} >/dev/null
+            image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' nextshift-app:${{ env.IMAGE_TAG }})"
+            test "$image_revision" = "${{ env.IMAGE_TAG }}"
             docker tag nextshift-app:${{ env.IMAGE_TAG }} nextshift-app:latest
             docker run --rm \
               --env-file .env.production \
@@ -164,27 +167,44 @@ jobs:
             rm image.tar.gz
 
   rollback:
-    name: Roll back production to previous image
+    name: Roll back production to exact release SHA
     if: ${{ inputs.action == 'rollback' && inputs.confirmation == 'ROLLBACK_PRODUCTION' }}
     needs: validate-request
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
     env:
+      ACTION: ${{ inputs.action }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      CONTROL_PLANE_REF: ${{ github.ref }}
+      CONTROL_PLANE_SHA: ${{ needs.validate-request.outputs.control_plane_sha }}
       RELEASE_SHA: ${{ needs.validate-request.outputs.release_sha }}
     steps:
+      - name: Checkout exact production control plane
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate-request.outputs.control_plane_sha }}
+          fetch-depth: 0
+
+      - name: Revalidate control plane after environment wait
+        run: |
+          set -euo pipefail
+          scripts/deployment/validate-production-request.sh \
+            "$ACTION" \
+            "$CONFIRMATION" \
+            "$RELEASE_SHA" \
+            "$CONTROL_PLANE_REF" \
+            "$CONTROL_PLANE_SHA"
+          test "$(git rev-parse HEAD)" = "$CONTROL_PLANE_SHA"
+
       - name: Checkout exact authorized release SHA
         uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate-request.outputs.release_sha }}
           fetch-depth: 0
 
-      - name: Revalidate rollback authorization SHA on main
-        run: |
-          set -euo pipefail
-          git fetch --no-tags origin main
-          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
-          git merge-base --is-ancestor "$RELEASE_SHA" origin/main
+      - name: Verify exact rollback checkout
+        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
 
       - name: Rollback on VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -194,7 +214,11 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/deploy/nextshift
-            docker image inspect nextshift-app:previous >/dev/null 2>&1
-            docker tag nextshift-app:previous nextshift-app:latest
+            target_image="nextshift-app:${{ env.RELEASE_SHA }}"
+            docker image inspect "$target_image" >/dev/null 2>&1
+            image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$target_image")"
+            test -n "$image_revision"
+            test "$image_revision" = "${{ env.RELEASE_SHA }}"
+            docker tag "$target_image" nextshift-app:latest
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-build app
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
