@@ -4,6 +4,18 @@ This document records the GitHub Actions configuration required by `.github/work
 
 Production deployment secrets must use the `PROD_` prefix and must not reuse E2E staging secret names. Do not commit real values.
 
+## Manual Production Gate
+
+`Deploy to Production` has no `push`, `pull_request`, `schedule`, or `workflow_run` trigger. A successful CI run cannot start a production action. Both deploy and rollback are available only through an explicit `workflow_dispatch` request, run in the `production` GitHub Environment, and require:
+
+- `action`: `deploy` or `rollback`;
+- `release_sha`: an exact 40-character commit SHA contained in `origin/main`;
+- `confirmation`: exactly `DEPLOY_PRODUCTION` for deploy or `ROLLBACK_PRODUCTION` for rollback.
+
+The workflow validates the SHA before the production job, checks out that exact SHA, and validates it against `origin/main` again before any build, migration, deploy, or rollback command. Deploy builds and labels the image from that same SHA.
+
+Manual workflow dispatch and GitHub Environment approval are execution safeguards; neither is Steven Release Approval. This change does not create a Release Approval state machine or unlock the repository release gate. Release approval remains a separate governance decision.
+
 ## VPS Access Secrets
 
 | Name | Type | Purpose |
@@ -68,5 +80,7 @@ To roll back:
 1. Open the `Deploy to Production` workflow in GitHub Actions.
 2. Run `workflow_dispatch`.
 3. Select `rollback`.
+4. Enter a full SHA contained in `origin/main` as `release_sha`.
+5. Enter `ROLLBACK_PRODUCTION` as the confirmation.
 
 The rollback job retags `nextshift-app:previous` as `nextshift-app:latest`, recreates the app service, and runs `scripts/deploy-smoke.sh`.
