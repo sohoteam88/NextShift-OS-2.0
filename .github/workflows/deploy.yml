@@ -1,37 +1,111 @@
 name: Deploy to Production
 
 on:
-  workflow_run:
-    workflows: ['CI']
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       action:
-        description: 'Deployment maintenance action'
+        description: "Production action"
         required: true
-        default: 'rollback'
         type: choice
         options:
+          - deploy
           - rollback
+      release_sha:
+        description: "Exact 40-character commit SHA already contained in origin/main"
+        required: true
+        type: string
+      confirmation:
+        description: "DEPLOY_PRODUCTION or ROLLBACK_PRODUCTION, matching the selected action"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nextshift-production
+  cancel-in-progress: false
 
 jobs:
+  validate-request:
+    name: Validate manual production request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      release_sha: ${{ steps.request.outputs.release_sha }}
+      control_plane_sha: ${{ steps.request.outputs.control_plane_sha }}
+    steps:
+      - name: Checkout workflow revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Validate action, confirmation, and release SHA
+        id: request
+        env:
+          ACTION: ${{ inputs.action }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          RELEASE_SHA: ${{ inputs.release_sha }}
+          CONTROL_PLANE_REF: ${{ github.ref }}
+          CONTROL_PLANE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          scripts/deployment/validate-production-request.sh \
+            "$ACTION" \
+            "$CONFIRMATION" \
+            "$RELEASE_SHA" \
+            "$CONTROL_PLANE_REF" \
+            "$CONTROL_PLANE_SHA"
+          printf 'release_sha=%s\n' "$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          printf 'control_plane_sha=%s\n' "$CONTROL_PLANE_SHA" >> "$GITHUB_OUTPUT"
+
   deploy:
-    name: Deploy
-    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
+    name: Deploy exact release to production
+    if: ${{ inputs.action == 'deploy' && inputs.confirmation == 'DEPLOY_PRODUCTION' }}
+    needs: validate-request
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: production
     env:
-      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+      ACTION: ${{ inputs.action }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      CONTROL_PLANE_REF: ${{ github.ref }}
+      CONTROL_PLANE_SHA: ${{ needs.validate-request.outputs.control_plane_sha }}
+      IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}
 
     steps:
-      - name: Checkout
+      - name: Checkout exact production control plane
         uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate-request.outputs.control_plane_sha }}
+          fetch-depth: 0
+
+      - name: Revalidate control plane after environment wait
+        run: |
+          set -euo pipefail
+          scripts/deployment/validate-production-request.sh \
+            "$ACTION" \
+            "$CONFIRMATION" \
+            "$IMAGE_TAG" \
+            "$CONTROL_PLANE_REF" \
+            "$CONTROL_PLANE_SHA"
+          test "$(git rev-parse HEAD)" = "$CONTROL_PLANE_SHA"
+
+      - name: Checkout exact release SHA
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate-request.outputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Verify exact release checkout
+        run: test "$(git rev-parse HEAD)" = "$IMAGE_TAG"
 
       - name: Build Docker image
         run: |
           docker build \
             --target production \
+            --label "org.opencontainers.image.revision=$IMAGE_TAG" \
             --build-arg NEXT_PUBLIC_APP_URL="${{ secrets.PROD_NEXT_PUBLIC_APP_URL }}" \
             --build-arg NEXT_PUBLIC_BASE_DOMAIN="${{ secrets.PROD_NEXT_PUBLIC_BASE_DOMAIN }}" \
             --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ secrets.PROD_NEXT_PUBLIC_SUPABASE_URL }}" \
@@ -55,16 +129,16 @@ jobs:
             -t nextshift-app:$IMAGE_TAG .
           docker save nextshift-app:$IMAGE_TAG | gzip > image.tar.gz
 
-      - name: Copy to VPS
+      - name: Copy exact release artifacts to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: 'image.tar.gz,docker-compose.prod.yml,prisma,scripts/deploy-smoke.sh'
-          target: '/home/deploy/nextshift'
+          source: "image.tar.gz,docker-compose.prod.yml,prisma,scripts/deploy-smoke.sh"
+          target: "/home/deploy/nextshift"
 
-      - name: Deploy
+      - name: Migrate and deploy exact release SHA
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -76,6 +150,9 @@ jobs:
               docker tag nextshift-app:latest nextshift-app:previous
             fi
             docker load < image.tar.gz
+            docker image inspect nextshift-app:${{ env.IMAGE_TAG }} >/dev/null
+            image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' nextshift-app:${{ env.IMAGE_TAG }})"
+            test "$image_revision" = "${{ env.IMAGE_TAG }}"
             docker tag nextshift-app:${{ env.IMAGE_TAG }} nextshift-app:latest
             docker run --rm \
               --env-file .env.production \
@@ -90,11 +167,45 @@ jobs:
             rm image.tar.gz
 
   rollback:
-    name: Rollback to previous image
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'rollback' }}
+    name: Roll back production to exact release SHA
+    if: ${{ inputs.action == 'rollback' && inputs.confirmation == 'ROLLBACK_PRODUCTION' }}
+    needs: validate-request
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: production
+    env:
+      ACTION: ${{ inputs.action }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      CONTROL_PLANE_REF: ${{ github.ref }}
+      CONTROL_PLANE_SHA: ${{ needs.validate-request.outputs.control_plane_sha }}
+      RELEASE_SHA: ${{ needs.validate-request.outputs.release_sha }}
     steps:
+      - name: Checkout exact production control plane
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate-request.outputs.control_plane_sha }}
+          fetch-depth: 0
+
+      - name: Revalidate control plane after environment wait
+        run: |
+          set -euo pipefail
+          scripts/deployment/validate-production-request.sh \
+            "$ACTION" \
+            "$CONFIRMATION" \
+            "$RELEASE_SHA" \
+            "$CONTROL_PLANE_REF" \
+            "$CONTROL_PLANE_SHA"
+          test "$(git rev-parse HEAD)" = "$CONTROL_PLANE_SHA"
+
+      - name: Checkout exact authorized release SHA
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate-request.outputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Verify exact rollback checkout
+        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+
       - name: Rollback on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -103,17 +214,11 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/deploy/nextshift
-            docker image inspect nextshift-app:previous >/dev/null 2>&1
-            docker tag nextshift-app:previous nextshift-app:latest
+            target_image="nextshift-app:${{ env.RELEASE_SHA }}"
+            docker image inspect "$target_image" >/dev/null 2>&1
+            image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$target_image")"
+            test -n "$image_revision"
+            test "$image_revision" = "${{ env.RELEASE_SHA }}"
+            docker tag "$target_image" nextshift-app:latest
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-build app
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
-
-  ci-failure-notice:
-    name: CI failure notice
-    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deployment skipped
-        run: |
-          echo "CI failed on main. Deployment was NOT triggered."
-          echo "Investigate the CI failure: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
