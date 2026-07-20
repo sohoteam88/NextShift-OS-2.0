@@ -2,8 +2,8 @@
 
 Proposal version: `v3.8.0`
 
-Status: **RC package prepared / Release Preparation approved**
-Last updated: 2026-07-19
+Status: **Release PR #109 open / awaiting Architecture Review**
+Last updated: 2026-07-20
 
 ---
 
@@ -11,7 +11,7 @@ Last updated: 2026-07-19
 
 This documentation-only package prepares OS 3.8 for Release PR review. The release restores a usable content loop, converges navigation, separates member, tenant-admin, and platform-admin spaces, and closes the proven Video, Lead Magnet, and Webinar gaps.
 
-The Release Candidate source is `planning/os-3.8-product-usability` at `c579ef41ca204bedb0e141473579bea938edf333`. `main` remains the pre-OS-3.8 merge baseline at `76b573cdbf2f1bec31fe5770c080941469479d25`. The independent Final Audit reviewed product SHA `0e77a4182ee4a12582084ed504cf1c939b46ccd5` and returned `PASS`.
+The immutable R1A preparation baseline is `c579ef41ca204bedb0e141473579bea938edf333`; it is not the current Release PR exact head. Release PR [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) is open from `planning/os-3.8-product-usability` to `main` and is awaiting Architecture Review. Its current exact head is recorded by GitHub PR metadata and the corresponding exact-head Architecture Review rather than self-embedded in this package. `main` remains the pre-OS-3.8 merge baseline at `76b573cdbf2f1bec31fe5770c080941469479d25`. The independent Final Audit reviewed product SHA `0e77a4182ee4a12582084ed504cf1c939b46ccd5` and returned `PASS`.
 
 This package is not a release, deployment, tag, production migration, or statement that OS 3.8 is production current. Production remains **v3.7.0** at `28c077f115a4e43c5e11e1097ae06b8744043643`, and the production release gate remains **BLOCKED**.
 
@@ -29,13 +29,13 @@ This package is not a release, deployment, tag, production migration, or stateme
 ## Current Decision
 
 ```text
-RC package prepared / Release Preparation approved.
-Awaiting governance PR review and merge before a separate planning-to-main Release PR may be created.
+Release PR #109 is open and awaiting Architecture Review.
+The release gate remains BLOCKED.
 ```
 
 ## Not Executed
 
-- No planning-to-main Release PR was created.
+- Release PR #109 was created, but it has not been merged.
 - No merge to `main` was performed.
 - No production migration was run.
 - No deployment or production traffic change was performed.

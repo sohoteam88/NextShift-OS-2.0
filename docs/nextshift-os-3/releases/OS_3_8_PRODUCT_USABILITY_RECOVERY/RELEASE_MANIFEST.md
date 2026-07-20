@@ -2,8 +2,8 @@
 
 Proposal version: `v3.8.0`
 
-Status: **RC package prepared / Release Preparation approved**
-Last updated: 2026-07-19
+Status: **Release PR #109 open / awaiting Architecture Review**
+Last updated: 2026-07-20
 
 ---
 
@@ -15,7 +15,9 @@ Last updated: 2026-07-19
 | Proposal version | `v3.8.0` |
 | Package path | `docs/nextshift-os-3/releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/` |
 | Source branch | `planning/os-3.8-product-usability` |
-| Planning SHA | `c579ef41ca204bedb0e141473579bea938edf333` |
+| R1A preparation baseline SHA | `c579ef41ca204bedb0e141473579bea938edf333` |
+| Release PR stage | [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) is open from `planning/os-3.8-product-usability` to `main` and awaiting Architecture Review |
+| Release PR exact head authority | GitHub PR #109 metadata plus its exact-head Architecture Review; deliberately not self-referenced inside this commit |
 | Main baseline SHA | `76b573cdbf2f1bec31fe5770c080941469479d25` |
 | Main state | Pre-OS-3.8 merge baseline; planning has not been merged to main |
 | Current production | `v3.7.0` at `28c077f115a4e43c5e11e1097ae06b8744043643` |
@@ -69,8 +71,8 @@ Production migration requires separate explicit approval. This package does not 
 
 ## Authorization Boundary
 
-- The Release Preparation governance PR is authorized.
-- After that governance PR is reviewed and merged, a separate planning-to-main Release PR may be created for review.
+- The Release Preparation governance PR was reviewed and merged.
+- Planning-to-main Release PR #109 is open and awaiting Architecture Review.
 - A Release PR is not production release approval.
 - Production migration, deployment, tagging, GitHub Release creation, and production traffic changes remain unauthorized.
 - `auto_tag=false`, `auto_deploy=false`, and `auto_release=false`; the release gate remains `BLOCKED`.
