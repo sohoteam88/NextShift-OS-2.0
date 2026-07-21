@@ -1,8 +1,24 @@
 #!/usr/bin/env sh
 set -eu
 
-BASE_URL="${HEALTHCHECK_BASE_URL:-http://127.0.0.1:3000}"
-TIMEOUT_SECONDS="${HEALTHCHECK_TIMEOUT_SECONDS:-8}"
+CANONICAL_URL='http://127.0.0.1:3000/api/v1/health'
+CANONICAL_TIMEOUT_SECONDS='8'
+
+case "$#" in
+  0)
+    target_url="$CANONICAL_URL"
+    timeout_seconds="$CANONICAL_TIMEOUT_SECONDS"
+    ;;
+  2)
+    # Test-only interface. The Docker HEALTHCHECK metadata never supplies arguments.
+    target_url="$1"
+    timeout_seconds="$2"
+    ;;
+  *)
+    exit 2
+    ;;
+esac
+
 response_file="$(mktemp "${TMPDIR:-/tmp}/nextshift-healthcheck.XXXXXX")"
 
 cleanup() {
@@ -14,10 +30,10 @@ status="$(
   curl \
     --silent \
     --show-error \
-    --max-time "$TIMEOUT_SECONDS" \
+    --max-time "$timeout_seconds" \
     --output "$response_file" \
     --write-out '%{http_code}' \
-    "$BASE_URL/api/v1/health"
+    "$target_url"
 )"
 
 [ "$status" = "200" ] || exit 1

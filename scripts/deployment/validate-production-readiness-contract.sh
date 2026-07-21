@@ -10,6 +10,10 @@ migration_dockerfile="${4:-$repo_root/scripts/deployment/Dockerfile.migrations}"
 approval_validator="$repo_root/scripts/deployment/validate-final-release-approval.sh"
 manual_validator="$repo_root/scripts/deployment/validate-manual-production-workflow.sh"
 image_runtime_validator="$repo_root/scripts/deployment/validate-migration-image-runtime.sh"
+application_dockerfile="$repo_root/Dockerfile"
+application_healthcheck="$repo_root/scripts/container-healthcheck.sh"
+application_image_validator="$repo_root/scripts/deployment/validate-application-image-healthcheck.sh"
+deploy_smoke="$repo_root/scripts/deploy-smoke.sh"
 feedback_reconciliation_migration="$repo_root/supabase/migrations/20260721074302_feedback_catalog_reconciliation.sql"
 feedback_authority_migration="$repo_root/supabase/migrations/20260721085431_feedback_catalog_authority_hardening.sql"
 
@@ -47,7 +51,7 @@ require_order() {
     fail "$label: '$before' must precede '$after'"
 }
 
-for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$image_runtime_validator" "$feedback_reconciliation_migration" "$feedback_authority_migration"; do
+for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$image_runtime_validator" "$application_dockerfile" "$application_healthcheck" "$application_image_validator" "$deploy_smoke" "$feedback_reconciliation_migration" "$feedback_authority_migration"; do
   [[ -f "$contract_file" && ! -L "$contract_file" ]] || \
     fail "contract input must be a regular, non-symlink file: $contract_file"
 done
@@ -164,10 +168,22 @@ require_count "$migration_dockerfile" 1 'test "$(psql --version)" = "psql (Postg
 require_count "$migration_dockerfile" 1 'ENTRYPOINT ["/usr/bin/env", "bash", "/app/scripts/deployment/run-os38-production-migrations.sh"]' 'complete migration entrypoint'
 
 require_count "$ci_workflow" 1 '    name: Migration Image Build' 'required migration-image CI job'
-require_count "$ci_workflow" 1 'github.event.pull_request.head.sha || github.sha' 'exact PR-head migration image binding'
+require_count "$ci_workflow" 1 '    name: Application Image Healthcheck Contract' 'required final application-image CI job'
+require_count "$ci_workflow" 2 'github.event.pull_request.head.sha || github.sha' 'exact PR-head image binding'
 require_count "$ci_workflow" 1 '--file scripts/deployment/Dockerfile.migrations' 'CI migration image build'
 require_count "$ci_workflow" 1 'scripts/deployment/validate-migration-image-runtime.sh' 'CI migration image runtime validation'
-require_count "$ci_workflow" 1 'unset DATABASE_URL DIRECT_URL SOURCE_DB_URL SUPABASE_DB_URL PGPASSWORD' 'CI database-secret isolation'
+require_count "$ci_workflow" 1 '            --target production' 'CI final application image build'
+require_count "$ci_workflow" 1 'scripts/deployment/validate-application-image-healthcheck.sh' 'CI final image healthcheck integration'
+require_count "$ci_workflow" 2 'unset DATABASE_URL DIRECT_URL SOURCE_DB_URL SUPABASE_DB_URL PGPASSWORD' 'CI database-secret isolation'
+require_count "$application_dockerfile" 1 'COPY scripts/container-healthcheck.sh /usr/local/bin/nextshift-container-healthcheck' 'final image healthcheck authority'
+require_count "$application_dockerfile" 1 'HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD ["/usr/local/bin/nextshift-container-healthcheck"]' 'final image canonical Healthcheck metadata'
+require_count "$application_healthcheck" 1 "CANONICAL_URL='http://127.0.0.1:3000/api/v1/health'" 'immutable container readiness target'
+require_count "$application_healthcheck" 1 "CANONICAL_TIMEOUT_SECONDS='8'" 'immutable container readiness timeout'
+require_count "$application_healthcheck" 0 'HEALTHCHECK_BASE_URL' 'mutable container healthcheck target rejection'
+require_count "$application_healthcheck" 0 'HEALTHCHECK_TIMEOUT_SECONDS' 'mutable container healthcheck timeout rejection'
+require_count "$application_image_validator" 1 'PASS: exact_head_application_image_healthcheck_contract' 'real final image healthcheck scenarios'
+grep -Eq '(^|[[:space:];|&])(node|npm|npx|pnpm|python|python3|jq)([[:space:];|&]|$)' "$deploy_smoke" && \
+  fail 'VPS deploy smoke must not require an unfrozen host runtime'
 grep -Eq 'alpine/(edge|latest-stable)|/edge/' "$migration_dockerfile" && \
   fail 'migration runtime must not use Alpine edge repositories'
 

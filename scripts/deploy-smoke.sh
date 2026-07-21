@@ -27,20 +27,20 @@ check_json_contract() {
   contract="$2"
   check_status "$path" "200"
 
-  if ! node - "$response_file" "$contract" <<'NODE'
-const fs = require('node:fs');
+  case "$contract" in
+    liveness)
+      contract_pattern='^\{"status":"ok","app":"NextShift OS","environment":"production","timestamp":"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z"\}$'
+      ;;
+    readiness)
+      contract_pattern='^\{"status":"ok","timestamp":"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:.]+Z","version":"0\.1\.0","services":\{"database":"ok"\}\}$'
+      ;;
+    *)
+      echo "Smoke check failed: unknown JSON contract"
+      exit 1
+      ;;
+  esac
 
-try {
-  const body = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
-  const contract = process.argv[3];
-  const valid = body?.status === 'ok'
-    && (contract !== 'readiness' || body?.services?.database === 'ok');
-  process.exit(valid ? 0 : 1);
-} catch {
-  process.exit(1);
-}
-NODE
-  then
+  if ! LC_ALL=C grep -Eq "$contract_pattern" "$response_file"; then
     echo "Smoke check failed: $path did not satisfy the $contract JSON contract"
     exit 1
   fi
