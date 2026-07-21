@@ -118,6 +118,40 @@ expect_reject exact_release_sha_bound_to_migration
 new_fixture immutable_runtime
 expect_accept production_migration_runtime_has_no_network_install
 
+new_fixture stale_bash_pin
+perl -0pi -e 's/5\.3\.9-r1/5.3.3-r1/g' "$fixture_migration_dockerfile"
+expect_reject stale_bash_pin_rejected
+
+new_fixture unversioned_bash
+perl -0pi -e 's/bash=5\.3\.9-r1/bash/' "$fixture_migration_dockerfile"
+expect_reject unversioned_bash_rejected
+
+new_fixture edge_alpine
+perl -0pi -e 's/(RUN apk add)/RUN printf "https:\/\/dl-cdn.alpinelinux.org\/alpine\/edge\/main\\n" >> \/etc\/apk\/repositories\n$1/' "$fixture_migration_dockerfile"
+expect_reject edge_alpine_repository_rejected
+
+new_fixture exact_head_image_build
+expect_accept migration_image_builds_from_exact_head
+
+new_fixture bash_label_match
+perl -0pi -e 's/com\.nextshift\.migration\.bash="5\.3\.9-r1"/com.nextshift.migration.bash="5.3.8-r1"/' "$fixture_migration_dockerfile"
+expect_reject installed_bash_matches_oci_label
+
+new_fixture psql_label_match
+perl -0pi -e 's/com\.nextshift\.migration\.psql="17\.10-r0"/com.nextshift.migration.psql="17.9-r0"/' "$fixture_migration_dockerfile"
+expect_reject installed_psql_matches_oci_label
+
+new_fixture image_revision_exact_head
+perl -0pi -e 's/github\.event\.pull_request\.head\.sha \|\| github\.sha/github.sha/' "$fixture_ci"
+expect_reject migration_image_revision_matches_exact_head
+
+new_fixture build_no_migration
+expect_accept migration_image_build_does_not_run_migration
+
+new_fixture build_no_db_secret
+perl -ni -e 'print unless /unset DATABASE_URL DIRECT_URL SOURCE_DB_URL SUPABASE_DB_URL PGPASSWORD/' "$fixture_ci"
+expect_reject migration_image_build_requires_no_database_secret
+
 new_fixture migration_revision
 perl -0pi -e 's/org\.opencontainers\.image\.revision="\$\{RELEASE_SHA\}"/org.opencontainers.image.revision="wrong"/' "$fixture_migration_dockerfile"
 expect_reject migration_image_revision_must_match_release_sha
@@ -325,5 +359,5 @@ if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_
 fi
 pass partial_u3b_rls_ledger_state_rejected
 
-[[ "$pass_count" == 30 ]] || fail "expected 30 named fixtures, got $pass_count"
+[[ "$pass_count" == 39 ]] || fail "expected 39 named fixtures, got $pass_count"
 printf 'PASS: %s production-readiness fixtures\n' "$pass_count"

@@ -179,8 +179,14 @@ jobs:
             migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$migration_image")"
             test "$migration_revision" = "${{ env.IMAGE_TAG }}"
             test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.prisma" }}' "$migration_image")" = '6.19.3'
-            test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.bash" }}' "$migration_image")" = '5.3.3-r1'
+            test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.bash" }}' "$migration_image")" = '5.3.9-r1'
             test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.psql" }}' "$migration_image")" = '17.10-r0'
+            test "$(docker image inspect --format '{{json .Config.Entrypoint}}' "$migration_image")" = '["/usr/bin/env","bash","/app/scripts/deployment/run-os38-production-migrations.sh"]'
+            docker run --rm --network none --entrypoint /bin/sh "$migration_image" -ceu '
+              test "$(apk info -v | grep -Fx "bash-5.3.9-r1")" = "bash-5.3.9-r1"
+              test "$(apk info -v | grep -Fx "postgresql17-client-17.10-r0")" = "postgresql17-client-17.10-r0"
+              test "$(psql --version)" = "psql (PostgreSQL) 17.10"
+            '
             docker run --rm \
               --env-file .env.production \
               -e OS38_MIGRATION_MODE=production \
