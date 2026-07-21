@@ -105,11 +105,38 @@ EOF
 write_review_data() {
   jq -n --arg base "$pre_main_sha" --arg head "$request_head" --arg merge "$request_merge" '{base:{ref:"main",sha:$base,repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},head:{sha:$head},merged:true,merge_commit_sha:$merge}' >"$gh_data/pr.json"
   jq -n --arg request 'docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md' '[{filename:"docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"},{filename:$request}]' >"$gh_data/files.json"
-  jq -n --arg head "$request_head" --arg release "$release_sha" '[{id:4242,state:"COMMENTED",commit_id:$head,submitted_at:"2026-07-21T15:00:00Z",body:("CHECKPOINT: FINAL-RELEASE\nVERDICT: PASS\nREVIEWED_RELEASE_SHA="+$release)}]' >"$gh_data/reviews.json"
+  jq -n --arg head "$request_head" --arg release "$release_sha" '[{id:4242,state:"COMMENTED",commit_id:$head,submitted_at:"2026-07-21T15:00:00Z",user:{login:"sohoteam88"},author_association:"OWNER",body:("CHECKPOINT: FINAL-RELEASE\nVERDICT: PASS\nREVIEWED_RELEASE_SHA="+$release)}]' >"$gh_data/reviews.json"
+}
+
+set_review_body() {
+  local body="$1"
+  jq --arg body "$body" '.[0].body=$body' "$gh_data/reviews.valid.json" >"$gh_data/reviews.json"
 }
 
 run_review_validator() { (cd "$repo" && PATH="$gh_dir:$PATH" GH_FIXTURE_DIR="$gh_data" scripts/deployment/validate-final-release-review-request.sh --verify-pr "${1:-https://github.com/sohoteam88/NextShift-OS-2.0/pull/42}"); }
 run_approval_validator() { (cd "$repo" && PATH="$gh_dir:$PATH" GH_FIXTURE_DIR="$gh_data" scripts/deployment/validate-final-release-approval.sh deploy "$release_sha"); }
+
+assert_transaction_rollback() {
+  local fixture_name="$1" failure_point="$2" before_head before_manifest before_index before_remote common_dir
+  setup_pending_repository "$fixture_name"
+  before_head="$(git -C "$repo" rev-parse HEAD)"
+  before_manifest="$(sha256_file "$manifest")"
+  before_index="$(git -C "$repo" write-tree)"
+  before_remote="$(git -C "$repo" ls-remote --heads origin "refs/heads/final-release-request" | awk 'NR==1 {print $1}')"
+  common_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)"
+  if OS38_FINAL_RELEASE_TEST_MODE=1 OS38_FINAL_RELEASE_TEST_FAIL_AT="$failure_point" \
+    "$repo/scripts/deployment/request-final-release-review.sh" "$release_sha" >/dev/null 2>&1; then
+    fail "$fixture_name unexpectedly succeeded"
+  fi
+  [[ "$(git -C "$repo" rev-parse HEAD)" == "$before_head" ]] || fail "$fixture_name changed HEAD"
+  [[ "$(sha256_file "$manifest")" == "$before_manifest" ]] || fail "$fixture_name changed Manifest bytes"
+  [[ "$(git -C "$repo" write-tree)" == "$before_index" ]] || fail "$fixture_name changed index"
+  [[ ! -e "$repo/docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md" ]] || fail "$fixture_name left request artifact"
+  [[ -z "$(git -C "$repo" status --porcelain)" ]] || fail "$fixture_name left a dirty worktree"
+  [[ ! -e "$common_dir/os38-final-release-review-request.lock" ]] || fail "$fixture_name left its owned lock"
+  [[ "$(git -C "$repo" ls-remote --heads origin "refs/heads/final-release-request" | awk 'NR==1 {print $1}')" == "$before_remote" ]] || fail "$fixture_name changed remote request branch"
+  pass "$fixture_name"
+}
 
 setup_pending_repository primary
 expect_accept blocked_gate_without_approval_identity_is_valid "$repo/scripts/os-pipeline/validate-manifest.sh" --manifest "$manifest"
@@ -118,6 +145,9 @@ git -C "$repo" status --porcelain | grep -q . && fail 'pending fixture is dirty'
 "$repo/scripts/deployment/request-final-release-review.sh" "$release_sha" >/dev/null
 request_head="$(git -C "$repo" rev-parse HEAD)"
 request_artifact="$repo/docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md"
+common_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)"
+[[ ! -e "$common_dir/os38-final-release-review-request.lock" ]] || fail 'successful request left its owned lock'
+pass owner_releases_own_lock
 [[ "$(grep -Ec '^REVIEW_ID=|^REVIEWED_SHA=|^REVIEWED_RELEASE_SHA=|^REQUEST_PR_HEAD=' "$request_artifact" || true)" == 0 ]] || fail 'request contains future review/head authority'
 pass blocked_gate_can_create_review_request_without_review_id
 pass review_request_cannot_contain_future_review_id
@@ -151,6 +181,49 @@ make_gh_stub; write_review_data
 expect_accept exact_merged_request_review_verified run_review_validator
 
 cp "$gh_data/reviews.json" "$gh_data/reviews.valid.json"; cp "$gh_data/pr.json" "$gh_data/pr.valid.json"
+expect_accept authorized_reviewer_accepted run_review_validator
+jq '.[0].user.login="outside-reviewer"' "$gh_data/reviews.valid.json" >"$gh_data/reviews.json"
+expect_reject outsider_reviewer_rejected run_review_validator
+jq 'del(.[0].user)' "$gh_data/reviews.valid.json" >"$gh_data/reviews.json"
+expect_reject missing_reviewer_identity_rejected run_review_validator
+jq '.[0].author_association="CONTRIBUTOR"' "$gh_data/reviews.valid.json" >"$gh_data/reviews.json"
+expect_reject wrong_author_association_rejected run_review_validator
+jq '.[0].user.login="outside-reviewer" | .[0].transport_reviewer="sohoteam88" | .[0].body += "\nREVIEWER=sohoteam88"' "$gh_data/reviews.valid.json" >"$gh_data/reviews.json"
+expect_reject transport_supplied_reviewer_cannot_override_policy run_review_validator
+
+valid_body="CHECKPOINT: FINAL-RELEASE
+VERDICT: PASS
+REVIEWED_RELEASE_SHA=$release_sha"
+set_review_body "$valid_body
+CHECKPOINT: FINAL-RELEASE"
+expect_reject duplicate_checkpoint_rejected run_review_validator
+set_review_body "$valid_body
+CHECKPOINT: PRODUCTION-READINESS"
+expect_reject conflicting_checkpoint_rejected run_review_validator
+set_review_body "$valid_body
+VERDICT: PASS"
+expect_reject duplicate_verdict_rejected run_review_validator
+set_review_body "$valid_body
+VERDICT: FAIL"
+expect_reject conflicting_verdict_rejected run_review_validator
+set_review_body "$valid_body
+REVIEWED_RELEASE_SHA=$release_sha"
+expect_reject duplicate_reviewed_release_sha_rejected run_review_validator
+set_review_body "$valid_body
+REVIEWED_RELEASE_SHA=1111111111111111111111111111111111111111"
+expect_reject mixed_correct_and_wrong_release_sha_rejected run_review_validator
+set_review_body "CHECKPOINT: FINAL-RELEASE
+ verdict: PASS
+REVIEWED_RELEASE_SHA=$release_sha"
+expect_reject malformed_authority_control_rejected run_review_validator
+set_review_body "Architecture Review evidence follows.
+
+$valid_body
+
+No production execution is authorized by this review."
+expect_accept prose_with_single_valid_control_set_accepted run_review_validator
+cp "$gh_data/reviews.valid.json" "$gh_data/reviews.json"
+
 jq --arg head "$pre_main_sha" '.[0].commit_id=$head' "$gh_data/reviews.valid.json" >"$gh_data/reviews.json"
 expect_reject review_commit_not_exact_request_head_rejected run_review_validator
 cp "$gh_data/reviews.valid.json" "$gh_data/reviews.json"
@@ -206,6 +279,9 @@ jq --arg release "$release_sha" --arg head "$request_head" --arg merge "$request
 ' "$manifest" >"$manifest.tmp" && mv "$manifest.tmp" "$manifest"
 git -C "$repo" add docs && git -C "$repo" commit --quiet -m 'fixture: approve reviewed final release'
 expect_accept final_approval_with_exact_merged_request_review_accepted run_approval_validator
+jq '.[0].user.login="outside-reviewer"' "$gh_data/reviews.valid.json" >"$gh_data/reviews.json"
+expect_reject final_approval_revalidates_canonical_reviewer_identity run_approval_validator
+cp "$gh_data/reviews.valid.json" "$gh_data/reviews.json"
 
 cp "$gh_data/reviews.json" "$gh_data/reviews.saved.json"; printf '[]\n' >"$gh_data/reviews.json"
 expect_reject final_approval_without_pass_review_rejected run_approval_validator
@@ -220,18 +296,70 @@ git -C "$repo" add product-drift.txt && git -C "$repo" commit --quiet -m drift &
 git -C "$repo" switch --quiet final-release-approval
 expect_reject stale_request_after_release_drift_rejected run_review_validator
 
-# A remote push failure rolls the owned transaction back byte-for-byte.
+# Every failure after the first repository-owned write restores HEAD, bytes,
+# artifact state, index, worktree, remote branch and the owned common-dir lock.
+assert_transaction_rollback post_write_validator_failure_rolls_back post_write_validator
+pass failed_transaction_releases_owned_lock
+assert_transaction_rollback git_add_failure_rolls_back git_add
+assert_transaction_rollback staged_path_failure_rolls_back staged_path
+assert_transaction_rollback commit_failure_rolls_back commit
+assert_transaction_rollback injected_push_failure_rolls_back push
+assert_transaction_rollback post_push_exact_verification_failure_rolls_back post_push
+
+# A real receive-side push rejection has the same atomic rollback guarantee.
 setup_pending_repository push-failure
 cat >"$remote/hooks/pre-receive" <<'EOF'
 #!/usr/bin/env bash
 exit 1
 EOF
 chmod +x "$remote/hooks/pre-receive"
-before_head="$(git -C "$repo" rev-parse HEAD)"; before_manifest="$(sha256_file "$manifest")"
+before_head="$(git -C "$repo" rev-parse HEAD)"; before_manifest="$(sha256_file "$manifest")"; before_index="$(git -C "$repo" write-tree)"
+common_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)"
 if "$repo/scripts/deployment/request-final-release-review.sh" "$release_sha" >/dev/null 2>&1; then fail 'push failure fixture unexpectedly succeeded'; fi
 [[ "$(git -C "$repo" rev-parse HEAD)" == "$before_head" && "$(sha256_file "$manifest")" == "$before_manifest" ]] || fail 'push failure changed HEAD or Manifest'
+[[ "$(git -C "$repo" write-tree)" == "$before_index" ]] || fail 'push failure changed index'
 [[ ! -e "$repo/docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md" ]] || fail 'push failure left request artifact'
-[[ -z "$(git -C "$repo" status --porcelain)" && ! -e "$repo/.git/os38-final-release-review-request.lock" ]] || fail 'push failure left worktree or lock state'
-pass request_push_failure_rolls_back_without_manifest_drift
+[[ -z "$(git -C "$repo" status --porcelain)" && ! -e "$common_dir/os38-final-release-review-request.lock" ]] || fail 'push failure left worktree or lock state'
+pass push_failure_rolls_back
 
-printf 'PASS: Final Release review request contract fixtures (%d total; 20 required named fixtures plus exact merged evidence)\n' "$pass_count"
+# Existing/foreign lock ownership is immutable and never auto-cleaned.
+setup_pending_repository foreign-lock
+common_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)"
+foreign_lock="$common_dir/os38-final-release-review-request.lock"
+mkdir "$foreign_lock"
+printf '%s\n' 'PID=999999' 'HOST=foreign-host' 'TIMESTAMP=2026-07-22T00:00:00Z' \
+  'COMMAND=request-final-release-review.sh' 'BRANCH=foreign-branch' 'TRANSACTION_ID=foreign-owner' >"$foreign_lock/owner"
+foreign_lock_sha="$(sha256_file "$foreign_lock/owner")"
+expect_reject foreign_lock_not_removed "$repo/scripts/deployment/request-final-release-review.sh" "$release_sha"
+[[ "$(sha256_file "$foreign_lock/owner")" == "$foreign_lock_sha" ]] || fail 'foreign lock owner metadata changed'
+rm -f "$foreign_lock/owner" && rmdir "$foreign_lock"
+
+# A linked worktree uses the exact same canonical Git common-dir lock.
+setup_pending_repository linked-worktree
+linked_path="$fixture_root/linked-request-worktree"
+git -C "$repo" worktree add --quiet -b linked-final-release "$linked_path" "$pre_main_sha"
+linked_common="$(git -C "$linked_path" rev-parse --path-format=absolute --git-common-dir)"
+primary_common="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)"
+[[ "$(cd "$linked_common" && pwd -P)" == "$(cd "$primary_common" && pwd -P)" ]] || fail 'linked worktree did not share Git common-dir'
+"$linked_path/scripts/deployment/request-final-release-review.sh" "$release_sha" >/dev/null
+[[ ! -e "$primary_common/os38-final-release-review-request.lock" ]] || fail 'linked worktree request left common-dir lock'
+[[ "$(git -C "$linked_path" rev-parse HEAD)" == "$(git -C "$linked_path" ls-remote --heads origin refs/heads/linked-final-release | awk 'NR==1 {print $1}')" ]] || fail 'linked worktree request did not synchronize remote'
+pass linked_worktree_request_uses_common_dir_lock
+
+# A lock acquired through the primary checkout blocks the linked worktree too.
+setup_pending_repository concurrent-worktree
+linked_path="$fixture_root/concurrent-request-worktree"
+git -C "$repo" worktree add --quiet -b concurrent-final-release "$linked_path" "$pre_main_sha"
+common_dir="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)"
+concurrent_lock="$common_dir/os38-final-release-review-request.lock"
+mkdir "$concurrent_lock"
+printf '%s\n' "PID=$$" "HOST=$(hostname)" "TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  'COMMAND=request-final-release-review.sh' 'BRANCH=final-release-request' 'TRANSACTION_ID=primary-owner' >"$concurrent_lock/owner"
+concurrent_lock_sha="$(sha256_file "$concurrent_lock/owner")"
+if "$linked_path/scripts/deployment/request-final-release-review.sh" "$release_sha" >/dev/null 2>&1; then fail 'linked concurrent request bypassed common-dir lock'; fi
+[[ "$(sha256_file "$concurrent_lock/owner")" == "$concurrent_lock_sha" ]] || fail 'concurrent request changed primary lock'
+[[ -z "$(git -C "$linked_path" status --porcelain)" ]] || fail 'rejected linked request changed worktree'
+pass concurrent_main_and_worktree_request_rejected
+rm -f "$concurrent_lock/owner" && rmdir "$concurrent_lock"
+
+printf 'PASS: Final Release review request contract fixtures (%d total)\n' "$pass_count"

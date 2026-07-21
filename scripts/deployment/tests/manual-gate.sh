@@ -238,7 +238,7 @@ EOF
     '{base:{ref:"main",sha:$base,repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},head:{sha:$head},merged:true,merge_commit_sha:$merge}' >"$request_gh_data/pr.json"
   jq -n '[{filename:"docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"},{filename:"docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md"}]' >"$request_gh_data/files.json"
   jq -n --arg head "$request_pr_head" --arg release "$request_release_sha" \
-    '[{id:123456789,state:"COMMENTED",commit_id:$head,submitted_at:"2026-07-20T12:03:00Z",body:("CHECKPOINT: FINAL-RELEASE\nVERDICT: PASS\nREVIEWED_RELEASE_SHA="+$release)}]' >"$request_gh_data/reviews.json"
+    '[{id:123456789,state:"COMMENTED",commit_id:$head,submitted_at:"2026-07-20T12:03:00Z",user:{login:"sohoteam88"},author_association:"OWNER",body:("CHECKPOINT: FINAL-RELEASE\nVERDICT: PASS\nREVIEWED_RELEASE_SHA="+$release)}]' >"$request_gh_data/reviews.json"
 }
 
 commit_request_fixture() {

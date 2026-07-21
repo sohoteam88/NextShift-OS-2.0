@@ -986,6 +986,14 @@
   "final_release_review": {
     "id": "AR-OS3.8-FINAL-RELEASE",
     "status": "pending",
+    "reviewer_policy": {
+      "allowed_logins": [
+        "sohoteam88"
+      ],
+      "allowed_author_associations": [
+        "OWNER"
+      ]
+    },
     "request_artifact": "docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md",
     "release_sha": "86f54a2185d8d981da19a8155055a999af2dc365",
     "pre_request_main_sha": null,

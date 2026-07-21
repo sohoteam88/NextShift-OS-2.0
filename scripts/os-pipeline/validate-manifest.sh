@@ -40,6 +40,10 @@ jq -e '
    end) and
   (.final_release_review | type == "object") and
   .final_release_review.id == "AR-OS3.8-FINAL-RELEASE" and
+  .final_release_review.reviewer_policy == {
+    "allowed_logins": ["sohoteam88"],
+    "allowed_author_associations": ["OWNER"]
+  } and
   (.final_release_review.status | IN("pending", "awaiting_review", "passed")) and
   .final_release_review.request_artifact == "docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md" and
   (.final_release_review.release_sha | type == "string" and test("^[0-9a-f]{40}$")) and

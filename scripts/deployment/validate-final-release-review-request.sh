@@ -29,6 +29,29 @@ reject_unknown_controls() {
   done <"$file"
 }
 
+parse_review_controls() {
+  local body="$1" release_sha="$2" line lower authority_pattern
+  local checkpoint_count=0 verdict_count=0 release_count=0
+  parsed_authority_review=0
+  authority_pattern='^[[:space:]]*(checkpoint|verdict|reviewed_release_sha)([[:space:]:=]|$)'
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    lower="$(tr '[:upper:]' '[:lower:]' <<<"$line")"
+    [[ "$lower" =~ $authority_pattern ]] || continue
+    parsed_authority_review=1
+    case "$line" in
+      'CHECKPOINT: FINAL-RELEASE') checkpoint_count=$((checkpoint_count + 1)) ;;
+      'VERDICT: PASS') verdict_count=$((verdict_count + 1)) ;;
+      "REVIEWED_RELEASE_SHA=$release_sha") release_count=$((release_count + 1)) ;;
+      *) fail "malformed or conflicting Final Release review authority control: $line" ;;
+    esac
+  done <<<"$body"
+  [[ "$parsed_authority_review" == 0 ]] && return 0
+  [[ "$checkpoint_count" == 1 ]] || fail 'CHECKPOINT authority control must occur exactly once'
+  [[ "$verdict_count" == 1 ]] || fail 'VERDICT authority control must occur exactly once'
+  [[ "$release_count" == 1 ]] || fail 'REVIEWED_RELEASE_SHA authority control must occur exactly once'
+}
+
 safe_relative_path() {
   local path="$1" component
   [[ -n "$path" && "$path" != /* && "$path" != -* && ! "$path" =~ [[:cntrl:]] ]] || return 1
@@ -121,23 +144,24 @@ case "$mode" in
     validate_request_artifact "$tmp_artifact" "$(jq -r '.final_release_review.request_artifact_sha256' "$manifest")"
 
     reviews_json="$(gh api --paginate "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number/reviews")"
+    reviewer_policy="$(jq -c '.final_release_review.reviewer_policy' "$manifest")"
     valid_count=0; review_id=''; reviewed_at=''
     while IFS= read -r review; do
       [[ -n "$review" ]] || continue
       [[ "$(jq -r '.commit_id // empty' <<<"$review")" == "$head_sha" ]] || continue
       body="$(jq -r '.body // empty' <<<"$review")"
-      grep -Eq '^(CHECKPOINT:|VERDICT:|REVIEWED_RELEASE_SHA=)' <<<"$body" || continue
+      parse_review_controls "$body" "$release_sha"
+      [[ "$parsed_authority_review" == 1 ]] || continue
       review_state="$(jq -r '.state // empty' <<<"$review")"
       [[ "$review_state" == APPROVED || "$review_state" == COMMENTED ]] || fail 'exact-head authority review is dismissed or invalid'
-      verdict_lines="$(grep -Ec '^VERDICT: (PASS|FAIL|CHANGES_REQUESTED)$' <<<"$body" || true)"
-      pass_lines="$(grep -Ec '^VERDICT: PASS$' <<<"$body" || true)"
-      checkpoint_lines="$(grep -Ec '^CHECKPOINT: FINAL-RELEASE$' <<<"$body" || true)"
-      release_lines="$(grep -Ec "^REVIEWED_RELEASE_SHA=$(jq -r '.final_release_review.release_sha' "$manifest")$" <<<"$body" || true)"
-      if [[ "$verdict_lines" != 1 ]]; then fail 'duplicate or conflicting exact-head review verdict'; fi
-      if [[ "$pass_lines" == 1 && "$checkpoint_lines" == 1 && "$release_lines" == 1 ]]; then
-        valid_count=$((valid_count + 1)); review_id="$(jq -r '.id' <<<"$review")"; reviewed_at="$(jq -r '.submitted_at' <<<"$review")"
-      elif [[ "$pass_lines" == 1 ]]; then fail 'exact-head PASS review has the wrong checkpoint or release SHA';
-      else fail 'exact-head Final Release review is not PASS'; fi
+      reviewer_login="$(jq -r '.user.login // empty' <<<"$review")"
+      author_association="$(jq -r '.author_association // empty' <<<"$review")"
+      [[ -n "$reviewer_login" ]] || fail 'exact-head authority review has no reviewer identity'
+      jq -e --arg login "$reviewer_login" '.allowed_logins | index($login) != null' <<<"$reviewer_policy" >/dev/null || \
+        fail "reviewer login is not authorized by the canonical policy: $reviewer_login"
+      jq -e --arg association "$author_association" '.allowed_author_associations | index($association) != null' <<<"$reviewer_policy" >/dev/null || \
+        fail "reviewer author association is not authorized by the canonical policy: $author_association"
+      valid_count=$((valid_count + 1)); review_id="$(jq -r '.id' <<<"$review")"; reviewed_at="$(jq -r '.submitted_at' <<<"$review")"
     done < <(jq -c '.[]' <<<"$reviews_json")
     [[ "$valid_count" == 1 && "$review_id" =~ ^[1-9][0-9]*$ ]] || fail 'exactly one exact-head Final Release PASS review is required'
     [[ "$reviewed_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'exact-head review timestamp is invalid'

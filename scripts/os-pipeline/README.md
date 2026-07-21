@@ -510,7 +510,10 @@ scripts/deployment/request-final-release-review.sh <RELEASE_SHA>
 
 It runs only from a clean dedicated branch at synchronized `origin/main`,
 uses candidate-first validation plus a lock-held TOCTOU recheck, and commits
-only the Manifest and canonical request artifact. The artifact binds
+only the Manifest and canonical request artifact. Ordinary and linked
+worktrees share an owner-bound lock in the canonical Git common-dir. Every
+failure after the first owned write restores the original HEAD, Manifest,
+artifact state, index, worktree, remote request branch and owned lock. The artifact binds
 `PRE_REQUEST_MAIN_SHA`; it never claims its own future commit/PR head or a
 future review identity. GitHub is the sole authority for the exact request PR
 head.
@@ -524,9 +527,12 @@ scripts/deployment/validate-final-release-review-request.sh \
 
 The verifier obtains repository/base/head/merge and changed files from GitHub,
 requires the request artifact at that exact Git tree, and accepts exactly one
-review with `CHECKPOINT: FINAL-RELEASE`, `VERDICT: PASS`, a `commit_id` equal
-to the exact request head, and `REVIEWED_RELEASE_SHA` equal to the authorized
-release. A later independent approval artifact persists that PR/review
+review from the Manifest's immutable `sohoteam88`/`OWNER` reviewer policy,
+with `CHECKPOINT: FINAL-RELEASE`, `VERDICT: PASS`, a `commit_id` equal to the
+exact request head, and `REVIEWED_RELEASE_SHA` equal to the authorized
+release. Those three body controls must each appear exactly once in canonical
+case and format; malformed, padded, duplicate or conflicting authority lines
+fail closed. A later independent approval artifact persists that PR/review
 identity and is revalidated live before deploy or rollback. Request drift,
 unmerged requests, review/head mismatches, artifact digest changes, or release
 drift fail closed.

@@ -69,6 +69,10 @@ grep -Eq '^[[:space:]]+[A-Za-z0-9_-]+: write$' "$ci_workflow" && \
   fail 'CI must not grant write permission to a non-main push'
 require_count "$ci_workflow" 1 'A main push may not skip the required E2E gate.' 'main E2E fail-closed guard'
 require_count "$ci_workflow" 1 'scripts/deployment/tests/final-release-review.sh' 'Final Release review contract CI gate'
+require_count "$review_validator" 1 ".final_release_review.reviewer_policy" 'canonical Final Release reviewer policy'
+require_count "$review_validator" 1 'parse_review_controls "$body" "$release_sha"' 'strict Final Release review control parser'
+require_count "$request_creator" 1 'rev-parse --path-format=absolute --git-common-dir' 'Final Release common-dir lock authority'
+require_count "$request_creator" 1 'write_started=1' 'Final Release write-set rollback boundary'
 require_count "$ci_workflow" 1 '              exit 1' 'main E2E fail-closed exit'
 require_count "$ci_workflow" 1 'Untrusted pull requests retain the no-secrets boundary.' 'fork secret boundary'
 for required_job in 'Type Check + Lint + Build' 'Tests' 'E2E Secret Check' 'E2E Tests'; do

@@ -31,11 +31,19 @@ Missing, blocked, duplicate, stale, mismatched, untracked or symlink authority f
 The release contract deliberately separates four authorities:
 
 1. **Contract remediation** defines this fail-closed workflow without requesting or granting release authority.
-2. **Architecture Review Request** runs `scripts/deployment/request-final-release-review.sh <RELEASE_SHA>` from a clean dedicated branch created at synchronized `origin/main`. The candidate-first transaction writes only the Manifest's `awaiting_review` state and the canonical request artifact, rechecks main under a repository lock, commits and pushes atomically, and rolls both files and the branch reference back if push fails. It never creates a PR or invokes a production workflow.
-3. **Final Release Approval** is a later, independent governance change. It may be created only after the Request PR is merged and `scripts/deployment/validate-final-release-review-request.sh --verify-pr <PR_URL>` derives an exact head from GitHub metadata, finds exactly one exact-head `PASS` review, and proves the reviewed release, artifact digest, merge ancestry, and freshness.
+2. **Architecture Review Request** runs `scripts/deployment/request-final-release-review.sh <RELEASE_SHA>` from a clean dedicated branch created at synchronized `origin/main`. The candidate-first transaction writes only the Manifest's `awaiting_review` state and the canonical request artifact. It serializes ordinary and linked worktrees through one owner-bound lock in the canonical Git common-dir. From the first repository write onward, validator, staging, commit, push, or post-push verification failure restores the original HEAD, Manifest bytes, request-artifact state, index, worktree, remote request branch, and owned lock. It never creates a PR or invokes a production workflow.
+3. **Final Release Approval** is a later, independent governance change. It may be created only after the Request PR is merged and `scripts/deployment/validate-final-release-review-request.sh --verify-pr <PR_URL>` derives an exact head from GitHub metadata, finds exactly one exact-head `PASS` review from the immutable canonical reviewer policy (`sohoteam88`, `OWNER`), and proves the reviewed release, artifact digest, merge ancestry, and freshness. Request artifacts, review prose, transport envelopes, and caller input cannot alter reviewer authority.
 4. **Production Execution Approval** remains a separate explicit human action through the manual workflow and protected `production` Environment. A Final Release Approval never dispatches production automatically.
 
 The request artifact intentionally has no `REQUEST_PR_HEAD`, future review ID, or reviewed SHA. A commit cannot truthfully contain its own final Git object ID. It instead binds the synchronized pre-request main SHA, release/readiness/audit/rollback evidence, timestamp, and blocked release gate. The GitHub verifier obtains the exact request head only from the Request PR metadata and requires the review `commit_id` to equal it.
+
+The exact-head GitHub review body has exactly three machine-authority controls. Each must occur once, with canonical case, spacing and delimiter; duplicate, conflicting, malformed, padded, or case-variant controls fail closed. Explanatory prose may appear on other lines.
+
+```text
+CHECKPOINT: FINAL-RELEASE
+VERDICT: PASS
+REVIEWED_RELEASE_SHA=<authorized release SHA>
+```
 
 Canonical request controls are:
 
