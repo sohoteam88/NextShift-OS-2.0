@@ -9,6 +9,7 @@ migration_runner="${3:-$repo_root/scripts/deployment/run-os38-production-migrati
 migration_dockerfile="${4:-$repo_root/scripts/deployment/Dockerfile.migrations}"
 approval_validator="$repo_root/scripts/deployment/validate-final-release-approval.sh"
 manual_validator="$repo_root/scripts/deployment/validate-manual-production-workflow.sh"
+image_runtime_validator="$repo_root/scripts/deployment/validate-migration-image-runtime.sh"
 
 fail() {
   printf 'ERROR: %s\n' "$*" >&2
@@ -44,7 +45,7 @@ require_order() {
     fail "$label: '$before' must precede '$after'"
 }
 
-for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator"; do
+for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$image_runtime_validator"; do
   [[ -f "$contract_file" && ! -L "$contract_file" ]] || \
     fail "contract input must be a regular, non-symlink file: $contract_file"
 done
@@ -121,13 +122,26 @@ require_count "$approval_validator" 1 'rollback target is not the exact image au
 require_count "$approval_validator" 1 'Production Environment protection evidence is stale' 'environment freshness binding'
 
 require_count "$migration_dockerfile" 1 'node:22.23.1-alpine3.23@sha256:16e22a550f3863206a3f701448c45f7912c6896a62de43add43bb9c86130c3e2' 'digest-pinned Node migration base'
-require_count "$migration_dockerfile" 1 'bash=5.3.3-r1' 'pinned Bash migration runtime'
+require_count "$migration_dockerfile" 1 'bash=5.3.9-r1' 'pinned Bash migration runtime'
 require_count "$migration_dockerfile" 1 'postgresql17-client=17.10-r0' 'pinned psql migration runtime'
 require_count "$migration_dockerfile" 1 'corepack prepare pnpm@10.24.0 --activate' 'pinned pnpm migration runtime'
 require_count "$migration_dockerfile" 1 'pnpm install --frozen-lockfile --prod' 'lockfile-resolved Prisma migration runtime'
 require_count "$migration_dockerfile" 1 'org.opencontainers.image.revision="${RELEASE_SHA}"' 'migration OCI revision label'
 require_count "$migration_dockerfile" 1 'com.nextshift.migration.prisma="6.19.3"' 'migration Prisma version label'
+require_count "$migration_dockerfile" 1 'com.nextshift.migration.bash="5.3.9-r1"' 'migration Bash version label'
+require_count "$migration_dockerfile" 1 'com.nextshift.migration.psql="17.10-r0"' 'migration psql version label'
+require_count "$migration_dockerfile" 1 'test "$(apk info -v | grep -Fx '\''bash-5.3.9-r1'\'')" = "bash-5.3.9-r1"' 'installed Bash exact-version build assertion'
+require_count "$migration_dockerfile" 1 'test "$(apk info -v | grep -Fx '\''postgresql17-client-17.10-r0'\'')" = "postgresql17-client-17.10-r0"' 'installed psql package exact-version build assertion'
+require_count "$migration_dockerfile" 1 'test "$(psql --version)" = "psql (PostgreSQL) 17.10"' 'installed psql runtime build assertion'
 require_count "$migration_dockerfile" 1 'ENTRYPOINT ["/usr/bin/env", "bash", "/app/scripts/deployment/run-os38-production-migrations.sh"]' 'complete migration entrypoint'
+
+require_count "$ci_workflow" 1 '    name: Migration Image Build' 'required migration-image CI job'
+require_count "$ci_workflow" 1 'github.event.pull_request.head.sha || github.sha' 'exact PR-head migration image binding'
+require_count "$ci_workflow" 1 '--file scripts/deployment/Dockerfile.migrations' 'CI migration image build'
+require_count "$ci_workflow" 1 'scripts/deployment/validate-migration-image-runtime.sh' 'CI migration image runtime validation'
+require_count "$ci_workflow" 1 'unset DATABASE_URL DIRECT_URL SOURCE_DB_URL SUPABASE_DB_URL PGPASSWORD' 'CI database-secret isolation'
+grep -Eq 'alpine/(edge|latest-stable)|/edge/' "$migration_dockerfile" && \
+  fail 'migration runtime must not use Alpine edge repositories'
 
 require_count "$deploy_workflow" 1 '          printf '\''%s\n'\'' "$IMAGE_TAG" > os38-release-sha.txt' 'exact release marker creation'
 require_count "$deploy_workflow" 1 '-e OS38_MIGRATION_MODE=production' 'production migration mode'
@@ -136,6 +150,8 @@ require_count "$deploy_workflow" 1 'printf '\''%s\n'\'' "$migration_image_digest
 require_count "$deploy_workflow" 1 'sha256sum --check migration-image.tar.gz.sha256' 'migration archive checksum verification'
 require_count "$deploy_workflow" 1 'test "$actual_migration_digest" = "$expected_migration_digest"' 'loaded migration image digest verification'
 require_count "$deploy_workflow" 1 'test "$migration_revision" = "${{ env.IMAGE_TAG }}"' 'migration image revision verification'
+require_count "$deploy_workflow" 1 'com.nextshift.migration.bash" }}' 'deploy-time Bash label verification'
+require_count "$deploy_workflow" 1 'test "$(apk info -v | grep -Fx "bash-5.3.9-r1")" = "bash-5.3.9-r1"' 'deploy-time installed Bash verification'
 grep -Eq 'node:22-alpine|apk add|npx --yes|npm install|pnpm install' "$deploy_workflow" && \
   fail 'production VPS migration runtime must not install or download tooling'
 grep -Fq 'migrate deploy --schema /app/prisma/schema.prisma' "$deploy_workflow" && \

@@ -24,6 +24,34 @@ permissions:
   contents: read
 
 jobs:
+  migration-image:
+    name: Migration Image Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXACT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.EXACT_HEAD_SHA }}
+
+      - name: Verify exact checkout
+        run: test "$(git rev-parse HEAD)" = "$EXACT_HEAD_SHA"
+
+      - name: Build and validate immutable migration image
+        run: |
+          set -euo pipefail
+          unset DATABASE_URL DIRECT_URL SOURCE_DB_URL SUPABASE_DB_URL PGPASSWORD
+          image="nextshift-migrations:$EXACT_HEAD_SHA"
+          docker build \
+            --file scripts/deployment/Dockerfile.migrations \
+            --build-arg RELEASE_SHA="$EXACT_HEAD_SHA" \
+            --tag "$image" \
+            .
+          scripts/deployment/validate-migration-image-runtime.sh "$image" "$EXACT_HEAD_SHA"
+
   quality:
     name: Type Check + Lint + Build
     runs-on: ubuntu-latest
