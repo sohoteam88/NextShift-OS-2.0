@@ -83,6 +83,14 @@ new_fixture missing_supabase
 perl -0pi -e 's#supabase/migrations/20260717135456_u3b_three_space_audit\.sql#supabase/migrations/missing.sql#' "$fixture_runner"
 expect_reject missing_supabase_migration_rejected
 
+new_fixture missing_feedback_reconciliation
+perl -0pi -e 's#supabase/migrations/20260721074302_feedback_catalog_reconciliation\.sql#supabase/migrations/missing-feedback-reconciliation.sql#' "$fixture_runner"
+expect_reject missing_feedback_reconciliation_migration_rejected
+
+new_fixture fabricated_feedback_history
+printf '%s\n' "INSERT INTO supabase_migrations.schema_migrations(version) VALUES ('202606140001');" >>"$fixture_runner"
+expect_reject historic_feedback_ledger_fabrication_rejected
+
 new_fixture deterministic_order
 expect_accept migration_order_is_deterministic
 
@@ -234,6 +242,10 @@ ALTER TABLE "audit_logs"
   ALTER COLUMN "tenant_id" SET NOT NULL;
 DROP TYPE IF EXISTS "AuditScope" CASCADE;
 ALTER TABLE "contents" DROP COLUMN IF EXISTS "updated_at" CASCADE;
+-- Prisma db push does not reproduce the historical SQL default on Feedback.id.
+-- Normalize this disposable fixture to the preserved-production catalog that
+-- the exact historical Prisma migration created.
+ALTER TABLE public.feedback ALTER COLUMN id SET DEFAULT gen_random_uuid();
 
 CREATE TABLE public._prisma_migrations (
   id varchar(36) PRIMARY KEY,
@@ -262,14 +274,175 @@ CREATE TABLE supabase_migrations.schema_migrations (
 INSERT INTO supabase_migrations.schema_migrations(version, name) VALUES
   ('202606060001','initial_nextshift_schema'),
   ('202606060002','add_lead_score_reasons'),
-  ('202606080001','fix_voice_profile_status_check'),
-  ('202606140001','feedback_system');
+  ('202606080001','fix_voice_profile_status_check');
 SQL
 
 fixture_marker="$fixture_root/release-sha.txt"
 printf '%s\n' "$release_sha" >"$fixture_marker"
+
+historic_feedback_ledger_count="$("$psql_bin" -X -qAt "$psql_url" -c \
+  "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='202606140001';")"
+[[ "$historic_feedback_ledger_count" == 0 ]] || fail 'fixture unexpectedly contains the unrecorded historical Feedback Supabase ledger'
+
+feedback_reconciliation_snapshot() {
+  "$psql_bin" -X -qAt "$psql_url" <<'SQL'
+SELECT jsonb_build_object(
+  'ledgers', (SELECT jsonb_agg(to_jsonb(m) ORDER BY version) FROM supabase_migrations.schema_migrations m WHERE version IN ('20260721074302','20260721085431')),
+  'table_comment', obj_description('public.feedback'::regclass, 'pg_class'),
+  'column_comment', col_description('public.feedback'::regclass, (SELECT attnum FROM pg_attribute WHERE attrelid='public.feedback'::regclass AND attname='updated_at')),
+  'constraints', (SELECT jsonb_agg(jsonb_build_array(conname, contype, convalidated, pg_get_constraintdef(oid, true)) ORDER BY conname) FROM pg_constraint WHERE conrelid='public.feedback'::regclass),
+  'indexes', (SELECT jsonb_agg(jsonb_build_array(c.relname, i.indisunique, i.indisprimary, i.indisvalid, i.indisready, i.indkey::text, i.indoption::text, pg_get_indexdef(i.indexrelid)) ORDER BY c.relname) FROM pg_index i JOIN pg_class c ON c.oid=i.indexrelid WHERE i.indrelid='public.feedback'::regclass),
+  'triggers', (SELECT jsonb_agg(jsonb_build_array(tgname, tgenabled, tgtype, tgfoid::regprocedure::text, pg_get_triggerdef(oid, true)) ORDER BY tgname) FROM pg_trigger WHERE tgrelid='public.feedback'::regclass AND NOT tgisinternal),
+  'defaults', (SELECT jsonb_agg(jsonb_build_array(a.attname, pg_get_expr(d.adbin,d.adrelid)) ORDER BY a.attnum) FROM pg_attribute a LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE a.attrelid='public.feedback'::regclass AND a.attnum>0 AND NOT a.attisdropped),
+  'table_acl', (SELECT relacl FROM pg_class WHERE oid='public.feedback'::regclass),
+  'column_acl', (SELECT jsonb_agg(jsonb_build_array(attname, attacl) ORDER BY attnum) FROM pg_attribute WHERE attrelid='public.feedback'::regclass AND attnum>0 AND NOT attisdropped)
+)::text;
+SQL
+}
+
+# Same-name objects with non-canonical definitions must fail before either
+# reconciliation ledger/comment or any other Feedback catalog mutation lands.
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  'ALTER TABLE public.feedback ADD CONSTRAINT feedback_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.users(id);'
+feedback_failed_snapshot_before="$(feedback_reconciliation_snapshot)"
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'Feedback reconciliation accepted a wrong same-name foreign key'
+fi
+feedback_failed_snapshot_after="$(feedback_reconciliation_snapshot)"
+[[ "$feedback_failed_snapshot_before" == "$feedback_failed_snapshot_after" ]] || \
+  fail 'failed Feedback reconciliation changed ledger, comments, or catalog'
+pass wrong_named_fk_rejected
+pass failed_reconciliation_leaves_ledger_comment_catalog_unchanged
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  'ALTER TABLE public.feedback DROP CONSTRAINT feedback_tenant_id_fkey;'
+
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  'ALTER TABLE public.feedback ADD CONSTRAINT feedback_status_check CHECK (status IS NOT NULL);'
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'Feedback reconciliation accepted a permissive same-name CHECK constraint'
+fi
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  'ALTER TABLE public.feedback DROP CONSTRAINT feedback_status_check;'
+pass permissive_named_check_rejected
+
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
+DROP INDEX public.feedback_type_idx;
+CREATE INDEX feedback_type_idx ON public.feedback(message);
+SQL
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'Feedback reconciliation accepted a wrong same-name index'
+fi
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
+DROP INDEX public.feedback_type_idx;
+CREATE INDEX feedback_type_idx ON public.feedback(type);
+SQL
+pass wrong_named_index_rejected
+
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
+CREATE OR REPLACE FUNCTION public.update_feedback_updated_at()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER trg_feedback_updated_at
+  BEFORE INSERT ON public.feedback
+  FOR EACH ROW EXECUTE FUNCTION public.update_feedback_updated_at();
+SQL
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'Feedback reconciliation accepted a wrong same-name trigger definition'
+fi
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
+DROP TRIGGER trg_feedback_updated_at ON public.feedback;
+DROP FUNCTION public.update_feedback_updated_at();
+SQL
+pass wrong_trigger_definition_rejected
+
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  "ALTER TABLE public.feedback ALTER COLUMN status SET DEFAULT 'resolved';"
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'Feedback reconciliation accepted a canonical column default drift'
+fi
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  "ALTER TABLE public.feedback ALTER COLUMN status SET DEFAULT 'open';"
+pass feedback_default_drift_rejected
+
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  'CREATE POLICY feedback_fixture_policy ON public.feedback FOR SELECT TO anon USING (true);'
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'Feedback reconciliation accepted an unreviewed client-facing policy'
+fi
+feedback_failed_state="$("$psql_bin" -X -qAt "$psql_url" <<'SQL'
+SELECT concat_ws('|',
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260721074302'),
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260721085431'),
+  (SELECT count(*) FROM pg_description d JOIN pg_class c ON c.oid=d.objoid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='feedback' AND d.objsubid=0 AND d.description LIKE 'nextshift:supabase-migration:20260721074302:%'),
+  (SELECT count(*) FROM pg_description d JOIN pg_class c ON c.oid=d.objoid JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_attribute a ON a.attrelid=c.oid AND a.attnum=d.objsubid WHERE n.nspname='public' AND c.relname='feedback' AND a.attname='updated_at' AND d.description LIKE 'nextshift:supabase-migration:20260721085431:%'),
+  (SELECT count(*) FROM pg_constraint WHERE conrelid='public.feedback'::regclass AND conname IN ('feedback_tenant_id_fkey','feedback_user_id_fkey','feedback_type_check','feedback_severity_check','feedback_status_check'))
+);
+SQL
+)"
+[[ "$feedback_failed_state" == '0|0|0|0|0' ]] || fail "failed Feedback reconciliation left partial catalog/ledger state: $feedback_failed_state"
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c 'DROP POLICY feedback_fixture_policy ON public.feedback;'
+pass feedback_client_policy_drift_rejected
+
 OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
   "$runner" "$release_sha" "$fixture_marker" >/dev/null
+
+feedback_atomic_xmin_count="$("$psql_bin" -X -qAt "$psql_url" <<'SQL'
+SELECT count(DISTINCT transaction_id)
+FROM (
+  SELECT xmin::text AS transaction_id
+  FROM supabase_migrations.schema_migrations
+  WHERE version IN ('20260721074302','20260721085431')
+  UNION ALL
+  SELECT xmin::text
+  FROM pg_constraint
+  WHERE conrelid='public.feedback'::regclass
+    AND conname IN ('feedback_tenant_id_fkey','feedback_user_id_fkey','feedback_type_check','feedback_severity_check','feedback_status_check')
+) atomic_feedback_state;
+SQL
+)"
+[[ "$feedback_atomic_xmin_count" == 1 ]] || fail 'Feedback reconciliation ledger and constraints were not committed by one transaction'
+pass feedback_reconciliation_ledger_catalog_atomic
+
+historic_feedback_ledger_count="$("$psql_bin" -X -qAt "$psql_url" -c \
+  "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='202606140001';")"
+[[ "$historic_feedback_ledger_count" == 0 ]] || fail 'runner fabricated the unrecorded historical Feedback Supabase ledger'
+pass historic_feedback_ledger_not_fabricated
+
+feedback_reconciled_state="$("$psql_bin" -X -qAt "$psql_url" <<'SQL'
+SELECT concat_ws('|',
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260721074302' AND name='feedback_catalog_reconciliation'),
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260721085431' AND name='feedback_catalog_authority_hardening'),
+  (SELECT count(*) FROM pg_constraint WHERE conrelid='public.feedback'::regclass AND conname IN ('feedback_tenant_id_fkey','feedback_user_id_fkey','feedback_type_check','feedback_severity_check','feedback_status_check') AND convalidated),
+  (SELECT count(*) FROM pg_class WHERE oid='public.feedback'::regclass AND relrowsecurity),
+  (SELECT count(*) FROM (VALUES ('anon'),('authenticated')) r(role_name) CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('DELETE'),('TRUNCATE'),('REFERENCES'),('TRIGGER')) p(privilege_name) WHERE has_table_privilege(r.role_name,'public.feedback',p.privilege_name)),
+  (SELECT count(*) FROM (VALUES ('anon'),('authenticated')) r(role_name) CROSS JOIN pg_attribute a CROSS JOIN (VALUES ('SELECT'),('INSERT'),('UPDATE'),('REFERENCES')) p(privilege_name) WHERE a.attrelid='public.feedback'::regclass AND a.attnum>0 AND NOT a.attisdropped AND has_column_privilege(r.role_name,'public.feedback',a.attname,p.privilege_name)),
+  (SELECT count(*) FROM pg_policies WHERE schemaname='public' AND tablename='feedback'),
+  (SELECT count(*) FROM pg_trigger WHERE tgrelid='public.feedback'::regclass AND tgname='trg_feedback_updated_at' AND NOT tgisinternal)
+);
+SQL
+)"
+[[ "$feedback_reconciled_state" == '1|1|5|1|0|0|0|1' ]] || fail "Feedback catalog reconciliation did not converge: $feedback_reconciled_state"
+pass missing_historic_feedback_ledger_reconciled_from_catalog
+
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  'GRANT SELECT (message) ON public.feedback TO anon;'
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'recorded Feedback reconciliation accepted an effective client column grant'
+fi
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  'REVOKE SELECT (message) ON public.feedback FROM anon;'
+pass feedback_column_grant_rejected
 
 fresh_ledger_xmin_count="$("$psql_bin" -X -qAt "$psql_url" -c \
   "SELECT count(DISTINCT xmin::text) FROM supabase_migrations.schema_migrations WHERE version IN ('20260717135456','20260720134506');")"
@@ -283,15 +456,38 @@ pass supabase_default_grants_removed_before_first_commit
 
 index_oid_before="$("$psql_bin" -X -qAt "$psql_url" -c \
   "SELECT 'public.audit_logs_idempotency_key_unique'::regclass::oid;")"
+feedback_identity_before="$("$psql_bin" -X -qAt "$psql_url" <<'SQL'
+SELECT concat_ws('|',
+  (SELECT xmin::text FROM supabase_migrations.schema_migrations WHERE version='20260721074302'),
+  (SELECT xmin::text FROM supabase_migrations.schema_migrations WHERE version='20260721085431'),
+  (SELECT string_agg(oid::text, ',' ORDER BY oid) FROM pg_constraint WHERE conrelid='public.feedback'::regclass AND conname IN ('feedback_tenant_id_fkey','feedback_user_id_fkey','feedback_type_check','feedback_severity_check','feedback_status_check')),
+  (SELECT oid::text FROM pg_trigger WHERE tgrelid='public.feedback'::regclass AND tgname='trg_feedback_updated_at' AND NOT tgisinternal)
+);
+SQL
+)"
 OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
   "$runner" "$release_sha" "$fixture_marker" >/dev/null
 index_oid_after="$("$psql_bin" -X -qAt "$psql_url" -c \
   "SELECT 'public.audit_logs_idempotency_key_unique'::regclass::oid;")"
 [[ "$index_oid_before" == "$index_oid_after" ]] || fail 'idempotent restart recreated the partial index'
+feedback_identity_after="$("$psql_bin" -X -qAt "$psql_url" <<'SQL'
+SELECT concat_ws('|',
+  (SELECT xmin::text FROM supabase_migrations.schema_migrations WHERE version='20260721074302'),
+  (SELECT xmin::text FROM supabase_migrations.schema_migrations WHERE version='20260721085431'),
+  (SELECT string_agg(oid::text, ',' ORDER BY oid) FROM pg_constraint WHERE conrelid='public.feedback'::regclass AND conname IN ('feedback_tenant_id_fkey','feedback_user_id_fkey','feedback_type_check','feedback_severity_check','feedback_status_check')),
+  (SELECT oid::text FROM pg_trigger WHERE tgrelid='public.feedback'::regclass AND tgname='trg_feedback_updated_at' AND NOT tgisinternal)
+);
+SQL
+)"
+[[ "$feedback_identity_before" == "$feedback_identity_after" ]] || fail 'idempotent restart rewrote Feedback reconciliation authority'
+pass feedback_reconciliation_idempotent
+pass valid_preserved_production_catalog_run1_and_idempotent_run2
 
 catalog_result="$("$psql_bin" -X -qAt "$psql_url" <<'SQL'
 SELECT concat_ws('|',
   (SELECT count(*) FROM public._prisma_migrations WHERE migration_name='20260715220949_add_content_updated_at' AND finished_at IS NOT NULL),
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260721074302'),
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260721085431'),
   (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260717135456'),
   (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260720134506'),
   (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname='audit_logs_idempotency_key_unique' AND indexdef LIKE '%WHERE (idempotency_key IS NOT NULL)%'),
@@ -302,7 +498,7 @@ SELECT concat_ws('|',
 );
 SQL
 )"
-[[ "$catalog_result" == '1|1|1|1|2|2|0|0' ]] || fail "unexpected post-migration catalog: $catalog_result"
+[[ "$catalog_result" == '1|1|1|1|1|1|2|2|0|0' ]] || fail "unexpected post-migration catalog: $catalog_result"
 pass disposable_postgresql_migration_rehearsal
 
 [[ "$("$psql_bin" -X -qAt "$psql_url" -c "SELECT relrowsecurity FROM pg_class WHERE oid='public.audit_event_outbox'::regclass;")" == t ]] || \
@@ -349,6 +545,18 @@ SQL
 [[ "$additive_state" == '1|1|2|0' ]] || fail "existing U3B additive RLS hardening failed: $additive_state"
 pass existing_u3b_without_rls_is_hardened_additively
 
+# A recorded reconciliation whose protected Feedback catalog has drifted must
+# not be silently repaired or accepted.
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  'ALTER TABLE public.feedback DROP CONSTRAINT feedback_status_check;'
+if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_url" \
+  "$runner" "$release_sha" "$fixture_marker" >/dev/null 2>&1; then
+  fail 'recorded Feedback catalog drift was accepted'
+fi
+"$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
+  "ALTER TABLE public.feedback ADD CONSTRAINT feedback_status_check CHECK (status IN ('open', 'acknowledged', 'in_progress', 'resolved', 'closed'));"
+pass feedback_catalog_drift_rejected
+
 # A ledger/catalog combination from different lifecycle points must never be
 # repaired by guessing which migration succeeded.
 "$psql_bin" -X -q -v ON_ERROR_STOP=1 "$psql_url" -c \
@@ -359,5 +567,5 @@ if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_
 fi
 pass partial_u3b_rls_ledger_state_rejected
 
-[[ "$pass_count" == 39 ]] || fail "expected 39 named fixtures, got $pass_count"
+[[ "$pass_count" == 55 ]] || fail "expected 55 named fixtures, got $pass_count"
 printf 'PASS: %s production-readiness fixtures\n' "$pass_count"
