@@ -20,6 +20,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   quality:
     name: Type Check + Lint + Build
@@ -43,6 +46,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Validate production readiness contracts
+        run: scripts/deployment/validate-production-readiness-contract.sh
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -134,9 +140,12 @@ jobs:
           DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
           DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci?schema=public'
 
+      - name: Run production readiness fixtures
+        run: scripts/deployment/tests/production-readiness.sh
+
   e2e-secrets:
     name: E2E Secret Check
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     needs: [quality, test]
     outputs:
@@ -146,6 +155,8 @@ jobs:
       - name: Check E2E secrets
         id: check
         env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -166,9 +177,14 @@ jobs:
 
           if (( ${#missing[@]} > 0 )); then
             echo "has-secrets=false" >> "$GITHUB_OUTPUT"
-            echo "E2E skipped: missing secrets" >> "$GITHUB_STEP_SUMMARY"
+            echo "E2E secrets unavailable." >> "$GITHUB_STEP_SUMMARY"
             printf 'Missing required E2E secrets:\n' >> "$GITHUB_STEP_SUMMARY"
             printf -- '- %s\n' "${missing[@]}" >> "$GITHUB_STEP_SUMMARY"
+            if [[ "$EVENT_NAME" == "push" && "$EVENT_REF" == "refs/heads/main" ]]; then
+              echo "A main push may not skip the required E2E gate." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+            echo "Untrusted pull requests retain the no-secrets boundary." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -177,7 +193,7 @@ jobs:
 
   e2e:
     name: E2E Tests
-    if: github.event_name == 'pull_request' && needs.e2e-secrets.outputs.has-secrets == 'true'
+    if: (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && needs.e2e-secrets.outputs.has-secrets == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [quality, test, e2e-secrets]

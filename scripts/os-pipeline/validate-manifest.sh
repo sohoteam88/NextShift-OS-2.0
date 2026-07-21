@@ -38,7 +38,29 @@ jq -e '
     .final_audit.reviewed_sha == .final_audit.requested_product_sha and
     (.final_audit.completed_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"))
    end) and
-  (.release_gate.status == "blocked") and
+  (.release_gate.status | IN("blocked", "approved")) and
+  (if .release_gate.status == "blocked" then
+    (.release_gate.id? == null or .release_gate.id == "OS3.8-FINAL-RELEASE") and
+    (.release_gate.approval_artifact? == null or .release_gate.approval_artifact == "docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md") and
+    (.release_gate.readiness_evidence? == null or .release_gate.readiness_evidence == "docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md") and
+    (.release_gate.approval_sha256? // null) == null and
+    (.release_gate.readiness_evidence_sha256? // null) == null and
+    (.release_gate.approved_release_sha? // null) == null and
+    (.release_gate.approved_by? // null) == null and
+    (.release_gate.approved_at? // null) == null and
+    (.release_gate.review_id? // null) == null
+   else
+    .release_gate.id == "OS3.8-FINAL-RELEASE" and
+    .release_gate.approval_artifact == "docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md" and
+    .release_gate.readiness_evidence == "docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md" and
+    .final_audit.status == "pass" and
+    (.release_gate.approval_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+    (.release_gate.readiness_evidence_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+    (.release_gate.approved_release_sha | type == "string" and test("^[0-9a-f]{40}$")) and
+    .release_gate.approved_by == "Steven" and
+    (.release_gate.approved_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
+    (.release_gate.review_id | type == "number" and . > 0 and floor == .)
+   end) and
   (.release_gate.auto_tag == false) and
   (.release_gate.auto_deploy == false)
 ' "$MANIFEST_PATH" >/dev/null || {

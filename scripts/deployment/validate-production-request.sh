@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 action="${1:-}"
 confirmation="${2:-}"
 release_sha="${3:-}"
@@ -37,6 +38,11 @@ resolved_release_sha="$(git rev-parse "$release_sha^{commit}")"
   fail 'release SHA did not resolve to the exact requested commit'
 git merge-base --is-ancestor "$release_sha" refs/remotes/origin/main || \
   fail 'release SHA is not contained in origin/main'
+
+approval_validator="$repo_root/scripts/deployment/validate-final-release-approval.sh"
+[[ -f "$approval_validator" && ! -L "$approval_validator" && -x "$approval_validator" ]] || \
+  fail 'Final Release Approval validator must be an executable, non-symlink file'
+"$approval_validator" "$action" "$release_sha"
 
 printf 'PASS: production request is bound to main control plane %s and release %s\n' \
   "$control_plane_sha" "$release_sha"

@@ -2,7 +2,7 @@
 
 Proposal version: `v3.8.0`
 
-Status: **Release PR #109 open; live state is GitHub-authoritative**
+Status: **Merged to `main`; Production Readiness NOT READY**
 Last updated: 2026-07-20
 
 ---
@@ -16,10 +16,10 @@ Last updated: 2026-07-20
 | Package path | `docs/nextshift-os-3/releases/OS_3_8_PRODUCT_USABILITY_RECOVERY/` |
 | Source branch | `planning/os-3.8-product-usability` |
 | R1A preparation baseline SHA | `c579ef41ca204bedb0e141473579bea938edf333` |
-| Release PR stage | [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) is open; its live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence |
-| Release PR exact head authority | GitHub PR #109 metadata plus exact-head review evidence; no future planning or merge SHA is self-referenced inside this commit |
-| Main baseline SHA | `76b573cdbf2f1bec31fe5770c080941469479d25` |
-| Main state | Pre-OS-3.8 merge baseline; planning has not been merged to main |
+| Release PR stage | [#109](https://github.com/sohoteam88/NextShift-OS-2.0/pull/109) merged |
+| Release PR merge / current main SHA | `eabbcc3266b3bbddaaa8cf89ecf051592c8a7433` |
+| Previous main baseline SHA | `76b573cdbf2f1bec31fe5770c080941469479d25` |
+| Main state | OS 3.8 source merged; Production Readiness remains `NOT READY` |
 | Current production | `v3.7.0` at `28c077f115a4e43c5e11e1097ae06b8744043643` |
 | Audited product SHA | `0e77a4182ee4a12582084ed504cf1c939b46ccd5` |
 | Final Audit request commit | `746a44acf51c50194826c2b0326fccb1d30c5446` |
@@ -64,16 +64,25 @@ These repository changes are part of the RC source but **have not been executed 
 
 - [`prisma/migrations/20260715220949_add_content_updated_at/migration.sql`](../../../../prisma/migrations/20260715220949_add_content_updated_at/migration.sql)
 - [`supabase/migrations/20260717135456_u3b_three_space_audit.sql`](../../../../supabase/migrations/20260717135456_u3b_three_space_audit.sql)
+- [`supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql`](../../../../supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql)
 - [`scripts/u3b-admin-migration/install-audit-idempotency-authority.sql`](../../../../scripts/u3b-admin-migration/install-audit-idempotency-authority.sql)
 - [`prisma/schema.prisma`](../../../../prisma/schema.prisma), representing the RC schema authority
 
 Production migration requires separate explicit approval. This package does not grant or execute it.
 
+The repository production entrypoint is [`scripts/deployment/run-os38-production-migrations.sh`](../../../../scripts/deployment/run-os38-production-migrations.sh). It binds the exact release SHA, validates the Prisma and Supabase ledgers, acquires one database advisory lock, and applies the Prisma migration first. For a fresh database, U3B creation, additive audit-table RLS/revocation, and both Supabase ledger entries share one transaction. For a complete existing U3B install, only the additive RLS migration runs. Partial catalog/ledger combinations fail closed. The separate partial-index installer remains skipped when the authoritative U3B migration owns that index, and final RLS, privilege, policy and other catalog assertions must pass before application deployment may begin. Its disposable PostgreSQL rehearsal is evidence only; no production database has been contacted or changed.
+
+The migration entrypoint runs from the dedicated [`scripts/deployment/Dockerfile.migrations`](../../../../scripts/deployment/Dockerfile.migrations) artifact built from the exact release SHA. The workflow verifies its archive checksum, image digest, OCI revision and pinned Node/pnpm/Prisma/Bash/psql labels after transfer; it performs no production-host network installation. A failed migration prevents application retag/start and does not authorize an automatic database reset or rebuild.
+
 ## Authorization Boundary
 
 - The Release Preparation governance PR was reviewed and merged.
-- Planning-to-main Release PR #109 is open; its live review, exact-head, and merge state are governed by GitHub PR metadata and exact-head review evidence.
+- Planning-to-main Release PR #109 is merged at `eabbcc3266b3bbddaaa8cf89ecf051592c8a7433`.
 - A Release PR is not production release approval.
+- Production Readiness is `NOT READY`; merging source to `main` did not execute a production action.
+- The canonical Final Release gate remains `blocked`; the genuine Final Release Approval and `READY` evidence artifacts do not yet exist.
+- Future READY evidence must bind the `production` GitHub Environment, Steven as required reviewer, a fresh environment verification identity/timestamp, and a successful exact-release migration-image digest/revision rehearsal. No Environment configuration is created by this repository remediation.
+- Deploy remains bound to the approved release SHA. Rollback remains under that approval but may target only the exact `ROLLBACK_IMAGE_SHA` recorded by its readiness evidence; rollback performs no build or migration.
 - Production migration, deployment, tagging, GitHub Release creation, and production traffic changes remain unauthorized.
 - `auto_tag=false`, `auto_deploy=false`, and `auto_release=false`; the release gate remains `BLOCKED`.
 
