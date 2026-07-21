@@ -9,12 +9,14 @@ direct_url="${DIRECT_URL:-}"
 lock_key=38003820260717
 
 content_migration="$repo_root/prisma/migrations/20260715220949_add_content_updated_at/migration.sql"
+feedback_reconciliation_migration="$repo_root/supabase/migrations/20260721074302_feedback_catalog_reconciliation.sql"
 u3b_migration="$repo_root/supabase/migrations/20260717135456_u3b_three_space_audit.sql"
 audit_rls_migration="$repo_root/supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql"
 partial_index_installer="$repo_root/scripts/u3b-admin-migration/install-audit-idempotency-authority.sql"
 prisma_schema="$repo_root/prisma/schema.prisma"
 
 content_sha='31ca2c16224aee4184d4cb787428ae365bb5f1bafbac74196fb9f367738ffa5a'
+feedback_reconciliation_sha='385923f9172652cea404ff6c6ddbe802941a3072b911877ac632436b57b36dc6'
 u3b_sha='cbce822033bb3ced502f2e6f104e275a064dd8516a98190dd8e2d4403622ae66'
 audit_rls_sha='f560a101bc912500cf924a6972b9abe6720b2a248785a4bf7c96ecaeb0521264'
 installer_sha='a97cee2918c934be7a3951732e210ee73365d18320740b98af7d8ff96fd92246'
@@ -70,6 +72,7 @@ trap cleanup EXIT INT TERM
 
 for inventory_item in \
   "$content_migration" \
+  "$feedback_reconciliation_migration" \
   "$u3b_migration" \
   "$audit_rls_migration" \
   "$partial_index_installer" \
@@ -79,6 +82,8 @@ for inventory_item in \
 done
 
 [[ "$(sha256_file "$content_migration")" == "$content_sha" ]] || fail 'Content migration checksum drift'
+[[ "$(sha256_file "$feedback_reconciliation_migration")" == "$feedback_reconciliation_sha" ]] || \
+  fail 'Feedback reconciliation migration checksum drift'
 [[ "$(sha256_file "$u3b_migration")" == "$u3b_sha" ]] || fail 'U3B Supabase migration checksum drift'
 [[ "$(sha256_file "$audit_rls_migration")" == "$audit_rls_sha" ]] || fail 'audit-table RLS migration checksum drift'
 [[ "$(sha256_file "$partial_index_installer")" == "$installer_sha" ]] || fail 'partial-index installer checksum drift'
@@ -169,15 +174,52 @@ SQL
 )"
 [[ "$supabase_ledger_shape" == 3 ]] || fail 'Supabase migration ledger authority is missing or incompatible'
 
-supabase_prior_count="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
-  "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version = '202606140001';")"
-[[ "$supabase_prior_count" == 1 ]] || fail 'required prior Supabase migration ledger entry is missing'
-
 "$repo_root/node_modules/.bin/prisma" migrate deploy --schema "$prisma_schema"
 
 applied_content_sha="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
   "SELECT checksum FROM public._prisma_migrations WHERE migration_name = '20260715220949_add_content_updated_at' AND finished_at IS NOT NULL AND rolled_back_at IS NULL;")"
 [[ "$applied_content_sha" == "$content_sha" ]] || fail 'Content migration was not recorded with the exact repository checksum'
+
+feedback_ledger_count="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
+  "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version = '20260721074302';")"
+feedback_ledger_binding_count="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
+  "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version = '20260721074302' AND name = 'feedback_catalog_reconciliation' AND statements = ARRAY['nextshift sha256=$feedback_reconciliation_sha'];")"
+feedback_catalog_binding_count="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
+  "SELECT count(*) FROM pg_description d JOIN pg_class c ON c.oid=d.objoid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='feedback' AND d.objsubid=0 AND d.description='nextshift:supabase-migration:20260721074302:sha256=$feedback_reconciliation_sha';")"
+feedback_catalog_state="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" <<'SQL'
+SELECT concat_ws('|',
+  (SELECT count(*) FROM pg_constraint WHERE conrelid='public.feedback'::regclass AND conname IN ('feedback_tenant_id_fkey','feedback_user_id_fkey','feedback_type_check','feedback_severity_check','feedback_status_check') AND convalidated),
+  (SELECT count(*) FROM pg_class WHERE oid='public.feedback'::regclass AND relrowsecurity),
+  (SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public' AND table_name='feedback' AND grantee IN ('anon','authenticated')),
+  (SELECT count(*) FROM pg_policies WHERE schemaname='public' AND tablename='feedback'),
+  (SELECT count(*) FROM pg_trigger WHERE tgrelid='public.feedback'::regclass AND tgname='trg_feedback_updated_at' AND NOT tgisinternal AND tgfoid=to_regprocedure('public.update_feedback_updated_at()')),
+  (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname='update_feedback_updated_at' AND p.pronargs=0 AND NOT p.prosecdef),
+  (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND tablename='feedback' AND indexname IN ('feedback_pkey','feedback_tenant_id_idx','feedback_type_idx','feedback_status_idx','feedback_created_at_idx'))
+);
+SQL
+)"
+
+if [[ "$feedback_ledger_count" == 0 ]]; then
+  [[ "$feedback_catalog_binding_count" == 0 ]] || \
+    fail 'Feedback reconciliation catalog binding exists without its ledger authority'
+  feedback_apply_sql="$lock_directory/feedback-reconciliation-apply.sql"
+  {
+    printf '%s\n' '\set ON_ERROR_STOP on' 'BEGIN;'
+    cat "$feedback_reconciliation_migration"
+    printf '%s\n' \
+      "COMMENT ON TABLE public.feedback IS 'nextshift:supabase-migration:20260721074302:sha256=$feedback_reconciliation_sha';" \
+      "INSERT INTO supabase_migrations.schema_migrations(version, statements, name) VALUES ('20260721074302', ARRAY['nextshift sha256=$feedback_reconciliation_sha'], 'feedback_catalog_reconciliation');" \
+      'COMMIT;'
+  } >"$feedback_apply_sql"
+  psql -X -q -v ON_ERROR_STOP=1 "$psql_url" -f "$feedback_apply_sql"
+  rm -f "$feedback_apply_sql"
+  feedback_ledger_count=1
+  feedback_ledger_binding_count=1
+  feedback_catalog_binding_count=1
+  feedback_catalog_state='5|1|0|0|1|1|5'
+elif [[ "$feedback_ledger_count" != 1 || "$feedback_ledger_binding_count" != 1 || "$feedback_catalog_binding_count" != 1 || "$feedback_catalog_state" != '5|1|0|0|1|1|5' ]]; then
+  fail 'Feedback reconciliation migration ledger/catalog binding drift detected'
+fi
 
 u3b_ledger_count="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" -c \
   "SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version = '20260717135456';")"
@@ -255,6 +297,15 @@ post_assertions="$(psql -X -qAt -v ON_ERROR_STOP=1 "$psql_url" <<SQL
 SELECT concat_ws('|',
   (SELECT count(*) FROM information_schema.columns WHERE table_schema='public' AND table_name='contents' AND column_name='updated_at' AND is_nullable='NO'),
   (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname IN ('contents_tenant_id_owner_id_updated_at_id_idx','contents_tenant_id_updated_at_id_idx')),
+  (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260721074302' AND name='feedback_catalog_reconciliation' AND statements=ARRAY['nextshift sha256=$feedback_reconciliation_sha']),
+  (SELECT count(*) FROM pg_description d JOIN pg_class c ON c.oid=d.objoid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='feedback' AND d.objsubid=0 AND d.description='nextshift:supabase-migration:20260721074302:sha256=$feedback_reconciliation_sha'),
+  (SELECT count(*) FROM pg_constraint WHERE conrelid='public.feedback'::regclass AND conname IN ('feedback_tenant_id_fkey','feedback_user_id_fkey','feedback_type_check','feedback_severity_check','feedback_status_check') AND convalidated),
+  (SELECT count(*) FROM pg_class WHERE oid='public.feedback'::regclass AND relrowsecurity),
+  (SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='public' AND table_name='feedback' AND grantee IN ('anon','authenticated')),
+  (SELECT count(*) FROM pg_policies WHERE schemaname='public' AND tablename='feedback'),
+  (SELECT count(*) FROM pg_trigger WHERE tgrelid='public.feedback'::regclass AND tgname='trg_feedback_updated_at' AND NOT tgisinternal AND tgfoid=to_regprocedure('public.update_feedback_updated_at()')),
+  (SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname='update_feedback_updated_at' AND p.pronargs=0 AND NOT p.prosecdef),
+  (SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND tablename='feedback' AND indexname IN ('feedback_pkey','feedback_tenant_id_idx','feedback_type_idx','feedback_status_idx','feedback_created_at_idx')),
   (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260717135456'),
   (SELECT count(*) FROM supabase_migrations.schema_migrations WHERE version='20260720134506'),
   (SELECT obj_description('public."AuditScope"'::regtype::oid, 'pg_type')),
@@ -268,7 +319,7 @@ SELECT concat_ws('|',
 );
 SQL
 )"
-expected_post_assertions="1|2|1|1|nextshift:supabase-migration:20260717135456:sha256=$u3b_sha|1|2|2|0|0|2|5"
+expected_post_assertions="1|2|1|1|5|1|0|0|1|1|5|1|1|nextshift:supabase-migration:20260717135456:sha256=$u3b_sha|1|2|2|0|0|2|5"
 [[ "$post_assertions" == "$expected_post_assertions" ]] || fail 'post-migration catalog assertions failed'
 
 printf 'PASS: OS 3.8 migrations applied for exact release %s; partial-index installer skipped because the Supabase migration owns the index\n' "$release_sha"
