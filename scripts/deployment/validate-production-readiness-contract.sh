@@ -11,6 +11,7 @@ approval_validator="$repo_root/scripts/deployment/validate-final-release-approva
 manual_validator="$repo_root/scripts/deployment/validate-manual-production-workflow.sh"
 image_runtime_validator="$repo_root/scripts/deployment/validate-migration-image-runtime.sh"
 feedback_reconciliation_migration="$repo_root/supabase/migrations/20260721074302_feedback_catalog_reconciliation.sql"
+feedback_authority_migration="$repo_root/supabase/migrations/20260721085431_feedback_catalog_authority_hardening.sql"
 
 fail() {
   printf 'ERROR: %s\n' "$*" >&2
@@ -46,7 +47,7 @@ require_order() {
     fail "$label: '$before' must precede '$after'"
 }
 
-for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$image_runtime_validator" "$feedback_reconciliation_migration"; do
+for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$image_runtime_validator" "$feedback_reconciliation_migration" "$feedback_authority_migration"; do
   [[ -f "$contract_file" && ! -L "$contract_file" ]] || \
     fail "contract input must be a regular, non-symlink file: $contract_file"
 done
@@ -73,6 +74,7 @@ grep -Fq 'github.event.workflow_run' "$deploy_workflow" && fail 'workflow_run st
 for inventory_path in \
   'prisma/migrations/20260715220949_add_content_updated_at/migration.sql' \
   'supabase/migrations/20260721074302_feedback_catalog_reconciliation.sql' \
+  'supabase/migrations/20260721085431_feedback_catalog_authority_hardening.sql' \
   'supabase/migrations/20260717135456_u3b_three_space_audit.sql' \
   'supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql' \
   'scripts/u3b-admin-migration/install-audit-idempotency-authority.sql' \
@@ -81,20 +83,29 @@ for inventory_path in \
 done
 
 require_count "$migration_runner" 1 'pg_try_advisory_lock' 'advisory migration lock'
-require_count "$migration_runner" 3 "-v ON_ERROR_STOP=1 \"\$psql_url\" -f" 'transactional Supabase migrations'
+require_count "$migration_runner" 4 "-v ON_ERROR_STOP=1 \"\$psql_url\" -f" 'transactional Supabase migrations'
 require_count "$migration_runner" 1 'Prisma migration ledger is incomplete or has checksum drift' 'Prisma ledger drift guard'
 require_count "$migration_runner" 1 'Supabase migration ledger authority is missing or incompatible' 'Supabase ledger drift guard'
 require_count "$migration_runner" 0 "version = '202606140001'" 'historical Feedback Supabase ledger must not be required'
 require_count "$migration_runner" 0 "VALUES ('202606140001'" 'historical Feedback Supabase ledger must not be fabricated'
 require_count "$migration_runner" 1 'feedback-reconciliation-apply.sql' 'Feedback catalog/ledger reconciliation transaction'
+require_count "$migration_runner" 1 'feedback-authority-apply.sql' 'additive Feedback authority-hardening transaction'
 require_count "$migration_runner" 1 'Feedback reconciliation migration ledger/catalog binding drift detected' 'Feedback ledger/catalog binding gate'
-require_count "$migration_runner" 1 'Feedback reconciliation catalog binding exists without its ledger authority' 'Feedback partial-state rejection'
+require_count "$migration_runner" 1 'Feedback catalog binding exists without its ledger authority' 'Feedback partial-state rejection'
 require_count "$migration_runner" 1 "version='20260721074302' AND name='feedback_catalog_reconciliation'" 'Feedback post-migration ledger assertion'
-require_count "$migration_runner" 4 "tablename='feedback'" 'Feedback policy and index catalog assertions'
-require_count "$migration_runner" 2 "tgname='trg_feedback_updated_at'" 'Feedback trigger assertion'
+require_count "$migration_runner" 1 "version='20260721085431' AND name='feedback_catalog_authority_hardening'" 'Feedback authority post-migration ledger assertion'
+require_count "$migration_runner" 2 "tablename='feedback'" 'Feedback policy catalog assertions'
+require_count "$migration_runner" 1 "tgname='trg_feedback_updated_at'" 'Feedback trigger assertion'
 require_count "$feedback_reconciliation_migration" 1 'feedback catalog column signature drift' 'Feedback source-catalog signature guard'
 require_count "$feedback_reconciliation_migration" 1 'feedback reconciliation rejects unreviewed client-facing policies' 'Feedback policy drift guard'
 require_count "$feedback_reconciliation_migration" 1 'REVOKE ALL PRIVILEGES ON TABLE public.feedback FROM PUBLIC, anon, authenticated;' 'Feedback server-only privilege posture'
+require_count "$feedback_authority_migration" 1 'feedback canonical column/default definition drift' 'Feedback exact default guard'
+require_count "$feedback_authority_migration" 1 'feedback canonical foreign-key definition drift' 'Feedback exact foreign-key guard'
+require_count "$feedback_authority_migration" 1 'feedback canonical check-constraint definition drift' 'Feedback exact check guard'
+require_count "$feedback_authority_migration" 1 'feedback canonical index definition drift' 'Feedback exact index guard'
+require_count "$feedback_authority_migration" 1 'feedback canonical trigger definition drift' 'Feedback exact trigger guard'
+require_count "$feedback_authority_migration" 1 'feedback effective client privilege drift' 'Feedback effective table/column privilege guard'
+require_count "$migration_runner" 3 'feedback_catalog_state)' 'Feedback exact pre/post catalog verification'
 require_count "$migration_runner" 1 'partial-index installer skipped because the Supabase migration owns the index' 'partial-index single authority'
 require_count "$migration_runner" 1 'post-migration catalog assertions failed' 'catalog assertion gate'
 require_count "$migration_runner" 1 'audit-table RLS migration ledger/catalog drift detected' 'audit RLS ledger/catalog gate'
@@ -105,7 +116,7 @@ require_order "$migration_runner" \
   'cat "$audit_rls_migration"' \
   'fresh U3B/RLS migration order'
 require_count "$migration_runner" 2 "c.relname IN ('audit_event_outbox','audit_operational_alerts') AND c.relrowsecurity" 'audit-table RLS catalog assertions'
-require_count "$migration_runner" 4 "grantee IN ('anon','authenticated')" 'Feedback/audit-table privilege catalog assertions'
+require_count "$migration_runner" 3 "grantee IN ('anon','authenticated')" 'audit-table direct privilege catalog assertions'
 require_count "$migration_runner" 2 "tablename IN ('audit_event_outbox','audit_operational_alerts')" 'no client-facing audit policy assertions'
 require_count "$migration_runner" 1 'fixture mode rejects non-local database connections' 'fixture production isolation'
 require_count "$migration_runner" 1 'release marker does not match the requested release SHA' 'exact release marker binding'
