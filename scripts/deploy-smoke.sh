@@ -2,33 +2,52 @@
 set -eu
 
 BASE_URL="${BASE_URL:-http://127.0.0.1:3000}"
+response_file="$(mktemp "${TMPDIR:-/tmp}/nextshift-smoke.XXXXXX")"
+
+cleanup() {
+  rm -f "$response_file"
+}
+trap cleanup EXIT HUP INT TERM
 
 check_status() {
   path="$1"
   expected="$2"
-  status="$(curl -sS -o /tmp/nextshift-smoke-response -w '%{http_code}' "$BASE_URL$path")"
+  status="$(curl --silent --show-error --max-time 10 --output "$response_file" --write-out '%{http_code}' "$BASE_URL$path")"
 
   if [ "$status" != "$expected" ]; then
     echo "Smoke check failed: $path returned $status, expected $expected"
-    cat /tmp/nextshift-smoke-response || true
     exit 1
   fi
 
   echo "Smoke check passed: $path returned $status"
 }
 
-check_json_ok() {
+check_json_contract() {
   path="$1"
+  contract="$2"
   check_status "$path" "200"
 
-  if ! grep -q '"status":"ok"' /tmp/nextshift-smoke-response; then
-    echo "Smoke check failed: $path did not include status ok"
-    cat /tmp/nextshift-smoke-response || true
+  if ! node - "$response_file" "$contract" <<'NODE'
+const fs = require('node:fs');
+
+try {
+  const body = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+  const contract = process.argv[3];
+  const valid = body?.status === 'ok'
+    && (contract !== 'readiness' || body?.services?.database === 'ok');
+  process.exit(valid ? 0 : 1);
+} catch {
+  process.exit(1);
+}
+NODE
+  then
+    echo "Smoke check failed: $path did not satisfy the $contract JSON contract"
     exit 1
   fi
 }
 
-check_json_ok "/api/health"
+check_json_contract "/api/health" "liveness"
+check_json_contract "/api/v1/health" "readiness"
 check_status "/api/v1/version" "200"
 check_status "/login" "200"
 

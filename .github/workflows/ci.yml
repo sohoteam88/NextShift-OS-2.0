@@ -171,6 +171,9 @@ jobs:
       - name: Run production readiness fixtures
         run: scripts/deployment/tests/production-readiness.sh
 
+      - name: Run health and readiness contract fixtures
+        run: scripts/deployment/tests/health-readiness-contract.sh
+
   e2e-secrets:
     name: E2E Secret Check
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')

@@ -16,12 +16,16 @@ export const GET = apiHandler(async () => {
     dbStatus = 'error';
   }
 
-  return NextResponse.json({
-    status: dbStatus === 'ok' ? 'ok' : 'degraded',
-    timestamp: new Date().toISOString(),
-    version: '0.1.0',
-    services: { database: dbStatus },
-  }, {
-    headers: NO_STORE_HEADERS,
-  });
+  return NextResponse.json(
+    {
+      status: dbStatus === 'ok' ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      version: '0.1.0',
+      services: { database: dbStatus },
+    },
+    {
+      status: dbStatus === 'ok' ? 200 : 503,
+      headers: NO_STORE_HEADERS,
+    },
+  );
 });
