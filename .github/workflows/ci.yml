@@ -24,6 +24,41 @@ permissions:
   contents: read
 
 jobs:
+  application-image:
+    name: Application Image Healthcheck Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      EXACT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.EXACT_HEAD_SHA }}
+
+      - name: Verify exact checkout
+        run: test "$(git rev-parse HEAD)" = "$EXACT_HEAD_SHA"
+
+      - name: Build exact-head final application image
+        run: |
+          set -euo pipefail
+          unset DATABASE_URL DIRECT_URL SOURCE_DB_URL SUPABASE_DB_URL PGPASSWORD
+          image="nextshift-app-health-contract:$EXACT_HEAD_SHA"
+          docker build \
+            --target production \
+            --label "org.opencontainers.image.revision=$EXACT_HEAD_SHA" \
+            --build-arg NEXT_PUBLIC_APP_URL='https://app.example.invalid' \
+            --build-arg NEXT_PUBLIC_BASE_DOMAIN='example.invalid' \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL='https://example.supabase.co' \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY='ci-placeholder-not-a-secret' \
+            --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY='ci-placeholder-not-a-secret' \
+            --build-arg NEXT_PUBLIC_COMMIT_SHA="$EXACT_HEAD_SHA" \
+            --build-arg NEXT_PUBLIC_BUILD_TIME='1970-01-01T00:00:00Z' \
+            --tag "$image" \
+            .
+          scripts/deployment/validate-application-image-healthcheck.sh "$image" "$EXACT_HEAD_SHA"
+
   migration-image:
     name: Migration Image Build
     runs-on: ubuntu-latest
@@ -170,6 +205,9 @@ jobs:
 
       - name: Run production readiness fixtures
         run: scripts/deployment/tests/production-readiness.sh
+
+      - name: Run health and readiness contract fixtures
+        run: scripts/deployment/tests/health-readiness-contract.sh
 
   e2e-secrets:
     name: E2E Secret Check
