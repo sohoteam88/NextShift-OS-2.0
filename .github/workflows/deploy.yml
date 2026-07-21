@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: nextshift-production
@@ -44,6 +45,7 @@ jobs:
       - name: Validate action, confirmation, and release SHA
         id: request
         env:
+          GH_TOKEN: ${{ github.token }}
           ACTION: ${{ inputs.action }}
           CONFIRMATION: ${{ inputs.confirmation }}
           RELEASE_SHA: ${{ inputs.release_sha }}
@@ -68,6 +70,7 @@ jobs:
     timeout-minutes: 15
     environment: production
     env:
+      GH_TOKEN: ${{ github.token }}
       ACTION: ${{ inputs.action }}
       CONFIRMATION: ${{ inputs.confirmation }}
       CONTROL_PLANE_REF: ${{ github.ref }}
@@ -209,6 +212,7 @@ jobs:
     timeout-minutes: 10
     environment: production
     env:
+      GH_TOKEN: ${{ github.token }}
       ACTION: ${{ inputs.action }}
       CONFIRMATION: ${{ inputs.confirmation }}
       CONTROL_PLANE_REF: ${{ github.ref }}

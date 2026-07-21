@@ -8,6 +8,8 @@ deploy_workflow="${2:-$repo_root/.github/workflows/deploy.yml}"
 migration_runner="${3:-$repo_root/scripts/deployment/run-os38-production-migrations.sh}"
 migration_dockerfile="${4:-$repo_root/scripts/deployment/Dockerfile.migrations}"
 approval_validator="$repo_root/scripts/deployment/validate-final-release-approval.sh"
+review_validator="$repo_root/scripts/deployment/validate-final-release-review-request.sh"
+request_creator="$repo_root/scripts/deployment/request-final-release-review.sh"
 manual_validator="$repo_root/scripts/deployment/validate-manual-production-workflow.sh"
 image_runtime_validator="$repo_root/scripts/deployment/validate-migration-image-runtime.sh"
 application_dockerfile="$repo_root/Dockerfile"
@@ -51,7 +53,7 @@ require_order() {
     fail "$label: '$before' must precede '$after'"
 }
 
-for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$image_runtime_validator" "$application_dockerfile" "$application_healthcheck" "$application_image_validator" "$deploy_smoke" "$feedback_reconciliation_migration" "$feedback_authority_migration"; do
+for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$review_validator" "$request_creator" "$image_runtime_validator" "$application_dockerfile" "$application_healthcheck" "$application_image_validator" "$deploy_smoke" "$feedback_reconciliation_migration" "$feedback_authority_migration"; do
   [[ -f "$contract_file" && ! -L "$contract_file" ]] || \
     fail "contract input must be a regular, non-symlink file: $contract_file"
 done
@@ -66,6 +68,7 @@ require_count "$ci_workflow" 1 '  contents: read' 'CI read-only token authority'
 grep -Eq '^[[:space:]]+[A-Za-z0-9_-]+: write$' "$ci_workflow" && \
   fail 'CI must not grant write permission to a non-main push'
 require_count "$ci_workflow" 1 'A main push may not skip the required E2E gate.' 'main E2E fail-closed guard'
+require_count "$ci_workflow" 1 'scripts/deployment/tests/final-release-review.sh' 'Final Release review contract CI gate'
 require_count "$ci_workflow" 1 '              exit 1' 'main E2E fail-closed exit'
 require_count "$ci_workflow" 1 'Untrusted pull requests retain the no-secrets boundary.' 'fork secret boundary'
 for required_job in 'Type Check + Lint + Build' 'Tests' 'E2E Secret Check' 'E2E Tests'; do

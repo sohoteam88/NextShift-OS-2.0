@@ -810,15 +810,20 @@ fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites()
   checkpoint_reviewed_sha="$(jq -r '[.waves[].checkpoint.reviewed_sha][-1]' "$real_manifest")"
 
   manifest_tmp="$real_case/control/manifest-normalized.json"
-  jq '
+  jq --argjson final_release_review "$(jq -c '.final_release_review' "$SOURCE_MANIFEST")" '
+    .final_release_review=$final_release_review |
     .final_audit.status="pending" |
     .final_audit.requested_product_sha=null |
     .final_audit.requested_at=null |
     .final_audit.reviewed_sha=null |
     .final_audit.completed_at=null |
+    .release_gate.id="OS3.8-FINAL-RELEASE" |
     .release_gate.status="blocked" |
+    .release_gate.approval_artifact="docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md" |
+    .release_gate.readiness_evidence="docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md" |
     .release_gate.auto_tag=false |
     .release_gate.auto_deploy=false |
+    .release_gate.auto_release=false |
     .execution_policy.auto_release=false |
     .execution_policy.auto_deploy=false
   ' "$real_manifest" >"$manifest_tmp"

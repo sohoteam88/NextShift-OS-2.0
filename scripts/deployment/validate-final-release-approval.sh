@@ -75,9 +75,19 @@ approved_release_sha="$(jq -r '.release_gate.approved_release_sha // empty' "$ma
 approved_by="$(jq -r '.release_gate.approved_by // empty' "$manifest")"
 approved_at="$(jq -r '.release_gate.approved_at // empty' "$manifest")"
 review_id="$(jq -r '.release_gate.review_id // empty' "$manifest")"
+review_status="$(jq -r '.final_release_review.status' "$manifest")"
+request_pr_url="$(jq -r '.final_release_review.request_pr_url // empty' "$manifest")"
+request_pr_number="$(jq -r '.final_release_review.request_pr_number // empty' "$manifest")"
+request_pr_head="$(jq -r '.final_release_review.request_pr_head // empty' "$manifest")"
+request_merge_sha="$(jq -r '.final_release_review.request_merge_sha // empty' "$manifest")"
+request_artifact="$(jq -r '.final_release_review.request_artifact' "$manifest")"
+request_artifact_sha="$(jq -r '.final_release_review.request_artifact_sha256 // empty' "$manifest")"
+review_commit_id="$(jq -r '.final_release_review.review_commit_id // empty' "$manifest")"
+reviewed_release_sha="$(jq -r '.final_release_review.reviewed_release_sha // empty' "$manifest")"
 
 [[ "$gate_id" == 'OS3.8-FINAL-RELEASE' ]] || fail 'unexpected Final Release gate identity'
 [[ "$gate_status" == 'approved' ]] || fail 'canonical Final Release gate is not approved'
+[[ "$review_status" == 'passed' ]] || fail 'Final Release Architecture Review has not passed'
 [[ "$approved_release_sha" =~ ^[0-9a-f]{40}$ ]] || fail 'Manifest approved release SHA is invalid'
 [[ "$(git -C "$repo_root" rev-parse "$approved_release_sha^{commit}" 2>/dev/null || true)" == "$approved_release_sha" ]] || \
   fail 'Manifest approved release SHA does not resolve exactly'
@@ -86,7 +96,14 @@ git -C "$repo_root" merge-base --is-ancestor "$approved_release_sha" refs/remote
 [[ "$approved_by" == 'Steven' ]] || fail 'Manifest Final Release approver must be Steven'
 [[ "$approved_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'Manifest Final Release approval timestamp is invalid'
 [[ "$review_id" =~ ^[1-9][0-9]*$ ]] || fail 'Manifest Final Release review identity is invalid'
+[[ "$request_pr_number" =~ ^[1-9][0-9]*$ && "$request_pr_head" =~ ^[0-9a-f]{40}$ && "$request_merge_sha" =~ ^[0-9a-f]{40}$ ]] || fail 'Manifest request PR identity is invalid'
+[[ "$review_commit_id" == "$request_pr_head" && "$reviewed_release_sha" == "$approved_release_sha" ]] || fail 'Manifest exact-head Final Release review binding is invalid'
 [[ "$approval_sha" =~ ^[0-9a-f]{64}$ && "$evidence_sha" =~ ^[0-9a-f]{64}$ ]] || fail 'Manifest Final Release evidence digests are invalid'
+[[ "$request_artifact_sha" =~ ^[0-9a-f]{64}$ ]] || fail 'Manifest request artifact digest is invalid'
+
+review_validator="$repo_root/scripts/deployment/validate-final-release-review-request.sh"
+[[ -f "$review_validator" && ! -L "$review_validator" && -x "$review_validator" ]] || fail 'Final Release review verifier is unavailable or unsafe'
+"$review_validator" --verify-pr "$request_pr_url" >/dev/null
 
 require_regular_repository_file "$approval_path" 'Final Release Approval artifact'
 require_regular_repository_file "$evidence_path" 'Production Readiness evidence artifact'
@@ -95,7 +112,7 @@ evidence="$repo_root/$evidence_path"
 [[ "$(sha256_file "$approval")" == "$approval_sha" ]] || fail 'Final Release Approval artifact digest mismatch'
 [[ "$(sha256_file "$evidence")" == "$evidence_sha" ]] || fail 'Production Readiness evidence artifact digest mismatch'
 
-approval_fields=$'APPROVAL_ID\nRELEASE_GATE\nDECISION\nAPPROVER\nAPPROVED_AT\nRELEASE_SHA\nREVIEW_ID\nREVIEWED_SHA\nPRODUCTION_READINESS_EVIDENCE\nPRODUCTION_READINESS_EVIDENCE_SHA256\nPRODUCTION_READINESS_VERIFICATION_ID'
+approval_fields=$'APPROVAL_ID\nRELEASE_GATE\nDECISION\nAPPROVER\nAPPROVED_AT\nRELEASE_SHA\nREQUEST_PR_URL\nREQUEST_PR_NUMBER\nREQUEST_PR_HEAD\nREQUEST_MERGE_SHA\nREQUEST_ARTIFACT\nREQUEST_ARTIFACT_SHA256\nREVIEW_ID\nREVIEW_COMMIT_ID\nREVIEWED_RELEASE_SHA\nPRODUCTION_READINESS_EVIDENCE\nPRODUCTION_READINESS_EVIDENCE_SHA256\nPRODUCTION_READINESS_VERIFICATION_ID'
 reject_unknown_controls "$approval" "$approval_fields"
 [[ "$(control_value "$approval" APPROVAL_ID)" == 'OS3.8-FINAL-RELEASE-APPROVAL' ]] || fail 'Final Release Approval identity mismatch'
 [[ "$(control_value "$approval" RELEASE_GATE)" == "$gate_id" ]] || fail 'Final Release Approval gate mismatch'
@@ -103,8 +120,15 @@ reject_unknown_controls "$approval" "$approval_fields"
 [[ "$(control_value "$approval" APPROVER)" == 'Steven' ]] || fail 'Final Release Approval approver mismatch'
 [[ "$(control_value "$approval" APPROVED_AT)" == "$approved_at" ]] || fail 'Final Release Approval timestamp mismatch'
 [[ "$(control_value "$approval" RELEASE_SHA)" == "$approved_release_sha" ]] || fail 'Final Release Approval release SHA mismatch'
+[[ "$(control_value "$approval" REQUEST_PR_URL)" == "$request_pr_url" ]] || fail 'Final Release Approval request PR URL mismatch'
+[[ "$(control_value "$approval" REQUEST_PR_NUMBER)" == "$request_pr_number" ]] || fail 'Final Release Approval request PR number mismatch'
+[[ "$(control_value "$approval" REQUEST_PR_HEAD)" == "$request_pr_head" ]] || fail 'Final Release Approval request PR head mismatch'
+[[ "$(control_value "$approval" REQUEST_MERGE_SHA)" == "$request_merge_sha" ]] || fail 'Final Release Approval request merge SHA mismatch'
+[[ "$(control_value "$approval" REQUEST_ARTIFACT)" == "$request_artifact" ]] || fail 'Final Release Approval request artifact path mismatch'
+[[ "$(control_value "$approval" REQUEST_ARTIFACT_SHA256)" == "$request_artifact_sha" ]] || fail 'Final Release Approval request artifact digest mismatch'
 [[ "$(control_value "$approval" REVIEW_ID)" == "$review_id" ]] || fail 'Final Release Approval review identity mismatch'
-[[ "$(control_value "$approval" REVIEWED_SHA)" == "$approved_release_sha" ]] || fail 'Final Release Approval reviewed SHA mismatch'
+[[ "$(control_value "$approval" REVIEW_COMMIT_ID)" == "$review_commit_id" ]] || fail 'Final Release Approval review commit mismatch'
+[[ "$(control_value "$approval" REVIEWED_RELEASE_SHA)" == "$reviewed_release_sha" ]] || fail 'Final Release Approval reviewed release SHA mismatch'
 [[ "$(control_value "$approval" PRODUCTION_READINESS_EVIDENCE)" == "$evidence_path" ]] || fail 'Final Release Approval readiness path mismatch'
 [[ "$(control_value "$approval" PRODUCTION_READINESS_EVIDENCE_SHA256)" == "$evidence_sha" ]] || fail 'Final Release Approval readiness digest mismatch'
 verification_id="$(control_value "$approval" PRODUCTION_READINESS_VERIFICATION_ID)"
