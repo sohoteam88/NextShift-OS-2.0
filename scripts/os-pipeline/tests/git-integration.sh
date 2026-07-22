@@ -30,7 +30,27 @@ jq '
   ) |
   .final_audit.status="pending" | .final_audit.requested_product_sha=null |
   .final_audit.requested_at=null | .final_audit.reviewed_sha=null | .final_audit.completed_at=null |
-  .release_gate.status="blocked"
+  .final_release_review.status="pending" |
+  .final_release_review.pre_request_main_sha=null |
+  .final_release_review.requested_at=null |
+  .final_release_review.request_artifact_sha256=null |
+  .final_release_review.request_pr_url=null |
+  .final_release_review.request_pr_number=null |
+  .final_release_review.request_pr_head=null |
+  .final_release_review.request_merge_sha=null |
+  .final_release_review.review_id=null |
+  .final_release_review.review_commit_id=null |
+  .final_release_review.reviewed_release_sha=null |
+  .final_release_review.reviewed_at=null |
+  .release_gate.status="blocked" |
+  del(
+    .release_gate.approval_sha256,
+    .release_gate.readiness_evidence_sha256,
+    .release_gate.approved_release_sha,
+    .release_gate.approved_by,
+    .release_gate.approved_at,
+    .release_gate.review_id
+  )
 ' "$SEED/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json" >"$SEED/manifest.json" && mv "$SEED/manifest.json" "$SEED/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
 mkdir -p "$SEED/docs/nextshift-os-3/os-3-8/3.8-A"
 cp "$ROOT/docs/nextshift-os-3/os-3-8/3.8-A/IMPLEMENTATION_CONTRACT.md" "$ROOT/docs/nextshift-os-3/os-3-8/3.8-A/EXECUTION_TASK.md" "$SEED/docs/nextshift-os-3/os-3-8/3.8-A/"

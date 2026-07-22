@@ -60,9 +60,30 @@ reset_manifest() {
     .final_audit.requested_at=null |
     .final_audit.reviewed_sha=null |
     .final_audit.completed_at=null |
+    .final_release_review.status="pending" |
+    .final_release_review.pre_request_main_sha=null |
+    .final_release_review.requested_at=null |
+    .final_release_review.request_artifact_sha256=null |
+    .final_release_review.request_pr_url=null |
+    .final_release_review.request_pr_number=null |
+    .final_release_review.request_pr_head=null |
+    .final_release_review.request_merge_sha=null |
+    .final_release_review.review_id=null |
+    .final_release_review.review_commit_id=null |
+    .final_release_review.reviewed_release_sha=null |
+    .final_release_review.reviewed_at=null |
     .release_gate.status="blocked" |
     .release_gate.auto_tag=false |
-    .release_gate.auto_deploy=false
+    .release_gate.auto_deploy=false |
+    .release_gate.auto_release=false |
+    del(
+      .release_gate.approval_sha256,
+      .release_gate.readiness_evidence_sha256,
+      .release_gate.approved_release_sha,
+      .release_gate.approved_by,
+      .release_gate.approved_at,
+      .release_gate.review_id
+    )
   ' "$source" >"$target"
 }
 
@@ -783,9 +804,12 @@ fixture_pipeline_generated_approval_uses_canonical_fields() {
 
 fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites() {
   local real_case real_remote real_state real_manifest real_request real_report real_artifact real_lock
+  local real_final_release_request real_final_release_approval
+  local final_release_request_rel final_release_approval_rel
   local manifest_tmp approval_snapshot approval_sha_before approval_sha_after checkpoint_reviewed_sha
   local source_approval source_manifest_sha source_request_sha source_report_sha source_approval_sha
-  local normalized_head request_commit request_files
+  local normalized_head request_commit request_files relative_path
+  local -a normalization_paths
   real_case="$TMP/real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites"
   real_remote="$real_case/origin.git"
   real_state="$real_case/state"
@@ -797,6 +821,10 @@ fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites()
   real_manifest="$real_state/$MANIFEST_REL"
   real_request="$real_state/$(jq -r '.final_audit.request' "$real_manifest")"
   real_report="$real_state/$(jq -r '.final_audit.report' "$real_manifest")"
+  final_release_request_rel="$(jq -r '.final_release_review.request_artifact' "$SOURCE_MANIFEST")"
+  final_release_approval_rel="$(jq -r '.release_gate.approval_artifact' "$SOURCE_MANIFEST")"
+  real_final_release_request="$real_state/$final_release_request_rel"
+  real_final_release_approval="$real_state/$final_release_approval_rel"
   real_artifact="$real_state/$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approval_artifact' "$real_manifest")"
   source_approval="$ROOT/$(jq -r '.waves[] | select(.human_gate?.id == "STEVEN-IA") | .human_gate.approval_artifact' "$SOURCE_MANIFEST")"
   [[ -f "$real_artifact" && ! -L "$real_artifact" ]] || fail 'real repository STEVEN-IA artifact is not a regular file'
@@ -817,6 +845,18 @@ fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites()
     .final_audit.requested_at=null |
     .final_audit.reviewed_sha=null |
     .final_audit.completed_at=null |
+    .final_release_review.status="pending" |
+    .final_release_review.pre_request_main_sha=null |
+    .final_release_review.requested_at=null |
+    .final_release_review.request_artifact_sha256=null |
+    .final_release_review.request_pr_url=null |
+    .final_release_review.request_pr_number=null |
+    .final_release_review.request_pr_head=null |
+    .final_release_review.request_merge_sha=null |
+    .final_release_review.review_id=null |
+    .final_release_review.review_commit_id=null |
+    .final_release_review.reviewed_release_sha=null |
+    .final_release_review.reviewed_at=null |
     .release_gate.id="OS3.8-FINAL-RELEASE" |
     .release_gate.status="blocked" |
     .release_gate.approval_artifact="docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md" |
@@ -825,10 +865,18 @@ fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites()
     .release_gate.auto_deploy=false |
     .release_gate.auto_release=false |
     .execution_policy.auto_release=false |
-    .execution_policy.auto_deploy=false
+    .execution_policy.auto_deploy=false |
+    del(
+      .release_gate.approval_sha256,
+      .release_gate.readiness_evidence_sha256,
+      .release_gate.approved_release_sha,
+      .release_gate.approved_by,
+      .release_gate.approved_at,
+      .release_gate.review_id
+    )
   ' "$real_manifest" >"$manifest_tmp"
   mv "$manifest_tmp" "$real_manifest"
-  rm -f "$real_request" "$real_report"
+  rm -f "$real_request" "$real_report" "$real_final_release_request" "$real_final_release_approval"
 
   jq -e '
     all(.waves[].tasks[]; .status == "completed" or .status == "superseded") and
@@ -857,7 +905,17 @@ fixture_real_repository_steven_ia_artifact_satisfies_final_audit_prerequisites()
 
   "$ROOT/scripts/os-pipeline/validate-manifest.sh" --manifest "$real_manifest" >/dev/null || \
     fail 'normalized real repository fixture failed canonical Manifest validation'
-  git -C "$real_state" add -- "$MANIFEST_REL" "$(jq -r '.final_audit.request' "$real_manifest")" "$(jq -r '.final_audit.report' "$real_manifest")"
+  normalization_paths=(
+    "$MANIFEST_REL"
+    "$(jq -r '.final_audit.request' "$real_manifest")"
+    "$(jq -r '.final_audit.report' "$real_manifest")"
+  )
+  for relative_path in "$final_release_request_rel" "$final_release_approval_rel"; do
+    if [[ -e "$real_state/$relative_path" ]] || git -C "$real_state" ls-files --error-unmatch "$relative_path" >/dev/null 2>&1; then
+      normalization_paths+=("$relative_path")
+    fi
+  done
+  git -C "$real_state" add -A -- "${normalization_paths[@]}"
   git -C "$real_state" commit -m 'fixture normalize terminal Final Audit state' >/dev/null
   normalized_head="$(git -C "$real_state" rev-parse HEAD)"
   git -C "$real_state" push origin planning/os-3.8-product-usability >/dev/null

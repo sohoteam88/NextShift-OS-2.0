@@ -59,6 +59,8 @@ setup_pending_repository() {
   copy_contract_tree "$repo"
   manifest="$repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
   readiness="$repo/docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md"
+  request_artifact="$repo/$(jq -r '.final_release_review.request_artifact' "$manifest")"
+  approval="$repo/$(jq -r '.release_gate.approval_artifact' "$manifest")"
   perl -pi -e "s/^RELEASE_SHA=.*/RELEASE_SHA=$release_sha/; s/^MIGRATION_IMAGE_REVISION=.*/MIGRATION_IMAGE_REVISION=$release_sha/" "$readiness"
   jq --arg release "$release_sha" '
     .final_release_review.release_sha=$release |
@@ -75,13 +77,16 @@ setup_pending_repository() {
     .final_release_review.reviewed_release_sha=null |
     .final_release_review.reviewed_at=null |
     .release_gate.status="blocked" |
-    .release_gate.approval_sha256=null |
-    .release_gate.readiness_evidence_sha256=null |
-    .release_gate.approved_release_sha=null |
-    .release_gate.approved_by=null |
-    .release_gate.approved_at=null |
-    .release_gate.review_id=null
+    del(
+      .release_gate.approval_sha256,
+      .release_gate.readiness_evidence_sha256,
+      .release_gate.approved_release_sha,
+      .release_gate.approved_by,
+      .release_gate.approved_at,
+      .release_gate.review_id
+    )
   ' "$manifest" >"$manifest.tmp" && mv "$manifest.tmp" "$manifest"
+  rm -f "$request_artifact" "$approval"
   git -C "$repo" add scripts docs audit
   git -C "$repo" commit --quiet -m 'fixture contract baseline'
   pre_main_sha="$(git -C "$repo" rev-parse HEAD)"
@@ -147,6 +152,7 @@ assert_transaction_rollback() {
 
 setup_pending_repository primary
 expect_accept blocked_gate_without_approval_identity_is_valid "$repo/scripts/os-pipeline/validate-manifest.sh" --manifest "$manifest"
+pass terminal_final_release_state_normalized_for_review_fixture
 git -C "$repo" status --porcelain | grep -q . && fail 'pending fixture is dirty'
 
 "$repo/scripts/deployment/request-final-release-review.sh" "$release_sha" >/dev/null
