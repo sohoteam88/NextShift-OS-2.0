@@ -19,11 +19,46 @@ The workflow control plane is separately bound to the exact current `main` commi
 Manual workflow dispatch and GitHub Environment approval are execution safeguards; neither is Steven Final Release Approval. Before either production job can start, the request validator requires all of the following from the exact `main` control-plane tree:
 
 - `PIPELINE_MANIFEST.json` has `release_gate.status=approved`, bound to the current approved release SHA and Steven;
+- `final_release_review.status=passed` is bound to a merged Final Release Architecture Review Request PR, its exact GitHub head/merge identity, and one exact-head `PASS` review;
 - the canonical `STEVEN_FINAL_RELEASE_APPROVAL.md` exists as a regular, non-symlink Git file and has the exact SHA-256 recorded by the Manifest;
 - the approval contains one authoritative `APPROVED` decision, Steven as approver, the exact release/review identity, and the canonical Production Readiness evidence identity;
 - the canonical Production Readiness evidence exists as a regular, non-symlink Git file, matches its recorded SHA-256, says `STATUS=READY`, and binds the approved release SHA, exact-release migration-image rehearsal/digest/revision, repository-external logical-backup checksum, isolated restore verification, exact rollback image, and a fresh `production` GitHub Environment protection snapshot requiring Steven.
 
-Missing, blocked, duplicate, stale, mismatched, untracked or symlink authority fails before Docker build, SCP, SSH, migration or deployment. The current repository deliberately has `release_gate.status=blocked` and contains no Final Release Approval or READY evidence artifact, so it is not deployable. This PR does not create either artifact or unlock the gate.
+Missing, blocked, duplicate, stale, mismatched, untracked or symlink authority fails before Docker build, SCP, SSH, migration or deployment. The current repository deliberately has `final_release_review.status=pending`, `release_gate.status=blocked`, and no Final Release Approval artifact, so it is not deployable. The existing READY evidence is necessary but never sufficient production authority. This remediation creates neither a real review request nor an approval and does not unlock the gate.
+
+### Final Release governance sequence
+
+The release contract deliberately separates four authorities:
+
+1. **Contract remediation** defines this fail-closed workflow without requesting or granting release authority.
+2. **Architecture Review Request** runs `scripts/deployment/request-final-release-review.sh <RELEASE_SHA>` from a clean dedicated branch created at synchronized `origin/main`. The candidate-first transaction writes only the Manifest's `awaiting_review` state and the canonical request artifact. It serializes ordinary and linked worktrees through one owner-bound lock in the canonical Git common-dir. From the first repository write onward, validator, staging, commit, push, or post-push verification failure restores the original HEAD, Manifest bytes, request-artifact state, index, worktree, remote request branch, and owned lock. It never creates a PR or invokes a production workflow.
+3. **Final Release Approval** is a later, independent governance change. It may be created only after the Request PR is merged and `scripts/deployment/validate-final-release-review-request.sh --verify-pr <PR_URL>` derives an exact head from GitHub metadata, finds exactly one exact-head `PASS` review from the immutable canonical reviewer policy (`sohoteam88`, `OWNER`), and proves the reviewed release, artifact digest, merge ancestry, and freshness. Request artifacts, review prose, transport envelopes, and caller input cannot alter reviewer authority.
+4. **Production Execution Approval** remains a separate explicit human action through the manual workflow and protected `production` Environment. A Final Release Approval never dispatches production automatically.
+
+The request artifact intentionally has no `REQUEST_PR_HEAD`, future review ID, or reviewed SHA. A commit cannot truthfully contain its own final Git object ID. It instead binds the synchronized pre-request main SHA, release/readiness/audit/rollback evidence, timestamp, and blocked release gate. The GitHub verifier obtains the exact request head only from the Request PR metadata and requires the review `commit_id` to equal it.
+
+The exact-head GitHub review body has exactly three machine-authority controls. Each must occur once, with canonical case, spacing and delimiter; duplicate, conflicting, malformed, padded, or case-variant controls fail closed. Every other uppercase control-shaped key (including reviewer, approver, review/request identity, or release-gate fields) is forbidden rather than treated as prose. Explanatory prose that is not control-shaped may appear on other lines. A duplicate request invocation clean-stops only after the caller's release SHA matches both the canonical Manifest release and the digest-verified existing request artifact.
+
+```text
+CHECKPOINT: FINAL-RELEASE
+VERDICT: PASS
+REVIEWED_RELEASE_SHA=<authorized release SHA>
+```
+
+Canonical request controls are:
+
+```text
+REQUEST_ID=OS3.8-FINAL-RELEASE-ARCHITECTURE-REVIEW
+RELEASE_SHA=<authorized release SHA>
+PRE_REQUEST_MAIN_SHA=<synchronized main before the request commit>
+REQUESTED_AT=<UTC>
+PRODUCTION_READINESS_EVIDENCE=docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md
+PRODUCTION_READINESS_EVIDENCE_SHA256=<exact SHA-256>
+PRODUCTION_READINESS_VERIFICATION_ID=<exact READY verification ID>
+FINAL_AUDIT_REPORT_SHA256=<exact SHA-256>
+ROLLBACK_IMAGE_SHA=<exact rollback image SHA>
+RELEASE_GATE=BLOCKED
+```
 
 The future canonical Final Release Approval control fields are:
 
@@ -34,8 +69,15 @@ DECISION=APPROVED
 APPROVER=Steven
 APPROVED_AT=<UTC>
 RELEASE_SHA=<exact SHA>
+REQUEST_PR_URL=https://github.com/sohoteam88/NextShift-OS-2.0/pull/<number>
+REQUEST_PR_NUMBER=<number>
+REQUEST_PR_HEAD=<GitHub PR exact head>
+REQUEST_MERGE_SHA=<merged request commit>
+REQUEST_ARTIFACT=docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md
+REQUEST_ARTIFACT_SHA256=<exact SHA-256>
 REVIEW_ID=<exact review ID>
-REVIEWED_SHA=<same exact SHA>
+REVIEW_COMMIT_ID=<same exact request PR head>
+REVIEWED_RELEASE_SHA=<authorized release SHA>
 PRODUCTION_READINESS_EVIDENCE=docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md
 PRODUCTION_READINESS_EVIDENCE_SHA256=<exact SHA-256>
 PRODUCTION_READINESS_VERIFICATION_ID=<exact evidence ID>

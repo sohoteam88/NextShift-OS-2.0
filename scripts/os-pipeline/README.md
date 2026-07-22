@@ -494,6 +494,49 @@ Even a valid Final Audit PASS leaves `release_gate.status=blocked`,
 approval and a manual release/deploy procedure outside this runner are always
 required.
 
+## Final Release Architecture Review
+
+Final Audit PASS does not directly create a Final Release Approval. The
+Manifest has a sibling `final_release_review` state machine (`pending`,
+`awaiting_review`, `passed`) while the production `release_gate` remains only
+`blocked` or `approved`. Pending and awaiting review require a blocked gate,
+no approval artifact, and all auto actions disabled.
+
+The canonical request transaction is:
+
+```bash
+scripts/deployment/request-final-release-review.sh <RELEASE_SHA>
+```
+
+It runs only from a clean dedicated branch at synchronized `origin/main`,
+uses candidate-first validation plus a lock-held TOCTOU recheck, and commits
+only the Manifest and canonical request artifact. Ordinary and linked
+worktrees share an owner-bound lock in the canonical Git common-dir. Every
+failure after the first owned write restores the original HEAD, Manifest,
+artifact state, index, worktree, remote request branch and owned lock. The artifact binds
+`PRE_REQUEST_MAIN_SHA`; it never claims its own future commit/PR head or a
+future review identity. GitHub is the sole authority for the exact request PR
+head.
+
+After that separate Request PR is reviewed and merged, verify it with:
+
+```bash
+scripts/deployment/validate-final-release-review-request.sh \
+  --verify-pr https://github.com/sohoteam88/NextShift-OS-2.0/pull/<number>
+```
+
+The verifier obtains repository/base/head/merge and changed files from GitHub,
+requires the request artifact at that exact Git tree, and accepts exactly one
+review from the Manifest's immutable `sohoteam88`/`OWNER` reviewer policy,
+with `CHECKPOINT: FINAL-RELEASE`, `VERDICT: PASS`, a `commit_id` equal to the
+exact request head, and `REVIEWED_RELEASE_SHA` equal to the authorized
+release. Those three body controls must each appear exactly once in canonical
+case and format; malformed, padded, duplicate or conflicting authority lines
+fail closed. A later independent approval artifact persists that PR/review
+identity and is revalidated live before deploy or rollback. Request drift,
+unmerged requests, review/head mismatches, artifact digest changes, or release
+drift fail closed.
+
 ## Validation suite
 
 Run the complete pipeline validation from the repository root:
@@ -513,6 +556,7 @@ scripts/os-pipeline/tests/governance-integration.sh
 scripts/os-pipeline/tests/safety-integration.sh
 scripts/os-pipeline/tests/docs-only-ci-policy.sh
 scripts/os-pipeline/tests/governance-dispatch-gate.sh
+scripts/deployment/tests/final-release-review.sh
 
 git diff --check
 pnpm type-check

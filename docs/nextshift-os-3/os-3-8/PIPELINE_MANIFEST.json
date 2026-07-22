@@ -983,13 +983,42 @@
     "reviewed_sha": "0e77a4182ee4a12582084ed504cf1c939b46ccd5",
     "completed_at": "2026-07-19T13:50:43Z"
   },
+  "final_release_review": {
+    "id": "AR-OS3.8-FINAL-RELEASE",
+    "status": "pending",
+    "reviewer_policy": {
+      "allowed_logins": [
+        "sohoteam88"
+      ],
+      "allowed_author_associations": [
+        "OWNER"
+      ]
+    },
+    "request_artifact": "docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md",
+    "release_sha": "86f54a2185d8d981da19a8155055a999af2dc365",
+    "pre_request_main_sha": null,
+    "requested_at": null,
+    "request_artifact_sha256": null,
+    "request_pr_url": null,
+    "request_pr_number": null,
+    "request_pr_head": null,
+    "request_merge_sha": null,
+    "review_id": null,
+    "review_commit_id": null,
+    "reviewed_release_sha": null,
+    "reviewed_at": null
+  },
   "release_gate": {
+    "id": "OS3.8-FINAL-RELEASE",
     "status": "blocked",
+    "approval_artifact": "docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md",
+    "readiness_evidence": "docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md",
     "requires": [
       "AUDIT-OS3.8:PASS",
       "Steven release approval"
     ],
     "auto_tag": false,
-    "auto_deploy": false
+    "auto_deploy": false,
+    "auto_release": false
   }
 }

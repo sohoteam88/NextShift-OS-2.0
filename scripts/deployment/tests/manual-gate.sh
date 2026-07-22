@@ -80,13 +80,17 @@ setup_request_repository() {
   mkdir -p \
     "$request_repo/scripts/deployment" \
     "$request_repo/scripts/os-pipeline" \
-    "$request_repo/docs/nextshift-os-3/os-3-8"
+    "$request_repo/docs/nextshift-os-3/os-3-8" \
+    "$request_repo/audit"
   cp "$repo_root/scripts/deployment/validate-production-request.sh" "$request_repo/scripts/deployment/validate-production-request.sh"
   cp "$approval_validator" "$request_repo/scripts/deployment/validate-final-release-approval.sh"
+  cp "$repo_root/scripts/deployment/validate-final-release-review-request.sh" "$request_repo/scripts/deployment/validate-final-release-review-request.sh"
   cp "$repo_root/scripts/os-pipeline/validate-manifest.sh" "$request_repo/scripts/os-pipeline/validate-manifest.sh"
+  cp "$repo_root/audit/OS38_FINAL_CODE_REVIEW_REPORT.md" "$request_repo/audit/OS38_FINAL_CODE_REVIEW_REPORT.md"
   chmod +x \
     "$request_repo/scripts/deployment/validate-production-request.sh" \
     "$request_repo/scripts/deployment/validate-final-release-approval.sh" \
+    "$request_repo/scripts/deployment/validate-final-release-review-request.sh" \
     "$request_repo/scripts/os-pipeline/validate-manifest.sh"
   cp -R "$repo_root/docs/nextshift-os-3/os-3-8/." \
     "$request_repo/docs/nextshift-os-3/os-3-8/"
@@ -114,6 +118,53 @@ setup_request_repository() {
     'ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260720T120000Z' \
     'ENVIRONMENT_VERIFIED_AT=2026-07-20T12:00:00Z' >"$request_evidence"
   request_evidence_sha="$(shasum -a 256 "$request_evidence" | awk '{print $1}')"
+  request_manifest="$request_repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
+  jq --arg release_sha "$request_release_sha" '
+    .final_release_review.release_sha=$release_sha |
+    .final_release_review.status="pending" |
+    .final_release_review.pre_request_main_sha=null |
+    .final_release_review.requested_at=null |
+    .final_release_review.request_artifact_sha256=null |
+    .final_release_review.request_pr_url=null |
+    .final_release_review.request_pr_number=null |
+    .final_release_review.request_pr_head=null |
+    .final_release_review.request_merge_sha=null |
+    .final_release_review.review_id=null |
+    .final_release_review.review_commit_id=null |
+    .final_release_review.reviewed_release_sha=null |
+    .final_release_review.reviewed_at=null
+  ' "$request_manifest" >"$request_manifest.tmp"
+  mv "$request_manifest.tmp" "$request_manifest"
+  git -C "$request_repo" add scripts docs audit
+  git -C "$request_repo" commit --quiet -m 'fixture: Final Release contract baseline'
+  request_pre_main_sha="$(git -C "$request_repo" rev-parse HEAD)"
+
+  request_artifact="$request_repo/docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md"
+  request_audit_sha="$(shasum -a 256 "$request_repo/audit/OS38_FINAL_CODE_REVIEW_REPORT.md" | awk '{print $1}')"
+  printf '%s\n' \
+    'REQUEST_ID=OS3.8-FINAL-RELEASE-ARCHITECTURE-REVIEW' \
+    "RELEASE_SHA=$request_release_sha" \
+    "PRE_REQUEST_MAIN_SHA=$request_pre_main_sha" \
+    'REQUESTED_AT=2026-07-20T12:01:00Z' \
+    'PRODUCTION_READINESS_EVIDENCE=docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md' \
+    "PRODUCTION_READINESS_EVIDENCE_SHA256=$request_evidence_sha" \
+    'PRODUCTION_READINESS_VERIFICATION_ID=OS38-PR-20260720T120000Z' \
+    "FINAL_AUDIT_REPORT_SHA256=$request_audit_sha" \
+    "ROLLBACK_IMAGE_SHA=$request_rollback_sha" \
+    'RELEASE_GATE=BLOCKED' >"$request_artifact"
+  request_artifact_sha="$(shasum -a 256 "$request_artifact" | awk '{print $1}')"
+  jq --arg pre "$request_pre_main_sha" --arg digest "$request_artifact_sha" '
+    .final_release_review.status="awaiting_review" |
+    .final_release_review.pre_request_main_sha=$pre |
+    .final_release_review.requested_at="2026-07-20T12:01:00Z" |
+    .final_release_review.request_artifact_sha256=$digest
+  ' "$request_manifest" >"$request_manifest.tmp"
+  mv "$request_manifest.tmp" "$request_manifest"
+  git -C "$request_repo" add docs
+  git -C "$request_repo" commit --quiet -m 'fixture: request Final Release review'
+  request_pr_head="$(git -C "$request_repo" rev-parse HEAD)"
+  request_merge_sha="$request_pr_head"
+
   printf '%s\n' \
     'APPROVAL_ID=OS3.8-FINAL-RELEASE-APPROVAL' \
     'RELEASE_GATE=OS3.8-FINAL-RELEASE' \
@@ -121,17 +172,34 @@ setup_request_repository() {
     'APPROVER=Steven' \
     'APPROVED_AT=2026-07-20T12:05:00Z' \
     "RELEASE_SHA=$request_release_sha" \
+    'REQUEST_PR_URL=https://github.com/sohoteam88/NextShift-OS-2.0/pull/42' \
+    'REQUEST_PR_NUMBER=42' \
+    "REQUEST_PR_HEAD=$request_pr_head" \
+    "REQUEST_MERGE_SHA=$request_merge_sha" \
+    'REQUEST_ARTIFACT=docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md' \
+    "REQUEST_ARTIFACT_SHA256=$request_artifact_sha" \
     'REVIEW_ID=123456789' \
-    "REVIEWED_SHA=$request_release_sha" \
+    "REVIEW_COMMIT_ID=$request_pr_head" \
+    "REVIEWED_RELEASE_SHA=$request_release_sha" \
     'PRODUCTION_READINESS_EVIDENCE=docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md' \
     "PRODUCTION_READINESS_EVIDENCE_SHA256=$request_evidence_sha" \
     'PRODUCTION_READINESS_VERIFICATION_ID=OS38-PR-20260720T120000Z' >"$request_approval"
   request_approval_sha="$(shasum -a 256 "$request_approval" | awk '{print $1}')"
-  request_manifest="$request_repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
   jq \
     --arg release_sha "$request_release_sha" \
+    --arg request_head "$request_pr_head" \
+    --arg merge_sha "$request_merge_sha" \
     --arg approval_sha "$request_approval_sha" \
     --arg evidence_sha "$request_evidence_sha" '
+      .final_release_review.status="passed" |
+      .final_release_review.request_pr_url="https://github.com/sohoteam88/NextShift-OS-2.0/pull/42" |
+      .final_release_review.request_pr_number=42 |
+      .final_release_review.request_pr_head=$request_head |
+      .final_release_review.request_merge_sha=$merge_sha |
+      .final_release_review.review_id=123456789 |
+      .final_release_review.review_commit_id=$request_head |
+      .final_release_review.reviewed_release_sha=$release_sha |
+      .final_release_review.reviewed_at="2026-07-20T12:03:00Z" |
       .release_gate.id="OS3.8-FINAL-RELEASE" |
       .release_gate.status="approved" |
       .release_gate.approval_artifact="docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md" |
@@ -144,11 +212,33 @@ setup_request_repository() {
       .release_gate.review_id=123456789
     ' "$request_manifest" >"$request_manifest.tmp"
   mv "$request_manifest.tmp" "$request_manifest"
-  git -C "$request_repo" add scripts docs
+  git -C "$request_repo" add docs
   git -C "$request_repo" commit --quiet -m 'fixture: approve exact release'
   git -C "$request_repo" push --quiet -u origin main
   request_main_sha="$(git -C "$request_repo" rev-parse HEAD)"
   request_validator="$request_repo/scripts/deployment/validate-production-request.sh"
+  request_gh_bin="$fixture_root/${name}-gh-bin"
+  request_gh_data="$fixture_root/${name}-gh-data"
+  mkdir -p "$request_gh_bin" "$request_gh_data"
+  cat >"$request_gh_bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$1" == api ]] || exit 2
+shift
+[[ "${1:-}" == --paginate ]] && shift
+case "$1" in
+  repos/sohoteam88/NextShift-OS-2.0/pulls/42) cat "$GH_FIXTURE_DIR/pr.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/42/files) cat "$GH_FIXTURE_DIR/files.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/42/reviews) cat "$GH_FIXTURE_DIR/reviews.json" ;;
+  *) exit 1 ;;
+esac
+EOF
+  chmod +x "$request_gh_bin/gh"
+  jq -n --arg base "$request_pre_main_sha" --arg head "$request_pr_head" --arg merge "$request_merge_sha" \
+    '{base:{ref:"main",sha:$base,repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},head:{sha:$head},merged:true,merge_commit_sha:$merge}' >"$request_gh_data/pr.json"
+  jq -n '[{filename:"docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"},{filename:"docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md"}]' >"$request_gh_data/files.json"
+  jq -n --arg head "$request_pr_head" --arg release "$request_release_sha" \
+    '[{id:123456789,state:"COMMENTED",commit_id:$head,submitted_at:"2026-07-20T12:03:00Z",user:{login:"sohoteam88"},author_association:"OWNER",body:("CHECKPOINT: FINAL-RELEASE\nVERDICT: PASS\nREVIEWED_RELEASE_SHA="+$release)}]' >"$request_gh_data/reviews.json"
 }
 
 commit_request_fixture() {
@@ -188,14 +278,14 @@ advance_request_main() {
 expect_request_accept() {
   local name="$1"
   shift
-  (cd "$request_repo" && "$request_validator" "$@") >/dev/null || fail "$name should be accepted"
+  (cd "$request_repo" && PATH="$request_gh_bin:$PATH" GH_FIXTURE_DIR="$request_gh_data" "$request_validator" "$@") >/dev/null || fail "$name should be accepted"
   pass "$name"
 }
 
 expect_request_reject() {
   local name="$1"
   shift
-  if (cd "$request_repo" && "$request_validator" "$@") >/dev/null 2>&1; then
+  if (cd "$request_repo" && PATH="$request_gh_bin:$PATH" GH_FIXTURE_DIR="$request_gh_data" "$request_validator" "$@") >/dev/null 2>&1; then
     fail "$name should be rejected"
   fi
   pass "$name"
@@ -298,8 +388,9 @@ advance_request_main main-advanced
 expect_request_reject stale_main_control_plane_sha_rejected \
   deploy DEPLOY_PRODUCTION "$request_release_sha" refs/heads/main "$stale_control_plane_sha"
 
+setup_request_repository environment-wait
 environment_wait_sha="$request_main_sha"
-(cd "$request_repo" && "$request_validator" \
+(cd "$request_repo" && PATH="$request_gh_bin:$PATH" GH_FIXTURE_DIR="$request_gh_data" "$request_validator" \
   rollback ROLLBACK_PRODUCTION "$request_rollback_sha" refs/heads/main "$environment_wait_sha") >/dev/null || \
   fail 'control plane should be valid before environment-wait drift'
 advance_request_main environment-wait-drift
@@ -317,6 +408,18 @@ pass failed_control_plane_validation_cannot_enter_production_job
 # repository and proves the request validator fails before any production step.
 setup_request_repository blocked-gate
 jq '
+  .final_release_review.status="pending" |
+  .final_release_review.pre_request_main_sha=null |
+  .final_release_review.requested_at=null |
+  .final_release_review.request_artifact_sha256=null |
+  .final_release_review.request_pr_url=null |
+  .final_release_review.request_pr_number=null |
+  .final_release_review.request_pr_head=null |
+  .final_release_review.request_merge_sha=null |
+  .final_release_review.review_id=null |
+  .final_release_review.review_commit_id=null |
+  .final_release_review.reviewed_release_sha=null |
+  .final_release_review.reviewed_at=null |
   .release_gate.status="blocked" |
   .release_gate.approval_sha256=null |
   .release_gate.readiness_evidence_sha256=null |
@@ -370,6 +473,18 @@ expect_request_reject symlink_release_approval_rejected \
 
 setup_request_repository no-production-side-effects
 jq '
+  .final_release_review.status="pending" |
+  .final_release_review.pre_request_main_sha=null |
+  .final_release_review.requested_at=null |
+  .final_release_review.request_artifact_sha256=null |
+  .final_release_review.request_pr_url=null |
+  .final_release_review.request_pr_number=null |
+  .final_release_review.request_pr_head=null |
+  .final_release_review.request_merge_sha=null |
+  .final_release_review.review_id=null |
+  .final_release_review.review_commit_id=null |
+  .final_release_review.reviewed_release_sha=null |
+  .final_release_review.reviewed_at=null |
   .release_gate.status="blocked" |
   .release_gate.approval_sha256=null |
   .release_gate.readiness_evidence_sha256=null |
