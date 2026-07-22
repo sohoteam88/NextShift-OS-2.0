@@ -32,6 +32,7 @@ expect_reject_message() {
   pass "$name"
 }
 sha256_file() { shasum -a 256 "$1" | awk '{print $1}'; }
+sha256_stdin() { shasum -a 256 | awk '{print $1}'; }
 
 copy_contract_tree() {
   local repo="$1"
@@ -76,6 +77,10 @@ setup_pending_repository() {
     .final_release_review.review_commit_id=null |
     .final_release_review.reviewed_release_sha=null |
     .final_release_review.reviewed_at=null |
+    del(
+      .final_release_review.reviewed_post_request_drift,
+      .final_release_review.reviewed_post_request_remediation
+    ) |
     .release_gate.status="blocked" |
     del(
       .release_gate.approval_sha256,
@@ -108,6 +113,12 @@ case "$1" in
   repos/sohoteam88/NextShift-OS-2.0/pulls/42) cat "$GH_FIXTURE_DIR/pr.json" ;;
   repos/sohoteam88/NextShift-OS-2.0/pulls/42/files) cat "$GH_FIXTURE_DIR/files.json" ;;
   repos/sohoteam88/NextShift-OS-2.0/pulls/42/reviews) cat "$GH_FIXTURE_DIR/reviews.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/120) cat "$GH_FIXTURE_DIR/drift-pr.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/120/files) cat "$GH_FIXTURE_DIR/drift-files.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/120/reviews) cat "$GH_FIXTURE_DIR/drift-reviews.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/121) cat "$GH_FIXTURE_DIR/remediation-pr.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/121/files) cat "$GH_FIXTURE_DIR/remediation-files.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/121/reviews) cat "$GH_FIXTURE_DIR/remediation-reviews.json" ;;
   *) exit 1 ;;
 esac
 EOF
@@ -347,11 +358,188 @@ cp "$gh_data/reviews.saved.json" "$gh_data/reviews.json"
 expect_reject approved_gate_still_requires_separate_production_execution_authorization \
   bash -c 'cd "$1" && PATH="$2:$PATH" GH_FIXTURE_DIR="$3" scripts/deployment/validate-production-request.sh deploy WRONG "$4" refs/heads/main "$5"' _ "$repo" "$gh_dir" "$gh_data" "$release_sha" "$request_merge"
 
-# Product drift after the reviewed request is rejected.
+# Model a reviewed, merged governance-only PR after the Final Release request.
+# Its immutable evidence is persisted in a later commit so the evidence cannot
+# self-authorize or self-hash its own Manifest bytes.
+reviewed_drift_path='scripts/deployment/tests/final-release-review.sh'
+mkdir -p "$repo/$(dirname "$reviewed_drift_path")"
+printf '%s\n' '#!/usr/bin/env bash' '# exact PR 120 bytes' 'exit 0' >"$repo/$reviewed_drift_path"
+chmod +x "$repo/$reviewed_drift_path"
+git -C "$repo" add "$reviewed_drift_path"
+git -C "$repo" commit --quiet -m 'fixture: reviewed PR 120 drift'
+reviewed_drift_head="$(git -C "$repo" rev-parse HEAD)"
+reviewed_drift_sha="$(sha256_file "$repo/$reviewed_drift_path")"
 git -C "$repo" switch --quiet main
+git -C "$repo" merge --quiet --no-ff final-release-approval -m 'merge reviewed PR 120 drift'
+reviewed_drift_merge="$(git -C "$repo" rev-parse HEAD)"
+git -C "$repo" push --quiet origin main
+git -C "$repo" switch --quiet -c reviewed-drift-evidence
+
+jq \
+  --arg head "$reviewed_drift_head" \
+  --arg merge "$reviewed_drift_merge" \
+  --arg release "$release_sha" \
+  --arg path "$reviewed_drift_path" \
+  --arg digest "$reviewed_drift_sha" '
+  .final_release_review.reviewed_post_request_drift = {
+    evidence_id: "OS38-PR120-REVIEWED-POST-REQUEST-DRIFT",
+    pr_url: "https://github.com/sohoteam88/NextShift-OS-2.0/pull/120",
+    pr_number: 120,
+    reviewed_head_sha: $head,
+    merge_sha: $merge,
+    review_id: 5120,
+    review_commit_id: $head,
+    reviewer_login: "sohoteam88",
+    reviewer_author_association: "OWNER",
+    verdict: "PASS",
+    release_sha: $release,
+    reviewed_at: "2026-07-22T06:25:27Z",
+    files: [{path: $path, sha256: $digest}]
+  }
+' "$manifest" >"$manifest.tmp" && mv "$manifest.tmp" "$manifest"
+git -C "$repo" add "$manifest"
+git -C "$repo" commit --quiet -m 'fixture: persist reviewed PR 120 drift evidence'
+
+jq -n --arg head "$reviewed_drift_head" --arg merge "$reviewed_drift_merge" \
+  '{base:{ref:"main",repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},head:{sha:$head,repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},merged:true,merge_commit_sha:$merge}' \
+  >"$gh_data/drift-pr.json"
+jq -n --arg path "$reviewed_drift_path" '[
+  {filename:"docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"},
+  {filename:"docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md"},
+  {filename:$path}
+]' >"$gh_data/drift-files.json"
+jq -n --arg head "$reviewed_drift_head" --arg release "$release_sha" '[{
+  id:5120,
+  state:"COMMENTED",
+  commit_id:$head,
+  submitted_at:"2026-07-22T06:25:27Z",
+  user:{login:"sohoteam88"},
+  author_association:"OWNER",
+  body:("VERDICT: PASS\nREVIEWED_SHA: "+$head+"\nRELEASE_SHA: "+$release)
+}]' >"$gh_data/drift-reviews.json"
+
+expect_accept exact_reviewed_pr120_drift_accepted run_review_validator
+[[ "$(git -C "$repo" show "$reviewed_drift_head:$reviewed_drift_path" | sha256_stdin)" == "$reviewed_drift_sha" && \
+   "$(git -C "$repo" show "$reviewed_drift_merge:$reviewed_drift_path" | sha256_stdin)" == "$reviewed_drift_sha" ]] || \
+  fail 'PR 120 original head/merge bytes no longer match immutable evidence'
+pass pr120_original_head_digest_still_verified
+
+cp "$manifest" "$fixture_root/reviewed-drift.valid.json"
+jq '.final_release_review.reviewed_post_request_drift.files[0].sha256 = ("0" * 64)' \
+  "$fixture_root/reviewed-drift.valid.json" >"$manifest"
+expect_reject listed_path_hash_mismatch_rejected run_review_validator
+cp "$fixture_root/reviewed-drift.valid.json" "$manifest"
+
+jq '.final_release_review.reviewed_post_request_drift.files[0].path = "scripts/os-pipeline/tests/*"' \
+  "$fixture_root/reviewed-drift.valid.json" >"$manifest"
+if run_review_validator >/dev/null 2>&1; then fail 'wildcard drift allowlist unexpectedly passed'; fi
+jq '.final_release_review.reviewed_post_request_drift.files[0].path = "scripts/os-pipeline/tests/"' \
+  "$fixture_root/reviewed-drift.valid.json" >"$manifest"
+if run_review_validator >/dev/null 2>&1; then fail 'directory drift allowlist unexpectedly passed'; fi
+cp "$fixture_root/reviewed-drift.valid.json" "$manifest"
+pass wildcard_and_directory_authority_rejected
+
+# Model PR 121 replacing only the two reviewed contract files. Its Manifest
+# stores exact final bytes, while exact head/merge/review identity is obtained
+# from GitHub after merge so the PR does not self-reference its own commit SHA.
+remediation_validator_path='scripts/deployment/validate-final-release-review-request.sh'
+remediation_test_path='scripts/deployment/tests/final-release-review.sh'
+printf '%s\n' '# exact PR 121 verifier bytes' >>"$repo/$remediation_validator_path"
+printf '%s\n' '#!/usr/bin/env bash' '# exact PR 121 test bytes' 'exit 0' >"$repo/$remediation_test_path"
+chmod +x "$repo/$remediation_validator_path" "$repo/$remediation_test_path"
+remediation_validator_sha="$(sha256_file "$repo/$remediation_validator_path")"
+remediation_test_sha="$(sha256_file "$repo/$remediation_test_path")"
+jq \
+  --arg validator_path "$remediation_validator_path" \
+  --arg validator_sha "$remediation_validator_sha" \
+  --arg test_path "$remediation_test_path" \
+  --arg test_sha "$remediation_test_sha" '
+  .final_release_review.reviewed_post_request_remediation = {
+    evidence_id: "OS38-PR121-FINAL-RELEASE-DRIFT-REMEDIATION",
+    pr_url: "https://github.com/sohoteam88/NextShift-OS-2.0/pull/121",
+    pr_number: 121,
+    files: [
+      {path: $validator_path, sha256: $validator_sha},
+      {path: $test_path, sha256: $test_sha}
+    ]
+  }
+' "$manifest" >"$manifest.tmp" && mv "$manifest.tmp" "$manifest"
+git -C "$repo" add "$manifest" "$remediation_validator_path" "$remediation_test_path"
+git -C "$repo" commit --quiet -m 'fixture: reviewed PR 121 remediation'
+remediation_head="$(git -C "$repo" rev-parse HEAD)"
+
+git -C "$repo" switch --quiet main
+git -C "$repo" merge --quiet --no-ff reviewed-drift-evidence -m 'merge reviewed PR 121 remediation'
+remediation_merge="$(git -C "$repo" rev-parse HEAD)"
+git -C "$repo" push --quiet origin main
+
+jq -n --arg head "$remediation_head" --arg merge "$remediation_merge" \
+  '{base:{ref:"main",repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},head:{sha:$head,repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},merged:true,merge_commit_sha:$merge}' \
+  >"$gh_data/remediation-pr.json"
+jq -n --arg validator "$remediation_validator_path" --arg test "$remediation_test_path" '[
+  {filename:"docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"},
+  {filename:$validator},
+  {filename:$test}
+]' >"$gh_data/remediation-files.json"
+jq -n --arg head "$remediation_head" '[{
+  id:5121,
+  state:"COMMENTED",
+  commit_id:$head,
+  submitted_at:"2026-07-22T07:30:00Z",
+  user:{login:"sohoteam88"},
+  author_association:"OWNER",
+  body:("VERDICT: PASS\nREVIEWED_SHA: "+$head)
+}]' >"$gh_data/remediation-reviews.json"
+
+expect_accept pr121_merged_main_self_stable run_review_validator
+
+printf ' ' >>"$repo/$remediation_validator_path"
+git -C "$repo" add "$remediation_validator_path"
+git -C "$repo" commit --quiet -m 'fixture: drift PR 121 validator'
+git -C "$repo" push --quiet origin main
+expect_reject pr121_validator_one_byte_drift_rejected run_review_validator
+git -C "$repo" show "$remediation_merge:$remediation_validator_path" >"$repo/$remediation_validator_path"
+chmod +x "$repo/$remediation_validator_path"
+git -C "$repo" add "$remediation_validator_path"
+git -C "$repo" commit --quiet -m 'fixture: restore PR 121 validator'
+git -C "$repo" push --quiet origin main
+
+printf '%s' x >>"$repo/$remediation_test_path"
+git -C "$repo" add "$remediation_test_path"
+git -C "$repo" commit --quiet -m 'fixture: one-byte PR 121 test drift'
+git -C "$repo" push --quiet origin main
+expect_reject pr121_test_one_byte_drift_rejected run_review_validator
+git -C "$repo" show "$remediation_merge:$remediation_test_path" >"$repo/$remediation_test_path"
+chmod +x "$repo/$remediation_test_path"
+git -C "$repo" add "$remediation_test_path"
+git -C "$repo" commit --quiet -m 'fixture: restore PR 121 test'
+git -C "$repo" push --quiet origin main
+
+# Every path introduced after the reviewed evidence must be rejected. Cleanup
+# commits restore the exact reviewed tree without rewriting fixture history.
+mkdir -p "$repo/docs"
+printf '%s\n' 'unlisted governance drift' >"$repo/docs/unlisted-post-request.md"
+git -C "$repo" add docs/unlisted-post-request.md
+git -C "$repo" commit --quiet -m 'fixture: unlisted post-request drift'
+git -C "$repo" push --quiet origin main
+expect_reject pr121_unlisted_path_rejected run_review_validator
+git -C "$repo" rm --quiet docs/unlisted-post-request.md
+git -C "$repo" commit --quiet -m 'fixture: remove unlisted post-request drift'
+git -C "$repo" push --quiet origin main
+
+mkdir -p "$repo/prisma/migrations/20990101000000_unreviewed"
+printf '%s\n' 'SELECT 1;' >"$repo/prisma/migrations/20990101000000_unreviewed/migration.sql"
+git -C "$repo" add prisma/migrations/20990101000000_unreviewed/migration.sql
+git -C "$repo" commit --quiet -m 'fixture: unreviewed migration drift'
+git -C "$repo" push --quiet origin main
+expect_reject product_or_migration_drift_rejected run_review_validator
+git -C "$repo" rm --quiet prisma/migrations/20990101000000_unreviewed/migration.sql
+git -C "$repo" commit --quiet -m 'fixture: remove unreviewed migration drift'
+git -C "$repo" push --quiet origin main
+
+# Product drift after the reviewed request is rejected.
 printf 'unreviewed drift\n' >"$repo/product-drift.txt"
 git -C "$repo" add product-drift.txt && git -C "$repo" commit --quiet -m drift && git -C "$repo" push --quiet origin main
-git -C "$repo" switch --quiet final-release-approval
 expect_reject stale_request_after_release_drift_rejected run_review_validator
 
 # Every failure after the first repository-owned write restores HEAD, bytes,
