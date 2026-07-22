@@ -24,6 +24,13 @@ expect_reject() {
   pass "$name"
 }
 expect_accept() { local name="$1"; shift; "$@" >/dev/null || fail "$name should pass"; pass "$name"; }
+expect_reject_message() {
+  local name="$1" expected="$2" output
+  shift 2
+  if output="$("$@" 2>&1)"; then fail "$name should reject"; fi
+  grep -Fq "$expected" <<<"$output" || fail "$name rejected for the wrong reason"
+  pass "$name"
+}
 sha256_file() { shasum -a 256 "$1" | awk '{print $1}'; }
 
 copy_contract_tree() {
@@ -157,12 +164,23 @@ pass review_request_keeps_release_gate_blocked
 pass review_request_cannot_enable_auto_actions
 expect_reject production_dispatch_rejected_while_review_awaiting "$repo/scripts/deployment/validate-final-release-approval.sh" deploy "$release_sha"
 
-# Duplicate invocation is a clean stop with no new commit or mutation.
-before_duplicate="$(git -C "$repo" rev-parse HEAD):$(sha256_file "$manifest"):$(sha256_file "$request_artifact")"
+# A duplicate clean-stop is authorized only for the exact canonical release.
+before_duplicate="$(git -C "$repo" rev-parse HEAD):$(sha256_file "$manifest"):$(sha256_file "$request_artifact"):$(git -C "$repo" write-tree)"
 "$repo/scripts/deployment/request-final-release-review.sh" "$release_sha" | grep -q '^CLEAN_STOP:' || fail 'duplicate request did not clean-stop'
-after_duplicate="$(git -C "$repo" rev-parse HEAD):$(sha256_file "$manifest"):$(sha256_file "$request_artifact")"
+after_duplicate="$(git -C "$repo" rev-parse HEAD):$(sha256_file "$manifest"):$(sha256_file "$request_artifact"):$(git -C "$repo" write-tree)"
 [[ "$before_duplicate" == "$after_duplicate" && -z "$(git -C "$repo" status --porcelain)" ]] || fail 'duplicate request mutated state'
-pass duplicate_request_clean_stop_or_fail_closed
+pass duplicate_same_release_clean_stop
+
+wrong_release='1111111111111111111111111111111111111111'
+before_wrong_duplicate="$before_duplicate"
+expect_reject_message duplicate_wrong_release_rejected \
+  'duplicate request release differs from canonical release target' \
+  "$repo/scripts/deployment/request-final-release-review.sh" "$wrong_release"
+after_wrong_duplicate="$(git -C "$repo" rev-parse HEAD):$(sha256_file "$manifest"):$(sha256_file "$request_artifact"):$(git -C "$repo" write-tree)"
+[[ "$before_wrong_duplicate" == "$after_wrong_duplicate" ]] || fail 'wrong-release duplicate changed HEAD, Manifest, artifact, or index'
+[[ -z "$(git -C "$repo" status --porcelain)" ]] || fail 'wrong-release duplicate dirtied worktree'
+[[ ! -e "$common_dir/os38-final-release-review-request.lock" ]] || fail 'wrong-release duplicate left lock'
+pass duplicate_wrong_release_preserves_head_manifest_artifact_index_and_lock
 
 # Pending also cannot authorize production dispatch.
 pending_manifest="$fixture_root/pending.json"
@@ -194,6 +212,40 @@ expect_reject transport_supplied_reviewer_cannot_override_policy run_review_vali
 valid_body="CHECKPOINT: FINAL-RELEASE
 VERDICT: PASS
 REVIEWED_RELEASE_SHA=$release_sha"
+set_review_body "$valid_body
+REVIEWER=sohoteam88"
+expect_reject_message authorized_reviewer_with_reviewer_control_rejected \
+  'unexpected Final Release review authority control: REVIEWER' run_review_validator
+set_review_body "$valid_body
+APPROVER=Steven"
+expect_reject_message authorized_reviewer_with_approver_control_rejected \
+  'unexpected Final Release review authority control: APPROVER' run_review_validator
+set_review_body "$valid_body
+REVIEW_ID=4242"
+expect_reject_message authorized_reviewer_with_review_id_control_rejected \
+  'unexpected Final Release review authority control: REVIEW_ID' run_review_validator
+set_review_body "$valid_body
+REQUEST_PR_HEAD=$request_head"
+expect_reject_message authorized_reviewer_with_request_pr_head_control_rejected \
+  'unexpected Final Release review authority control: REQUEST_PR_HEAD' run_review_validator
+set_review_body "$valid_body
+REQUEST_MERGE_SHA=$request_head"
+expect_reject_message authorized_reviewer_with_request_merge_sha_control_rejected \
+  'unexpected Final Release review authority control: REQUEST_MERGE_SHA' run_review_validator
+set_review_body "$valid_body
+RELEASE_GATE=APPROVED"
+expect_reject_message authorized_reviewer_with_release_gate_control_rejected \
+  'unexpected Final Release review authority control: RELEASE_GATE' run_review_validator
+set_review_body "$valid_body
+FUTURE_AUTHORITY=forged"
+expect_reject_message authorized_reviewer_with_unknown_uppercase_control_rejected \
+  'unexpected Final Release review authority control: FUTURE_AUTHORITY' run_review_validator
+set_review_body "Architecture Review evidence follows.
+
+$valid_body
+
+The authorized reviewer confirms only the exact release architecture."
+expect_accept authorized_reviewer_with_valid_controls_and_prose_accepted run_review_validator
 set_review_body "$valid_body
 CHECKPOINT: FINAL-RELEASE"
 expect_reject duplicate_checkpoint_rejected run_review_validator

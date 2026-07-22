@@ -30,21 +30,30 @@ reject_unknown_controls() {
 }
 
 parse_review_controls() {
-  local body="$1" release_sha="$2" line lower authority_pattern
+  local body="$1" release_sha="$2" line lower known_authority_pattern control_key
   local checkpoint_count=0 verdict_count=0 release_count=0
   parsed_authority_review=0
-  authority_pattern='^[[:space:]]*(checkpoint|verdict|reviewed_release_sha)([[:space:]:=]|$)'
+  known_authority_pattern='^[[:space:]]*(checkpoint|verdict|reviewed_release_sha)([[:space:]:=]|$)'
   while IFS= read -r line || [[ -n "$line" ]]; do
     line="${line%$'\r'}"
     lower="$(tr '[:upper:]' '[:lower:]' <<<"$line")"
-    [[ "$lower" =~ $authority_pattern ]] || continue
+    if [[ "$line" =~ ^([A-Z][A-Z0-9_]*)(:|=) ]]; then
+      parsed_authority_review=1
+      control_key="${BASH_REMATCH[1]}"
+      case "$line" in
+        'CHECKPOINT: FINAL-RELEASE') checkpoint_count=$((checkpoint_count + 1)) ;;
+        'VERDICT: PASS') verdict_count=$((verdict_count + 1)) ;;
+        "REVIEWED_RELEASE_SHA=$release_sha") release_count=$((release_count + 1)) ;;
+        CHECKPOINT:* | VERDICT:* | REVIEWED_RELEASE_SHA=*)
+          fail "malformed or conflicting Final Release review authority control: $line"
+          ;;
+        *) fail "unexpected Final Release review authority control: $control_key" ;;
+      esac
+      continue
+    fi
+    [[ "$lower" =~ $known_authority_pattern ]] || continue
     parsed_authority_review=1
-    case "$line" in
-      'CHECKPOINT: FINAL-RELEASE') checkpoint_count=$((checkpoint_count + 1)) ;;
-      'VERDICT: PASS') verdict_count=$((verdict_count + 1)) ;;
-      "REVIEWED_RELEASE_SHA=$release_sha") release_count=$((release_count + 1)) ;;
-      *) fail "malformed or conflicting Final Release review authority control: $line" ;;
-    esac
+    fail "malformed or conflicting Final Release review authority control: $line"
   done <<<"$body"
   [[ "$parsed_authority_review" == 0 ]] && return 0
   [[ "$checkpoint_count" == 1 ]] || fail 'CHECKPOINT authority control must occur exactly once'

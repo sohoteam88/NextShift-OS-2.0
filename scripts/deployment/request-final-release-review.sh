@@ -94,7 +94,11 @@ pre_head="$(git -C "$repo_root" rev-parse HEAD)"
 main_head="$(git -C "$repo_root" rev-parse refs/remotes/origin/main)"
 status="$(jq -r '.final_release_review.status' "$manifest")"
 if [[ "$status" == awaiting_review ]]; then
+  canonical_release_sha="$(jq -r '.final_release_review.release_sha' "$manifest")"
+  [[ "$release_sha" == "$canonical_release_sha" ]] || fail 'duplicate request release differs from canonical release target'
   "$repo_root/scripts/deployment/validate-final-release-review-request.sh" --manifest-only >/dev/null
+  existing_request="$repo_root/$(jq -r '.final_release_review.request_artifact' "$manifest")"
+  [[ "$(control_value "$existing_request" RELEASE_SHA)" == "$release_sha" ]] || fail 'existing request artifact release SHA mismatch'
   printf 'CLEAN_STOP: an identical Final Release Architecture Review request already exists\n'
   exit 0
 fi

@@ -37,7 +37,7 @@ The release contract deliberately separates four authorities:
 
 The request artifact intentionally has no `REQUEST_PR_HEAD`, future review ID, or reviewed SHA. A commit cannot truthfully contain its own final Git object ID. It instead binds the synchronized pre-request main SHA, release/readiness/audit/rollback evidence, timestamp, and blocked release gate. The GitHub verifier obtains the exact request head only from the Request PR metadata and requires the review `commit_id` to equal it.
 
-The exact-head GitHub review body has exactly three machine-authority controls. Each must occur once, with canonical case, spacing and delimiter; duplicate, conflicting, malformed, padded, or case-variant controls fail closed. Explanatory prose may appear on other lines.
+The exact-head GitHub review body has exactly three machine-authority controls. Each must occur once, with canonical case, spacing and delimiter; duplicate, conflicting, malformed, padded, or case-variant controls fail closed. Every other uppercase control-shaped key (including reviewer, approver, review/request identity, or release-gate fields) is forbidden rather than treated as prose. Explanatory prose that is not control-shaped may appear on other lines. A duplicate request invocation clean-stops only after the caller's release SHA matches both the canonical Manifest release and the digest-verified existing request artifact.
 
 ```text
 CHECKPOINT: FINAL-RELEASE
