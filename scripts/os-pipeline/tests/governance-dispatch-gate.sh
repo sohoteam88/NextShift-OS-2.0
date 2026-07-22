@@ -128,11 +128,32 @@ configure_manifest() {
     .final_audit.requested_at=null |
     .final_audit.reviewed_sha=null |
     .final_audit.completed_at=null |
+    .final_release_review.status="pending" |
+    .final_release_review.pre_request_main_sha=null |
+    .final_release_review.requested_at=null |
+    .final_release_review.request_artifact_sha256=null |
+    .final_release_review.request_pr_url=null |
+    .final_release_review.request_pr_number=null |
+    .final_release_review.request_pr_head=null |
+    .final_release_review.request_merge_sha=null |
+    .final_release_review.review_id=null |
+    .final_release_review.review_commit_id=null |
+    .final_release_review.reviewed_release_sha=null |
+    .final_release_review.reviewed_at=null |
     .release_gate.status="blocked" |
     .release_gate.auto_tag=false |
     .release_gate.auto_deploy=false |
+    .release_gate.auto_release=false |
     .execution_policy.auto_release=false |
-    .execution_policy.auto_deploy=false
+    .execution_policy.auto_deploy=false |
+    del(
+      .release_gate.approval_sha256,
+      .release_gate.readiness_evidence_sha256,
+      .release_gate.approved_release_sha,
+      .release_gate.approved_by,
+      .release_gate.approved_at,
+      .release_gate.review_id
+    )
   ' "$SOURCE_MANIFEST" >"$MANIFEST"
 }
 
