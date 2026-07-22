@@ -1006,7 +1006,51 @@
     "review_id": 4750663304,
     "review_commit_id": "b9c418d9cc62a8d11250315ad9a8f58dc61171b6",
     "reviewed_release_sha": "86f54a2185d8d981da19a8155055a999af2dc365",
-    "reviewed_at": "2026-07-22T03:14:27Z"
+    "reviewed_at": "2026-07-22T03:14:27Z",
+    "reviewed_post_request_drift": {
+      "evidence_id": "OS38-PR120-REVIEWED-POST-REQUEST-DRIFT",
+      "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/120",
+      "pr_number": 120,
+      "reviewed_head_sha": "b5a3800c97dd4d68b5597ff6009892cd5ddb47da",
+      "merge_sha": "2450d4e973a569d65786c857474b42d2198ed0fa",
+      "review_id": 4751579619,
+      "review_commit_id": "b5a3800c97dd4d68b5597ff6009892cd5ddb47da",
+      "reviewer_login": "sohoteam88",
+      "reviewer_author_association": "OWNER",
+      "verdict": "PASS",
+      "release_sha": "86f54a2185d8d981da19a8155055a999af2dc365",
+      "reviewed_at": "2026-07-22T06:25:27Z",
+      "files": [
+        {
+          "path": "scripts/deployment/tests/final-release-review.sh",
+          "sha256": "4908e7451180282d97e51cd9912182bbe6e7b59991e758fc9a9e467c16f70503"
+        },
+        {
+          "path": "scripts/os-pipeline/tests/git-integration.sh",
+          "sha256": "6803405a47e7eda16baa84d1c2b49a0b6c139394ddcb91b71a4b2be39e5d113c"
+        },
+        {
+          "path": "scripts/os-pipeline/tests/governance-dispatch-gate.sh",
+          "sha256": "b995ca49a084fa0bfcdd0de72db775aa7a7b15798cce1c1cab32f127428696b0"
+        },
+        {
+          "path": "scripts/os-pipeline/tests/governance-integration.sh",
+          "sha256": "3db5ca8886769b8482e1c73ca2bf81e8e980b36480ce795db9eac58cc860838d"
+        },
+        {
+          "path": "scripts/os-pipeline/tests/remediation-integration.sh",
+          "sha256": "82f1c91fb7bf84b9086a655384646f36c522e2445c1b5352c3ad586fc6de7295"
+        },
+        {
+          "path": "scripts/os-pipeline/tests/run.sh",
+          "sha256": "1dd02155b265ac83b4c7dae645ce4702df9f1ab94fb9dea291d9327e3871acae"
+        },
+        {
+          "path": "scripts/os-pipeline/tests/safety-integration.sh",
+          "sha256": "bf8b21bbb21dfb379c907a82920994fee4c95189d4780cf8a59734452afb7121"
+        }
+      ]
+    }
   },
   "release_gate": {
     "id": "OS3.8-FINAL-RELEASE",

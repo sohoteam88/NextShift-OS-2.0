@@ -76,6 +76,7 @@ setup_pending_repository() {
     .final_release_review.review_commit_id=null |
     .final_release_review.reviewed_release_sha=null |
     .final_release_review.reviewed_at=null |
+    del(.final_release_review.reviewed_post_request_drift) |
     .release_gate.status="blocked" |
     del(
       .release_gate.approval_sha256,
@@ -108,6 +109,9 @@ case "$1" in
   repos/sohoteam88/NextShift-OS-2.0/pulls/42) cat "$GH_FIXTURE_DIR/pr.json" ;;
   repos/sohoteam88/NextShift-OS-2.0/pulls/42/files) cat "$GH_FIXTURE_DIR/files.json" ;;
   repos/sohoteam88/NextShift-OS-2.0/pulls/42/reviews) cat "$GH_FIXTURE_DIR/reviews.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/120) cat "$GH_FIXTURE_DIR/drift-pr.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/120/files) cat "$GH_FIXTURE_DIR/drift-files.json" ;;
+  repos/sohoteam88/NextShift-OS-2.0/pulls/120/reviews) cat "$GH_FIXTURE_DIR/drift-reviews.json" ;;
   *) exit 1 ;;
 esac
 EOF
@@ -346,6 +350,129 @@ expect_reject final_approval_without_pass_review_rejected run_approval_validator
 cp "$gh_data/reviews.saved.json" "$gh_data/reviews.json"
 expect_reject approved_gate_still_requires_separate_production_execution_authorization \
   bash -c 'cd "$1" && PATH="$2:$PATH" GH_FIXTURE_DIR="$3" scripts/deployment/validate-production-request.sh deploy WRONG "$4" refs/heads/main "$5"' _ "$repo" "$gh_dir" "$gh_data" "$release_sha" "$request_merge"
+
+# Model a reviewed, merged governance-only PR after the Final Release request.
+# Its immutable evidence is persisted in a later commit so the evidence cannot
+# self-authorize or self-hash its own Manifest bytes.
+reviewed_drift_path='scripts/os-pipeline/tests/reviewed-pr120-fixture.sh'
+mkdir -p "$repo/$(dirname "$reviewed_drift_path")"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$repo/$reviewed_drift_path"
+chmod +x "$repo/$reviewed_drift_path"
+git -C "$repo" add "$reviewed_drift_path"
+git -C "$repo" commit --quiet -m 'fixture: reviewed PR 120 drift'
+reviewed_drift_head="$(git -C "$repo" rev-parse HEAD)"
+reviewed_drift_sha="$(sha256_file "$repo/$reviewed_drift_path")"
+git -C "$repo" switch --quiet main
+git -C "$repo" merge --quiet --no-ff final-release-approval -m 'merge reviewed PR 120 drift'
+reviewed_drift_merge="$(git -C "$repo" rev-parse HEAD)"
+git -C "$repo" push --quiet origin main
+git -C "$repo" switch --quiet -c reviewed-drift-evidence
+
+jq \
+  --arg head "$reviewed_drift_head" \
+  --arg merge "$reviewed_drift_merge" \
+  --arg release "$release_sha" \
+  --arg path "$reviewed_drift_path" \
+  --arg digest "$reviewed_drift_sha" '
+  .final_release_review.reviewed_post_request_drift = {
+    evidence_id: "OS38-PR120-REVIEWED-POST-REQUEST-DRIFT",
+    pr_url: "https://github.com/sohoteam88/NextShift-OS-2.0/pull/120",
+    pr_number: 120,
+    reviewed_head_sha: $head,
+    merge_sha: $merge,
+    review_id: 5120,
+    review_commit_id: $head,
+    reviewer_login: "sohoteam88",
+    reviewer_author_association: "OWNER",
+    verdict: "PASS",
+    release_sha: $release,
+    reviewed_at: "2026-07-22T06:25:27Z",
+    files: [{path: $path, sha256: $digest}]
+  }
+' "$manifest" >"$manifest.tmp" && mv "$manifest.tmp" "$manifest"
+git -C "$repo" add "$manifest"
+git -C "$repo" commit --quiet -m 'fixture: persist reviewed PR 120 drift evidence'
+
+jq -n --arg head "$reviewed_drift_head" --arg merge "$reviewed_drift_merge" \
+  '{base:{ref:"main",repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},head:{sha:$head,repo:{full_name:"sohoteam88/NextShift-OS-2.0"}},merged:true,merge_commit_sha:$merge}' \
+  >"$gh_data/drift-pr.json"
+jq -n --arg path "$reviewed_drift_path" '[
+  {filename:"docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"},
+  {filename:"docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md"},
+  {filename:$path}
+]' >"$gh_data/drift-files.json"
+jq -n --arg head "$reviewed_drift_head" --arg release "$release_sha" '[{
+  id:5120,
+  state:"COMMENTED",
+  commit_id:$head,
+  submitted_at:"2026-07-22T06:25:27Z",
+  user:{login:"sohoteam88"},
+  author_association:"OWNER",
+  body:("VERDICT: PASS\nREVIEWED_SHA: "+$head+"\nRELEASE_SHA: "+$release)
+}]' >"$gh_data/drift-reviews.json"
+
+expect_accept exact_reviewed_pr120_drift_accepted run_review_validator
+
+cp "$manifest" "$fixture_root/reviewed-drift.valid.json"
+jq '.final_release_review.reviewed_post_request_drift.files[0].sha256 = ("0" * 64)' \
+  "$fixture_root/reviewed-drift.valid.json" >"$manifest"
+expect_reject listed_path_hash_mismatch_rejected run_review_validator
+cp "$fixture_root/reviewed-drift.valid.json" "$manifest"
+
+jq '.final_release_review.reviewed_post_request_drift.files[0].path = "scripts/os-pipeline/tests/*"' \
+  "$fixture_root/reviewed-drift.valid.json" >"$manifest"
+if run_review_validator >/dev/null 2>&1; then fail 'wildcard drift allowlist unexpectedly passed'; fi
+jq '.final_release_review.reviewed_post_request_drift.files[0].path = "scripts/os-pipeline/tests/"' \
+  "$fixture_root/reviewed-drift.valid.json" >"$manifest"
+if run_review_validator >/dev/null 2>&1; then fail 'directory drift allowlist unexpectedly passed'; fi
+cp "$fixture_root/reviewed-drift.valid.json" "$manifest"
+pass wildcard_or_directory_allowlist_rejected
+
+# Every path introduced after the reviewed evidence must be rejected. Cleanup
+# commits restore the exact reviewed tree without rewriting fixture history.
+git -C "$repo" switch --quiet main
+mkdir -p "$repo/docs"
+printf '%s\n' 'unlisted governance drift' >"$repo/docs/unlisted-post-request.md"
+git -C "$repo" add docs/unlisted-post-request.md
+git -C "$repo" commit --quiet -m 'fixture: unlisted post-request drift'
+git -C "$repo" push --quiet origin main
+git -C "$repo" switch --quiet reviewed-drift-evidence
+expect_reject unlisted_post_request_path_rejected run_review_validator
+git -C "$repo" switch --quiet main
+git -C "$repo" rm --quiet docs/unlisted-post-request.md
+git -C "$repo" commit --quiet -m 'fixture: remove unlisted post-request drift'
+git -C "$repo" push --quiet origin main
+git -C "$repo" switch --quiet reviewed-drift-evidence
+
+git -C "$repo" switch --quiet main
+mkdir -p "$repo/prisma/migrations/20990101000000_unreviewed"
+printf '%s\n' 'SELECT 1;' >"$repo/prisma/migrations/20990101000000_unreviewed/migration.sql"
+git -C "$repo" add prisma/migrations/20990101000000_unreviewed/migration.sql
+git -C "$repo" commit --quiet -m 'fixture: unreviewed migration drift'
+git -C "$repo" push --quiet origin main
+git -C "$repo" switch --quiet reviewed-drift-evidence
+expect_reject product_or_migration_drift_rejected run_review_validator
+git -C "$repo" switch --quiet main
+git -C "$repo" rm --quiet prisma/migrations/20990101000000_unreviewed/migration.sql
+git -C "$repo" commit --quiet -m 'fixture: remove unreviewed migration drift'
+git -C "$repo" push --quiet origin main
+git -C "$repo" switch --quiet reviewed-drift-evidence
+
+git -C "$repo" switch --quiet main
+printf '%s\n' '#!/usr/bin/env bash' 'echo future-drift' >"$repo/$reviewed_drift_path"
+chmod +x "$repo/$reviewed_drift_path"
+git -C "$repo" add "$reviewed_drift_path"
+git -C "$repo" commit --quiet -m 'fixture: future drift after evidence'
+git -C "$repo" push --quiet origin main
+git -C "$repo" switch --quiet reviewed-drift-evidence
+expect_reject future_drift_after_evidence_rejected run_review_validator
+git -C "$repo" switch --quiet main
+git -C "$repo" show "$reviewed_drift_merge:$reviewed_drift_path" >"$repo/$reviewed_drift_path"
+chmod +x "$repo/$reviewed_drift_path"
+git -C "$repo" add "$reviewed_drift_path"
+git -C "$repo" commit --quiet -m 'fixture: restore reviewed drift bytes'
+git -C "$repo" push --quiet origin main
+git -C "$repo" switch --quiet reviewed-drift-evidence
 
 # Product drift after the reviewed request is rejected.
 git -C "$repo" switch --quiet main
