@@ -1050,6 +1050,21 @@
           "sha256": "bf8b21bbb21dfb379c907a82920994fee4c95189d4780cf8a59734452afb7121"
         }
       ]
+    },
+    "reviewed_post_request_remediation": {
+      "evidence_id": "OS38-PR121-FINAL-RELEASE-DRIFT-REMEDIATION",
+      "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/121",
+      "pr_number": 121,
+      "files": [
+        {
+          "path": "scripts/deployment/validate-final-release-review-request.sh",
+          "sha256": "0cae05a3974f9724172e4b20dc26eb122a0547a2acdb4dc1e3fb702b0343e6e8"
+        },
+        {
+          "path": "scripts/deployment/tests/final-release-review.sh",
+          "sha256": "43cb860f24f355052921940b528d438cd7f4714d34edf741af4ff5171f557bac"
+        }
+      ]
     }
   },
   "release_gate": {
