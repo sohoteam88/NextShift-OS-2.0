@@ -38,7 +38,7 @@ expect_contract_accept() {
   local name="$1"
   local workflow="$2"
   local helper="$3"
-  "$contract_validator" "$workflow" "$helper" >/dev/null || fail "$name should be accepted"
+  "$contract_validator" "$workflow" "$helper" || fail "$name should be accepted"
   pass "$name"
 }
 
@@ -115,8 +115,9 @@ setup_request_repository() {
     'PRODUCTION_ENVIRONMENT=production' \
     'REQUIRED_REVIEWER=Steven' \
     'ENVIRONMENT_PROTECTION=PASS' \
-    'ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260720T120000Z' \
-    'ENVIRONMENT_VERIFIED_AT=2026-07-20T12:00:00Z' >"$request_evidence"
+    'ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260720T120000Z' >"$request_evidence"
+  request_verified_at="$(grep -E '^VERIFIED_AT=' "$request_evidence" | cut -d= -f2-)"
+  printf 'ENVIRONMENT_VERIFIED_AT=%s\n' "$request_verified_at" >>"$request_evidence"
   request_evidence_sha="$(shasum -a 256 "$request_evidence" | awk '{print $1}')"
   request_manifest="$request_repo/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
   jq --arg release_sha "$request_release_sha" '
