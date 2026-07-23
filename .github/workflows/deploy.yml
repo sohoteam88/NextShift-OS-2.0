@@ -251,11 +251,15 @@ jobs:
             fi
             expected_migration_digest="$(cat migration-image-digest.txt)"
             assert_sha256 'migration artifact recorded image ID' "$expected_migration_digest"
+            migration_tar_config="$(tar -xzOf migration-image.tar.gz manifest.json | jq -r '.[0].Config')"
+            [[ "$migration_tar_config" =~ ^blobs/sha256/[0-9a-f]{64}$ ]] || \
+              fail_check 'migration artifact Config path' 'blobs/sha256/<64 lowercase hex>' "$migration_tar_config"
+            migration_tar_config_digest="sha256:$(tar -xzOf migration-image.tar.gz "$migration_tar_config" | sha256sum | awk '{print $1}')"
+            assert_sha256 'migration artifact Config digest' "$migration_tar_config_digest"
+            assert_equal 'migration artifact config digest' "$expected_migration_digest" "$migration_tar_config_digest"
             docker load < migration-image.tar.gz
             migration_image="nextshift-migrations:${{ env.IMAGE_TAG }}"
             require_image 'migration image after archive load' "$migration_image"
-            actual_migration_digest="$(docker image inspect --format '{{.Id}}' "$migration_image")"
-            assert_equal 'migration image ID' "$expected_migration_digest" "$actual_migration_digest"
             migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$migration_image")"
             assert_equal 'migration OCI revision' "${{ env.IMAGE_TAG }}" "$migration_revision"
             assert_equal 'migration Prisma label' '6.19.3' \
