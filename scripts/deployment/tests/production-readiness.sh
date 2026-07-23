@@ -108,7 +108,7 @@ perl -0pi -e 's/partial U3B\/RLS ledger state detected before fresh installation
 expect_reject partial_u3b_rls_ledger_state_rejected
 
 new_fixture failure_order
-perl -0pi -e 's#(            docker run --rm \\\n)#            docker compose --env-file .env.production -f docker-compose.prod.yml up -d app\n$1#' "$fixture_deploy"
+perl -0pi -e 's#(            if ! docker run --rm \\\n)#            docker compose --env-file .env.production -f docker-compose.prod.yml up -d app\n$1#' "$fixture_deploy"
 expect_reject migration_failure_prevents_deploy
 
 new_fixture double_index
@@ -165,8 +165,16 @@ perl -0pi -e 's/org\.opencontainers\.image\.revision="\$\{RELEASE_SHA\}"/org.ope
 expect_reject migration_image_revision_must_match_release_sha
 
 new_fixture migration_digest
-perl -ni -e 'print unless /test "\$actual_migration_digest" = "\$expected_migration_digest"/' "$fixture_deploy"
+perl -ni -e 'print unless /assert_equal '\''migration image ID'\'' "\$expected_migration_digest" "\$actual_migration_digest"/' "$fixture_deploy"
 expect_reject migration_image_digest_mismatch_rejected
+
+new_fixture migration_artifact_download
+perl -ni -e 'print unless /uses: actions\/download-artifact\@v4/' "$fixture_deploy"
+expect_reject migration_image_artifact_must_cross_job_boundary
+
+new_fixture migration_rebuild_in_deploy
+perl -0pi -e 's/(      - name: Download exact migration deployment artifact)/      - name: Rebuild migration image\n        run: docker build --file scripts\/deployment\/Dockerfile.migrations .\n\n$1/' "$fixture_deploy"
+expect_reject deploy_must_not_rebuild_migration_image
 
 new_fixture additive_rls_inventory
 perl -0pi -e 's#supabase/migrations/20260720134506_harden_audit_internal_tables_rls\.sql#supabase/migrations/missing-audit-rls.sql#' "$fixture_runner"

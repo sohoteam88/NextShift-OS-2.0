@@ -199,18 +199,22 @@ grep -Eq 'alpine/(edge|latest-stable)|/edge/' "$migration_dockerfile" && \
 require_count "$deploy_workflow" 1 '          printf '\''%s\n'\'' "$IMAGE_TAG" > os38-release-sha.txt' 'exact release marker creation'
 require_count "$deploy_workflow" 1 '-e OS38_MIGRATION_MODE=production' 'production migration mode'
 require_count "$deploy_workflow" 1 '--file scripts/deployment/Dockerfile.migrations' 'immutable migration image build'
+require_count "$deploy_workflow" 1 '    name: Build exact migration deployment artifact' 'single migration artifact build job'
+require_count "$deploy_workflow" 1 'uses: actions/upload-artifact@v4' 'migration artifact upload'
+require_count "$deploy_workflow" 1 'uses: actions/download-artifact@v4' 'migration artifact download'
+require_count "$deploy_workflow" 1 '    needs: [validate-request, build-migration-artifact]' 'deploy waits for migration artifact'
 require_count "$deploy_workflow" 1 'printf '\''%s\n'\'' "$migration_image_digest" > migration-image-digest.txt' 'migration image digest evidence'
 require_count "$deploy_workflow" 1 'sha256sum --check migration-image.tar.gz.sha256' 'migration archive checksum verification'
-require_count "$deploy_workflow" 1 'test "$actual_migration_digest" = "$expected_migration_digest"' 'loaded migration image digest verification'
-require_count "$deploy_workflow" 1 'test "$migration_revision" = "${{ env.IMAGE_TAG }}"' 'migration image revision verification'
+require_count "$deploy_workflow" 1 "assert_equal 'migration image ID' \"\$expected_migration_digest\" \"\$actual_migration_digest\"" 'loaded migration image digest verification'
+require_count "$deploy_workflow" 1 "assert_equal 'migration OCI revision' \"\${{ env.IMAGE_TAG }}\" \"\$migration_revision\"" 'migration image revision verification'
 require_count "$deploy_workflow" 1 'com.nextshift.migration.bash" }}' 'deploy-time Bash label verification'
-require_count "$deploy_workflow" 1 'test "$(apk info -v | grep -Fx "bash-5.3.9-r1")" = "bash-5.3.9-r1"' 'deploy-time installed Bash verification'
+require_count "$deploy_workflow" 1 'assert_equal "migration runtime Bash package" "bash-5.3.9-r1"' 'deploy-time installed Bash verification'
 grep -Eq 'node:22-alpine|apk add|npx --yes|npm install|pnpm install' "$deploy_workflow" && \
   fail 'production VPS migration runtime must not install or download tooling'
 grep -Fq 'migrate deploy --schema /app/prisma/schema.prisma' "$deploy_workflow" && \
   fail 'deploy workflow must not bypass the complete migration entrypoint'
 require_order "$deploy_workflow" \
-  "            docker run --rm \\" \
+  "            if ! docker run --rm \\" \
   'docker compose --env-file .env.production -f docker-compose.prod.yml up -d app' \
   'migration failure must prevent application deployment'
 
