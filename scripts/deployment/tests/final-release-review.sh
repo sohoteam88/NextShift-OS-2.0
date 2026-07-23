@@ -62,7 +62,8 @@ setup_pending_repository() {
   readiness="$repo/docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md"
   request_artifact="$repo/$(jq -r '.final_release_review.request_artifact' "$manifest")"
   approval="$repo/$(jq -r '.release_gate.approval_artifact' "$manifest")"
-  perl -pi -e "s/^RELEASE_SHA=.*/RELEASE_SHA=$release_sha/; s/^MIGRATION_IMAGE_REVISION=.*/MIGRATION_IMAGE_REVISION=$release_sha/" "$readiness"
+  fixture_verified_at="$(grep -E '^VERIFIED_AT=' "$readiness" | cut -d= -f2-)"
+  perl -pi -e "s/^RELEASE_SHA=.*/RELEASE_SHA=$release_sha/; s/^MIGRATION_IMAGE_REVISION=.*/MIGRATION_IMAGE_REVISION=$release_sha/; s/^ENVIRONMENT_VERIFIED_AT=.*/ENVIRONMENT_VERIFIED_AT=$fixture_verified_at/" "$readiness"
   jq --arg release "$release_sha" '
     .final_release_review.release_sha=$release |
     .final_release_review.status="pending" |
