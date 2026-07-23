@@ -180,7 +180,10 @@ require_block_count "$deploy_job" 1 'docker run --rm --network none --entrypoint
 require_block_count "$deploy_job" 1 "require_image 'application image after archive load' nextshift-app:\${{ env.IMAGE_TAG }}" 'loaded deploy image existence diagnostic'
 require_block_count "$deploy_job" 1 "image_revision=\"\$(docker image inspect --format '{{ index .Config.Labels \"org.opencontainers.image.revision\" }}' nextshift-app:\${{ env.IMAGE_TAG }})\"" 'loaded deploy image revision'
 require_block_count "$deploy_job" 1 "assert_equal 'application OCI revision' \"\${{ env.IMAGE_TAG }}\" \"\$image_revision\"" 'loaded deploy image revision diagnostic'
-require_block_count "$deploy_job" 1 "assert_equal 'migration image ID' \"\$expected_migration_digest\" \"\$actual_migration_digest\"" 'loaded migration image ID diagnostic'
+require_block_count "$deploy_job" 1 "migration_tar_config=\"\$(tar -xzOf migration-image.tar.gz manifest.json | jq -r '.[0].Config')\"" 'migration archive Config extraction'
+require_block_count "$deploy_job" 1 "migration_tar_config_digest=\"sha256:\$(tar -xzOf migration-image.tar.gz \"\$migration_tar_config\" | sha256sum | awk '{print \$1}')\"" 'migration archive Config digest calculation'
+require_block_count "$deploy_job" 1 "assert_equal 'migration artifact config digest' \"\$expected_migration_digest\" \"\$migration_tar_config_digest\"" 'migration archive Config digest verification'
+require_block_count "$deploy_job" 0 "assert_equal 'migration image ID' \"\$expected_migration_digest\" \"\$actual_migration_digest\"" 'cross-engine migration image ID equality is forbidden'
 
 require_block_count "$rollback_job" 1 'target_image="nextshift-app:${{ env.RELEASE_SHA }}"' 'rollback exact target'
 require_block_count "$rollback_job" 1 'docker image inspect "$target_image" >/dev/null 2>&1' 'rollback target existence'

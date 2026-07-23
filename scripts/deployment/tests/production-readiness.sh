@@ -164,9 +164,13 @@ new_fixture migration_revision
 perl -0pi -e 's/org\.opencontainers\.image\.revision="\$\{RELEASE_SHA\}"/org.opencontainers.image.revision="wrong"/' "$fixture_migration_dockerfile"
 expect_reject migration_image_revision_must_match_release_sha
 
-new_fixture migration_digest
-perl -ni -e 'print unless /assert_equal '\''migration image ID'\'' "\$expected_migration_digest" "\$actual_migration_digest"/' "$fixture_deploy"
-expect_reject migration_image_digest_mismatch_rejected
+new_fixture migration_artifact_config_digest
+perl -ni -e 'print unless /assert_equal '\''migration artifact config digest'\'' "\$expected_migration_digest" "\$migration_tar_config_digest"/' "$fixture_deploy"
+expect_reject migration_artifact_config_digest_verification_required
+
+new_fixture cross_engine_image_id_equality
+perl -0pi -e 's/(            migration_revision=)/            assert_equal '\''migration image ID'\'' "\$expected_migration_digest" "\$actual_migration_digest"\n$1/' "$fixture_deploy"
+expect_reject cross_engine_migration_image_id_equality_rejected
 
 new_fixture migration_artifact_download
 perl -ni -e 'print unless /uses: actions\/download-artifact\@v4/' "$fixture_deploy"
@@ -575,5 +579,5 @@ if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_
 fi
 pass partial_u3b_rls_ledger_state_rejected
 
-[[ "$pass_count" == 57 ]] || fail "expected 57 named fixtures, got $pass_count"
+[[ "$pass_count" == 58 ]] || fail "expected 58 named fixtures, got $pass_count"
 printf 'PASS: %s production-readiness fixtures\n' "$pass_count"
