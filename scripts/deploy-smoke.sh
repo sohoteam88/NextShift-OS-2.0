@@ -36,7 +36,7 @@ check_status() {
   started_at="$(date +%s)"
 
   while :; do
-    if status="$(curl --silent --show-error --max-time 1 --output "$response_file" --write-out '%{http_code}' "$BASE_URL$path")"; then
+    if status="$(curl --silent --show-error --max-time 10 --output "$response_file" --write-out '%{http_code}' "$BASE_URL$path")"; then
       if [ "$status" != "$expected" ]; then
         fail_smoke "$path returned $status, expected $expected"
       fi

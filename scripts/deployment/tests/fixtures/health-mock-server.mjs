@@ -125,11 +125,13 @@ const publishServerUrl = (address) => {
 if (scenario === "delayed-ready") {
   const reservation = createServer();
   reservation.listen(0, listenHost, () => {
-    const address = reservation.address();
-    writeFileSync(controlFile, `http://127.0.0.1:${address.port}\n`, {
-      mode: 0o600,
+    const port = reservation.address().port;
+    reservation.close(() => {
+      writeFileSync(controlFile, `http://127.0.0.1:${port}\n`, {
+        mode: 0o600,
+      });
+      setTimeout(() => server.listen(port, listenHost), 600);
     });
-    setTimeout(() => reservation.close(() => server.listen(address.port, listenHost)), 600);
   });
 } else {
   server.listen(0, listenHost, () => {
