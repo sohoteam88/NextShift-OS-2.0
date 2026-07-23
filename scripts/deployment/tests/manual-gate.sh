@@ -38,7 +38,11 @@ expect_contract_accept() {
   local name="$1"
   local workflow="$2"
   local helper="$3"
-  "$contract_validator" "$workflow" "$helper" || fail "$name should be accepted"
+  local validator_output
+  if ! validator_output="$("$contract_validator" "$workflow" "$helper" 2>&1)"; then
+    printf '%s\n' "$validator_output" >&2
+    fail "$name should be accepted"
+  fi
   pass "$name"
 }
 
