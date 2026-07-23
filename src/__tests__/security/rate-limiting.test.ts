@@ -69,13 +69,15 @@ describe('Rate Limiting', () => {
       }),
     });
 
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
       const response = await postContent(request.clone() as never);
       expect(response.status).toBe(200);
     }
 
     const blocked = await postContent(request.clone() as never);
     expect(blocked.status).toBe(429);
+    expect(blocked.headers.get('Retry-After')).toMatch(/^\d+$/);
+    expect(blocked.headers.get('X-RateLimit-Remaining')).toBe('0');
   });
 
   it('blocks excessive funnel form submissions', async () => {
@@ -100,5 +102,17 @@ describe('Rate Limiting', () => {
       { id: 'tenant-user-3', tenantId: 'tenant-shared' },
       { feature: 'tenant-test', userLimit: 10, tenantLimit: 2 },
     )).rejects.toMatchObject({ code: 'RATE_LIMITED', statusCode: 429 });
+  });
+
+  it('keeps per-feature AI buckets isolated while retaining a total user guardrail', async () => {
+    const user = { id: 'feature-user', tenantId: 'feature-tenant' };
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      await sharedAiRateLimitGuard(user, { feature: 'content-engine' });
+    }
+
+    await expect(sharedAiRateLimitGuard(user, { feature: 'content-engine' }))
+      .rejects.toMatchObject({ code: 'RATE_LIMITED', statusCode: 429 });
+    await expect(sharedAiRateLimitGuard(user, { feature: 'lead-magnet' }))
+      .resolves.toMatchObject({ remaining: 29 });
   });
 });

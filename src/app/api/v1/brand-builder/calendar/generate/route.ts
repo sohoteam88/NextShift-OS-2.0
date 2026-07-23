@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'brand-calendar' });
   const body = (await request.json().catch(() => ({}))) as { days?: number };
   const days = typeof body.days === 'number' ? Math.min(body.days, 60) : 30;
   const items = await contentCalendarService.generate(user, days);

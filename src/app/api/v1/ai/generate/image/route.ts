@@ -33,7 +33,7 @@ const STYLE_SUFFIX: Record<string, string> = {
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'image-generation' });
   await enforceQuota(user.tenantId);
 
   const body = await request.json();

@@ -12,7 +12,7 @@ const LeadAnalysisSchema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'lead-analysis' });
   const body = await request.json();
   const input = LeadAnalysisSchema.parse(body);
   const result = await leadAnalysisService.analyze(user, input);

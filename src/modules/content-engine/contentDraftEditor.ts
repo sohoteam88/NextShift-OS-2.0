@@ -125,6 +125,51 @@ export function contentPatchPayload(draft: EditableContentDraft) {
   };
 }
 
+const localDraftPrefix = 'draft:content-engine:';
+
+export function contentDraftStorageKey(contentId: string) {
+  return `${localDraftPrefix}${contentId}`;
+}
+
+/** Keep a recoverable client-side copy until the canonical PATCH succeeds. */
+export function saveRecoverableContentDraft(
+  storage: Pick<Storage, 'setItem'>,
+  draft: EditableContentDraft,
+) {
+  storage.setItem(contentDraftStorageKey(draft.id), JSON.stringify(draft));
+}
+
+export function loadRecoverableContentDraft(
+  storage: Pick<Storage, 'getItem'>,
+  contentId: string,
+): EditableContentDraft | null {
+  const raw = storage.getItem(contentDraftStorageKey(contentId));
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as Partial<EditableContentDraft>;
+    if (
+      value.id !== contentId ||
+      typeof value.title !== 'string' ||
+      typeof value.body !== 'string' ||
+      !isPlatform(value.platform ?? null) ||
+      !isContentFormat(value.format ?? '') ||
+      !isContentStatus(value.status ?? '') ||
+      typeof value.createdAt !== 'string' ||
+      typeof value.updatedAt !== 'string'
+    ) return null;
+    return value as EditableContentDraft;
+  } catch {
+    return null;
+  }
+}
+
+export function clearRecoverableContentDraft(
+  storage: Pick<Storage, 'removeItem'>,
+  contentId: string,
+) {
+  storage.removeItem(contentDraftStorageKey(contentId));
+}
+
 function draftsMatch(
   left: EditableContentDraft | null,
   right: EditableContentDraft,

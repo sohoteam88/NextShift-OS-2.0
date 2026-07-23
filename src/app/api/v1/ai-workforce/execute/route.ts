@@ -117,7 +117,7 @@ async function executeRuntimeAssignment(input: {
 
 export const POST = apiHandler(async (req: NextRequest) => {
   const user = await requireAuthApi(req);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'ai-workforce' });
   const body = Schema.parse(await req.json());
   const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { plan: true } });
 

@@ -43,7 +43,7 @@ function pickTemplate(
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'content-stream' });
   const body = await request.json();
   const input = StreamSchema.parse(body);
 

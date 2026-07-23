@@ -7,7 +7,7 @@ import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission'
 
 export const POST = apiHandler(async (req: NextRequest) => {
   const user = await requireAuthApi(req);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'whatsapp-ai' });
   const data = await whatsappService.generate(user.id, user.tenantId);
   await notifyMissionProgress(user, 'whatsapp_followup_configured');
   return NextResponse.json({ data });

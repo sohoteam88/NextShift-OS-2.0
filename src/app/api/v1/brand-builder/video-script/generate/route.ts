@@ -18,7 +18,7 @@ const GenerateSchema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'brand-video-script' });
   const body = await request.json();
   const input = GenerateSchema.parse(body);
   const script = await videoScriptService.generate(user, input);

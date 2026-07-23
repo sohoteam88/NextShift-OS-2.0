@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'brand-bio-regenerate' });
   const body = (await request.json()) as {
     platform?: string;
     instruction?: string;

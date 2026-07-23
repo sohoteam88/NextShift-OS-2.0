@@ -18,7 +18,7 @@ const GenerateContentSchema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'content-generation' });
   assertRequestBodySize(request, 1_000_000, 'AI generation payload');
   const body = await request.json();
   const input = GenerateContentSchema.parse(body);
