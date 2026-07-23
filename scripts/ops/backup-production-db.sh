@@ -22,7 +22,7 @@ available_kb="$(df -Pk "$backup_dir" | awk 'NR == 2 {print $4}')"
 [[ "$available_kb" =~ ^[0-9]+$ && "$available_kb" -ge "$minimum_free_kb" ]] || \
   fail "insufficient disk space: required_kb=$minimum_free_kb actual_kb=${available_kb:-unknown}"
 
-backup_file="$backup_dir/nextshift-$(date -u +%Y%m%d-%H%M%S).dump.gz"
+backup_file="$backup_dir/nextshift-$(date -u +%Y%m%d-%H%M%S).dump"
 temporary_file="$backup_file.partial"
 trap 'rm -f "$temporary_file"' EXIT
 
@@ -40,7 +40,7 @@ if (( backup_exit_code != 0 )); then
   fail "pg_dump failed exit_code=$backup_exit_code image=$image_ref (connection details redacted)"
 fi
 mv "$temporary_file" "$backup_file"
-sha256="$(shasum -a 256 "$backup_file" | awk '{print $1}')"
+sha256="$(sha256sum "$backup_file" | awk '{print $1}')"
 printf '%s  %s\n' "$sha256" "$(basename "$backup_file")" >>"$manifest_file"
-find "$backup_dir" -maxdepth 1 -type f -name 'nextshift-*.dump.gz' -mtime +13 -delete
+find "$backup_dir" -maxdepth 1 -type f -name 'nextshift-*.dump' -mtime +13 -delete
 log "SUCCESS: backup=$(basename "$backup_file") sha256=$sha256 image=$image_ref"
