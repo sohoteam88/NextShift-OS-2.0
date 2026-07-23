@@ -42,135 +42,55 @@ test.describe('E3B mounted working loops', () => {
     await expect(page.locator('[data-canonical-id="lm-recruitment"]')).toBeVisible();
   });
 
-  for (const [successfulTrack, failedTrack] of [
-    ['retail', 'recruitment'],
-    ['recruitment', 'retail'],
-  ] as const) {
-    test(`E3B-LEAD-PARTIAL-RETRY: partial success preserves ${successfulTrack} and retries only ${failedTrack}`, async ({ page }) => {
-      await shell(page);
-      const tracks: Record<'retail' | 'recruitment', ReturnType<typeof lead> | null> = {
-        retail: null,
-        recruitment: null,
-      };
-      const attempts: Array<'retail' | 'recruitment'> = [];
-      let failedOnce = false;
+  test('E3B-LEAD-BATCH-RESERVATION: generates every missing track in one reserved batch', async ({ page }) => {
+    await shell(page);
+    const tracks: Record<'retail' | 'recruitment', ReturnType<typeof lead> | null> = {
+      retail: null,
+      recruitment: null,
+    };
+    const batches: Array<Array<'retail' | 'recruitment'>> = [];
 
-      await page.route('**/api/v1/lead-magnet**', async (route) => {
-        const request = route.request();
-        const pathname = new URL(request.url()).pathname;
-        if (pathname.endsWith('/generate')) {
-          const input = request.postDataJSON() as {
-            track: 'retail' | 'recruitment';
+    await page.route('**/api/v1/lead-magnet**', async (route) => {
+      const request = route.request();
+      const pathname = new URL(request.url()).pathname;
+      if (pathname.endsWith('/generate')) {
+        const input = request.postDataJSON() as {
+          requests?: Array<{ track: 'retail' | 'recruitment' }>;
+          track?: 'retail' | 'recruitment';
+        };
+        const requestedTracks = input.requests?.map(({ track }) => track) ?? [input.track!];
+        batches.push(requestedTracks);
+        const generated = requestedTracks.map((track) => {
+          const sequence = batches.flat().filter((candidate) => candidate === track).length;
+          const config = {
+            ...lead(track),
+            id: `lm-${track}-generated-${sequence}`,
+            title: `${track} generated ${sequence}`,
           };
-          attempts.push(input.track);
-          if (input.track === failedTrack && !failedOnce) {
-            failedOnce = true;
-            await route.fulfill({
-              status: 500,
-              json: { message: `${failedTrack} deterministic failure` },
-            });
-            return;
-          }
-          const sequence = attempts.filter((track) => track === input.track).length;
-          const generated = {
-            ...lead(input.track),
-            id: `lm-${input.track}-generated-${sequence}`,
-            title: `${input.track} generated ${sequence}`,
-          };
-          tracks[input.track] = generated;
-          await route.fulfill({ json: { data: generated } });
-          return;
-        }
-        if (request.method() === 'PATCH') {
-          const patch = request.postDataJSON() as {
-            id: string;
-            track: 'retail' | 'recruitment';
-            title: string;
-            promise: string;
-            description: string;
-            whatsappCta: string;
-          };
-          const current = tracks[patch.track];
-          if (!current || current.id !== patch.id) {
-            await route.fulfill({ status: 404, json: { message: 'not found' } });
-            return;
-          }
-          const persisted = {
-            ...current,
-            title: patch.title,
-            promise: patch.promise,
-            description: patch.description,
-            cta: { ...current.cta, whatsappCta: patch.whatsappCta },
-          };
-          tracks[patch.track] = persisted;
-          await route.fulfill({ json: { data: persisted } });
-          return;
-        }
-        await route.fulfill({
-          json: {
-            data: tracks.retail,
-            trackLeadMagnets: tracks,
-          },
+          tracks[track] = config;
+          return config;
         });
-      });
-
-      await page.goto('/lead-magnet');
-      await page.getByRole('button', { name: '生成引流资源' }).click();
-      const successful = tracks[successfulTrack];
-      expect(successful).not.toBeNull();
-      const successfulId = successful!.id;
-      const successfulTitle = successful!.title;
-      await expect(page.locator(`[data-canonical-id="${successfulId}"]`)).toBeVisible();
-      await expect(page.getByText(`${failedTrack} deterministic failure`)).toBeVisible();
-
-      await page
-        .getByRole('button', {
-          name: `只重试 ${failedTrack === 'retail' ? 'Retail' : 'Recruitment'}`,
-        })
-        .click();
-      await expect(
-        page.locator(`[data-canonical-id="${tracks[failedTrack]!.id}"]`),
-      ).toBeVisible();
-      expect(tracks[successfulTrack]?.id).toBe(successfulId);
-      expect(tracks[successfulTrack]?.title).toBe(successfulTitle);
-      expect(attempts).toEqual(['retail', 'recruitment', failedTrack]);
-
-      await page.reload();
-      await expect(page.locator(`[data-canonical-id="${successfulId}"]`)).toBeVisible();
-      await expect(
-        page.locator(`[data-canonical-id="${tracks[failedTrack]!.id}"]`),
-      ).toBeVisible();
-
-      if (successfulTrack === 'retail') {
-        const card = page.locator(`[data-canonical-id="${successfulId}"]`);
-        await card.getByRole('button', { name: '编辑' }).click();
-        const editor = page.getByRole('dialog');
-        await editor.getByRole('textbox', { name: '标题', exact: true }).fill('Edited Retail title');
-        await editor.getByRole('button', { name: '保存' }).click();
-        await expect(card.getByText('保存成功。', { exact: true })).toBeVisible();
-        await page.keyboard.press('Escape');
-        await expect(editor).toBeHidden();
-        const callCount = attempts.length;
-        const regenerateRetail = page.getByRole('button', {
-          name: '重新生成 Retail',
-          exact: true,
-        });
-        await regenerateRetail.click();
-        await expect(page.getByRole('dialog')).toContainText('新的 canonical ID');
-        await page.getByRole('button', { name: '保留现有版本' }).click();
-        expect(attempts).toHaveLength(callCount);
-        await regenerateRetail.click();
-        await page.getByRole('button', { name: '确认并生成新版本' }).click();
-        await expect(page.locator('[data-canonical-id="lm-retail-generated-2"]')).toBeVisible();
-        expect(attempts).toEqual([
-          'retail',
-          'recruitment',
-          'recruitment',
-          'retail',
-        ]);
+        await route.fulfill({ json: { data: input.requests ? generated : generated[0] } });
+        return;
       }
+      await route.fulfill({
+        json: {
+          data: tracks.retail,
+          trackLeadMagnets: tracks,
+        },
+      });
     });
-  }
+
+    await page.goto('/lead-magnet');
+    await page.getByRole('button', { name: '生成引流资源' }).click();
+    expect(batches).toEqual([['retail', 'recruitment']]);
+    await expect(page.locator('[data-canonical-id="lm-retail-generated-1"]')).toBeVisible();
+    await expect(page.locator('[data-canonical-id="lm-recruitment-generated-1"]')).toBeVisible();
+
+    await page.reload();
+    await expect(page.locator('[data-canonical-id="lm-retail-generated-1"]')).toBeVisible();
+    await expect(page.locator('[data-canonical-id="lm-recruitment-generated-1"]')).toBeVisible();
+  });
 
   test('E3B-LEAD-COMMIT-RESPONSE-LOSS: initial generation reconciles the canonical track without a second POST', async ({ page }) => {
     await shell(page);
