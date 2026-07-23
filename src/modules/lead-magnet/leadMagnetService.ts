@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
-import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import { getBrandContext, getBrandDnaVersion } from '@/modules/brand-dna/services/BrandContextProvider';
 import { funnelService } from '@/modules/funnel/services/funnel-service';
 import type {
   FunnelConfig,
@@ -211,6 +211,7 @@ export const leadMagnetService = {
     const activeTrack = resolveWorkspaceTrack(track, workspaceContext);
     const config = {
       ...adaptConfigForTrack(generateLeadMagnet(ctx, type), activeTrack),
+      brandDnaVersion: await getBrandDnaVersion(userId),
       workspaceContext: workspaceMetadata(workspaceContext),
     };
     config.qualityScore = validateLeadMagnet(config).score;

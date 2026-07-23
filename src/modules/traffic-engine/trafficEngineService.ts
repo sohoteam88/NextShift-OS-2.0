@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import { getBrandContext, getBrandDnaVersion } from '@/modules/brand-dna/services/BrandContextProvider';
 import { extractCheckKeys } from '@/modules/mission/utils/completed-checks';
 import type { TrafficGoal, TrafficPlatform, BudgetTier, TrafficPackage, TrafficPrerequisites } from './types';
 import { generateTrafficPackage } from './trafficGenerators';
@@ -36,6 +36,7 @@ export const trafficEngineService = {
     const contentCount = await prisma.content.count({ where: { ownerId: userId } });
 
     const pkg = generateTrafficPackage(ctx, goal, platform, budget, funnelExists, lmExists, contentCount);
+    pkg.brandDnaVersion = await getBrandDnaVersion(userId);
     pkg.campaign.readinessScore = pkg.readiness.score;
     pkg.prerequisites = prerequisites;
     if (workspaceContext) {

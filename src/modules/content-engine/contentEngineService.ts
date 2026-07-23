@@ -4,7 +4,7 @@
 
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import { getBrandContext, getBrandDnaVersion } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { ContentPillar } from '@/modules/brand-dna/types';
 import {
@@ -66,7 +66,13 @@ export const contentEngineService = {
 
     const activeTrack = resolveContentTrack(track, workspaceContext);
     const items = generateCalendar(ctx, pillars, days, activeTrack);
-    const calendar: ContentCalendar = { days, track: activeTrack, items, generatedAt: new Date().toISOString() };
+    const calendar: ContentCalendar = {
+      days,
+      track: activeTrack,
+      items,
+      generatedAt: new Date().toISOString(),
+      brandDnaVersion: await getBrandDnaVersion(userId),
+    };
     await this.saveTrackCalendar(userId, activeTrack, calendar);
 
     if (activeTrack !== 'retail') {

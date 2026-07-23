@@ -79,6 +79,7 @@ export interface ContentCalendar {
   track?: ContentTrack;
   items: ContentCalendarItem[];
   generatedAt: string;
+  brandDnaVersion?: number;
 }
 
 export interface ContentCalendarItem {

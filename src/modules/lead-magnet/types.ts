@@ -106,6 +106,7 @@ export interface LeadMagnetConfig {
   status: LMStatus;
   createdAt: string;
   updatedAt: string;
+  brandDnaVersion?: number;
   workspaceContext?: {
     workspaceId: string;
     workspaceType: string;
