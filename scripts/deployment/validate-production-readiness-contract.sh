@@ -208,6 +208,7 @@ require_count "$deploy_workflow" 1 'sha256sum --check migration-image.tar.gz.sha
 require_count "$deploy_workflow" 1 "assert_equal 'migration image ID' \"\$expected_migration_digest\" \"\$actual_migration_digest\"" 'loaded migration image digest verification'
 require_count "$deploy_workflow" 1 "assert_equal 'migration OCI revision' \"\${{ env.IMAGE_TAG }}\" \"\$migration_revision\"" 'migration image revision verification'
 require_count "$deploy_workflow" 1 'com.nextshift.migration.bash" }}' 'deploy-time Bash label verification'
+require_count "$deploy_workflow" 1 'docker run --rm --network none --entrypoint bash "$migration_image" -ceu' 'deploy-time migration runtime check uses Bash'
 require_count "$deploy_workflow" 1 'assert_equal "migration runtime Bash package" "bash-5.3.9-r1"' 'deploy-time installed Bash verification'
 grep -Eq 'node:22-alpine|apk add|npx --yes|npm install|pnpm install' "$deploy_workflow" && \
   fail 'production VPS migration runtime must not install or download tooling'

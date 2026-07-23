@@ -266,7 +266,7 @@ jobs:
               "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.psql" }}' "$migration_image")"
             assert_equal 'migration entrypoint' '["/usr/bin/env","bash","/app/scripts/deployment/run-os38-production-migrations.sh"]' \
               "$(docker image inspect --format '{{json .Config.Entrypoint}}' "$migration_image")"
-            docker run --rm --network none --entrypoint /bin/sh "$migration_image" -ceu '
+            docker run --rm --network none --entrypoint bash "$migration_image" -ceu '
               assert_equal() {
                 local check_name="$1" expected="$2" actual="$3"
                 [[ "$actual" == "$expected" ]] || {

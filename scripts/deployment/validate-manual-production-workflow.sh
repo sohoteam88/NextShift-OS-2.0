@@ -176,6 +176,7 @@ require_block_count "$deploy_job" 1 '-t nextshift-app:$IMAGE_TAG .' 'deploy immu
 require_block_count "$deploy_job" 1 'uses: actions/download-artifact@v4' 'migration artifact download'
 require_block_count "$deploy_job" 1 'name: nextshift-migration-${{ env.IMAGE_TAG }}' 'download exact migration artifact'
 require_block_count "$deploy_job" 0 '--file scripts/deployment/Dockerfile.migrations' 'deploy must not rebuild migration image'
+require_block_count "$deploy_job" 1 'docker run --rm --network none --entrypoint bash "$migration_image" -ceu' 'offline migration runtime check must use Bash'
 require_block_count "$deploy_job" 1 "require_image 'application image after archive load' nextshift-app:\${{ env.IMAGE_TAG }}" 'loaded deploy image existence diagnostic'
 require_block_count "$deploy_job" 1 "image_revision=\"\$(docker image inspect --format '{{ index .Config.Labels \"org.opencontainers.image.revision\" }}' nextshift-app:\${{ env.IMAGE_TAG }})\"" 'loaded deploy image revision'
 require_block_count "$deploy_job" 1 "assert_equal 'application OCI revision' \"\${{ env.IMAGE_TAG }}\" \"\$image_revision\"" 'loaded deploy image revision diagnostic'
