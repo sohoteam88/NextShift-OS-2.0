@@ -27,8 +27,24 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
+print_server_log() {
+  local server_log="$fixture_root/server.log"
+
+  [[ -e "$server_log" ]] || return 0
+  if [[ ! -f "$server_log" || -L "$server_log" ]]; then
+    printf '%s\n' '--- mock server log unavailable: expected a regular file ---' >&2
+    return 0
+  fi
+
+  printf '%s\n' '--- mock server log (stdout/stderr) ---' >&2
+  sed -n '1,$p' "$server_log" >&2 || \
+    printf '%s\n' '--- mock server log could not be read ---' >&2
+  printf '%s\n' '--- end mock server log ---' >&2
+}
+
 fail() {
   printf 'FAIL: %s\n' "$*" >&2
+  print_server_log
   exit 1
 }
 
@@ -57,16 +73,22 @@ docker run --rm --network none --entrypoint /bin/sh "$image" -ceu '
 start_server() {
   local scenario="$1"
   local control_file="$fixture_root/server-url"
+  local elapsed_milliseconds=0
+  local poll_interval_milliseconds=200
+  local timeout_milliseconds=30000
 
   cleanup_server
   rm -f "$control_file"
   node "$mock_server" "$control_file" "$scenario" 0.0.0.0 >"$fixture_root/server.log" 2>&1 &
   server_pid=$!
 
-  for _ in {1..50}; do
-    [[ -s "$control_file" ]] && break
+  while [[ ! -s "$control_file" ]]; do
     kill -0 "$server_pid" >/dev/null 2>&1 || fail "mock server exited for scenario $scenario"
-    sleep 0.05
+    if (( elapsed_milliseconds >= timeout_milliseconds )); then
+      fail "mock server did not publish a URL after ${elapsed_milliseconds}ms (timeout ${timeout_milliseconds}ms) for scenario $scenario"
+    fi
+    sleep 0.2
+    elapsed_milliseconds=$((elapsed_milliseconds + poll_interval_milliseconds))
   done
 
   [[ -s "$control_file" && ! -L "$control_file" ]] || fail 'mock server did not publish a URL'
