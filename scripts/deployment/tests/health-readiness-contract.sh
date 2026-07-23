@@ -161,25 +161,25 @@ BASE_URL="$closed_url"
 expect_health_reject container_health_rejects_connection_failure
 
 start_server readiness-degraded
-if BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1; then
+if SMOKE_STARTUP_WAIT_SECONDS=1 BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1; then
   fail 'deploy_smoke_rejects_database_degraded should be rejected'
 fi
 pass deploy_smoke_rejects_database_degraded
 
 start_server readiness-database-error
-if BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1; then
+if SMOKE_STARTUP_WAIT_SECONDS=1 BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1; then
   fail 'deploy_smoke_rejects_database_error should be rejected'
 fi
 pass deploy_smoke_rejects_database_error
 
 start_server malformed
-if BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1; then
+if SMOKE_STARTUP_WAIT_SECONDS=1 BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1; then
   fail 'deploy_smoke_rejects_malformed_json should be rejected'
 fi
 pass deploy_smoke_rejects_malformed_json
 
 start_server timeout
-if BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1; then
+if SMOKE_STARTUP_WAIT_SECONDS=1 BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1; then
   fail 'deploy_smoke_rejects_timeout should be rejected'
 fi
 pass deploy_smoke_rejects_timeout
@@ -187,10 +187,15 @@ pass deploy_smoke_rejects_timeout
 start_server readiness-ok
 closed_url="$BASE_URL"
 cleanup_server
-if BASE_URL="$closed_url" "$deploy_smoke" >/dev/null 2>&1; then
+if SMOKE_STARTUP_WAIT_SECONDS=1 BASE_URL="$closed_url" "$deploy_smoke" >/dev/null 2>&1; then
   fail 'deploy_smoke_rejects_connection_failure should be rejected'
 fi
 pass deploy_smoke_rejects_connection_failure
+
+start_server delayed-ready
+SMOKE_STARTUP_WAIT_SECONDS=2 BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1 || \
+  fail 'deploy_smoke_waits_for_transient_startup_connection_failure should be accepted'
+pass deploy_smoke_waits_for_transient_startup_connection_failure
 
 start_server readiness-ok
 BASE_URL="$BASE_URL" "$deploy_smoke" >/dev/null 2>&1 || \
@@ -199,7 +204,7 @@ pass deploy_smoke_accepts_healthy_contract
 
 restricted_bin="$fixture_root/restricted-bin"
 mkdir -p "$restricted_bin"
-for command_name in sh curl grep mktemp rm; do
+for command_name in sh curl grep mktemp rm date sleep; do
   command_path="$(command -v "$command_name")"
   [[ -n "$command_path" ]] || fail "missing required POSIX smoke command: $command_name"
   ln -s "$command_path" "$restricted_bin/$command_name"
@@ -216,5 +221,5 @@ if grep -Eq 'nextshift-container-healthcheck|docker[[:space:]]+(run|exec)' "$dep
 fi
 pass rollback_smoke_compatible_with_legacy_exact_sha_image
 
-[[ "$pass_count" == 19 ]] || fail "expected 19 named fixtures, got $pass_count"
+[[ "$pass_count" == 20 ]] || fail "expected 20 named fixtures, got $pass_count"
 printf 'PASS: %s health/readiness contract fixtures\n' "$pass_count"
