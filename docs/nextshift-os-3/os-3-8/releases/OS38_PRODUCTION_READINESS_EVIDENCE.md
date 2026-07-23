@@ -2,13 +2,13 @@
 
 EVIDENCE_ID=OS3.8-PRODUCTION-READINESS
 STATUS=READY
-RELEASE_SHA=41f8784f09296aa8d85b799f71ade60683c0f359
-VERIFICATION_ID=OS38-PR-20260723T035629Z
-VERIFIED_AT=2026-07-23T03:56:29Z
+RELEASE_SHA=8b2ce429dc58d8f97fca084969fbc30ec4a4c392
+VERIFICATION_ID=OS38-PR-20260723T063355Z
+VERIFIED_AT=2026-07-23T06:33:55Z
 MIGRATION_REHEARSAL=PASS
 MIGRATION_IMAGE_REHEARSAL=PASS
-MIGRATION_IMAGE_DIGEST=sha256:40887082b712c000e74034d226f8d5ed255d76f01b19fdfe82057859d1914c78
-MIGRATION_IMAGE_REVISION=41f8784f09296aa8d85b799f71ade60683c0f359
+MIGRATION_IMAGE_DIGEST=sha256:f514f7351fdf476007898557fd4b28ac0b6d8eefb25efe0556f7413571614ce0
+MIGRATION_IMAGE_REVISION=8b2ce429dc58d8f97fca084969fbc30ec4a4c392
 BACKUP_SHA256=90192a8c71fe7b3fa57a0011909a1cf2fbc4f2e93fe4b6fc29ce9a7ff3360ffb
 RESTORE_VERIFIED_AT=2026-07-21T06:11:49Z
 ROLLBACK_IMAGE_SHA=76b573cdbf2f1bec31fe5770c080941469479d25
@@ -28,12 +28,16 @@ production mutation.
 ## Repository and exact-release evidence
 
 - Repository: `sohoteam88/NextShift-OS-2.0`
-- Exact merged `main`: `41f8784f09296aa8d85b799f71ade60683c0f359`
-- PR #122 merge: `41f8784f09296aa8d85b799f71ade60683c0f359`
-- PR #122 reviewed head: `373ad3d4aad3a6534d19eff2d00ef8dc5428b453`
-- Reviewed-head-to-merge tree delta: zero files
-- Main CI run `29975583038`: all required jobs succeeded, including the
-  migration-image contract and E2E suite (67 passed, 1 skipped).
+- Exact merged `main`: `8b2ce429dc58d8f97fca084969fbc30ec4a4c392`
+- PR #122 merge (rate limiting and drafts):
+  `41f8784f09296aa8d85b799f71ade60683c0f359`.
+- PR #127 merge (single-build migration artifact integrity and deployment
+  diagnostics): `8b2ce429dc58d8f97fca084969fbc30ec4a4c392`.
+- PR #127 reviewed head: `db9270a638bcfd7a7f61230658426e6d5a6ea2b2`;
+  reviewed-head-to-merge tree delta: zero files.
+- PR CI run `29984250240` succeeded for that reviewed head, including the
+  migration-image contract, application-image healthcheck contract, complete
+  test suite, and E2E suite.
 - Deploy workflow runs for the exact merge SHA: zero
 
 ## Backup and restore evidence
@@ -55,8 +59,8 @@ production mutation.
   requested commit.
 - The exact image passed the offline migration-image runtime contract.
 - No files under `prisma/migrations`, nor the production migration Dockerfile
-  or migration runner, changed between the previous rehearsed SHA
-  `86f54a2185d8d981da19a8155055a999af2dc365` and this exact release SHA.
+  or migration runner, changed between the previous rehearsed release SHA
+  `41f8784f09296aa8d85b799f71ade60683c0f359` and this exact release SHA.
   The preserved isolated-database Run 1 and Run 2 evidence therefore remains
   applicable to the unchanged migration inputs.
 - Migration ledgers, constraints, indexes, triggers, functions, RLS, client
@@ -93,5 +97,5 @@ production mutation.
 
 All repository-controlled and independently readable Production Readiness
 evidence was consistent at the recorded verification time. Production
-Readiness is therefore `READY`, while the Final Release review is pending and
-the canonical release gate remains `blocked`.
+Readiness is therefore `READY`, while the Final Release review for the exact
+SHA above is pending and the canonical release gate remains `blocked`.
