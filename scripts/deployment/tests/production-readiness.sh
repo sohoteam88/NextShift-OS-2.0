@@ -575,5 +575,5 @@ if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_
 fi
 pass partial_u3b_rls_ledger_state_rejected
 
-[[ "$pass_count" == 55 ]] || fail "expected 55 named fixtures, got $pass_count"
+[[ "$pass_count" == 57 ]] || fail "expected 57 named fixtures, got $pass_count"
 printf 'PASS: %s production-readiness fixtures\n' "$pass_count"
