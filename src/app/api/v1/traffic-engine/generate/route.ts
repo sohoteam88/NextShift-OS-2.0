@@ -9,7 +9,7 @@ import { resolveRequestWorkspaceContext } from '@/modules/workspace/request-work
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'traffic-engine' });
   const body = await request.json();
   const { goal, platform, budget } = z.object({
     goal: z.enum(['lead_generation','webinar_registration','whatsapp_conversation','consultation_booking','content_growth']),

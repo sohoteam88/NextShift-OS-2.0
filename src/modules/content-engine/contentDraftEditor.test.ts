@@ -4,8 +4,12 @@ import {
   canSaveDraft,
   contentEditStartedProperties,
   contentPatchPayload,
+  clearRecoverableContentDraft,
+  contentDraftStorageKey,
   isDraftDirty,
+  loadRecoverableContentDraft,
   reconcilePersistedEditorDraft,
+  saveRecoverableContentDraft,
   toEditableContentDraft,
 } from './contentDraftEditor';
 import type { GeneratedPost } from './types';
@@ -136,5 +140,21 @@ describe('content draft editor state', () => {
         id: 'content-2',
       }),
     ).toMatchObject({ contentId: 'content-2' });
+  });
+
+  it('saves, restores, and clears a recoverable local draft', () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+    };
+    const edited = { ...toEditableContentDraft(generatedPost), body: 'Recovered after navigation' };
+
+    saveRecoverableContentDraft(storage, edited);
+    expect(contentDraftStorageKey('content-1')).toBe('draft:content-engine:content-1');
+    expect(loadRecoverableContentDraft(storage, 'content-1')).toEqual(edited);
+    clearRecoverableContentDraft(storage, 'content-1');
+    expect(loadRecoverableContentDraft(storage, 'content-1')).toBeNull();
   });
 });

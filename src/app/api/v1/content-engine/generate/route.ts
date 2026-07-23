@@ -18,7 +18,7 @@ const GenSchema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'content-engine' });
   const body = await request.json();
   const input = GenSchema.parse(body);
   const workspaceContext = await resolveRequestWorkspaceContext({ user, request, body });

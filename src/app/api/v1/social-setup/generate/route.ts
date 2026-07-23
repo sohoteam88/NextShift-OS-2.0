@@ -7,7 +7,7 @@ import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission'
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'social-setup' });
   const [setup, readiness] = await Promise.all([
     socialSetupService.generateSetup(user.id),
     socialSetupService.getReadiness(user.id),

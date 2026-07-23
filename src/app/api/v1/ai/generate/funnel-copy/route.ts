@@ -15,7 +15,7 @@ const Schema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'funnel-copy' });
   const body = await request.json();
   const input = Schema.parse(body);
   const result = await funnelCopyService.generate(user, input);

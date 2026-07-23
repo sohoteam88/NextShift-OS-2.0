@@ -116,6 +116,38 @@ export async function generateLeadMagnetTracks(
   requests: LeadMagnetGenerationRequest[],
   request: typeof fetch = fetch,
 ): Promise<LeadMagnetGenerationOutcome[]> {
+  // The production browser uses the atomic batch endpoint. Keep the injected
+  // request seam on the single-request protocol for reconciliation tests and
+  // non-browser callers that intentionally control each job response.
+  if (requests.length > 1 && request === fetch) {
+    try {
+      const response = await request('/api/v1/lead-magnet/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: requests.map(({ track, type }) => ({ track, type })),
+        }),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: { message?: string }; message?: string };
+        const error = payload.error?.message ?? payload.message ?? '引流资源暂时无法生成。';
+        return requests.map(({ track, previousId = null }) => ({ status: 'definite_failure' as const, track, previousId, error }));
+      }
+      const payload = (await response.json()) as { data?: unknown };
+      const generated = payload.data;
+      if (Array.isArray(generated) && generated.length === requests.length) {
+        return requests.map(({ track, previousId = null }, index) => {
+          const data = generated[index];
+          return isLeadMagnetConfig(data) && data.track === track && data.id !== previousId
+            ? { status: 'success' as const, source: 'response' as const, track, previousId, data }
+            : { status: 'definite_failure' as const, track, previousId, error: '批量生成没有返回完整结果，请重试。' };
+        });
+      }
+      return requests.map(({ track, previousId = null }) => ({ status: 'definite_failure' as const, track, previousId, error: '批量生成没有返回完整结果，请重试。' }));
+    } catch {
+      return Promise.all(requests.map(({ track, previousId = null }) => reconcileLeadMagnetTrack(track, previousId, request)));
+    }
+  }
   return Promise.all(
     requests.map(async ({ track, type, previousId = null }) => {
       let response: Response;
