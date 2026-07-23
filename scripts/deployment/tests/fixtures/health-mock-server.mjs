@@ -116,12 +116,28 @@ const server = createServer((req, res) => {
   respond(res, 404, JSON.stringify({ status: "not-found" }));
 });
 
-server.listen(0, listenHost, () => {
-  const address = server.address();
+const publishServerUrl = (address) => {
   writeFileSync(controlFile, `http://127.0.0.1:${address.port}\n`, {
     mode: 0o600,
   });
-});
+};
+
+if (scenario === "delayed-ready") {
+  const reservation = createServer();
+  reservation.listen(0, listenHost, () => {
+    const port = reservation.address().port;
+    reservation.close(() => {
+      writeFileSync(controlFile, `http://127.0.0.1:${port}\n`, {
+        mode: 0o600,
+      });
+      setTimeout(() => server.listen(port, listenHost), 600);
+    });
+  });
+} else {
+  server.listen(0, listenHost, () => {
+    publishServerUrl(server.address());
+  });
+}
 
 const shutdown = () => server.close(() => process.exit(0));
 process.on("SIGTERM", shutdown);
