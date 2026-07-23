@@ -1313,7 +1313,8 @@
     "aiCommand": {
       "nextStepBadge": "Tindakan seterusnya",
       "todayFocus": "Buat satu perkara ini hari ini.",
-      "whyThis": "Mengapa ini",
+  "whyThis": "Mengapa ini",
+  "whyThisCompact": "Mengapa ini?",
       "whyNow": "Mengapa sekarang",
       "whyNotOthers": "Mengapa bukan tugasan lain",
       "currentStep": "Langkah semasa",

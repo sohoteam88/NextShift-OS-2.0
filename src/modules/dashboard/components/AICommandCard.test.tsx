@@ -69,7 +69,7 @@ describe('AICommandCardView', () => {
     expect(html).not.toContain('mission-alternative-suggestion');
   });
 
-  it('renders an expanded alternative suggestion inside the mission card', () => {
+  it('keeps alternative suggestions out of the action-first card', () => {
     const recommendation = {
       recommendation: {
         id: 'engine-1',
@@ -91,10 +91,8 @@ describe('AICommandCardView', () => {
       },
     })));
 
-    expect(html).toContain('data-testid="mission-alternative-suggestion"');
-    expect(html).toContain('AI has another suggestion');
-    expect(html).toContain('Contact the warmest lead');
-    expect(html).toContain('The decision engine detected a stronger sales signal.');
+    expect(html).not.toContain('mission-alternative-suggestion');
+    expect(html).not.toContain('Contact the warmest lead');
   });
 
   it('does not treat rule recommendations as divergent', () => {
@@ -111,14 +109,14 @@ describe('AICommandCardView', () => {
     }, 'Prepare your offer')).toBe(false);
   });
 
-  it('keeps all mission content available without a recommendation or discussion entry', () => {
+  it('renders only the mission, reason, action, and estimated time', () => {
     const html = renderToStaticMarkup(createElement(AICommandCardView, baseProps()));
 
     expect(html).toContain('Prepare your offer');
-    expect(html).toContain('Define the outcome');
     expect(html).toContain('Start mission');
-    expect(html).not.toContain('mission-alternative-suggestion');
-    expect(html).not.toContain('Discuss with AI');
+    expect(html).toContain('15 minutes');
+    expect(html).not.toContain('Execution steps');
+    expect(html).not.toContain('Current gap');
   });
 });
 
