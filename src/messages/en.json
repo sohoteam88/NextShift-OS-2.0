@@ -1313,8 +1313,8 @@
     "aiCommand": {
       "nextStepBadge": "Next action",
       "todayFocus": "Do this one thing today.",
-  "whyThis": "Why this",
-  "whyThisCompact": "Why this?",
+      "whyThis": "Why this",
+      "whyThisCompact": "Why this?",
       "whyNow": "Why now",
       "whyNotOthers": "Why not another task",
       "currentStep": "Current step",

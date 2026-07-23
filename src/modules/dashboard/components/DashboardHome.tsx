@@ -1,16 +1,31 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { AICommandCard } from './AICommandCard';
-import type { DashboardPriorityLevel } from './AICommandCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
 import { MomentumCard } from './MomentumCard';
 import { useDashboardMission } from '../hooks/useDashboardMission';
+import { useDashboardRecommendation } from '../hooks/useDashboardRecommendation';
 import { revenueDriverHubRouteForMission } from '@/modules/revenue-drivers/constants/revenue-drivers';
 import { humanizeEstimatedTime, userFacingCopy } from '../lib/user-facing-copy';
+import {
+  fetchTelemetryUserId,
+  trackRecommendationClicked,
+  trackRecommendationViewed,
+  trackWeeklyActive,
+} from '@/lib/telemetry/tracker';
 
 function routeOrFallback(route?: string) {
   return route && route.length > 0 ? route : '/journey';
+}
+
+function weeklyActiveStorageKey(userId: string, now = new Date()) {
+  const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const day = weekStart.getUTCDay() || 7;
+  weekStart.setUTCDate(weekStart.getUTCDate() - day + 1);
+  return `nextshift:weekly-active:${userId}:${weekStart.toISOString().slice(0, 10)}`;
 }
 
 function DashboardHomeSkeleton() {
@@ -63,7 +78,45 @@ function MissionEngineFailure({ onRetry }: { onRetry: () => void }) {
 
 export function DashboardHome() {
   const projection = useDashboardMission();
+  const recommendation = useDashboardRecommendation();
+  const telemetryUser = useQuery({
+    queryKey: ['telemetry-user-id'],
+    queryFn: fetchTelemetryUserId,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const viewedRecommendationIds = useRef<Set<string>>(new Set());
   const data = projection.data;
+  const recommendationData = recommendation.isError ? null : recommendation.data ?? null;
+  const telemetryUserId = telemetryUser.data ?? null;
+
+  useEffect(() => {
+    const userId = telemetryUser.data;
+    if (!userId) return;
+
+    try {
+      const key = weeklyActiveStorageKey(userId);
+      if (window.localStorage.getItem(key)) return;
+      trackWeeklyActive(userId, {});
+      window.localStorage.setItem(key, 'true');
+    } catch {
+      // Telemetry should never block dashboard rendering.
+    }
+  }, [telemetryUser.data]);
+
+  useEffect(() => {
+    if (!recommendationData || !telemetryUserId) return;
+
+    const recommendationId = recommendationData.recommendation.id;
+    if (viewedRecommendationIds.current.has(recommendationId)) return;
+
+    viewedRecommendationIds.current.add(recommendationId);
+    trackRecommendationViewed(telemetryUserId, {
+      recommendationId,
+      source: recommendationData.source,
+      confidence: recommendationData.confidence,
+    });
+  }, [recommendationData, telemetryUserId]);
 
   if (projection.isLoading) {
     return <DashboardHomeSkeleton />;
@@ -89,28 +142,18 @@ export function DashboardHome() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
       <AICommandCard
-        completedItems={data.missionControl.completedItems}
-        currentGap={data.missionControl.currentGap}
         todayMission={userFacingCopy(data.missionControl.title)}
         missionDescription={userFacingCopy(data.missionControl.description)}
-        steps={data.missionControl.steps}
-        currentStep={data.missionControl.currentStep}
-        progress={data.missionControl.progress}
-        passedChecks={data.missionControl.passedChecks}
-        remainingChecks={data.missionControl.remainingChecks}
-        nextRequiredCheck={data.missionControl.nextRequiredCheck}
-        verificationStatus={data.missionControl.verificationStatus}
         missionReason={userFacingCopy(data.missionControl.whyThis)}
-        whyNow={data.missionControl.whyNow}
-        decisionReason={data.missionControl.whyNotOthers}
-        nextMilestone={data.missionControl.nextMilestone}
-        priorityLevel={data.missionControl.priority as DashboardPriorityLevel}
         estimatedTime={humanizeEstimatedTime(data.missionControl.estimatedTime)}
-        expectedOutcome={data.missionControl.expectedOutcome}
-        firstUserExperience={data.firstUserExperience}
-        userSuccess={data.userSuccess}
         executeRoute={executeRoute}
         primaryActionLabel={data.missionControl.ctaLabel}
+        onPrimaryAction={recommendationData && telemetryUserId ? () => {
+          trackRecommendationClicked(telemetryUserId, {
+            recommendationId: recommendationData.recommendation.id,
+            ctaTarget: executeRoute,
+          });
+        } : undefined}
       />
       <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />
       {hasMomentum ? (
