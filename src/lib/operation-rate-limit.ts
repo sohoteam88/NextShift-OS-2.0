@@ -11,7 +11,8 @@ export async function operationRateLimitGuard(
   const result = await consumeRateLimit(`operation:${feature}:user:${userId}`, limit, windowMs);
   if (result.allowed) return;
 
-  // A rejected operation must not extend a fixed window or count as a future operation.
+  // consumeRateLimit mirrors Redis INCR on rejection, so rolling this request
+  // back preserves the fixed-window count at its configured limit.
   await releaseRateLimit(`operation:${feature}:user:${userId}`);
   throw new AppError('RATE_LIMITED', 429, 'Too many operations', result);
 }

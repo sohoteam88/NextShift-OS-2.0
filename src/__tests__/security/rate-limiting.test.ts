@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST as postAuth } from '@/app/api/v1/auth/route';
 import { POST as postContent } from '@/app/api/v1/ai/generate/content/route';
 import { sharedAiRateLimitGuard } from '@/lib/ai-rate-limit';
+import { operationRateLimitGuard } from '@/lib/operation-rate-limit';
 import { checkRateLimit, resetRateLimits } from '@/lib/rate-limit';
 
 const authMocks = vi.hoisted(() => ({
@@ -86,6 +87,23 @@ describe('Rate Limiting', () => {
     }
 
     expect(await checkRateLimit('submit:203.0.113.9', 10, 60 * 60 * 1000)).toBe(false);
+  });
+
+  it('keeps rejecting a bucket after repeated rejected attempts in the same window', async () => {
+    const key = 'repeat-rejected';
+    expect(await checkRateLimit(key, 2, 60 * 60 * 1000)).toBe(true);
+    expect(await checkRateLimit(key, 2, 60 * 60 * 1000)).toBe(true);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      expect(await checkRateLimit(key, 2, 60 * 60 * 1000)).toBe(false);
+    }
+  });
+
+  it('keeps the ordinary operation bucket blocked after repeated rejections', async () => {
+    await operationRateLimitGuard('operation-user', 'publish', 1);
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await expect(operationRateLimitGuard('operation-user', 'publish', 1))
+        .rejects.toMatchObject({ code: 'RATE_LIMITED', statusCode: 429 });
+    }
   });
 
   it('blocks excessive AI usage by tenant even across users', async () => {

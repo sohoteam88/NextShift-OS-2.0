@@ -81,6 +81,9 @@ export async function consumeRateLimit(
     return { allowed: true, remaining: Math.max(0, max - 1), retryAfterSeconds: Math.ceil(windowMs / 1000) };
   }
   if (entry.count >= max) {
+    // Mirror Redis INCR: rejected attempts participate in the fixed window.
+    // Callers that roll a rejected attempt back can now do so safely.
+    entry.count++;
     return {
       allowed: false,
       remaining: 0,
