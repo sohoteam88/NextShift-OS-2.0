@@ -62,10 +62,66 @@ jobs:
           printf 'release_sha=%s\n' "$RELEASE_SHA" >> "$GITHUB_OUTPUT"
           printf 'control_plane_sha=%s\n' "$CONTROL_PLANE_SHA" >> "$GITHUB_OUTPUT"
 
+  build-migration-artifact:
+    name: Build exact migration deployment artifact
+    if: ${{ inputs.action == 'deploy' && inputs.confirmation == 'DEPLOY_PRODUCTION' }}
+    needs: validate-request
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}
+
+    steps:
+      - name: Checkout exact release SHA
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate-request.outputs.release_sha }}
+          fetch-depth: 0
+
+      - name: Verify exact release checkout
+        run: test "$(git rev-parse HEAD)" = "$IMAGE_TAG"
+
+      - name: Build and package one exact migration image
+        run: |
+          set -euo pipefail
+          migration_image="nextshift-migrations:$IMAGE_TAG"
+          docker build \
+            --file scripts/deployment/Dockerfile.migrations \
+            --build-arg RELEASE_SHA="$IMAGE_TAG" \
+            --label "org.opencontainers.image.revision=$IMAGE_TAG" \
+            --tag "$migration_image" \
+            .
+          migration_image_digest="$(docker image inspect --format '{{.Id}}' "$migration_image")"
+          if [[ ! "$migration_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            printf 'ERROR: migration build image ID is invalid: actual=%s\n' "$migration_image_digest" >&2
+            exit 1
+          fi
+          migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$migration_image")"
+          if [[ "$migration_revision" != "$IMAGE_TAG" ]]; then
+            printf 'ERROR: migration build OCI revision mismatch: expected=%s actual=%s\n' \
+              "$IMAGE_TAG" "$migration_revision" >&2
+            exit 1
+          fi
+          scripts/deployment/validate-migration-image-runtime.sh "$migration_image" "$IMAGE_TAG"
+          docker save "$migration_image" | gzip -n > migration-image.tar.gz
+          printf '%s\n' "$migration_image_digest" > migration-image-digest.txt
+          sha256sum migration-image.tar.gz > migration-image.tar.gz.sha256
+
+      - name: Upload exact migration deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextshift-migration-${{ env.IMAGE_TAG }}
+          path: |
+            migration-image.tar.gz
+            migration-image.tar.gz.sha256
+            migration-image-digest.txt
+          if-no-files-found: error
+          retention-days: 1
+
   deploy:
     name: Deploy exact release to production
     if: ${{ inputs.action == 'deploy' && inputs.confirmation == 'DEPLOY_PRODUCTION' }}
-    needs: validate-request
+    needs: [validate-request, build-migration-artifact]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
@@ -104,7 +160,7 @@ jobs:
       - name: Verify exact release checkout
         run: test "$(git rev-parse HEAD)" = "$IMAGE_TAG"
 
-      - name: Build exact application and migration images
+      - name: Build exact application image
         run: |
           set -euo pipefail
           docker build \
@@ -131,21 +187,14 @@ jobs:
             --build-arg NEXT_PUBLIC_COMMIT_SHA="$IMAGE_TAG" \
             --build-arg NEXT_PUBLIC_BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             -t nextshift-app:$IMAGE_TAG .
-          docker build \
-            --file scripts/deployment/Dockerfile.migrations \
-            --build-arg RELEASE_SHA="$IMAGE_TAG" \
-            --label "org.opencontainers.image.revision=$IMAGE_TAG" \
-            --tag nextshift-migrations:$IMAGE_TAG \
-            .
-          migration_image_digest="$(docker image inspect --format '{{.Id}}' nextshift-migrations:$IMAGE_TAG)"
-          [[ "$migration_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
-          migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' nextshift-migrations:$IMAGE_TAG)"
-          test "$migration_revision" = "$IMAGE_TAG"
           docker save nextshift-app:$IMAGE_TAG | gzip -n > image.tar.gz
-          docker save nextshift-migrations:$IMAGE_TAG | gzip -n > migration-image.tar.gz
-          printf '%s\n' "$migration_image_digest" > migration-image-digest.txt
-          sha256sum migration-image.tar.gz > migration-image.tar.gz.sha256
           printf '%s\n' "$IMAGE_TAG" > os38-release-sha.txt
+
+      - name: Download exact migration deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextshift-migration-${{ env.IMAGE_TAG }}
+          path: .
 
       - name: Copy exact release artifacts to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -164,39 +213,84 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -euo pipefail
+
+            fail_check() {
+              local check_name="$1" expected="$2" actual="$3"
+              printf 'ERROR: %s failed: expected=%s actual=%s\n' \
+                "$check_name" "$expected" "$actual" >&2
+              exit 1
+            }
+
+            assert_equal() {
+              local check_name="$1" expected="$2" actual="$3"
+              [[ "$actual" == "$expected" ]] || fail_check "$check_name" "$expected" "$actual"
+            }
+
+            assert_sha256() {
+              local check_name="$1" actual="$2"
+              [[ "$actual" =~ ^sha256:[0-9a-f]{64}$ ]] || \
+                fail_check "$check_name" 'sha256:<64 lowercase hex>' "$actual"
+            }
+
+            require_image() {
+              local check_name="$1" image="$2"
+              docker image inspect "$image" >/dev/null 2>&1 || \
+                fail_check "$check_name" "present image $image" 'absent'
+            }
+
             cd /home/deploy/nextshift
             if docker image inspect nextshift-app:latest >/dev/null 2>&1; then
               docker tag nextshift-app:latest nextshift-app:previous
             fi
             docker load < image.tar.gz
-            docker image inspect nextshift-app:${{ env.IMAGE_TAG }} >/dev/null
+            require_image 'application image after archive load' nextshift-app:${{ env.IMAGE_TAG }}
             image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' nextshift-app:${{ env.IMAGE_TAG }})"
-            test "$image_revision" = "${{ env.IMAGE_TAG }}"
-            sha256sum --check migration-image.tar.gz.sha256
+            assert_equal 'application OCI revision' "${{ env.IMAGE_TAG }}" "$image_revision"
+            if ! sha256sum --check migration-image.tar.gz.sha256; then
+              fail_check 'migration archive checksum' 'matching SHA-256 manifest' 'mismatch'
+            fi
             expected_migration_digest="$(cat migration-image-digest.txt)"
-            [[ "$expected_migration_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            assert_sha256 'migration artifact recorded image ID' "$expected_migration_digest"
+            migration_tar_config="$(tar -xzOf migration-image.tar.gz manifest.json | jq -r '.[0].Config')"
+            [[ "$migration_tar_config" =~ ^blobs/sha256/[0-9a-f]{64}$ ]] || \
+              fail_check 'migration artifact Config path' 'blobs/sha256/<64 lowercase hex>' "$migration_tar_config"
+            migration_tar_config_digest="sha256:$(tar -xzOf migration-image.tar.gz "$migration_tar_config" | sha256sum | awk '{print $1}')"
+            assert_sha256 'migration artifact Config digest' "$migration_tar_config_digest"
+            assert_equal 'migration artifact config digest' "$expected_migration_digest" "$migration_tar_config_digest"
             docker load < migration-image.tar.gz
             migration_image="nextshift-migrations:${{ env.IMAGE_TAG }}"
-            actual_migration_digest="$(docker image inspect --format '{{.Id}}' "$migration_image")"
-            test "$actual_migration_digest" = "$expected_migration_digest"
+            require_image 'migration image after archive load' "$migration_image"
             migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$migration_image")"
-            test "$migration_revision" = "${{ env.IMAGE_TAG }}"
-            test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.prisma" }}' "$migration_image")" = '6.19.3'
-            test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.bash" }}' "$migration_image")" = '5.3.9-r1'
-            test "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.psql" }}' "$migration_image")" = '17.10-r0'
-            test "$(docker image inspect --format '{{json .Config.Entrypoint}}' "$migration_image")" = '["/usr/bin/env","bash","/app/scripts/deployment/run-os38-production-migrations.sh"]'
-            docker run --rm --network none --entrypoint /bin/sh "$migration_image" -ceu '
-              test "$(apk info -v | grep -Fx "bash-5.3.9-r1")" = "bash-5.3.9-r1"
-              test "$(apk info -v | grep -Fx "postgresql17-client-17.10-r0")" = "postgresql17-client-17.10-r0"
-              test "$(psql --version)" = "psql (PostgreSQL) 17.10"
+            assert_equal 'migration OCI revision' "${{ env.IMAGE_TAG }}" "$migration_revision"
+            assert_equal 'migration Prisma label' '6.19.3' \
+              "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.prisma" }}' "$migration_image")"
+            assert_equal 'migration Bash label' '5.3.9-r1' \
+              "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.bash" }}' "$migration_image")"
+            assert_equal 'migration psql label' '17.10-r0' \
+              "$(docker image inspect --format '{{ index .Config.Labels "com.nextshift.migration.psql" }}' "$migration_image")"
+            assert_equal 'migration entrypoint' '["/usr/bin/env","bash","/app/scripts/deployment/run-os38-production-migrations.sh"]' \
+              "$(docker image inspect --format '{{json .Config.Entrypoint}}' "$migration_image")"
+            docker run --rm --network none --entrypoint bash "$migration_image" -ceu '
+              assert_equal() {
+                local check_name="$1" expected="$2" actual="$3"
+                [[ "$actual" == "$expected" ]] || {
+                  printf "ERROR: %s failed: expected=%s actual=%s\\n" "$check_name" "$expected" "$actual" >&2
+                  exit 1
+                }
+              }
+              assert_equal "migration runtime Bash package" "bash-5.3.9-r1" "$(apk info -v | grep -Fx "bash-5.3.9-r1" || true)"
+              assert_equal "migration runtime psql package" "postgresql17-client-17.10-r0" "$(apk info -v | grep -Fx "postgresql17-client-17.10-r0" || true)"
+              assert_equal "migration runtime psql version" "psql (PostgreSQL) 17.10" "$(psql --version)"
             '
-            docker run --rm \
+            if ! docker run --rm \
               --env-file .env.production \
               -e OS38_MIGRATION_MODE=production \
               -v "$PWD/os38-release-sha.txt:/run/nextshift/os38-release-sha.txt:ro" \
               "$migration_image" \
               "${{ env.IMAGE_TAG }}" \
-              /run/nextshift/os38-release-sha.txt
+              /run/nextshift/os38-release-sha.txt; then
+              fail_check 'migration container exit status' '0' 'non-zero'
+            fi
             docker tag nextshift-app:${{ env.IMAGE_TAG }} nextshift-app:latest
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d app
             chmod +x scripts/deploy-smoke.sh

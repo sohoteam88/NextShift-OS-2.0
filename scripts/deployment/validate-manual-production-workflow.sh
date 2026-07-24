@@ -74,13 +74,14 @@ trigger_block="$(extract_top_level_block on)"
 permissions_block="$(extract_top_level_block permissions)"
 concurrency_block="$(extract_top_level_block concurrency)"
 validate_job="$(extract_job_block validate-request)"
+migration_artifact_job="$(extract_job_block build-migration-artifact)"
 deploy_job="$(extract_job_block deploy)"
 rollback_job="$(extract_job_block rollback)"
 
 [[ -n "$trigger_block" && -n "$permissions_block" && -n "$concurrency_block" ]] || \
   fail 'required top-level workflow blocks are missing'
-[[ -n "$validate_job" && -n "$deploy_job" && -n "$rollback_job" ]] || \
-  fail 'validate-request, deploy, and rollback jobs must all exist'
+[[ -n "$validate_job" && -n "$migration_artifact_job" && -n "$deploy_job" && -n "$rollback_job" ]] || \
+  fail 'validate-request, build-migration-artifact, deploy, and rollback jobs must all exist'
 
 top_level_triggers="$(printf '%s\n' "$trigger_block" | awk '/^  [A-Za-z0-9_-]+:$/ { sub(/^  /, ""); sub(/:$/, ""); print }')"
 [[ "$top_level_triggers" == 'workflow_dispatch' ]] || \
@@ -115,15 +116,30 @@ require_block_count "$validate_job" 1 '          CONTROL_PLANE_SHA: ${{ github.s
 require_block_count "$validate_job" 1 '          scripts/deployment/validate-production-request.sh' 'validate helper invocation'
 require_block_count "$validate_job" 1 "          printf 'control_plane_sha=%s\\n' \"\$CONTROL_PLANE_SHA\" >> \"\$GITHUB_OUTPUT\"" 'control-plane output'
 
+require_block_count "$migration_artifact_job" 1 "    if: \${{ inputs.action == 'deploy' && inputs.confirmation == 'DEPLOY_PRODUCTION' }}" 'migration artifact confirmation'
+require_block_count "$migration_artifact_job" 1 '    needs: validate-request' 'migration artifact dependency'
+require_block_count "$migration_artifact_job" 0 '    environment: production' 'migration artifact must not obtain production environment authority'
+require_block_count "$migration_artifact_job" 1 '      IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}' 'migration artifact release SHA'
+require_block_count "$migration_artifact_job" 1 '          ref: ${{ needs.validate-request.outputs.release_sha }}' 'migration artifact exact release checkout'
+require_block_count "$migration_artifact_job" 1 '--file scripts/deployment/Dockerfile.migrations' 'one migration image build'
+require_block_count "$migration_artifact_job" 1 'docker save "$migration_image" | gzip -n > migration-image.tar.gz' 'migration image archive from built image'
+require_block_count "$migration_artifact_job" 1 "printf '%s\\n' \"\$migration_image_digest\" > migration-image-digest.txt" 'migration image ID from built image'
+require_block_count "$migration_artifact_job" 1 'sha256sum migration-image.tar.gz > migration-image.tar.gz.sha256' 'migration archive checksum creation'
+require_block_count "$migration_artifact_job" 1 'uses: actions/upload-artifact@v4' 'migration artifact upload'
+require_block_count "$migration_artifact_job" 1 'name: nextshift-migration-${{ env.IMAGE_TAG }}' 'migration artifact exact name'
+require_block_count "$migration_artifact_job" 1 'scripts/deployment/validate-migration-image-runtime.sh "$migration_image" "$IMAGE_TAG"' 'migration artifact runtime validation'
+
 for job_name in deploy rollback; do
   if [[ "$job_name" == deploy ]]; then
     job_block="$deploy_job"
     release_env='      IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}'
+    expected_needs='    needs: [validate-request, build-migration-artifact]'
   else
     job_block="$rollback_job"
     release_env='      RELEASE_SHA: ${{ needs.validate-request.outputs.release_sha }}'
+    expected_needs='    needs: validate-request'
   fi
-  require_block_count "$job_block" 1 '    needs: validate-request' "$job_name dependency"
+  require_block_count "$job_block" 1 "$expected_needs" "$job_name dependency"
   require_block_count "$job_block" 1 '    environment: production' "$job_name environment"
   require_block_count "$job_block" 1 '      CONTROL_PLANE_REF: ${{ github.ref }}' "$job_name control-plane ref"
   require_block_count "$job_block" 1 '      CONTROL_PLANE_SHA: ${{ needs.validate-request.outputs.control_plane_sha }}' "$job_name control-plane SHA"
@@ -144,7 +160,7 @@ done
 
 require_order "$deploy_job" \
   '          ref: ${{ needs.validate-request.outputs.release_sha }}' \
-  '      - name: Build exact application and migration images' \
+  '      - name: Build exact application image' \
   'deploy release checkout/build order'
 require_order "$rollback_job" \
   '          ref: ${{ needs.validate-request.outputs.release_sha }}' \
@@ -154,12 +170,20 @@ require_order "$rollback_job" \
 require_block_count "$deploy_job" 1 "    if: \${{ inputs.action == 'deploy' && inputs.confirmation == 'DEPLOY_PRODUCTION' }}" 'deploy confirmation'
 require_block_count "$rollback_job" 1 "    if: \${{ inputs.action == 'rollback' && inputs.confirmation == 'ROLLBACK_PRODUCTION' }}" 'rollback confirmation'
 
-require_block_count "$deploy_job" 2 '--label "org.opencontainers.image.revision=$IMAGE_TAG"' 'application and migration OCI revision labels'
+require_block_count "$deploy_job" 1 '--label "org.opencontainers.image.revision=$IMAGE_TAG"' 'application OCI revision label'
 require_block_count "$deploy_job" 1 '--build-arg NEXT_PUBLIC_COMMIT_SHA="$IMAGE_TAG"' 'deploy build SHA'
 require_block_count "$deploy_job" 1 '-t nextshift-app:$IMAGE_TAG .' 'deploy immutable image tag'
-require_block_count "$deploy_job" 1 'docker image inspect nextshift-app:${{ env.IMAGE_TAG }} >/dev/null' 'loaded deploy image existence'
+require_block_count "$deploy_job" 1 'uses: actions/download-artifact@v4' 'migration artifact download'
+require_block_count "$deploy_job" 1 'name: nextshift-migration-${{ env.IMAGE_TAG }}' 'download exact migration artifact'
+require_block_count "$deploy_job" 0 '--file scripts/deployment/Dockerfile.migrations' 'deploy must not rebuild migration image'
+require_block_count "$deploy_job" 1 'docker run --rm --network none --entrypoint bash "$migration_image" -ceu' 'offline migration runtime check must use Bash'
+require_block_count "$deploy_job" 1 "require_image 'application image after archive load' nextshift-app:\${{ env.IMAGE_TAG }}" 'loaded deploy image existence diagnostic'
 require_block_count "$deploy_job" 1 "image_revision=\"\$(docker image inspect --format '{{ index .Config.Labels \"org.opencontainers.image.revision\" }}' nextshift-app:\${{ env.IMAGE_TAG }})\"" 'loaded deploy image revision'
-require_block_count "$deploy_job" 1 'test "$image_revision" = "${{ env.IMAGE_TAG }}"' 'loaded deploy image revision match'
+require_block_count "$deploy_job" 1 "assert_equal 'application OCI revision' \"\${{ env.IMAGE_TAG }}\" \"\$image_revision\"" 'loaded deploy image revision diagnostic'
+require_block_count "$deploy_job" 1 "migration_tar_config=\"\$(tar -xzOf migration-image.tar.gz manifest.json | jq -r '.[0].Config')\"" 'migration archive Config extraction'
+require_block_count "$deploy_job" 1 "migration_tar_config_digest=\"sha256:\$(tar -xzOf migration-image.tar.gz \"\$migration_tar_config\" | sha256sum | awk '{print \$1}')\"" 'migration archive Config digest calculation'
+require_block_count "$deploy_job" 1 "assert_equal 'migration artifact config digest' \"\$expected_migration_digest\" \"\$migration_tar_config_digest\"" 'migration archive Config digest verification'
+require_block_count "$deploy_job" 0 "assert_equal 'migration image ID' \"\$expected_migration_digest\" \"\$actual_migration_digest\"" 'cross-engine migration image ID equality is forbidden'
 
 require_block_count "$rollback_job" 1 'target_image="nextshift-app:${{ env.RELEASE_SHA }}"' 'rollback exact target'
 require_block_count "$rollback_job" 1 'docker image inspect "$target_image" >/dev/null 2>&1' 'rollback target existence'

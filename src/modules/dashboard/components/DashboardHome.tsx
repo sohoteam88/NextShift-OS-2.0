@@ -1,26 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { AICommandCard } from './AICommandCard';
-import type { DashboardPriorityLevel } from './AICommandCard';
-import { BusinessScoreCard } from './BusinessScoreCard';
 import { buildJourneySteps, JourneyProgressCard } from './JourneyProgressCard';
 import { MomentumCard } from './MomentumCard';
-import { RecommendationDiscussion } from './RecommendationDiscussion';
-import { WeeklyReviewCard } from './WeeklyReviewCard';
 import { useDashboardMission } from '../hooks/useDashboardMission';
-import {
-  useDashboardRecommendation,
-} from '../hooks/useDashboardRecommendation';
-import { useRecommendationDiscussion } from '../hooks/useRecommendationDiscussion';
-import {
-  isDivergentRecommendation,
-  mergeMissionReason,
-} from '../lib/mission-recommendation';
+import { useDashboardRecommendation } from '../hooks/useDashboardRecommendation';
 import { revenueDriverHubRouteForMission } from '@/modules/revenue-drivers/constants/revenue-drivers';
+import { humanizeEstimatedTime, userFacingCopy } from '../lib/user-facing-copy';
 import {
   fetchTelemetryUserId,
   trackRecommendationClicked,
@@ -30,6 +19,13 @@ import {
 
 function routeOrFallback(route?: string) {
   return route && route.length > 0 ? route : '/journey';
+}
+
+function weeklyActiveStorageKey(userId: string, now = new Date()) {
+  const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const day = weekStart.getUTCDay() || 7;
+  weekStart.setUTCDate(weekStart.getUTCDate() - day + 1);
+  return `nextshift:weekly-active:${userId}:${weekStart.toISOString().slice(0, 10)}`;
 }
 
 function DashboardHomeSkeleton() {
@@ -80,15 +76,7 @@ function MissionEngineFailure({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function weeklyActiveStorageKey(userId: string, now = new Date()) {
-  const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const day = weekStart.getUTCDay() || 7;
-  weekStart.setUTCDate(weekStart.getUTCDate() - day + 1);
-  return `nextshift:weekly-active:${userId}:${weekStart.toISOString().slice(0, 10)}`;
-}
-
 export function DashboardHome() {
-  const router = useRouter();
   const projection = useDashboardMission();
   const recommendation = useDashboardRecommendation();
   const telemetryUser = useQuery({
@@ -97,15 +85,10 @@ export function DashboardHome() {
     staleTime: 5 * 60_000,
     retry: false,
   });
+  const viewedRecommendationIds = useRef<Set<string>>(new Set());
   const data = projection.data;
   const recommendationData = recommendation.isError ? null : recommendation.data ?? null;
   const telemetryUserId = telemetryUser.data ?? null;
-  const discussion = useRecommendationDiscussion({
-    recommendation: recommendationData,
-    telemetryUserId,
-  });
-  const viewedRecommendationIds = useRef<Set<string>>(new Set());
-  const [alternativeOpen, setAlternativeOpen] = useState(false);
 
   useEffect(() => {
     const userId = telemetryUser.data;
@@ -119,7 +102,7 @@ export function DashboardHome() {
     } catch {
       // Telemetry should never block dashboard rendering.
     }
-  }, [telemetryUserId]);
+  }, [telemetryUser.data]);
 
   useEffect(() => {
     if (!recommendationData || !telemetryUserId) return;
@@ -135,11 +118,7 @@ export function DashboardHome() {
     });
   }, [recommendationData, telemetryUserId]);
 
-  useEffect(() => {
-    setAlternativeOpen(false);
-  }, [recommendationData?.recommendation.id]);
-
-  if (projection.isLoading || recommendation.isLoading) {
+  if (projection.isLoading) {
     return <DashboardHomeSkeleton />;
   }
 
@@ -151,73 +130,33 @@ export function DashboardHome() {
     route: data.missionControl.route,
     missionType: data.missionControl.missionType,
   }) ?? routeOrFallback(data.missionControl.route);
-  const divergent = isDivergentRecommendation(recommendationData, data.missionControl.title);
-  const recommendationRationale = recommendationData
-    ? recommendationData.explain || recommendationData.recommendation.rationale
-    : '';
-  const missionReason = divergent
-    ? data.missionControl.whyThis
-    : mergeMissionReason(data.missionControl.whyThis, recommendationRationale);
+  const hasMomentum = [
+    data.value.outcomeMetrics.contentPublished,
+    data.value.outcomeMetrics.viewsGenerated,
+    data.value.outcomeMetrics.leadsGenerated,
+    data.value.outcomeMetrics.appointmentsBooked,
+    data.value.outcomeMetrics.customersAcquired,
+    data.value.outcomeMetrics.revenueGenerated,
+  ].some((value) => value > 0);
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
-      <BusinessScoreCard />
       <AICommandCard
-        completedItems={data.missionControl.completedItems}
-        currentGap={data.missionControl.currentGap}
-        todayMission={data.missionControl.title}
-        missionDescription={data.missionControl.description}
-        steps={data.missionControl.steps}
-        currentStep={data.missionControl.currentStep}
-        progress={data.missionControl.progress}
-        passedChecks={data.missionControl.passedChecks}
-        remainingChecks={data.missionControl.remainingChecks}
-        nextRequiredCheck={data.missionControl.nextRequiredCheck}
-        verificationStatus={data.missionControl.verificationStatus}
-        missionReason={missionReason}
-        whyNow={data.missionControl.whyNow}
-        decisionReason={data.missionControl.whyNotOthers}
-        nextMilestone={data.missionControl.nextMilestone}
-        priorityLevel={data.missionControl.priority as DashboardPriorityLevel}
-        estimatedTime={data.missionControl.estimatedTime}
-        expectedOutcome={data.missionControl.expectedOutcome}
-        firstUserExperience={data.firstUserExperience}
-        userSuccess={data.userSuccess}
+        todayMission={userFacingCopy(data.missionControl.title)}
+        missionDescription={userFacingCopy(data.missionControl.description)}
+        missionReason={userFacingCopy(data.missionControl.whyThis)}
+        estimatedTime={humanizeEstimatedTime(data.missionControl.estimatedTime)}
         executeRoute={executeRoute}
         primaryActionLabel={data.missionControl.ctaLabel}
-        alternativeSuggestion={divergent && recommendationData ? {
-          title: recommendationData.recommendation.title,
-          rationale: recommendationRationale,
-          open: alternativeOpen,
-          onToggle: () => setAlternativeOpen((value) => !value),
+        onPrimaryAction={recommendationData && telemetryUserId ? () => {
+          trackRecommendationClicked(telemetryUserId, {
+            recommendationId: recommendationData.recommendation.id,
+            ctaTarget: executeRoute,
+          });
         } : undefined}
-        discussion={recommendationData && discussion.available ? (
-          <RecommendationDiscussion
-            recommendation={recommendationData}
-            open={discussion.open}
-            messages={discussion.messages}
-            input={discussion.input}
-            turnsUsed={discussion.turnsUsed}
-            turnsLimit={discussion.turnsLimit}
-            sending={discussion.sending}
-            error={discussion.error}
-            onToggle={discussion.toggle}
-            onInputChange={discussion.setInput}
-            onSubmit={discussion.submit}
-            onNavigate={(route) => {
-              if (telemetryUserId) {
-                trackRecommendationClicked(telemetryUserId, {
-                  recommendationId: recommendationData.recommendation.id,
-                  ctaTarget: route,
-                });
-              }
-              router.push(route);
-            }}
-          />
-        ) : undefined}
       />
-      <div className="grid gap-5 lg:grid-cols-2">
-        <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />
+      <JourneyProgressCard steps={buildJourneySteps(data.progressPath)} />
+      {hasMomentum ? (
         <MomentumCard
           metrics={data.value.outcomeMetrics}
           customerHealth={data.customerHealth}
@@ -226,8 +165,7 @@ export function DashboardHome() {
           referral={data.referral}
           setupHref={executeRoute}
         />
-      </div>
-      <WeeklyReviewCard />
+      ) : null}
     </div>
   );
 }

@@ -25,7 +25,7 @@ const Schema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'world-class-funnel' });
   const body = await request.json();
   const { workspaceId: _workspaceId, ...input } = Schema.parse(body);
   const workspaceContext = await resolveRequestWorkspaceContext({ user, request, body });

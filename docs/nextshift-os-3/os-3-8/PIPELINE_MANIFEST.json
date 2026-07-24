@@ -995,77 +995,18 @@
       ]
     },
     "request_artifact": "docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md",
-    "release_sha": "86f54a2185d8d981da19a8155055a999af2dc365",
-    "pre_request_main_sha": "986d3f4855dd968b61418d16d0637e6efa8b935a",
-    "requested_at": "2026-07-22T02:03:45Z",
-    "request_artifact_sha256": "0f5619cc8e2ec9a8ea426ecb33eb27bbf5f9989b3e2510f1dad5e2c3c1714450",
-    "request_pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/119",
-    "request_pr_number": 119,
-    "request_pr_head": "b9c418d9cc62a8d11250315ad9a8f58dc61171b6",
-    "request_merge_sha": "790edf0dbdbf2fb086896034f92f6ba1ea1ae0f6",
-    "review_id": 4750663304,
-    "review_commit_id": "b9c418d9cc62a8d11250315ad9a8f58dc61171b6",
-    "reviewed_release_sha": "86f54a2185d8d981da19a8155055a999af2dc365",
-    "reviewed_at": "2026-07-22T03:14:27Z",
-    "reviewed_post_request_drift": {
-      "evidence_id": "OS38-PR120-REVIEWED-POST-REQUEST-DRIFT",
-      "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/120",
-      "pr_number": 120,
-      "reviewed_head_sha": "b5a3800c97dd4d68b5597ff6009892cd5ddb47da",
-      "merge_sha": "2450d4e973a569d65786c857474b42d2198ed0fa",
-      "review_id": 4751579619,
-      "review_commit_id": "b5a3800c97dd4d68b5597ff6009892cd5ddb47da",
-      "reviewer_login": "sohoteam88",
-      "reviewer_author_association": "OWNER",
-      "verdict": "PASS",
-      "release_sha": "86f54a2185d8d981da19a8155055a999af2dc365",
-      "reviewed_at": "2026-07-22T06:25:27Z",
-      "files": [
-        {
-          "path": "scripts/deployment/tests/final-release-review.sh",
-          "sha256": "4908e7451180282d97e51cd9912182bbe6e7b59991e758fc9a9e467c16f70503"
-        },
-        {
-          "path": "scripts/os-pipeline/tests/git-integration.sh",
-          "sha256": "6803405a47e7eda16baa84d1c2b49a0b6c139394ddcb91b71a4b2be39e5d113c"
-        },
-        {
-          "path": "scripts/os-pipeline/tests/governance-dispatch-gate.sh",
-          "sha256": "b995ca49a084fa0bfcdd0de72db775aa7a7b15798cce1c1cab32f127428696b0"
-        },
-        {
-          "path": "scripts/os-pipeline/tests/governance-integration.sh",
-          "sha256": "3db5ca8886769b8482e1c73ca2bf81e8e980b36480ce795db9eac58cc860838d"
-        },
-        {
-          "path": "scripts/os-pipeline/tests/remediation-integration.sh",
-          "sha256": "82f1c91fb7bf84b9086a655384646f36c522e2445c1b5352c3ad586fc6de7295"
-        },
-        {
-          "path": "scripts/os-pipeline/tests/run.sh",
-          "sha256": "1dd02155b265ac83b4c7dae645ce4702df9f1ab94fb9dea291d9327e3871acae"
-        },
-        {
-          "path": "scripts/os-pipeline/tests/safety-integration.sh",
-          "sha256": "bf8b21bbb21dfb379c907a82920994fee4c95189d4780cf8a59734452afb7121"
-        }
-      ]
-    },
-    "reviewed_post_request_remediation": {
-      "evidence_id": "OS38-PR121-FINAL-RELEASE-DRIFT-REMEDIATION",
-      "pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/121",
-      "pr_number": 121,
-      "files": [
-        {
-          "path": "scripts/deployment/validate-final-release-review-request.sh",
-          "sha256": "0cae05a3974f9724172e4b20dc26eb122a0547a2acdb4dc1e3fb702b0343e6e8"
-        },
-        {
-          "path": "scripts/deployment/tests/final-release-review.sh",
-          "sha256": "43cb860f24f355052921940b528d438cd7f4714d34edf741af4ff5171f557bac"
-        }
-      ]
-    }
+    "release_sha": "8b2ce429dc58d8f97fca084969fbc30ec4a4c392",
+    "pre_request_main_sha": "26b0e5d1fd9da03dffa5931d70aed9d7a4c0a517",
+    "requested_at": "2026-07-23T11:06:28Z",
+    "request_artifact_sha256": "585bac61fbe2e1b16b702e3bfdc8e46b150c889c22fafca4442d16229034d8f3",
+    "request_pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/138",
+    "request_pr_number": 138,
+    "request_pr_head": "bf10b7578afa038342bfab56475b3443caa03ae6",
+    "request_merge_sha": "ab5bc67e933d9edee82075468ebbcc8709c5a3a8",
+    "review_id": 4763456255,
+    "review_commit_id": "bf10b7578afa038342bfab56475b3443caa03ae6",
+    "reviewed_release_sha": "8b2ce429dc58d8f97fca084969fbc30ec4a4c392",
+    "reviewed_at": "2026-07-23T11:07:03Z"
   },
   "release_gate": {
     "id": "OS3.8-FINAL-RELEASE",
@@ -1079,11 +1020,11 @@
     "auto_tag": false,
     "auto_deploy": false,
     "auto_release": false,
-    "approval_sha256": "4af42b6525e03b58e87147bb09edce19e7ad2589448a51b5d023f797c6270243",
-    "readiness_evidence_sha256": "31c98d0ee36e37f219f8aad00a46bd57d22a298d2bec785def4e6868323923e7",
-    "approved_release_sha": "86f54a2185d8d981da19a8155055a999af2dc365",
+    "approval_sha256": "74afd5bdf59846567349be34f9f793ca79adee605cc9d6604f3d6520ad0ec670",
+    "readiness_evidence_sha256": "8896a0ff205441f37fd73ca0417e363a48211389802644121e97cb54a9e59933",
+    "approved_release_sha": "8b2ce429dc58d8f97fca084969fbc30ec4a4c392",
     "approved_by": "Steven",
-    "approved_at": "2026-07-22T05:23:13Z",
-    "review_id": 4750663304
+    "approved_at": "2026-07-23T11:07:57Z",
+    "review_id": 4763456255
   }
 }

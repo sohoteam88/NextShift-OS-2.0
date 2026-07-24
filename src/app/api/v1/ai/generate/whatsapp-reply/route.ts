@@ -13,7 +13,7 @@ const WhatsAppReplySchema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'whatsapp-reply' });
   const body = await request.json();
   const input = WhatsAppReplySchema.parse(body);
   const result = await whatsappReplyService.suggest(user, input);

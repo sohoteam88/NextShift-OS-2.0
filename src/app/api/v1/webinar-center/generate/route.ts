@@ -7,7 +7,7 @@ import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission'
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'webinar-center' });
   const data = await webinarService.generate(user.id);
   if (data.qualityScore >= 80) await notifyMissionProgress(user, 'webinar_created');
   return NextResponse.json({ data });

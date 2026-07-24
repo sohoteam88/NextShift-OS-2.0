@@ -2,21 +2,21 @@
 
 EVIDENCE_ID=OS3.8-PRODUCTION-READINESS
 STATUS=READY
-RELEASE_SHA=86f54a2185d8d981da19a8155055a999af2dc365
-VERIFICATION_ID=OS38-PR-20260721T142928Z
-VERIFIED_AT=2026-07-21T14:29:28Z
+RELEASE_SHA=8b2ce429dc58d8f97fca084969fbc30ec4a4c392
+VERIFICATION_ID=OS38-PR-20260723T084743Z
+VERIFIED_AT=2026-07-23T08:47:43Z
 MIGRATION_REHEARSAL=PASS
 MIGRATION_IMAGE_REHEARSAL=PASS
-MIGRATION_IMAGE_DIGEST=sha256:037d31d3424f809b35ed0793b37cef84e54dcfac2bd90370b97059834a5cb508
-MIGRATION_IMAGE_REVISION=86f54a2185d8d981da19a8155055a999af2dc365
+MIGRATION_IMAGE_DIGEST=sha256:5d0995b94644af9eef0f51b57958dc4a2a3c7b8201d563b87fdecaaef9a20823
+MIGRATION_IMAGE_REVISION=8b2ce429dc58d8f97fca084969fbc30ec4a4c392
 BACKUP_SHA256=90192a8c71fe7b3fa57a0011909a1cf2fbc4f2e93fe4b6fc29ce9a7ff3360ffb
 RESTORE_VERIFIED_AT=2026-07-21T06:11:49Z
-ROLLBACK_IMAGE_SHA=76b573cdbf2f1bec31fe5770c080941469479d25
+ROLLBACK_IMAGE_SHA=86f54a2185d8d981da19a8155055a999af2dc365
 PRODUCTION_ENVIRONMENT=production
 REQUIRED_REVIEWER=Steven
 ENVIRONMENT_PROTECTION=PASS
-ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260721T142928Z
-ENVIRONMENT_VERIFIED_AT=2026-07-21T14:29:28Z
+ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260723T084743Z
+ENVIRONMENT_VERIFIED_AT=2026-07-23T08:47:43Z
 
 ## Decision boundary
 
@@ -28,14 +28,25 @@ production mutation.
 ## Repository and exact-release evidence
 
 - Repository: `sohoteam88/NextShift-OS-2.0`
-- Exact merged `main`: `86f54a2185d8d981da19a8155055a999af2dc365`
-- PR #116 reviewed head: `b1ed0fa034ee75afd557bdea620bea642d09c8fb`
-- Reviewed-head-to-merge tree delta: zero files
-- Main CI run `29835684227`: 6/6 required jobs succeeded
+- Exact deploy release: `8b2ce429dc58d8f97fca084969fbc30ec4a4c392`.
+- Current control-plane `main`: `89064babb1ebbdca17821a73a10cb7f30de7c757`
+  (includes #130 backup operations and #131 fixture-time repair).
+- PR #122 merge (rate limiting and drafts):
+  `41f8784f09296aa8d85b799f71ade60683c0f359`.
+- PR #127 merge (single-build migration artifact integrity and deployment
+  diagnostics): `8b2ce429dc58d8f97fca084969fbc30ec4a4c392`.
+- PR #127 reviewed head: `db9270a638bcfd7a7f61230658426e6d5a6ea2b2`;
+  reviewed-head-to-merge tree delta: zero files.
+- Control-plane CI run `29989917677` succeeded for the current `main`,
+  including migration-image and application-image contracts, complete tests,
+  and E2E.
 - Deploy workflow runs for the exact merge SHA: zero
 
 ## Backup and restore evidence
 
+- Steven explicitly approved reuse of `BACKUP_SHA256` and
+  `RESTORE_VERIFIED_AT` on 2026-07-23 because exact release `8b2ce429` has no
+  database-schema migration delta. These are the only carried-forward fields.
 - The production logical backup was created read-only on 2026-07-21 and its
   five SQL files plus release marker revalidated successfully against
   `SHA256SUMS.txt`.
@@ -48,15 +59,16 @@ production mutation.
 
 ## Exact-release migration rehearsal
 
-- The immutable migration image was built from `RELEASE_SHA` and has the
-  digest and OCI revision recorded above.
-- The preserved isolated database passed formal entrypoint Run 1 and Run 2.
-- Migration ledgers, constraints, indexes, triggers, functions, RLS, client
-  privilege checks, and catalog assertions passed.
-- Business row counts remained byte-identical; row-count SHA-256:
-  `e70f42acd96b0d9d43ba2fa2f778d64772c658e6c2fd627cceedf22e2d27e2d2`.
-- The merged-main Phase B evidence manifest SHA-256 is
-  `e547f1103294fb7ec00e899eeb66a27e800f428278cb175887e8aae52a4cb844`.
+- The immutable migration image was rebuilt locally from exact
+  `RELEASE_SHA`; its image ID and OCI revision are recorded above and match
+  the requested commit.
+- The rebuilt image passed the offline migration-image runtime contract:
+  pinned Bash, PostgreSQL client, pnpm, Prisma, entrypoint, exact revision,
+  and credential-free image environment were all verified.
+- The repository's disposable PostgreSQL migration rehearsal was re-executed
+  from the exact release checkout. It completed its migration-inventory,
+  ledger, catalog, RLS, and atomicity assertions without contacting
+  production.
 
 ## Production Environment protection
 
@@ -65,22 +77,17 @@ production mutation.
 - The configured reviewer is GitHub user `sohoteam88` (user ID `269462159`),
   the repository identity used for Steven's approval authority.
 - Deployment branch policy is restricted to the `main` branch.
-- The snapshot was read directly from GitHub during this verification and no
+- The snapshot was read directly from GitHub during this same verification
+  session by `scripts/deployment/verify-environment-protection.sh`; no
   Environment setting, secret, or variable was changed.
 
 ## Current production and rollback evidence
 
-- Production currently reports commit
-  `76b573cdbf2f1bec31fe5770c080941469479d25`, which is an ancestor of the
-  exact release SHA.
-- The active production container was running with Docker health `healthy`,
-  zero restarts, and returned liveness `ok` plus readiness `ok` with database
-  `ok` during this read-only verification.
-- Exact rollback tag:
-  `nextshift-app:76b573cdbf2f1bec31fe5770c080941469479d25`.
-- Rollback image digest:
-  `sha256:758381747097bef4ea20c6e69c47487c27d720497b15f6987fa289aa64467cf4`.
-- The rollback image OCI revision exactly matches `ROLLBACK_IMAGE_SHA`.
+- The current production rollback image was re-derived and read directly from
+  the VPS: `nextshift-app:86f54a2185d8d981da19a8155055a999af2dc365` exists,
+  has image ID
+  `sha256:c453be3cef192d6ac2319b06a960bb4d138c97cbb1bec11f8bda546c5fb31121`,
+  and its OCI revision exactly matches `ROLLBACK_IMAGE_SHA`.
 - No container, image, tag, runtime environment, credential, or service was
   modified.
 
@@ -88,5 +95,5 @@ production mutation.
 
 All repository-controlled and independently readable Production Readiness
 evidence was consistent at the recorded verification time. Production
-Readiness is therefore `READY`, while Final Release Approval remains absent
-and the canonical release gate remains `blocked`.
+Readiness is therefore `READY`, while the Final Release review for the exact
+SHA above is pending and the canonical release gate remains `blocked`.

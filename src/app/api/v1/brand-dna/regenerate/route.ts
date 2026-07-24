@@ -11,7 +11,7 @@ import prisma from '@/lib/prisma';
  */
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'brand-dna' });
 
   // Find latest extracted/confirmed interview
   const interview = await prisma.brandInterview.findFirst({

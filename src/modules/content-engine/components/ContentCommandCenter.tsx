@@ -34,8 +34,11 @@ import {
   canSaveDraft,
   contentEditStartedProperties,
   contentPatchPayload,
+  clearRecoverableContentDraft,
   isDraftDirty,
+  loadRecoverableContentDraft,
   reconcilePersistedEditorDraft,
+  saveRecoverableContentDraft,
   toEditableContentDraft,
   type ContentEditStartedProperties,
   type EditableContentDraft,
@@ -190,10 +193,15 @@ function uniqueValues(values: string[]) {
 
 async function responseError(response: Response, fallback: string) {
   const payload = (await response.json().catch(() => ({}))) as {
-    error?: { message?: string };
+    error?: { code?: string; message?: string };
     message?: string;
   };
-  return payload.error?.message ?? payload.message ?? fallback;
+  const message = payload.error?.message ?? payload.message ?? fallback;
+  const retryAfter = Number(response.headers.get('Retry-After'));
+  if (payload.error?.code === 'RATE_LIMITED' && Number.isFinite(retryAfter) && retryAfter > 0) {
+    return `${message} 约 ${Math.ceil(retryAfter / 60)} 分钟后可重试。`;
+  }
+  return message;
 }
 
 function BrandDNAGate({ isError }: { isError: boolean }) {
@@ -261,11 +269,13 @@ export function ContentCommandCenter() {
     useState<ContentCommandCenterPlatform>('facebook');
   const [editorDraft, setEditorDraft] = useState<EditableContentDraft | null>(null);
   const [savedDraft, setSavedDraft] = useState<EditableContentDraft | null>(null);
+  const [recoverableDraft, setRecoverableDraft] = useState<EditableContentDraft | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<'idle' | 'success' | 'error'>('idle');
   const [copyError, setCopyError] = useState<string | null>(null);
   const [pendingEditStarted, setPendingEditStarted] =
     useState<ContentEditStartedProperties | null>(null);
   const savedAfterEditRef = useRef<string | null>(null);
+  const recoveryCheckedRef = useRef<string | null>(null);
   const trackedEditingRef = useRef<string | null>(null);
   const reportedEditingRef = useRef<string | null>(null);
   const handleIntentResolved = useCallback((resolution: RevenueDriverResolvedIntent) => {
@@ -332,6 +342,8 @@ export function ContentCommandCenter() {
       trackedEditingRef.current = null;
       reportedEditingRef.current = null;
       setPendingEditStarted(null);
+      window.localStorage.removeItem(`draft:content-engine:${post.id}`);
+      recoveryCheckedRef.current = post.id;
       const userId = telemetryUserQuery.data;
       if (userId) {
         trackContentGenerated(userId, {
@@ -367,6 +379,7 @@ export function ContentCommandCenter() {
         reconcilePersistedEditorDraft(currentDraft, draft, saved),
       );
       savedAfterEditRef.current = saved.id;
+      clearRecoverableContentDraft(window.localStorage, draft.id);
       const userId = telemetryUserQuery.data;
       if (userId) {
         trackContentSaved(userId, {
@@ -438,6 +451,31 @@ export function ContentCommandCenter() {
   }, [editorDraft, lastPost]);
 
   useEffect(() => {
+    if (
+      !lastPost ||
+      recoverableDraft ||
+      recoveryCheckedRef.current === lastPost.id ||
+      typeof window === 'undefined'
+    ) return;
+    recoveryCheckedRef.current = lastPost.id;
+    const recovered = loadRecoverableContentDraft(window.localStorage, lastPost.id);
+    if (recovered && isDraftDirty(recovered, toEditableContentDraft(lastPost))) {
+      setRecoverableDraft(recovered);
+    }
+  }, [lastPost, recoverableDraft]);
+
+  useEffect(() => {
+    if (!editorDraft || !isDirty || typeof window === 'undefined') return;
+    saveRecoverableContentDraft(window.localStorage, editorDraft);
+  }, [editorDraft, isDirty]);
+
+  useEffect(() => {
+    if (!editorDraft || !isDirty || saveDraft.isPending) return;
+    const timer = window.setTimeout(() => saveDraft.mutate(editorDraft), 3_000);
+    return () => window.clearTimeout(timer);
+  }, [editorDraft, isDirty, saveDraft]);
+
+  useEffect(() => {
     if (!pendingEditStarted || !telemetryUserQuery.data) return;
     if (reportedEditingRef.current === pendingEditStarted.contentId) {
       setPendingEditStarted(null);
@@ -504,6 +542,17 @@ export function ContentCommandCenter() {
     setCopyFeedback('idle');
     setCopyError(null);
     setEditorDraft({ ...editorDraft, [field]: value });
+  }
+
+  function restoreRecoverableDraft() {
+    if (!recoverableDraft) return;
+    setEditorDraft(recoverableDraft);
+    setRecoverableDraft(null);
+  }
+
+  function discardRecoverableDraft() {
+    if (recoverableDraft) clearRecoverableContentDraft(window.localStorage, recoverableDraft.id);
+    setRecoverableDraft(null);
   }
 
   async function handleCopy() {
@@ -658,6 +707,16 @@ export function ContentCommandCenter() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
       <RevenueDriverIntentResolver route="/content-engine" onResolved={handleIntentResolved} />
+      {recoverableDraft ? (
+        <section className="rounded-[var(--radius-lg)] border border-amber-200 bg-amber-50 p-4 shadow-sm" role="alert">
+          <p className="text-sm font-semibold text-amber-900">检测到上次未保存的编辑。</p>
+          <p className="mt-1 text-sm text-amber-800">要恢复上次未保存的编辑吗？</p>
+          <div className="mt-3 flex gap-2">
+            <button type="button" onClick={restoreRecoverableDraft} className="rounded-[var(--radius-md)] bg-amber-700 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-800">恢复编辑</button>
+            <button type="button" onClick={discardRecoverableDraft} className="rounded-[var(--radius-md)] border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">丢弃</button>
+          </div>
+        </section>
+      ) : null}
       {hasStaleContentPlan ? (
         <BrandDnaStaleBanner
           isPending={generatePlan.isPending}

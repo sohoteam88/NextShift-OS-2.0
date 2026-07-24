@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'brand-bio' });
   const body = (await request.json().catch(() => ({}))) as { brand_profile?: Record<string, unknown> };
 
   let brandProfile = body.brand_profile;

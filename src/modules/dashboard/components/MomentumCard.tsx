@@ -23,11 +23,13 @@ export function MomentumCard({ metrics, customerHealth, retention, expansion, re
   const referralT = useTranslations('referral.dashboard');
   const hasBusinessData = [
     metrics.contentPublished,
+    metrics.viewsGenerated,
     metrics.leadsGenerated,
     metrics.appointmentsBooked,
     metrics.customersAcquired,
     metrics.revenueGenerated,
   ].some((value) => value > 0);
+  if (!hasBusinessData) return null;
   const items = [
     { label: '已发布内容', value: metrics.contentPublished },
     { label: '浏览量', value: metrics.viewsGenerated },
@@ -208,23 +210,7 @@ export function MomentumCard({ metrics, customerHealth, retention, expansion, re
             ))}
           </div>
         </div>
-      ) : (
-        <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h3 className="text-base font-semibold text-[var(--color-text)]">
-            No Business Data Yet
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-muted)]">
-            完成当前任务后，你的内容、漏斗、Leads
-            和销售数据会自动出现在这里。
-          </p>
-          <Link
-            href={setupHref}
-            className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            继续当前任务 <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-      )}
+      ) : null}
     </section>
   );
 }

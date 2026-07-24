@@ -62,7 +62,8 @@ setup_pending_repository() {
   readiness="$repo/docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md"
   request_artifact="$repo/$(jq -r '.final_release_review.request_artifact' "$manifest")"
   approval="$repo/$(jq -r '.release_gate.approval_artifact' "$manifest")"
-  perl -pi -e "s/^RELEASE_SHA=.*/RELEASE_SHA=$release_sha/; s/^MIGRATION_IMAGE_REVISION=.*/MIGRATION_IMAGE_REVISION=$release_sha/" "$readiness"
+  fixture_verified_at="$(grep -E '^VERIFIED_AT=' "$readiness" | cut -d= -f2-)"
+  perl -pi -e "s/^RELEASE_SHA=.*/RELEASE_SHA=$release_sha/; s/^MIGRATION_IMAGE_REVISION=.*/MIGRATION_IMAGE_REVISION=$release_sha/; s/^ENVIRONMENT_VERIFIED_AT=.*/ENVIRONMENT_VERIFIED_AT=$fixture_verified_at/" "$readiness"
   jq --arg release "$release_sha" '
     .final_release_review.release_sha=$release |
     .final_release_review.status="pending" |
@@ -318,6 +319,10 @@ expect_reject wrong_request_pr_rejected run_review_validator 'https://github.com
 cp "$gh_data/reviews.valid.json" "$gh_data/reviews.json"
 approval="$repo/docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md"
 readiness_sha="$(sha256_file "$readiness")"; request_sha="$(sha256_file "$request_artifact")"
+[[ "$(grep -Ec '^VERIFICATION_ID=' "$readiness" || true)" == 1 ]] || fail 'fixture readiness evidence must contain one verification identity'
+readiness_verification_id="$(grep -E '^VERIFICATION_ID=' "$readiness" | cut -d= -f2-)"
+[[ "$readiness_verification_id" =~ ^OS38-PR-[0-9]{8}T[0-9]{6}Z$ ]] || \
+  fail 'fixture readiness verification identity is malformed'
 printf '%s\n' \
   'APPROVAL_ID=OS3.8-FINAL-RELEASE-APPROVAL' 'RELEASE_GATE=OS3.8-FINAL-RELEASE' 'DECISION=APPROVED' 'APPROVER=Steven' \
   'APPROVED_AT=2026-07-21T15:05:00Z' "RELEASE_SHA=$release_sha" \
@@ -326,7 +331,7 @@ printf '%s\n' \
   'REQUEST_ARTIFACT=docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md' \
   "REQUEST_ARTIFACT_SHA256=$request_sha" 'REVIEW_ID=4242' "REVIEW_COMMIT_ID=$request_head" "REVIEWED_RELEASE_SHA=$release_sha" \
   'PRODUCTION_READINESS_EVIDENCE=docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md' \
-  "PRODUCTION_READINESS_EVIDENCE_SHA256=$readiness_sha" 'PRODUCTION_READINESS_VERIFICATION_ID=OS38-PR-20260721T142928Z' >"$approval"
+  "PRODUCTION_READINESS_EVIDENCE_SHA256=$readiness_sha" "PRODUCTION_READINESS_VERIFICATION_ID=$readiness_verification_id" >"$approval"
 approval_sha="$(sha256_file "$approval")"
 jq --arg release "$release_sha" --arg head "$request_head" --arg merge "$request_merge" --arg request_sha "$request_sha" --arg approval_sha "$approval_sha" --arg readiness_sha "$readiness_sha" '
   .final_release_review.status="passed" |
@@ -357,6 +362,19 @@ expect_reject final_approval_without_pass_review_rejected run_approval_validator
 cp "$gh_data/reviews.saved.json" "$gh_data/reviews.json"
 expect_reject approved_gate_still_requires_separate_production_execution_authorization \
   bash -c 'cd "$1" && PATH="$2:$PATH" GH_FIXTURE_DIR="$3" scripts/deployment/validate-production-request.sh deploy WRONG "$4" refs/heads/main "$5"' _ "$repo" "$gh_dir" "$gh_data" "$release_sha" "$request_merge"
+
+valid_approval="$fixture_root/valid-approval.md"
+valid_manifest="$fixture_root/valid-approval-manifest.json"
+cp "$approval" "$valid_approval"; cp "$manifest" "$valid_manifest"
+bad_verification_id='OS38-PR-19990101T000000Z'
+perl -pi -e "s/^PRODUCTION_READINESS_VERIFICATION_ID=.*/PRODUCTION_READINESS_VERIFICATION_ID=$bad_verification_id/" "$approval"
+bad_approval_sha="$(sha256_file "$approval")"
+jq --arg digest "$bad_approval_sha" '.release_gate.approval_sha256=$digest' "$manifest" >"$manifest.tmp" && mv "$manifest.tmp" "$manifest"
+git -C "$repo" add docs && git -C "$repo" commit --quiet -m 'fixture: mismatched readiness verification identity'
+expect_reject_message production_readiness_verification_identity_mismatch_rejected \
+  'Production Readiness verification identity mismatch' run_approval_validator
+cp "$valid_approval" "$approval"; cp "$valid_manifest" "$manifest"
+git -C "$repo" add docs && git -C "$repo" commit --quiet -m 'fixture: restore readiness verification identity'
 
 # Model a reviewed, merged governance-only PR after the Final Release request.
 # Its immutable evidence is persisted in a later commit so the evidence cannot

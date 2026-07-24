@@ -19,7 +19,7 @@ const BriefSchema = z.object({
 
 export const POST = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  await sharedAiRateLimitGuard(user, { feature: 'generation' });
+  await sharedAiRateLimitGuard(user, { feature: 'video-production' });
   const body = await request.json();
   const { brief } = BriefSchema.parse(body);
   const pkg = await videoProductionService.generateVideoPackage(user.id, user.tenantId, brief);
