@@ -23,6 +23,8 @@ import type {
   ContentCalendar,
   ContentTrack,
 } from '@/modules/content-engine/types';
+import { BrandDnaStaleBanner } from '@/components/BrandDnaStaleBanner';
+import { isBrandDnaArtifactStale } from '@/lib/brand-dna-versioning';
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import { AccessibleDialog } from '@/components/ui/AccessibleDialog';
 import type { LeadMagnetConfig, LeadMagnetTrack } from '../types';
@@ -387,6 +389,18 @@ export function LeadMagnetDashboard() {
   const retailResource =
     trackLeadMagnets.retail ?? leadMagnetQuery.data?.data ?? null;
   const recruitmentResource = trackLeadMagnets.recruitment ?? null;
+  const staleLeadMagnetTracks = TRACKS.filter((track) => {
+    const resource =
+      track.id === 'retail' ? retailResource : recruitmentResource;
+    return (
+      resource &&
+      isBrandDnaArtifactStale(
+        resource.brandDnaVersion,
+        profile?.brandDnaVersion,
+      )
+    );
+  }).map((track) => track.id);
+  const hasStaleLeadMagnets = staleLeadMagnetTracks.length > 0;
   const hasGeneratedResources = Boolean(retailResource && recruitmentResource);
   const hasAnyGeneratedResource = Boolean(
     retailResource || recruitmentResource,
@@ -455,6 +469,12 @@ export function LeadMagnetDashboard() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
       <RevenueDriverIntentResolver route="/lead-magnet" />
+      {hasStaleLeadMagnets ? (
+        <BrandDnaStaleBanner
+          isPending={generateResources.isPending}
+          onRegenerate={() => generateResources.mutate(staleLeadMagnetTracks)}
+        />
+      ) : null}
 
       <section className="rounded-[var(--radius-lg)] border border-blue-200 bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
