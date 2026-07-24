@@ -60,6 +60,10 @@ export type {
   RunGenerationOptions,
 } from './generation';
 
+// ── Business pack (public, track-scoped generation context) ────────────────
+export { getBusinessPackSlice } from './business-pack';
+export type { BusinessPack, BusinessPackTrack, BusinessPackVisibility, GetBusinessPackSliceOptions } from './business-pack';
+
 // ── Policies ─────────────────────────────────────────────────────────────────
 export { decidePolicy, getTaskDefinition } from './services/model-policy-engine';
 export { estimateCredits } from './services/cost-estimator';
