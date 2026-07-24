@@ -32,12 +32,12 @@ set -euo pipefail
 
 # --- Repo -------------------------------------------------------------------
 REPO_DIR="${REPO_DIR:-$HOME/Documents/GitHub/NextShift-OS-2.0}"
-BASE_BRANCH="${BASE_BRANCH:-planning/os-3.3-runtime-platform}"
+BASE_BRANCH="${BASE_BRANCH:-main}"
 MAIN_BRANCH="${MAIN_BRANCH:-main}"
 
 # The active blueprint this run should draw tasks from. Update this pointer when you start a
 # new OS version; the script does not guess which blueprint is "current".
-BLUEPRINT_PATH="${BLUEPRINT_PATH:-docs/nextshift-os-3/OS_3_7_BLUEPRINT.md}"
+BLUEPRINT_PATH="${BLUEPRINT_PATH:-docs/nextshift-os-3/OS_3_9_BLUEPRINT.md}"
 
 # --- CLIs ---------------------------------------------------------------------
 # Fill in the actual invocation for your setup. Both must:
@@ -60,6 +60,7 @@ CODEX_CMD="${CODEX_CMD:-codex exec --dangerously-bypass-approvals-and-sandbox}"
 AUDIT_EVERY_N_PRS="${AUDIT_EVERY_N_PRS:-3}"
 PR_CHECKS_TIMEOUT_SECONDS="${PR_CHECKS_TIMEOUT_SECONDS:-1800}"
 PR_CHECKS_REGISTRATION_TIMEOUT_SECONDS="${PR_CHECKS_REGISTRATION_TIMEOUT_SECONDS:-600}"
+DISABLE_RC_TAG="${DISABLE_RC_TAG:-true}"
 
 # Must stay in sync with .github/workflows/ci.yml pull_request.paths-ignore.
 # A diff is CI-exempt only when every changed file matches one of these patterns.
@@ -78,6 +79,8 @@ FORBIDDEN_PATH_PATTERNS=(
   '^\.github/workflows/deploy\.yml$'
   'prisma/migrations/'   # migrations are reviewed manually until this pipeline has a track record
 )
+
+HUMAN_GATE_ITEMS=("G4" "G5")
 
 # C0 is the sole approved exception to the packages/ freeze. Keep this list exact: a C0 diff
 # that touches any other package file still aborts, as does any packages/ edit in another task.
@@ -121,7 +124,7 @@ if [[ "${PIPELINE_DETACHED:-0}" != "1" ]]; then
     || { printf 'ABORT: tmux is required for detached pipeline execution. Install it with: brew install tmux\n' >&2; exit 1; }
 
   PIPELINE_SESSION="os-pipeline-$RUN_ID"
-  export PIPELINE_DETACHED=1 RUN_ID REPO_DIR BASE_BRANCH MAIN_BRANCH BLUEPRINT_PATH
+  export PIPELINE_DETACHED=1 RUN_ID REPO_DIR BASE_BRANCH MAIN_BRANCH BLUEPRINT_PATH DISABLE_RC_TAG
   export CLAUDE_CMD CLAUDE_REVIEW_CMD CODEX_CMD AUDIT_EVERY_N_PRS LOG_DIR PIPELINE_SESSION
   tmux new-session -d -s "$PIPELINE_SESSION" "$SCRIPT_PATH"
   PIPELINE_PID="$(tmux display-message -p -t "$PIPELINE_SESSION" '#{pane_pid}')"
@@ -414,6 +417,15 @@ git worktree remove "/tmp/pipeline-verify-$RUN_ID" --force
 log "Local verification passed."
 
 # ============================================================================
+# Step 3.5 — human review gate
+# ============================================================================
+
+if [[ " ${HUMAN_GATE_ITEMS[*]} " == *" $CURRENT_ITEM "* ]]; then
+  log "$CURRENT_ITEM 已通过本地验证,按人工闸门规则暂停,不进入自动 review/合并,PR 留 open 等 Fable 窗口人工复审: $PR_URL"
+  abort "human review gate paused $CURRENT_ITEM; PR left open for Fable review: $PR_URL"
+fi
+
+# ============================================================================
 # Step 4 — Architecture Review of the diff
 # ============================================================================
 
@@ -605,7 +617,7 @@ fi
 # Step 7 — RC / main / tag (only if: audit says ready AND blueprint has no open items left)
 # ============================================================================
 
-if [[ -f "$LOG_DIR/.ready-for-rc" ]]; then
+if [[ -f "$LOG_DIR/.ready-for-rc" && "$DISABLE_RC_TAG" != "true" ]]; then
   REMAINING_CHECK="$LOG_DIR/$RUN_ID-remaining.log"
   $CLAUDE_CMD "Read $BLUEPRINT_PATH in the current repo. Is every workstream item marked \
 已完成/completed? Answer with exactly one line: ALL_DONE=YES or ALL_DONE=NO." > "$REMAINING_CHECK"
@@ -630,6 +642,8 @@ exactly the recommended release tag in the form vX.Y.Z, nothing else.")"
   else
     log "Step 7: audit was PASS but blueprint still has open items (unlikely but checked) — continuing normal cycles."
   fi
+elif [[ -f "$LOG_DIR/.ready-for-rc" ]]; then
+  log "Step 7: RC/tag disabled by DISABLE_RC_TAG — cycle stops after audit."
 fi
 
 # ============================================================================
