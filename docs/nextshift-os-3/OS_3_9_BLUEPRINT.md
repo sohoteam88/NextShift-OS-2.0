@@ -27,7 +27,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 
 | ID | 名称 | Track | Wave | 状态 |
 |---|---|---|---|---|
-| G0 | 统一生成网关(地基,先行) | G | W1 | 未开始 |
+| G0 | 统一生成网关(地基,先行) | G | W1 | 已完成(统一生成网关落地 src/modules/ai/generation:GenerationContext + 上下文/prompt 组装 + router 接线 helper + 显式降级契约;PR #147 / fef84f2) |
 | G1 | content-engine 首个接入 | G | W1 | 未开始 |
 | O1 | 事业包 data pack | O | W1(并行,Steven 口述) | 未开始 |
 | G4 | 输出硬过滤层(合规闸) | G | W2 | 未开始(review 强制暂停) |
