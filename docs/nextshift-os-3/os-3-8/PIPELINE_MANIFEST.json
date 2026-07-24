@@ -985,7 +985,7 @@
   },
   "final_release_review": {
     "id": "AR-OS3.8-FINAL-RELEASE",
-    "status": "passed",
+    "status": "pending",
     "reviewer_policy": {
       "allowed_logins": [
         "sohoteam88"
@@ -995,22 +995,22 @@
       ]
     },
     "request_artifact": "docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md",
-    "release_sha": "8b2ce429dc58d8f97fca084969fbc30ec4a4c392",
-    "pre_request_main_sha": "26b0e5d1fd9da03dffa5931d70aed9d7a4c0a517",
-    "requested_at": "2026-07-23T11:06:28Z",
-    "request_artifact_sha256": "585bac61fbe2e1b16b702e3bfdc8e46b150c889c22fafca4442d16229034d8f3",
-    "request_pr_url": "https://github.com/sohoteam88/NextShift-OS-2.0/pull/138",
-    "request_pr_number": 138,
-    "request_pr_head": "bf10b7578afa038342bfab56475b3443caa03ae6",
-    "request_merge_sha": "ab5bc67e933d9edee82075468ebbcc8709c5a3a8",
-    "review_id": 4763456255,
-    "review_commit_id": "bf10b7578afa038342bfab56475b3443caa03ae6",
-    "reviewed_release_sha": "8b2ce429dc58d8f97fca084969fbc30ec4a4c392",
-    "reviewed_at": "2026-07-23T11:07:03Z"
+    "release_sha": "c57722b082002c0fe546b1141f9f0e7b3a4f4ad0",
+    "pre_request_main_sha": null,
+    "requested_at": null,
+    "request_artifact_sha256": null,
+    "request_pr_url": null,
+    "request_pr_number": null,
+    "request_pr_head": null,
+    "request_merge_sha": null,
+    "review_id": null,
+    "review_commit_id": null,
+    "reviewed_release_sha": null,
+    "reviewed_at": null
   },
   "release_gate": {
     "id": "OS3.8-FINAL-RELEASE",
-    "status": "approved",
+    "status": "blocked",
     "approval_artifact": "docs/nextshift-os-3/os-3-8/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md",
     "readiness_evidence": "docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md",
     "requires": [
@@ -1020,11 +1020,6 @@
     "auto_tag": false,
     "auto_deploy": false,
     "auto_release": false,
-    "approval_sha256": "74afd5bdf59846567349be34f9f793ca79adee605cc9d6604f3d6520ad0ec670",
-    "readiness_evidence_sha256": "8896a0ff205441f37fd73ca0417e363a48211389802644121e97cb54a9e59933",
-    "approved_release_sha": "8b2ce429dc58d8f97fca084969fbc30ec4a4c392",
-    "approved_by": "Steven",
-    "approved_at": "2026-07-23T11:07:57Z",
-    "review_id": 4763456255
+    "readiness_evidence_sha256": null
   }
 }
