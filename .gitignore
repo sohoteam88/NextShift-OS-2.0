@@ -13,3 +13,5 @@ packages/*/dist/
 .env.*
 !.env.example
 !.env.production.example
+
+scripts/os-pipeline/logs/
