@@ -1360,6 +1360,7 @@
     "staleArtifact": {
       "title": "Brand DNA anda telah dikemas kini; kandungan ini menggunakan versi lama.",
       "description": "Jana semula kandungan ini apabila bersedia; aset lain tidak akan diubah secara automatik.",
+      "funnelDescription": "Jana semula dan terbitkan semula landing page ini untuk mencipta versi baharu; aset funnel lain tidak akan diubah secara automatik.",
       "regenerate": "Jana semula sekarang",
       "regenerating": "Sedang menjana semula"
     }

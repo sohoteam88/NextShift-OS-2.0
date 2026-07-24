@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
+import { getBrandContext, getBrandDnaVersion } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { FunnelBuilderType, FunnelPackage, FunnelPortfolio, FunnelTrack } from '../types/funnel-builder';
 import { generateFullFunnel } from './funnel-generators';
 import { funnelHealthService } from '@/modules/funnel/services/funnel-health-service';
@@ -9,6 +9,7 @@ import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { FunnelConfig, FunnelSection, FunnelTheme } from '@/modules/funnel/types';
 import { extractCheckKeys } from '@/modules/mission/utils/completed-checks';
 import type { WorkspaceContext } from '@/modules/workspace/types';
+import { resolveBrandDnaVersion } from './funnel-versioning';
 
 const DEFAULT_THEME: FunnelTheme = { primary_color: '#2563eb', bg_color: '#ffffff', font: 'system' };
 const TRACKS: FunnelTrack[] = ['retail', 'recruitment'];
@@ -107,6 +108,7 @@ function buildLandingPageConfig(pkg: FunnelPackage): FunnelConfig {
     type: 'lead_magnet',
     theme: DEFAULT_THEME,
     sections,
+    brandDnaVersion: resolveBrandDnaVersion(pkg.brandDnaVersion),
   };
 }
 
@@ -120,7 +122,9 @@ export const funnelBuilderService = {
     const activeTrack = resolveWorkspaceTrack(track, workspaceContext);
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('Brand DNA not found');
+    const brandDnaVersion = await getBrandDnaVersion(userId);
     const pkg = generateFullFunnel(ctx, funnelType, undefined, undefined, activeTrack);
+    pkg.brandDnaVersion = brandDnaVersion;
     const health = funnelHealthService.evaluatePackage(pkg);
     pkg.healthScore = health.score;
     pkg.nextBestAction = funnelHealthService.getPackageAdvisor(health).nextAction;
@@ -149,14 +153,16 @@ export const funnelBuilderService = {
   },
 
   async getPortfolio(userId: string): Promise<FunnelPortfolio> {
-    const [user, progress] = await Promise.all([
+    const [user, progress, currentBrandDnaVersion] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } }),
       prisma.userProgress.findUnique({ where: { userId }, select: { completedChecks: true } }),
+      getBrandDnaVersion(userId),
     ]);
     const meta = (user?.metadata as Record<string, unknown>) ?? {};
     const checks = new Set(extractCheckKeys(progress?.completedChecks));
     const activeTrack = isFunnelTrack(meta.funnel_builder_active_track) ? meta.funnel_builder_active_track : 'retail';
     const portfolio = emptyPortfolio(activeTrack);
+    portfolio.currentBrandDnaVersion = currentBrandDnaVersion;
     const storedTracks = (meta.funnel_builder_tracks && typeof meta.funnel_builder_tracks === 'object')
       ? meta.funnel_builder_tracks as Record<string, unknown>
       : {};

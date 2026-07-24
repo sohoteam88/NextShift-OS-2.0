@@ -5,6 +5,8 @@ const prismaMocks = vi.hoisted(() => ({
     findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(),
     create: vi.fn(), update: vi.fn(), updateMany: vi.fn(), delete: vi.fn(), count: vi.fn(),
   },
+  brandProfile: { findUnique: vi.fn() },
+  user: { findUnique: vi.fn() },
   funnelTemplate: { findFirst: vi.fn() },
   tenant: { findUnique: vi.fn() },
 }));
@@ -27,6 +29,7 @@ describe('funnelService', () => {
     vi.clearAllMocks();
     quotaMocks.checkFunnelQuota.mockResolvedValue(undefined);
     prismaMocks.funnel.findUnique.mockResolvedValue(null);
+    prismaMocks.brandProfile.findUnique.mockResolvedValue({ version: 1 });
   });
 
   // ── createInternal ──
@@ -81,6 +84,11 @@ describe('funnelService', () => {
       prismaMocks.funnel.update.mockResolvedValue({ id: 'f-1', status: 'published' });
       const result = await funnelService.publish(makeUser(), 'f-1');
       expect(result.status).toBe('published');
+      expect(prismaMocks.funnel.update).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          config: expect.objectContaining({ brandDnaVersion: 1 }),
+        }),
+      }));
     });
   });
 

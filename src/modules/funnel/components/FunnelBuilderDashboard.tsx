@@ -21,6 +21,9 @@ import {
   Target,
 } from 'lucide-react';
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
+import { BrandDnaStaleBanner } from '@/components/BrandDnaStaleBanner';
+import { useTranslations } from 'next-intl';
+import { shouldShowPublishedFunnelStaleBanner } from '../services/funnel-versioning';
 import type {
   FunnelBuilderType,
   FunnelPackage,
@@ -116,6 +119,20 @@ function usePublishSingleTrack() {
 
   return useMutation({
     mutationFn: async (track: FunnelTrack) => publishTrack(track),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['funnel-builder'] }),
+  });
+}
+
+function useRegenerateSingleTrack() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (track: FunnelTrack) => {
+      const definition = TRACKS.find((item) => item.id === track);
+      if (!definition) throw new Error('Unknown funnel track');
+      await generateTrack(track, definition.defaultType);
+      return publishTrack(track);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['funnel-builder'] }),
   });
 }
@@ -270,15 +287,27 @@ function ReadinessItem({
 function TrackSummary({
   track,
   pkg,
+  currentBrandDnaVersion,
   publishing,
+  regenerating,
   onPublish,
+  onRegenerate,
 }: {
   track: (typeof TRACKS)[number];
   pkg: FunnelPackage | null;
+  currentBrandDnaVersion?: number;
   publishing: boolean;
+  regenerating: boolean;
   onPublish: (track: FunnelTrack) => void;
+  onRegenerate: (track: FunnelTrack) => void;
 }) {
+  const t = useTranslations('dashboard.staleArtifact');
   const publicPath = pkg?.landingPage.publicPath;
+  const isStale = shouldShowPublishedFunnelStaleBanner(
+    publicPath,
+    pkg?.brandDnaVersion,
+    currentBrandDnaVersion,
+  );
 
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
@@ -352,6 +381,16 @@ function TrackSummary({
         </div>
       </div>
 
+      {isStale && (
+        <div className="mt-5">
+          <BrandDnaStaleBanner
+            onRegenerate={() => onRegenerate(track.id)}
+            isPending={regenerating}
+            description={t('funnelDescription')}
+          />
+        </div>
+      )}
+
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         {pkg && !publicPath && (
           <button
@@ -406,6 +445,7 @@ export function FunnelBuilderDashboard() {
   const portfolio = q.data?.data ?? defaultPortfolio();
   const generateDual = useGenerateDualLandingPages(portfolio);
   const publishSingle = usePublishSingleTrack();
+  const regenerateSingle = useRegenerateSingleTrack();
   const requiredInputsReady = hasRequiredInputs(portfolio);
   const bothPagesReady = hasBothLandingPages(portfolio);
   const readiness = portfolio.readiness ?? defaultPortfolio().readiness!;
@@ -598,8 +638,11 @@ export function FunnelBuilderDashboard() {
             key={track.id}
             track={track}
             pkg={portfolio[track.id]}
+            currentBrandDnaVersion={portfolio.currentBrandDnaVersion}
             publishing={publishSingle.isPending}
+            regenerating={regenerateSingle.isPending}
             onPublish={(item) => publishSingle.mutate(item)}
+            onRegenerate={(item) => regenerateSingle.mutate(item)}
           />
         ))}
       </div>

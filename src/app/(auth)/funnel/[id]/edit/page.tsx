@@ -116,6 +116,8 @@ export default function FunnelEditorPage() {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [showTheme, setShowTheme] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const saveTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -124,6 +126,12 @@ export default function FunnelEditorPage() {
       setConfig(funnelData.data.config as FunnelConfig);
     }
   }, [funnelData?.data?.config]);
+
+  useEffect(() => {
+    if (funnelData?.data?.title !== undefined) {
+      setTitleDraft(funnelData.data.title);
+    }
+  }, [funnelData?.data?.title]);
 
   const autoSave = useCallback((newConfig: FunnelConfig) => {
     setSaveState('unsaved');
@@ -163,6 +171,23 @@ export default function FunnelEditorPage() {
     }
   }
 
+  async function finishTitleEdit() {
+    setEditingTitle(false);
+    const nextTitle = titleDraft.trim();
+    if (!funnel || !nextTitle || nextTitle === funnel.title) {
+      if (funnel) setTitleDraft(funnel.title);
+      return;
+    }
+
+    try {
+      await updateFunnel.mutateAsync({ id, data: { title: nextTitle } });
+      toast('success', '漏斗名称已更新');
+    } catch {
+      setTitleDraft(funnel.title);
+      toast('error', '漏斗名称保存失败');
+    }
+  }
+
   async function handleManualSave() {
     setSaveState('saving');
     try {
@@ -186,7 +211,35 @@ export default function FunnelEditorPage() {
         <button onClick={() => router.push('/funnel')} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)]">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-[var(--color-text)]">{funnel?.title}</h1>
+        <div className="min-w-0 flex-1">
+          {editingTitle ? (
+            <input
+              autoFocus
+              value={titleDraft}
+              onChange={(event) => setTitleDraft(event.target.value)}
+              onBlur={() => void finishTitleEdit()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void finishTitleEdit();
+                if (event.key === 'Escape') {
+                  setTitleDraft(funnel?.title ?? '');
+                  setEditingTitle(false);
+                }
+              }}
+              aria-label="漏斗名称"
+              className="w-full max-w-xl rounded-md border border-blue-300 px-2 py-1 text-base font-semibold text-[var(--color-text)] outline-none ring-blue-100 focus:ring-2"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditingTitle(true)}
+              className="group flex max-w-full items-center gap-2 text-left"
+              aria-label="编辑漏斗名称"
+            >
+              <h1 className="min-w-0 truncate text-base font-semibold text-[var(--color-text)]">{funnel?.title}</h1>
+              <Pencil className="h-4 w-4 shrink-0 text-gray-400 group-hover:text-blue-600" aria-hidden="true" />
+            </button>
+          )}
+        </div>
         <span className={`text-xs ${saveState === 'unsaved' ? 'text-amber-500' : saveState === 'saving' ? 'text-gray-400' : 'text-emerald-600'}`}>
           {saveState === 'unsaved' ? '未保存' : saveState === 'saving' ? '保存中...' : '✓ 已保存'}
         </span>
