@@ -1360,6 +1360,7 @@
     "staleArtifact": {
       "title": "Your Brand DNA has changed; this content uses an older version.",
       "description": "Regenerate this content when you are ready; other generated assets will not be changed automatically.",
+      "funnelDescription": "Regenerate and republish this landing page to create a new version; other funnel assets will not be changed automatically.",
       "regenerate": "Regenerate now",
       "regenerating": "Regenerating"
     }

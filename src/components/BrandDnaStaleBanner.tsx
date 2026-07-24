@@ -6,11 +6,13 @@ import { useTranslations } from 'next-intl';
 type BrandDnaStaleBannerProps = {
   onRegenerate: () => void;
   isPending?: boolean;
+  description?: string;
 };
 
 export function BrandDnaStaleBanner({
   onRegenerate,
   isPending = false,
+  description,
 }: BrandDnaStaleBannerProps) {
   const t = useTranslations('dashboard.staleArtifact');
 
@@ -27,7 +29,7 @@ export function BrandDnaStaleBanner({
         <div>
           <p className="text-sm font-semibold text-amber-950">{t('title')}</p>
           <p className="mt-1 text-xs leading-5 text-amber-800">
-            {t('description')}
+            {description ?? t('description')}
           </p>
         </div>
       </div>

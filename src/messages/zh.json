@@ -1360,6 +1360,7 @@
     "staleArtifact": {
       "title": "人设已更新，此内容基于旧版人设",
       "description": "你可以重新生成这一份内容；系统不会自动级联修改其他生成物。",
+      "funnelDescription": "重新生成并重新发布这条落地页，才会创建新版本；其他漏斗资产不会自动级联修改。",
       "regenerate": "一键重新生成",
       "regenerating": "正在重新生成"
     }

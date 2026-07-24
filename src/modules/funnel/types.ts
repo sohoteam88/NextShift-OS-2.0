@@ -104,6 +104,8 @@ export interface FunnelConfig {
   type: FunnelPageType;
   theme: FunnelTheme;
   sections: FunnelSection[];
+  /** Brand DNA version used when this generated/published config was created. */
+  brandDnaVersion?: number;
   quiz?: QuizConfig;
   tracking?: {
     facebook_pixel?: string;

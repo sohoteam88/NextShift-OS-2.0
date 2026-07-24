@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
 import { paginationMeta } from '@/lib/query-helpers';
 import { type AuthUser } from '@/modules/auth/services/auth-service';
+import { getBrandDnaVersion } from '@/modules/brand-dna/services/BrandContextProvider';
+import { resolveBrandDnaVersion } from './funnel-versioning';
 import { type CreateFunnelInput, type UpdateFunnelInput, type FunnelQuery } from '../schemas/funnel-schemas';
 import { type FunnelConfig } from '../types';
 import { quotaService } from '@/modules/tenant/services/quota-service';
@@ -215,9 +217,27 @@ export const funnelService = {
 
     validatePublishConfig(funnel.config as unknown as FunnelConfig);
 
+    const existingConfig = (funnel.config && typeof funnel.config === 'object' && !Array.isArray(funnel.config))
+      ? funnel.config as Record<string, unknown>
+      : {};
+    const hasSnapshot = typeof existingConfig.brandDnaVersion === 'number' && existingConfig.brandDnaVersion > 0;
+    const publishedConfig = hasSnapshot
+      ? existingConfig
+      : {
+          ...existingConfig,
+          // A legacy editor publish gets a fresh snapshot; generated packages
+          // already carry the version used to create their copy.
+          brandDnaVersion: resolveBrandDnaVersion(await getBrandDnaVersion(funnel.ownerId)),
+        };
+
     return prisma.funnel.update({
       where: { id: funnelId },
-      data: { status: 'published', publishedAt: new Date(), updatedAt: new Date() },
+      data: {
+        config: publishedConfig as Prisma.InputJsonValue,
+        status: 'published',
+        publishedAt: new Date(),
+        updatedAt: new Date(),
+      },
     });
   },
 

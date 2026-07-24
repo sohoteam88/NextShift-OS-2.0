@@ -4,6 +4,8 @@ export type FunnelTrack = 'retail' | 'recruitment';
 
 export interface FunnelPackage {
   id: string; funnelType: FunnelBuilderType; track?: FunnelTrack; title: string;
+  /** Brand DNA version used to generate this package; legacy packages resolve to v1. */
+  brandDnaVersion?: number;
   landingPage: LandingPage; thankYouPage: ThankYouPage;
   whatsappFlow: WhatsAppFlow; emailSequence: EmailMessage[];
   adAngles: AdAngle[]; launchPlan: LaunchDay[];
@@ -15,6 +17,8 @@ export interface FunnelPortfolio {
   retail: FunnelPackage | null;
   recruitment: FunnelPackage | null;
   activeTrack: FunnelTrack;
+  /** Current canonical Brand DNA version used for published-asset comparisons. */
+  currentBrandDnaVersion?: number;
   readiness?: FunnelBuilderReadiness;
 }
 
