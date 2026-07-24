@@ -4,10 +4,6 @@ import { loginAsUser } from './helpers/auth';
 const commandCenterEnabled = process.env.NEXT_PUBLIC_ENABLE_COMMAND_CENTER === 'true';
 const aiDiscussionEnabled = process.env.NEXT_PUBLIC_ENABLE_AI_DISCUSSION === 'true';
 
-function normalize(value: string) {
-  return value.trim().toLowerCase();
-}
-
 test.describe('Command Center recommendation', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsUser(page);
@@ -28,29 +24,15 @@ test.describe('Command Center recommendation', () => {
     expect(recommendationBody.data).toBeTruthy();
     expect(projectionBody.data?.missionControl).toBeTruthy();
 
-    const recommendation = recommendationBody.data;
     const mission = projectionBody.data.missionControl;
-    const divergent = recommendation.source === 'engine'
-      && normalize(recommendation.recommendation.title) !== normalize(mission.title);
 
     await page.goto('/dashboard');
     const missionCard = page.getByTestId('today-mission-card');
     await expect(missionCard).toBeVisible({ timeout: 15000 });
     await expect(missionCard).toContainText(mission.title);
     await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
-
-    const alternativeSuggestion = page.getByTestId('mission-alternative-suggestion');
-    if (divergent) {
-      await expect(alternativeSuggestion).toBeVisible();
-      await alternativeSuggestion.getByRole('button').click();
-      await expect(alternativeSuggestion).toContainText(recommendation.recommendation.title);
-      await expect(alternativeSuggestion).toContainText(
-        recommendation.explain || recommendation.recommendation.rationale,
-      );
-    } else {
-      await expect(alternativeSuggestion).toHaveCount(0);
-      await expect(missionCard).toContainText(mission.whyThis);
-    }
+    await expect(page.getByTestId('mission-alternative-suggestion')).toHaveCount(0);
+    await expect(missionCard).toContainText(mission.whyThis);
   });
 
   test('flag on: recommendation discussion API returns the response contract', async ({ page }) => {
@@ -78,7 +60,7 @@ test.describe('Command Center recommendation', () => {
   // system prompt content). E2E cannot observe prompt internals, and on-topic messages
   // would require live LLM provider keys that CI intentionally does not have.
 
-  test('flag on: unified mission discussion panel sends and receives a reply', async ({ page }) => {
+  test('flag on: dashboard keeps discussion UI out of the first screen', async ({ page }) => {
     test.skip(
       !(commandCenterEnabled && aiDiscussionEnabled),
       'Command Center and AI Discussion flags must be enabled for this E2E path.',
@@ -87,17 +69,9 @@ test.describe('Command Center recommendation', () => {
     await page.goto('/dashboard');
     await expect(page.getByTestId('today-mission-card')).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId('today-recommendation-card')).toHaveCount(0);
-
-    const discussionToggle = page.getByTestId('recommendation-discussion-toggle');
-    await expect(discussionToggle).toBeVisible({ timeout: 15000 });
-    await discussionToggle.click();
-    await expect(page.getByTestId('today-recommendation-discussion')).toBeVisible();
-
-    await page.getByPlaceholder('Enter your question').fill('What is the weather in Tokyo tomorrow?');
-    await page.getByRole('button', { name: 'Send' }).click();
-
-    await expect(page.getByText(/today's recommendation/i)).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('Turn 1/5')).toBeVisible();
+    await expect(page.getByTestId('recommendation-discussion-toggle')).toHaveCount(0);
+    await expect(page.getByTestId('today-recommendation-discussion')).toHaveCount(0);
+    await expect(page.getByTestId('weekly-review-card')).toHaveCount(0);
   });
 
   test('flag off: mission remains available without a discussion entry', async ({ page }) => {
@@ -114,18 +88,13 @@ test.describe('Command Center recommendation', () => {
     await expect(page.getByTestId('recommendation-discussion-toggle')).toHaveCount(0);
   });
 
-  test('weekly review API preserves its nullable data contract without breaking the dashboard', async ({ page }) => {
+  test('weekly review API preserves its nullable data contract without rendering a dashboard card', async ({ page }) => {
     const response = await page.request.get('/api/v1/dashboard/weekly-review');
     expect(response.ok()).toBeTruthy();
     const body = await response.json();
     expect(body).toHaveProperty('data');
 
     await page.goto('/dashboard');
-    const weeklyReview = page.getByTestId('weekly-review-card');
-    if (body.data) {
-      await expect(weeklyReview).toBeVisible({ timeout: 15000 });
-    } else {
-      await expect(weeklyReview).toHaveCount(0);
-    }
+    await expect(page.getByTestId('weekly-review-card')).toHaveCount(0);
   });
 });
