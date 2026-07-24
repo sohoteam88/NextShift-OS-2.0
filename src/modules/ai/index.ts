@@ -41,6 +41,25 @@ export {
 } from './usage/quota';
 export { logAIUsage, getUsageStats } from './usage/tracker';
 
+// ── Unified generation gateway ──────────────────────────────────────────────
+export {
+  buildGenerationContext,
+  composeGenerationSystemPrompt,
+  PLATFORM_CHARACTERISTICS,
+  runGeneration,
+  GENERATION_DEGRADE_LABEL,
+} from './generation';
+export type {
+  BuildGenerationContextOptions,
+  BusinessPackSlice,
+  GenerationContext,
+  GenerationOutcome,
+  GenerationPlatform,
+  PlatformCharacteristics,
+  RoutedGenerationResult,
+  RunGenerationOptions,
+} from './generation';
+
 // ── Policies ─────────────────────────────────────────────────────────────────
 export { decidePolicy, getTaskDefinition } from './services/model-policy-engine';
 export { estimateCredits } from './services/cost-estimator';
