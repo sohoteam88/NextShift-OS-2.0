@@ -29,7 +29,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 |---|---|---|---|---|
 | G0 | 统一生成网关(地基,先行) | G | W1 | 已完成(统一生成网关落地 src/modules/ai/generation:GenerationContext + 上下文/prompt 组装 + router 接线 helper + 显式降级契约;PR #147 / fef84f2) |
 | G1 | content-engine 首个接入 | G | W1 | 已完成(generatePlatformPost 帖子正文经 G0 网关走 LLM:结构化产物 title/hook/body/cta/hashtags 落库,模板降为显式 fallback,generatedByAi 诚实反映来源+降级带 GENERATION_DEGRADE_LABEL,F-15 三缺陷护栏单测覆盖;PR #148 / 2e56a3b) |
-| O1 | 事业包 data pack | O | W1(并行,Steven 口述) | 未开始 |
+| O1 | 事业包 data pack | O | W1(并行,Steven 口述) | 已完成(事业包数据落地 src/modules/ai/business-pack:版本化 JSON 资产 version+priceListEffectiveDate,含产品线/双轨话术/异议库/合规红线/替代词表/追问模板/B路径默认引导,每条目带 track+visibility 目的地分级(价格/体重框架标 private);typed 校验 loader + getBusinessPackSlice({track}) 公开安全切片经 G0 seam 注入,替代词表脱敏后零品牌名/价格/体重数字承诺;content-engine 首个真实消费者接入且保留 CONTENT_POST_JSON_SYSTEM_INSTRUCTION,G1 解析与 F-15 护栏不回归;PR #149 / 3b8e80d) |
 | G4 | 输出硬过滤层(合规闸) | G | W2 | 未开始(review 强制暂停) |
 | G5 | 失败可见性 | G | W2 | 未开始(review 强制暂停) |
 | G2 | lead-magnet + webinar-center 接入 | G | W2 | 未开始 |
