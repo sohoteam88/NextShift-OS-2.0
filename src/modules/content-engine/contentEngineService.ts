@@ -8,6 +8,7 @@ import { getBrandContext, getBrandDnaVersion } from '@/modules/brand-dna/service
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { ContentPillar } from '@/modules/brand-dna/types';
 import { buildGenerationContext, runGeneration } from '@/modules/ai/generation';
+import { getBusinessPackSlice } from '@/modules/ai/business-pack';
 import {
   CONTENT_COMMAND_CENTER_PLATFORMS,
   isContentCommandCenterPlatform,
@@ -183,12 +184,17 @@ export const contentEngineService = {
     const fallback = generatePost(ctx, pillar, platform, format, funnelStage);
     const mode = resolveContentTrack('retail', workspaceContext);
     const user = { id: userId, tenantId };
+    const businessPack = getBusinessPackSlice({ track: mode, platform });
     const generationContext = await buildGenerationContext(user, {
       mode,
       platform,
-      // This scoped instruction becomes part of the shared system prompt,
-      // while the user message below holds the per-post inputs.
-      businessPack: { promptContext: CONTENT_POST_JSON_SYSTEM_INSTRUCTION },
+      // Keep G1's parser contract alongside O1's real, public-safe context.
+      businessPack: {
+        ...businessPack,
+        promptContext: [businessPack.promptContext, CONTENT_POST_JSON_SYSTEM_INSTRUCTION]
+          .filter(Boolean)
+          .join('\n\n'),
+      },
     });
     const outcome = await runGeneration(user, {
       context: generationContext,

@@ -1,0 +1,295 @@
+{
+  "version": 1,
+  "priceListEffectiveDate": "2026-05-19",
+  "productLines": [
+    {
+      "id": "healthy-breakfast-three-steps",
+      "track": "retail",
+      "visibility": "public",
+      "title": "健康早餐三步骤",
+      "products": [
+        {
+          "name": "浓缩芦荟汁",
+          "role": "促进营养吸收、促进健康的消化系统",
+          "flavours": ["原味", "芒果", "柑橘"]
+        },
+        {
+          "name": "茶饮木槿",
+          "role": "天然咖啡因保持机警活跃、茶的抗氧化功效",
+          "flavours": ["原味", "蜜姜", "蜜桃"]
+        },
+        {
+          "name": "营养早餐",
+          "role": "营养均衡的膳食、23种维生素矿物质、维持健康的体重管理",
+          "flavours": ["巧饼", "香草奶油", "顺滑巧克力", "夏季浆果", "拿铁", "香蕉奶油"]
+        }
+      ],
+      "complianceNote": "这些产品非用于诊断、治疗、治愈或预防任何疾病。"
+    },
+    {
+      "id": "weight-management-support",
+      "track": "retail",
+      "visibility": "public",
+      "title": "体重管理辅助",
+      "products": [
+        {
+          "name": "蛋白粉",
+          "role": "无脂蛋白质，可加入营养早餐、汤或酸奶，配合健身或均衡饮食"
+        },
+        {
+          "name": "膳食纤维补充",
+          "role": "膳食纤维补充"
+        }
+      ],
+      "complianceNote": "使用促进、帮助、支持、维持、有助于等措辞；不使用治、治愈、减肥药或保证瘦。"
+    },
+    {
+      "id": "targeted-nutrition-and-other-lines",
+      "track": "retail",
+      "visibility": "private",
+      "title": "针对性营养与其他线",
+      "products": [
+        {
+          "name": "鱼油、香蒜片、NW Formula、Herbal Retreat Powder、ImmuLift、TC Formula、N-R-G 瓜拿纳、Celactivo、TurmeriX、综合维他命、Calcium Plus、胶原蛋白饮、High Protein Premix Coffee、Herbalife SKIN 护肤线、芦荟洗护线",
+          "role": "内容选题素材库"
+        }
+      ]
+    },
+    {
+      "id": "official-retail-bundles",
+      "track": "retail",
+      "visibility": "private",
+      "title": "官方组合配套",
+      "products": [
+        {
+          "name": "开始启动配套与茶饮",
+          "role": "51g/102g 原味/蜜桃，营养早餐口味任选；最低门槛入门"
+        },
+        {
+          "name": "基础体重管理计划配套",
+          "role": "2×营养早餐 + 芦荟 + 茶"
+        },
+        {
+          "name": "高级体重管理计划配套",
+          "role": "基础 + F3；与营养早餐配套的口径对齐官方高级档"
+        },
+        {
+          "name": "终极体重管理计划配套",
+          "role": "高级 + 纤维菊粉"
+        },
+        {
+          "name": "功能配套 A-E",
+          "role": "按需求加购：Digestive+、Flow+、DefenZ+、Flexi+、Glow+"
+        }
+      ]
+    },
+    {
+      "id": "retail-need-branches",
+      "track": "retail",
+      "visibility": "private",
+      "title": "三大需求搭配",
+      "products": [
+        {
+          "name": "减重",
+          "role": "官方体重管理计划配套：基础、 高级、终极；先调理体质才健康瘦。"
+        },
+        {
+          "name": "增重",
+          "role": "营养早餐起步：1×F1 + 1×F3 + 1×Aloe，无茶饮；先调理肠胃才可以针对增重。"
+        },
+        {
+          "name": "改善健康",
+          "role": "看具体问题，一定以 F1+F3 为基础；三高类健康状况搭配属私聊咨询层，用支持、帮助措辞，不用治、降。"
+        }
+      ]
+    }
+  ],
+  "tracks": {
+    "retail": [
+      {
+        "id": "retail-trust-proof",
+        "track": "retail",
+        "visibility": "public",
+        "title": "产品信任说明",
+        "originalQuote": "产品已经在市场超过40年了，而且是在NYSE证券交易所上市。超过90个国家都通过当地的卫生部检验合法经营，背后还有一班医学团队帮你把关。",
+        "structure": ["信任四证：40年历史、NYSE上市、90国卫生部检验、医学团队"],
+        "complianceNote": "生成变体不得延伸出具体疗效承诺。"
+      },
+      {
+        "id": "retail-assumptive-close",
+        "track": "retail",
+        "visibility": "private",
+        "title": "成交时刻（assumptive close）",
+        "originalQuote": "说真的你是认真想要得到效果的吗？那我们的奶昔有6种口味 chocolate, vanilla, coffee latte, Summerberry, cookies and cream, banana。你平常都是喝什么比较多，coffee？如果是 coffee 的话我建议你试试我们的 chocolate 跟 coffee latte。我就直接配一个月的配套然后收钱。",
+        "structure": ["认真度确认", "进入选口味", "按生活习惯推荐", "配一个月的配套"],
+        "promptGuidance": "WhatsApp 跟进序列的成交节点模板；选口味问题可做成引流后跟进的互动钩子。"
+      },
+      {
+        "id": "whatsapp-first-contact-retail",
+        "track": "retail",
+        "visibility": "private",
+        "title": "WhatsApp 首次触达",
+        "originalQuote": "你好，我是Steven。我有看到你留下资料想要了解更多关于减重，想要知道一下你大概什么时候方便？",
+        "structure": ["自报姓名", "回指对方留下资料", "只约时间不卖货"],
+        "promptGuidance": "首触绝不含价格、产品细节或品牌名。"
+      },
+      {
+        "id": "whatsapp-follow-up",
+        "track": "both",
+        "visibility": "private",
+        "title": "WhatsApp 跟进",
+        "originalQuote": "我想确认一下留下资料的是本人吗？因为如果你是认真想要了解的话我们可以安排个时间。如果不是的话我也不想打扰到你。谢谢🙏",
+        "structure": ["是本人吗", "筛选认真度", "主动给退出台阶", "礼貌收尾"],
+        "promptGuidance": "首触无回复后3天内跟进一次；一次即止，不是连环轰炸。"
+      },
+      {
+        "id": "brand-disclosure",
+        "track": "both",
+        "visibility": "private",
+        "title": "品牌披露开口",
+        "originalQuote": "我们就是 Herbalife，你之前有听过吗？那你有用过吗？没问题，等下我会让你了解更多。",
+        "structure": ["坦白即提问", "听过且用过：问体验", "听过没用过：问印象", "没听过：讲信任四证"],
+        "promptGuidance": "联系之后主动说明并让对方了解品牌，不是隐瞒。"
+      }
+    ],
+    "recruitment": [
+      {
+        "id": "low-pressure-invitation",
+        "track": "recruitment",
+        "visibility": "public",
+        "title": "零压力邀请",
+        "originalQuote": "没有保证你一定会成功，你可以先了解看看，看得懂是一个机会，看不懂就当一场误会。",
+        "structure": ["不保证成功", "零压力邀请", "机会／误会的对仗收尾"],
+        "promptGuidance": "招募轨 CTA 的母版；默认基调是不承诺、低门槛、留台阶。"
+      },
+      {
+        "id": "whatsapp-first-contact-recruitment",
+        "track": "recruitment",
+        "visibility": "private",
+        "title": "WhatsApp 首次触达",
+        "originalQuote": "你好，我是Steven。我有看到你留下资料想要了解更多关于在家创业系统，想要知道一下你大概什么时候方便？",
+        "structure": ["自报姓名", "回指对方留下资料", "只约时间不卖货"],
+        "promptGuidance": "首触绝不含价格、产品细节或品牌名。"
+      }
+    ]
+  },
+  "objections": [
+    {
+      "id": "is-this-pyramid-scheme",
+      "track": "recruitment",
+      "visibility": "private",
+      "title": "是不是传销？",
+      "originalQuote": "传销是违法的，我们是一家直销公司，你会排斥直销吗？如果这个事业可以透过自己的努力改善你目前的生活状况，你还会在意他是否是直销吗？",
+      "structure": ["正名切割：传销违法 vs 直销合法", "反问对方立场", "努力前置的生活状况重构"],
+      "complianceNote": "止步于透过自己的努力改善生活状况；不得滑向一定能改善或能赚多少。"
+    },
+    {
+      "id": "side-effects",
+      "track": "retail",
+      "visibility": "public",
+      "title": "会不会有副作用？",
+      "originalQuote": "当然会有副作用，就是让你变美变漂亮！产品已经在市场超过40年了，而且是在NYSE证券交易所上市。超过90个国家都通过当地的卫生部检验合法经营，背后还有一班医学团队帮你把关。关键在于你有没有认真使用产品而已。",
+      "structure": ["幽默反转卸防", "信任四证", "责任回归认真使用"],
+      "complianceNote": "幽默修辞可保留；生成变体不得延伸出具体疗效承诺。"
+    },
+    {
+      "id": "too-expensive",
+      "track": "retail",
+      "visibility": "private",
+      "title": "好贵哦",
+      "originalQuote": "贵的定义取决于个人，如果一样东西只是卖你RM10不过是完全没有效或者有安全隐患。那你觉得贵还是便宜？",
+      "structure": ["价值重构", "便宜无效 vs 有效安全的反问收尾"],
+      "complianceNote": "可延伸日均成本对比，但不得承诺一定有效。"
+    }
+  ],
+  "complianceRedLines": [
+    {
+      "id": "public-destination",
+      "track": "both",
+      "visibility": "public",
+      "destination": "公开内容（帖子、落地页、引流资源）",
+      "rule": "零品牌名、零价格、零体重数字承诺；产品类内容带产品免责声明。"
+    },
+    {
+      "id": "private-destination",
+      "track": "both",
+      "visibility": "private",
+      "destination": "私聊（WhatsApp）",
+      "rule": "价格可用；体重话术必须完整使用五件套框架。"
+    },
+    {
+      "id": "official-disclaimer",
+      "track": "both",
+      "visibility": "public",
+      "destination": "产品类公开内容",
+      "rule": "这些产品非用于诊断、治疗、治愈或预防任何疾病。"
+    },
+    {
+      "id": "allowed-verbs",
+      "track": "both",
+      "visibility": "public",
+      "destination": "所有公开内容",
+      "rule": "允许：促进、帮助、支持、维持、有助于；禁止：治、治愈、减肥药、保证瘦。"
+    },
+    {
+      "id": "weight-framework",
+      "track": "retail",
+      "visibility": "private",
+      "destination": "WhatsApp 私聊咨询",
+      "rule": "通常一个月可以瘦3-5公斤；健康状况或使用医生药物者可能较慢；产品不是瘦身药物，是均衡营养食品；先调理体质才可以健康地瘦下来；产品有30天满意保证。"
+    }
+  ],
+  "substitutionTable": [
+    { "id": "product-overall", "track": "both", "visibility": "public", "internalTerm": "Herbalife 产品（整体）", "publicTerm": "健康管理方案" },
+    { "id": "business", "track": "recruitment", "visibility": "public", "internalTerm": "这份事业", "publicTerm": "在家创业系统" },
+    { "id": "title", "track": "both", "visibility": "public", "internalTerm": "自己的头衔", "publicTerm": "健康教练" },
+    { "id": "starter-bundle", "track": "both", "visibility": "public", "internalTerm": "起步配套", "publicTerm": "营养早餐配套" },
+    { "id": "weight-loss", "track": "retail", "visibility": "public", "internalTerm": "减肥", "publicTerm": "体重管理" },
+    { "id": "shake", "track": "retail", "visibility": "public", "internalTerm": "Herbalife 奶昔", "publicTerm": "营养早餐／营养代餐" }
+  ],
+  "questionTemplates": [
+    {
+      "id": "career-story-three-questions",
+      "track": "recruitment",
+      "visibility": "private",
+      "title": "挖故事三连问",
+      "questions": ["你目前是在从事什么行业？多久了？", "哦，应该还不错嘛。", "那为什么突然想要做 Herbalife 的一个事业？"],
+      "structure": ["事实起步", "轻肯定制造反差", "为什么突然邀请转折故事"],
+      "promptGuidance": "第2步的肯定式钩子是教练语气的核心技法。"
+    }
+  ],
+  "bPathDefaults": {
+    "id": "b-path-first-week",
+    "track": "recruitment",
+    "visibility": "private",
+    "title": "B 路径首周带法",
+    "principle": "第一步是自用体验，不是卖也不是招；我们不是寻找销售员。",
+    "starterBundle": "营养早餐配套：2罐奶昔 + 1罐 F3 Protein + 1罐 Tea Mix + 1罐 Aloe Drink",
+    "phases": [
+      { "id": "before-receipt", "track": "recruitment", "visibility": "private", "task": "收到了一定要让我知道；约线上时间引导使用。" },
+      { "id": "day-1", "track": "recruitment", "visibility": "private", "task": "逐个介绍产品；教冲泡方法，确保做对；拍 before 照并保存。" },
+      { "id": "day-2", "track": "recruitment", "visibility": "private", "task": "问开始喝了没有、味道如何，确保认真使用。" },
+      { "id": "day-4", "track": "recruitment", "visibility": "private", "task": "喝到有感觉了才开始规划下一步；无感则继续陪跑。" }
+    ]
+  },
+  "priceList": [
+    { "id": "f1", "track": "retail", "visibility": "private", "name": "配方1奶昔（550g，六口味同价）", "price": "RM212.03" },
+    { "id": "f3", "track": "retail", "visibility": "private", "name": "F3蛋白粉", "price": "RM174.41" },
+    { "id": "tea-51g", "track": "retail", "visibility": "private", "name": "茶饮木槿（51g）", "price": "RM177.25" },
+    { "id": "tea-102g", "track": "retail", "visibility": "private", "name": "茶饮木槿（102g）", "price": "RM307.14" },
+    { "id": "aloe", "track": "retail", "visibility": "private", "name": "浓缩芦荟汁", "price": "RM228.15" },
+    { "id": "fiber", "track": "retail", "visibility": "private", "name": "纤维菊粉", "price": "RM203" },
+    { "id": "starter-51g", "track": "retail", "visibility": "private", "name": "开始启动配套（F1+F3+茶51g）", "price": "RM563.69" },
+    { "id": "starter-102g", "track": "retail", "visibility": "private", "name": "开始启动配套（茶102g）", "price": "RM693.58" },
+    { "id": "basic", "track": "retail", "visibility": "private", "name": "基础体重管理计划", "price": "RM829.46" },
+    { "id": "advanced", "track": "retail", "visibility": "private", "name": "高级体重管理计划", "price": "RM1,003.87" },
+    { "id": "ultimate", "track": "retail", "visibility": "private", "name": "终极体重管理计划", "price": "RM1,206.87" },
+    { "id": "digestive", "track": "retail", "visibility": "private", "name": "Digestive+", "price": "RM431.15" },
+    { "id": "defenz", "track": "retail", "visibility": "private", "name": "DefenZ+", "price": "RM589.71" },
+    { "id": "glow", "track": "retail", "visibility": "private", "name": "Glow+", "price": "RM699.76" },
+    { "id": "flow", "track": "retail", "visibility": "private", "name": "Flow+", "price": "RM738.40" },
+    { "id": "flexi", "track": "retail", "visibility": "private", "name": "Flexi+", "price": "RM866.54" }
+    ,{ "id": "fish-oil", "track": "retail", "visibility": "private", "name": "鱼油", "price": "RM209.19" }
+    ,{ "id": "niteworks", "track": "retail", "visibility": "private", "name": "Niteworks 夜宁新", "price": "RM421.62" }
+  ]
+}
