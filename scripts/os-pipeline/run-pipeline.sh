@@ -599,6 +599,13 @@ the key evidence or blocking issue."
     printf 'AUDIT_ERROR=No valid structured verdict and report after 3 attempts.\n' > "$AUDIT_RUN_LOG"
   fi
 
+  if [[ "$AUDIT_RECEIVED" == true && -s "$AUDIT_REPORT" ]]; then
+    git add "$AUDIT_REPORT"
+    git commit -m "docs(audit): pipeline audit report $RUN_ID [pipeline]"
+    git push origin "$BASE_BRANCH"
+    log "Step 6: committed and pushed $AUDIT_REPORT"
+  fi
+
   if [[ "$AUDIT_RECEIVED" == true ]] && grep -q '^VERDICT=PASS$' "$AUDIT_RUN_LOG"; then
     echo 0 > "$MERGED_SINCE_LAST_AUDIT_FILE"
     log "Audit PASS (plain, no conditions) — flagging ready for RC stage."
