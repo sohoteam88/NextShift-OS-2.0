@@ -1,6 +1,7 @@
 'use client';
 
 import { RefreshCw, TriangleAlert } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type BrandDnaStaleBannerProps = {
   onRegenerate: () => void;
@@ -11,6 +12,8 @@ export function BrandDnaStaleBanner({
   onRegenerate,
   isPending = false,
 }: BrandDnaStaleBannerProps) {
+  const t = useTranslations('dashboard.staleArtifact');
+
   return (
     <section
       role="status"
@@ -22,11 +25,9 @@ export function BrandDnaStaleBanner({
           aria-hidden="true"
         />
         <div>
-          <p className="text-sm font-semibold text-amber-950">
-            人设已更新,此内容基于旧版人设
-          </p>
+          <p className="text-sm font-semibold text-amber-950">{t('title')}</p>
           <p className="mt-1 text-xs leading-5 text-amber-800">
-            你可以重新生成这一份内容；系统不会自动级联修改其他生成物。
+            {t('description')}
           </p>
         </div>
       </div>
@@ -40,7 +41,7 @@ export function BrandDnaStaleBanner({
           className={`h-4 w-4 ${isPending ? 'animate-spin' : ''}`}
           aria-hidden="true"
         />
-        {isPending ? '正在重新生成' : '一键重新生成'}
+        {isPending ? t('regenerating') : t('regenerate')}
       </button>
     </section>
   );

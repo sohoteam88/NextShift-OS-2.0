@@ -35,6 +35,9 @@ export const GET = apiHandler(async (request: NextRequest) => {
       primaryOffer: dna.offer.primaryOffer,
       secondaryOffer: dna.offer.secondaryOffer,
       transformationPromise: dna.offer.transformationPromise,
+      // Brand DNA currently has no trustProof/socialProof/credentials field.
+      // Keep the legacy response shape mapped to the closest canonical
+      // messaging signal until that dedicated field exists.
       trust_proof: dna.messaging.uniqueAngle,
       brandDnaVersion: dna.meta.version,
     },

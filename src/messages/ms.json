@@ -1355,6 +1355,12 @@
       "discussionQuotaExceeded": "Kuota AI hari ini telah digunakan.",
       "discussionTurnsExhausted": "Perbincangan ini telah mencapai hadnya. Cuba lakukan tindakan yang dicadangkan.",
       "discussionConnectionFailed": "Tidak dapat menyambung ke perbincangan AI sekarang."
+    },
+    "staleArtifact": {
+      "title": "Brand DNA anda telah dikemas kini; kandungan ini menggunakan versi lama.",
+      "description": "Jana semula kandungan ini apabila bersedia; aset lain tidak akan diubah secara automatik.",
+      "regenerate": "Jana semula sekarang",
+      "regenerating": "Sedang menjana semula"
     }
   },
   "errors": {
