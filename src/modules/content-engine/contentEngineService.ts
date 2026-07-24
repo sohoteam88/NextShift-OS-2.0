@@ -7,6 +7,7 @@ import prisma from '@/lib/prisma';
 import { getBrandContext, getBrandDnaVersion } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { ContentPillar } from '@/modules/brand-dna/types';
+import { buildGenerationContext, runGeneration } from '@/modules/ai/generation';
 import {
   CONTENT_COMMAND_CENTER_PLATFORMS,
   isContentCommandCenterPlatform,
@@ -20,6 +21,11 @@ import {
   type ContentTrack,
 } from './types';
 import { generateContentPillars, generateCalendar, generatePost } from './contentGenerators';
+import {
+  buildContentPostUserMessage,
+  CONTENT_POST_JSON_SYSTEM_INSTRUCTION,
+  parseGeneratedPostJson,
+} from './contentPostGeneration';
 
 const CONTENT_TRACKS: ContentTrack[] = ['retail', 'recruitment'];
 const CONTENT_EDITOR_STATUSES: ContentStatus[] = [
@@ -174,7 +180,28 @@ export const contentEngineService = {
       ? pillars.find((p) => p.name === pillarName) ?? pillars[0]
       : pillars[0];
 
-    const post = generatePost(ctx, pillar, platform, format, funnelStage);
+    const fallback = generatePost(ctx, pillar, platform, format, funnelStage);
+    const mode = resolveContentTrack('retail', workspaceContext);
+    const user = { id: userId, tenantId };
+    const generationContext = await buildGenerationContext(user, {
+      mode,
+      platform,
+      // This scoped instruction becomes part of the shared system prompt,
+      // while the user message below holds the per-post inputs.
+      businessPack: { promptContext: CONTENT_POST_JSON_SYSTEM_INSTRUCTION },
+    });
+    const outcome = await runGeneration(user, {
+      context: generationContext,
+      userMessage: buildContentPostUserMessage({ pillar, platform, format, funnelStage }),
+      taskCategory: 'content_generation',
+      feature: 'content_engine_post',
+      fallback,
+      parse: (text) => parseGeneratedPostJson(text, fallback),
+      temperature: 0.7,
+      maxTokens: 900,
+    });
+    const post = outcome.value;
+    const generatedByAi = outcome.source === 'ai';
 
     // Save to the canonical Content model and return its identity. The client
     // must PATCH this record rather than using the temporary generator ID.
@@ -187,7 +214,7 @@ export const contentEngineService = {
         title: post.title,
         body: post.body,
         language: 'zh',
-        generatedByAi: true,
+        generatedByAi,
         promptUsed: workspacePromptUsed,
         status: 'draft',
       },
@@ -201,6 +228,10 @@ export const contentEngineService = {
       platform,
       format,
       status: 'draft',
+      generatedByAi,
+      ...(outcome.status === 'degraded'
+        ? { degradedLabel: outcome.userVisibleLabel }
+        : {}),
       createdAt: content.createdAt.toISOString(),
       updatedAt: content.updatedAt.toISOString(),
     };

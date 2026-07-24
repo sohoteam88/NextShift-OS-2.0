@@ -65,6 +65,10 @@ export interface GeneratedPost {
   funnelStage: FunnelStage;
   status: ContentStatus;
   qualityScore: number;
+  /** True only when the persisted draft was produced by the AI generation gateway. */
+  generatedByAi?: boolean;
+  /** Present when the generation gateway returned the labelled template fallback. */
+  degradedLabel?: string;
   createdAt: string;
   /**
    * The Content model does not yet persist a separate updatedAt column. For
