@@ -1356,6 +1356,12 @@
       "discussionQuotaExceeded": "今日 AI 额度已用完。",
       "discussionTurnsExhausted": "本次讨论已达上限，试试执行推荐吧。",
       "discussionConnectionFailed": "暂时无法连接 AI 讨论。"
+    },
+    "staleArtifact": {
+      "title": "人设已更新，此内容基于旧版人设",
+      "description": "你可以重新生成这一份内容；系统不会自动级联修改其他生成物。",
+      "regenerate": "一键重新生成",
+      "regenerating": "正在重新生成"
     }
   },
   "errors": {

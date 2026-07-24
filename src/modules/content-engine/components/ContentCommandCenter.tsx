@@ -51,6 +51,8 @@ import {
   trackContentLoopCompleted,
   trackContentSaved,
 } from '@/lib/telemetry/tracker';
+import { BrandDnaStaleBanner } from '@/components/BrandDnaStaleBanner';
+import { isBrandDnaArtifactStale } from '@/lib/brand-dna-versioning';
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import type { RevenueDriverResolvedIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 
@@ -598,6 +600,14 @@ export function ContentCommandCenter() {
   const retailCalendar = trackCalendars.retail;
   const recruitmentCalendar = trackCalendars.recruitment;
   const hasGeneratedPlan = Boolean(retailCalendar && recruitmentCalendar);
+  const hasStaleContentPlan = [retailCalendar, recruitmentCalendar].some(
+    (calendar) =>
+      calendar &&
+      isBrandDnaArtifactStale(
+        calendar.brandDnaVersion,
+        profile?.brandDnaVersion,
+      ),
+  );
   const retailItems = retailCalendar?.items ?? [];
   const recruitmentItems = recruitmentCalendar?.items ?? [];
   const allCalendarItems = [
@@ -706,6 +716,12 @@ export function ContentCommandCenter() {
             <button type="button" onClick={discardRecoverableDraft} className="rounded-[var(--radius-md)] border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">丢弃</button>
           </div>
         </section>
+      ) : null}
+      {hasStaleContentPlan ? (
+        <BrandDnaStaleBanner
+          isPending={generatePlan.isPending}
+          onRegenerate={() => generatePlan.mutate()}
+        />
       ) : null}
       <section className="rounded-[var(--radius-lg)] border border-blue-200 bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">

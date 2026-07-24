@@ -1356,6 +1356,12 @@
       "discussionQuotaExceeded": "Today's AI quota has been used.",
       "discussionTurnsExhausted": "This discussion has reached its limit. Try the recommended action.",
       "discussionConnectionFailed": "Unable to connect to the AI discussion right now."
+    },
+    "staleArtifact": {
+      "title": "Your Brand DNA has changed; this content uses an older version.",
+      "description": "Regenerate this content when you are ready; other generated assets will not be changed automatically.",
+      "regenerate": "Regenerate now",
+      "regenerating": "Regenerating"
     }
   },
   "errors": {

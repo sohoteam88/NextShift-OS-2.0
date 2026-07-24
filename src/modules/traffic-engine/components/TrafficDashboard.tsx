@@ -23,6 +23,8 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { BrandDnaStaleBanner } from '@/components/BrandDnaStaleBanner';
+import { isBrandDnaArtifactStale } from '@/lib/brand-dna-versioning';
 import { RevenueDriverIntentResolver } from '@/modules/revenue-drivers/components/RevenueDriverIntentResolver';
 import type { RevenueDriverResolvedIntent } from '@/modules/revenue-drivers/constants/revenue-driver-intents';
 import type {
@@ -129,6 +131,17 @@ function nextPrerequisiteLink(prerequisites: TrafficPrerequisites) {
 
 export function TrafficDashboard() {
   const query = useTraffic();
+  const brandProfileQuery = useQuery({
+    queryKey: ['brand-builder-profile'],
+    queryFn: async () => {
+      const response = await fetch('/api/v1/brand-builder/profile');
+      if (!response.ok) throw new Error('Failed to load Brand DNA');
+      const payload = (await response.json()) as {
+        data: { brandDnaVersion?: unknown } | null;
+      };
+      return payload.data;
+    },
+  });
   const generate = useGenerate();
   const [goal, setGoal] = React.useState<TrafficGoal>('lead_generation');
   const [platform, setPlatform] = React.useState<TrafficPlatform>('facebook');
@@ -144,6 +157,13 @@ export function TrafficDashboard() {
   const prerequisites = pkg?.prerequisites ?? query.data?.prerequisites ?? emptyPrerequisites();
   const readyToGenerate = prerequisitesComplete(prerequisites);
   const savedPlan = isSavedTrafficPlan(pkg) && readyToGenerate;
+  const hasStaleTrafficPlan = Boolean(
+    isSavedTrafficPlan(pkg) &&
+      isBrandDnaArtifactStale(
+        pkg?.brandDnaVersion,
+        brandProfileQuery.data?.brandDnaVersion,
+      ),
+  );
   const nextLink = nextPrerequisiteLink(prerequisites);
   const tips = savedPlan && pkg ? getTrafficAdvisorTips(pkg.readiness) : [];
 
@@ -158,6 +178,18 @@ export function TrafficDashboard() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-14">
       <RevenueDriverIntentResolver route="/traffic-engine" onResolved={handleIntentResolved} />
+      {hasStaleTrafficPlan && pkg ? (
+        <BrandDnaStaleBanner
+          isPending={generate.isPending}
+          onRegenerate={() =>
+            generate.mutate({
+              goal: pkg.goal,
+              platform: pkg.campaign.platform,
+              budget: pkg.campaign.budgetTier ?? pkg.budget.tier,
+            })
+          }
+        />
+      ) : null}
       <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex items-start gap-3">
           <Link

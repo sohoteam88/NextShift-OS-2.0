@@ -4,6 +4,7 @@ import { apiHandler } from '@/lib/api-handler';
 import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import prisma from '@/lib/prisma';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
+import { brandDnaService } from '@/modules/brand-dna/services/brandDnaService';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,36 @@ export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
   const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { metadata: true } });
   const meta = (dbUser?.metadata as Record<string, unknown>) ?? {};
-  return NextResponse.json({ data: meta.brand_profile ?? null });
+  const legacyProfile = (meta.brand_profile as Record<string, unknown>) ?? {};
+  const dna = await brandDnaService.getBrandDNA(user.id);
+
+  // Display callers historically read this legacy metadata object. Overlay the
+  // canonical BrandProfile values so a saved Brand DNA update is immediately
+  // reflected in every downstream module without copying the profile again.
+  return NextResponse.json({
+    data: {
+      ...legacyProfile,
+      identity: dna.identity.brandPositioning || dna.identity.brandName || dna.identity.personalName,
+      brandName: dna.identity.brandName,
+      personalName: dna.identity.personalName,
+      brandPositioning: dna.identity.brandPositioning,
+      targetAudience: dna.audience.targetAudience,
+      target_audience: dna.audience.targetAudience,
+      audiencePainPoints: dna.audience.audiencePainPoints,
+      audience_pain_points: dna.audience.audiencePainPoints,
+      coreMessage: dna.messaging.coreMessage,
+      uniqueAngle: dna.messaging.uniqueAngle,
+      offer: dna.offer.primaryOffer,
+      primaryOffer: dna.offer.primaryOffer,
+      secondaryOffer: dna.offer.secondaryOffer,
+      transformationPromise: dna.offer.transformationPromise,
+      // Brand DNA currently has no trustProof/socialProof/credentials field.
+      // Keep the legacy response shape mapped to the closest canonical
+      // messaging signal until that dedicated field exists.
+      trust_proof: dna.messaging.uniqueAngle,
+      brandDnaVersion: dna.meta.version,
+    },
+  });
 });
 
 export const PATCH = apiHandler(async (request: NextRequest) => {

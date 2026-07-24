@@ -88,6 +88,15 @@ export async function getBrandContext(userId: string): Promise<BrandContext | nu
   };
 }
 
+/** The canonical version attached to generated artifacts for stale-output detection. */
+export async function getBrandDnaVersion(userId: string): Promise<number> {
+  const bp = await prisma.brandProfile.findUnique({ where: { userId }, select: { version: true } });
+  if (bp) return bp.version;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
+  const version = ((user?.metadata as Record<string, unknown>)?.brand_profile as Record<string, unknown> | undefined)?.version;
+  return typeof version === 'number' && version > 0 ? version : 1;
+}
+
 export function buildBrandContextPrompt(context: BrandContext): string {
   const parts: string[] = [];
   if (context.brandName) parts.push(`品牌: ${context.brandName}`);
