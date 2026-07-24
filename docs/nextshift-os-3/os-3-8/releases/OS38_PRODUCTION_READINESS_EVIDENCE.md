@@ -11,7 +11,7 @@ MIGRATION_IMAGE_DIGEST=sha256:c752f3dbfcf68bbc2c3e4701ec793c63838354c0b521542db5
 MIGRATION_IMAGE_REVISION=c57722b082002c0fe546b1141f9f0e7b3a4f4ad0
 BACKUP_SHA256=90192a8c71fe7b3fa57a0011909a1cf2fbc4f2e93fe4b6fc29ce9a7ff3360ffb
 RESTORE_VERIFIED_AT=2026-07-21T06:11:49Z
-ROLLBACK_IMAGE_SHA=86f54a2185d8d981da19a8155055a999af2dc365
+ROLLBACK_IMAGE_SHA=8b2ce429dc58d8f97fca084969fbc30ec4a4c392
 PRODUCTION_ENVIRONMENT=production
 REQUIRED_REVIEWER=Steven
 ENVIRONMENT_PROTECTION=PASS
@@ -74,10 +74,12 @@ production mutation.
 ## Current production and rollback evidence
 
 - The exact rollback target was read directly from the VPS over the deploy SSH
-  identity. `nextshift-app:86f54a2185d8d981da19a8155055a999af2dc365` exists,
+  identity. `nextshift-app:8b2ce429dc58d8f97fca084969fbc30ec4a4c392` exists,
   has image ID
-  `sha256:c453be3cef192d6ac2319b06a960bb4d138c97cbb1bec11f8bda546c5fb31121`,
-  and its OCI revision exactly matches `ROLLBACK_IMAGE_SHA`.
+  `sha256:7db3863512fa426ea418af841c32504b31eecba95ccfcbb7bdeef32c4557a62c`,
+  and its OCI revision exactly matches `ROLLBACK_IMAGE_SHA`. This is the
+  currently verified healthy production image and preserves the batch 1/2
+  fixes if rollback is required.
 - No container, image, tag, runtime environment, credential, or service was
   modified by this evidence collection.
 
