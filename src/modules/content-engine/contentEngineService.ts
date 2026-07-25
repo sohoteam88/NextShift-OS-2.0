@@ -7,8 +7,14 @@ import prisma from '@/lib/prisma';
 import { getBrandContext, getBrandDnaVersion } from '@/modules/brand-dna/services/BrandContextProvider';
 import type { WorkspaceContext } from '@/modules/workspace/types';
 import type { ContentPillar } from '@/modules/brand-dna/types';
-import { buildGenerationContext, runGeneration } from '@/modules/ai/generation';
+import {
+  buildGenerationContext,
+  GENERATION_DEGRADE_LABEL,
+  runGeneration,
+  type RunGenerationOptions,
+} from '@/modules/ai/generation';
 import { getBusinessPackSlice } from '@/modules/ai/business-pack';
+import { enforceComplianceHardFilter } from '@/modules/ai/compliance';
 import {
   CONTENT_COMMAND_CENTER_PLATFORMS,
   isContentCommandCenterPlatform,
@@ -35,6 +41,46 @@ const CONTENT_EDITOR_STATUSES: ContentStatus[] = [
   'copied',
   'published',
 ];
+const MAX_COMPLIANCE_RETRIES = 2;
+
+function filterPostForPublicOutput(post: GeneratedPost, track: ContentTrack) {
+  return enforceComplianceHardFilter({
+    fields: {
+      title: post.title,
+      hook: post.hook,
+      body: post.body,
+      cta: post.cta,
+      hashtags: post.hashtags,
+    },
+    track,
+  });
+}
+
+function applyFilteredFields(post: GeneratedPost, fields: {
+  title: string;
+  hook: string;
+  body: string;
+  cta: string;
+  hashtags: string[];
+}): GeneratedPost {
+  return { ...post, ...fields };
+}
+
+/**
+ * This is only reachable when a deterministic fallback violates the same
+ * public-output gate. Never persist a rejected fallback: replace its public
+ * fields with a deliberately neutral, destination-safe base version instead.
+ */
+function buildSafeBasePost(post: GeneratedPost): GeneratedPost {
+  return {
+    ...post,
+    title: '基础内容草稿',
+    hook: '从一个小行动开始，慢慢建立适合自己的健康习惯。',
+    body: '这是基础版本内容。请根据你的真实经验和受众需要补充具体建议，并在发布前完成人工审核。',
+    cta: '留言告诉我你想先从哪个小行动开始。',
+    hashtags: ['#健康习惯', '#日常行动'],
+  };
+}
 
 function isContentCalendar(value: unknown): value is ContentCalendar {
   return Boolean(value && typeof value === 'object' && Array.isArray((value as Partial<ContentCalendar>).items));
@@ -196,7 +242,7 @@ export const contentEngineService = {
           .join('\n\n'),
       },
     });
-    const outcome = await runGeneration(user, {
+    const generationOptions: RunGenerationOptions<GeneratedPost> = {
       context: generationContext,
       userMessage: buildContentPostUserMessage({ pillar, platform, format, funnelStage }),
       taskCategory: 'content_generation',
@@ -205,9 +251,45 @@ export const contentEngineService = {
       parse: (text) => parseGeneratedPostJson(text, fallback),
       temperature: 0.7,
       maxTokens: 900,
-    });
-    const post = outcome.value;
-    const generatedByAi = outcome.source === 'ai';
+    };
+    let outcome = await runGeneration(user, generationOptions);
+    let post = outcome.value;
+    let compliance = filterPostForPublicOutput(post, mode);
+    let complianceRetries = 0;
+
+    // A reject is never user-visible or persisted. Regenerate a bounded number
+    // of times through the same G0 gateway before falling back to the known
+    // deterministic template path.
+    while (
+      compliance.status === 'rejected'
+      && outcome.source === 'ai'
+      && complianceRetries < MAX_COMPLIANCE_RETRIES
+    ) {
+      complianceRetries += 1;
+      outcome = await runGeneration(user, generationOptions);
+      post = outcome.value;
+      compliance = filterPostForPublicOutput(post, mode);
+    }
+
+    let generatedByAi = outcome.source === 'ai';
+    let degradedLabel = outcome.status === 'degraded'
+      ? outcome.userVisibleLabel
+      : undefined;
+
+    if (compliance.status === 'rejected') {
+      // The AI exhausted its compliance retries, or the gateway degraded to a
+      // template that still failed the zero-trust check. Filter the existing
+      // template too; a bad template becomes a neutral safe base, never a
+      // rejected public result.
+      const fallbackCompliance = filterPostForPublicOutput(fallback, mode);
+      post = fallbackCompliance.status === 'rejected'
+        ? buildSafeBasePost(fallback)
+        : applyFilteredFields(fallback, fallbackCompliance.fields);
+      generatedByAi = false;
+      degradedLabel = GENERATION_DEGRADE_LABEL;
+    } else {
+      post = applyFilteredFields(post, compliance.fields);
+    }
 
     // Save to the canonical Content model and return its identity. The client
     // must PATCH this record rather than using the temporary generator ID.
@@ -235,8 +317,8 @@ export const contentEngineService = {
       format,
       status: 'draft',
       generatedByAi,
-      ...(outcome.status === 'degraded'
-        ? { degradedLabel: outcome.userVisibleLabel }
+      ...(degradedLabel
+        ? { degradedLabel }
         : {}),
       createdAt: content.createdAt.toISOString(),
       updatedAt: content.updatedAt.toISOString(),
