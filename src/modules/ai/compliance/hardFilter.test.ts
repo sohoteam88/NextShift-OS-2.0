@@ -52,6 +52,7 @@ describe('enforceComplianceHardFilter', () => {
     ['single-character treatment claim', { ...cleanFields, cta: '这个方案能治问题。' }, 'medical_claim'],
     // This wording is allowed in private chat, but public output must reject the numeric claim.
     ['weight number promise', { ...cleanFields, body: '通常一个月可以瘦3-5公斤。' }, 'weight_claim'],
+    ['weight number promise with 减重', { ...cleanFields, body: '一个月减重5公斤很正常。' }, 'weight_claim'],
     ['public price', { ...cleanFields, body: '公开页面显示 RM1,000。' }, 'public_price'],
   ])('rejects a %s for regeneration', (_name, fields, expectedCode) => {
     const verdict = enforceComplianceHardFilter({ track: 'retail', fields });

@@ -22,7 +22,7 @@ const INCOME_PROMISE_PATTERNS: RegExp[] = [
 // Known trade-off: exclude the three common prefixes 政／自／法, not every safe combination; the
 // occasional false positive costs one extra retry, which is acceptable for the public gate.
 const MEDICAL_CLAIM_PATTERN = /(?:(?<![政自法])治(?!理)|降三高|减肥药|保证瘦|\b(?:cure|cures|curing|guaranteed\s+weight\s+loss)\b)/i;
-const WEIGHT_NUMBER_PATTERN = /(?:瘦|减|掉)\s*\d+(?:\s*(?:[-~至到]\s*\d+))?\s*(?:公斤|kg|斤)/i;
+const WEIGHT_NUMBER_PATTERN = /(?:瘦|减(?:重|脂)?|掉)\s*\d+(?:\s*(?:[-~至到]\s*\d+))?\s*(?:公斤|kg|斤)/i;
 const PUBLIC_PRICE_PATTERN = /RM\s*[\d,]+/i;
 
 const BARE_BRAND_PATTERN = /(?:\bherbalife\b|贺宝芙|康宝莱)/gi;
