@@ -69,7 +69,7 @@ production mutation.
 
 - A migration image was rebuilt locally from the exact release SHA with
   `scripts/deployment/Dockerfile.migrations`. Its image ID (Config digest) is
-  `sha256:43189ded4c4d72ba0f27e326feec610520f39cb297bb3da29a15f07d9fbdc08`,
+  `sha256:43189ded4c4d72ba0f27e326feec610520f39cb297bb3bda29a15f07d9fbdc08`,
   matching `MIGRATION_IMAGE_DIGEST`; its OCI revision is the exact release
   SHA.
 - `scripts/deployment/validate-migration-image-runtime.sh` passed all six
