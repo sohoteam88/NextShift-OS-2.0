@@ -11,7 +11,6 @@ export interface BrandBuilderState {
 
 export const WIZARD_STEPS = [
   { id: 'interview', name: '了解你', path: '/brand-builder/step/interview' },
-  { id: 'profile', name: '品牌画像', path: '/brand-builder/step/profile' },
   { id: 'accounts', name: '社交资料设置', path: '/brand-builder/step/accounts' },
   { id: 'platform_guide', name: '平台指引', path: '/brand-builder/step/guides' },
   { id: 'complete', name: '完成', path: '/brand-builder/step/complete' },
@@ -71,7 +70,7 @@ export async function restartInterviewStep(userId: string): Promise<BrandBuilder
   const current = await getWizardState(userId);
   const nextState: BrandBuilderState = {
     current_step: 1,
-    completed_steps: current.completed_steps.filter((step) => step !== 'interview' && step !== 'profile'),
+    completed_steps: current.completed_steps.filter((step) => step !== 'interview'),
     started_at: new Date().toISOString(),
   };
 

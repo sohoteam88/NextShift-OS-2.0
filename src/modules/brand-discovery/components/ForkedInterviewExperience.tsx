@@ -128,8 +128,8 @@ export function ForkedInterviewExperience({ existingInterviewId }: { existingInt
         <section className="rounded-[var(--radius-lg)] border border-emerald-200 bg-emerald-50 p-6 text-center">
           <CheckCircle2 className="mx-auto h-9 w-9 text-emerald-600" />
           <h2 className="mt-3 text-lg font-bold text-emerald-950">Brand DNA 已保存</h2>
-          <p className="mt-2 text-sm text-emerald-800">你的确认故事已落入版本化 Brand DNA，可继续完成资料页。</p>
-          <Button className="mt-4" onClick={() => { window.location.href = '/brand-builder/step/profile'; }}>继续</Button>
+          <p className="mt-2 text-sm text-emerald-800">你的确认故事已落入版本化 Brand DNA。接下来准备社交资料，就能继续发布指引。</p>
+          <Button className="mt-4" onClick={() => { window.location.href = '/brand-builder/step/accounts'; }}>继续</Button>
         </section>
       ) : (
         <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm sm:p-6">

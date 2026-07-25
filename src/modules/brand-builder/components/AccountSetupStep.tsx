@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { triggerMissionCelebrationFromResponse } from '@/stores/mission-celebration-store';
 import type { UsernameOption } from '../services/username-service';
 import type { BioSet } from '../services/bio-service';
+import { JustInTimeFieldPrompt } from './JustInTimeFieldPrompt';
 
 type BrandProfile = Record<string, unknown>;
 
@@ -55,6 +56,7 @@ export function AccountSetupStep({ brandProfile, onSave }: Props) {
   const [saving, setSaving] = React.useState(false);
   const [shownUsernames, setShownUsernames] = React.useState<string[]>([]);
   const [avatarCompleted, setAvatarCompleted] = React.useState(false);
+  const [avatarUrl, setAvatarUrl] = React.useState(() => String(brandProfile.avatarUrl ?? ''));
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -378,6 +380,18 @@ export function AccountSetupStep({ brandProfile, onSave }: Props) {
       {/* Avatar + Cover guidance */}
       <div className={sectionClass}>
         <p className={labelClass}>头像建议</p>
+        {!avatarUrl && !avatarCompleted ? (
+          <div className="mb-4">
+            <JustInTimeFieldPrompt
+              field="avatarUrl"
+              label="要让带形象的内容更像你，贴一张个人照链接给我？"
+              whyNow="这张照片会用于你接下来需要个人形象的内容建议；现在没有也没关系。"
+              placeholder="https://..."
+              inputMode="url"
+              onSaved={setAvatarUrl}
+            />
+          </div>
+        ) : null}
         <ul className="space-y-1 text-sm">
           <li className="text-green-700">✅ 清晰个人正面照</li>
           <li className="text-green-700">✅ 自然微笑，背景简洁</li>

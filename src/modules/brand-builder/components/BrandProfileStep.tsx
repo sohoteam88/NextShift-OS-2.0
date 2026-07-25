@@ -394,7 +394,7 @@ export function BrandProfileStep({ interviewId, initialProfile, onComplete }: Pr
       <section className="rounded-[var(--radius-lg)] border border-blue-100 bg-blue-50 p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-primary)]">Brand DNA Review Room</p>
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-primary)]">Brand DNA 编辑</p>
             <h1 className="mt-2 text-2xl font-bold text-[var(--color-text)] sm:text-3xl">
               确认 AI 对你业务的理解。
             </h1>

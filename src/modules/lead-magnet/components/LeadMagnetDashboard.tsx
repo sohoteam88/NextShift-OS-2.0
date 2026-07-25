@@ -34,6 +34,7 @@ import {
   type LeadMagnetGenerationOutcome,
 } from '../leadMagnetGeneration';
 import { LeadMagnetWorkingLoopCard } from './LeadMagnetWorkingLoopCard';
+import { JustInTimeFieldPrompt } from '@/modules/brand-builder/components/JustInTimeFieldPrompt';
 
 type BrandProfile = Record<string, unknown>;
 
@@ -236,10 +237,10 @@ function ReadinessGate({
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
-                href="/brand-builder/step/profile"
+                href="/brand-builder/profile"
                 className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
               >
-                确认 Brand DNA
+                查看 Brand DNA
               </Link>
             </div>
           </div>
@@ -411,6 +412,7 @@ export function LeadMagnetDashboard() {
   const hasAmbiguousGeneration = Object.values(generationIssues).some(
     (issue) => issue?.status === 'ambiguous',
   );
+  const whatsappPhone = typeof profile?.phone === 'string' ? profile.phone.trim() : '';
   const brandSummary = [
     {
       label: 'Brand DNA',
@@ -469,6 +471,21 @@ export function LeadMagnetDashboard() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
       <RevenueDriverIntentResolver route="/lead-magnet" />
+      {!whatsappPhone ? (
+        <JustInTimeFieldPrompt
+          field="phone"
+          label="要让领取资源的人直接联系你，留一个 WhatsApp 号码？"
+          whyNow="这个号码会用于你正在配置的引流 CTA；暂时跳过也不会影响当前流程。"
+          placeholder="例如：60123456789"
+          inputMode="tel"
+          onSaved={(phone) => {
+            queryClient.setQueryData<BrandProfile>(['brand-builder-profile'], (current) => ({
+              ...(current ?? {}),
+              phone,
+            }));
+          }}
+        />
+      ) : null}
       {hasStaleLeadMagnets ? (
         <BrandDnaStaleBanner
           isPending={generateResources.isPending}

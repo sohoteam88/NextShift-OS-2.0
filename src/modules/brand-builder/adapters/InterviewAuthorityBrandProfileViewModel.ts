@@ -111,9 +111,12 @@ export async function getBrandBuilderProfileViewModel(userId: string): Promise<B
     getInterviewAuthority(userId),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { metadata: true },
+      select: { metadata: true, avatarUrl: true },
     }),
   ]);
-  const legacyProfile = toRecord(toRecord(user?.metadata).brand_profile);
+  const legacyProfile = {
+    ...toRecord(toRecord(user?.metadata).brand_profile),
+    ...(user?.avatarUrl ? { avatarUrl: user.avatarUrl } : {}),
+  };
   return toBrandBuilderProfileViewModel(authority, legacyProfile);
 }
