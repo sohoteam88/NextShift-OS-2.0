@@ -19,6 +19,8 @@ const mocks = vi.hoisted(() => ({
   subtitle: { generateSRT: vi.fn() },
   performance: { create: vi.fn() },
   brand: vi.fn(),
+  brandDnaVersion: vi.fn(),
+  runGeneration: vi.fn(),
 }));
 
 vi.mock('@/lib/prisma', () => ({ default: mocks.prisma }));
@@ -31,7 +33,14 @@ vi.mock('@/modules/video/services/capcut-service', () => ({ capcutService: mocks
 vi.mock('@/modules/video/services/platform-adaptation-service', () => ({ platformAdaptationService: mocks.adaptation }));
 vi.mock('@/modules/video/services/subtitle-service', () => ({ subtitleService: mocks.subtitle }));
 vi.mock('@/modules/brand-builder/services/post-performance-service', () => ({ postPerformanceService: mocks.performance }));
-vi.mock('@/modules/brand-dna/services/BrandContextProvider', () => ({ getBrandContext: mocks.brand }));
+vi.mock('@/modules/brand-dna/services/BrandContextProvider', () => ({
+  getBrandContext: mocks.brand,
+  getBrandDnaVersion: mocks.brandDnaVersion,
+}));
+vi.mock('@/modules/ai/generation', async () => ({
+  ...(await vi.importActual<typeof import('@/modules/ai/generation')>('@/modules/ai/generation')),
+  runGeneration: mocks.runGeneration,
+}));
 
 import { writeClipboardText } from '@/lib/clipboard';
 import { leadMagnetDeleteSchema, leadMagnetPatchSchema } from '@/modules/lead-magnet/input';
@@ -63,6 +72,11 @@ describe('E3B stable GAP executable fixtures', () => {
     vi.clearAllMocks();
     metadata = { unrelated: { locale: 'zh-MY' } };
     mocks.brand.mockResolvedValue(brand);
+    mocks.brandDnaVersion.mockResolvedValue(1);
+    mocks.runGeneration.mockImplementation(async (_user, options) => ({
+      status: 'degraded', source: 'template_fallback', value: options.fallback,
+      userVisibleLabel: 'AI 暂时不可用，这是基础版本', reason: 'test fallback',
+    }));
     mocks.prisma.$transaction.mockImplementation(async (callback: (tx: typeof mocks.prisma) => Promise<unknown>) => callback(mocks.prisma));
     mocks.prisma.user.findUnique.mockImplementation(async () => ({ metadata, updatedAt: new Date('2026-07-19T00:00:00.000Z') }));
     mocks.prisma.$queryRaw.mockImplementation(async (query: { strings?: string[]; values?: unknown[] }) => {
@@ -315,9 +329,9 @@ describe('E3B stable GAP executable fixtures', () => {
   it('E3-GAP-WEBINAR-01: generation has stable identity and a failed replacement preserves the existing package', async () => {
     const existing = generateFullWebinar(brand as never); metadata = { ...metadata, webinar: existing };
     mocks.brand.mockRejectedValueOnce(new Error('generation unavailable'));
-    await expect(webinarService.generate(user.id)).rejects.toThrow('generation unavailable');
+    await expect(webinarService.generate(user.id, user.tenantId)).rejects.toThrow('generation unavailable');
     expect((metadata.webinar as WebinarPackage).id).toBe(existing.id);
-    const retried = await webinarService.generate(user.id);
+    const retried = await webinarService.generate(user.id, user.tenantId);
     expect(retried.id).toMatch(/^webinar-/); expect(retried.id).not.toBe(existing.id); expect(retried.createdAt).toBe(retried.updatedAt);
   });
 

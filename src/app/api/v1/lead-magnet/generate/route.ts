@@ -38,6 +38,7 @@ export const POST = apiHandler(async (request: NextRequest) => {
       });
       return leadMagnetService.generate(
         user.id,
+        user.tenantId,
         input.type,
         input.track,
         workspaceContext,

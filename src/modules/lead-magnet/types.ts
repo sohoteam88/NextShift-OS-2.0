@@ -103,6 +103,10 @@ export interface LeadMagnetConfig {
     followUpStrategy: string;
   };
   qualityScore: number;
+  /** True only when the public copy passed through the G0 AI gateway. */
+  generatedByAi?: boolean;
+  /** Shown when G0 or the compliance fallback returned the base template. */
+  degradedLabel?: string;
   status: LMStatus;
   createdAt: string;
   updatedAt: string;
