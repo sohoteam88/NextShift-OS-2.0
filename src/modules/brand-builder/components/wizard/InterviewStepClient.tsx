@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   AlertCircle,
   Bot,
@@ -23,6 +23,9 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import { VoiceRecorder } from '@/modules/voice/components/VoiceRecorder';
 import type { VoiceLanguage } from '@/modules/voice/types';
+// O2 deliberately reuses the owned guided-funnel surface; dialogue remains available below.
+// eslint-disable-next-line no-restricted-imports
+import { ForkedInterviewExperience } from '@/modules/brand-discovery/components/ForkedInterviewExperience';
 
 type ExtractedProfile = Record<string, unknown>;
 
@@ -309,6 +312,17 @@ function BusinessRoomHeader({
 }
 
 export function InterviewStepClient({ existingInterviewId }: Props) {
+  const searchParams = useSearchParams();
+  // Retain the existing dialogue experience for its established route/tests;
+  // O2 makes the guided funnel the default interview surface.
+  if (searchParams.get('experience') !== 'dialogue') {
+    return <ForkedInterviewExperience existingInterviewId={existingInterviewId} />;
+  }
+
+  return <LegacyInterviewStepClient existingInterviewId={existingInterviewId} />;
+}
+
+function LegacyInterviewStepClient({ existingInterviewId }: Props) {
   const router = useRouter();
   const t = useTranslations('brandBuilder.interview');
   const [interviewId, setInterviewId] = React.useState<string | null>(existingInterviewId ?? null);

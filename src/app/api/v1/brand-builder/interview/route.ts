@@ -11,8 +11,8 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const body = (await request.json()) as { mode?: string; opening?: string };
   const mode = body.mode;
 
-  if (mode !== 'voice' && mode !== 'text' && mode !== 'dialogue') {
-    throw new AppError('VALIDATION_ERROR', 400, "mode must be 'voice', 'text', or 'dialogue'");
+  if (mode !== 'voice' && mode !== 'text' && mode !== 'dialogue' && mode !== 'funnel') {
+    throw new AppError('VALIDATION_ERROR', 400, "mode must be 'voice', 'text', 'dialogue', or 'funnel'");
   }
 
   const interview = await brandInterviewService.create(
