@@ -34,7 +34,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | G5 | 失败可见性 | G | W2 | 已完成(LLM 失败重试耗尽后经 src/modules/ai/generation/gateway.ts runGeneration 明示标注失败+可点击重试,不再静默回退模板;成功路径 logAIUsage 遥测改为 best-effort(try/catch 吞掉,失败不污染真实成功结果,补测覆盖);provider 错误经 runtimeFallbackLogger 上报;UI 端 ContentGenerationDegradedNotice 呈现降级提示+重试按钮;'点此重试'硬编码中文记入后续跨模块文案迁移批次;Fable 复审后放行;PR #152 / b5b1dc9)
 | G2 | lead-magnet + webinar-center 接入 | G | W2 | 已完成(经 G0 网关真实接入 LLM;PR #155 / 8d208df) |
 | O2 | 分叉访谈 | O | W3 | 已完成(数据驱动 5 主题 A/B 三步漏斗接入向导;确认句经 G0+G4/B 路径加严后直接写入版本化 Brand DNA,无二次提取;PR #163 / 1e1f2f9) |
-| O3 | 默认值全填满 + confidence | O | W3 | 未开始 |
+| O3 | 默认值全填满 + confidence | O | W3 | 已完成(纯函数 brandDnaDefaults(src/modules/brand-discovery/forkedInterview/brandDnaDefaults.ts):5 确认答案+推断+事业包中性合规默认→零空字段(content.contentPillars≥3),validateBrandDNA(...).missingFields 输出为空;BrandDNAMeta 增可选 fieldProvenance,按 ${section}.${field} 键(复用 findMissingFields 约定)区分 user-confirmed/coach-defaulted,存 User.metadata 专用键并在 getBrandDNA 读路径回并,跨主路径 BrandProfile 重载存活、无 schema 迁移;confirmForkedInterviewTopic 于 saveBrandDNA 前一次性填充并记 provenance,v(n+1) 首版即零空字段、无二次保存;profile PATCH 的 DNA 字段编辑改走 brandDnaService.updateBrandDNA 使 meta.version +1 并把该字段 provenance 翻回 user-confirmed,非 DNA 遗留 metadata 键行为不变;BrandProfileStep 仅在 coach-defaulted 字段渲染"教练猜的,点此改"标注;A/B 双路径默认填充/provenance/版本+1 均有 co-located 单测,默认文案零品牌名/价格/体重/收入承诺;PR #164 / 7403202) |
 | O4 | Review Room 下线 → just-in-time 字段 | O | W3 | 未开始 |
 | O5 | F-14 硬闸门拆除 | O | W3 | 未开始 |
 | G3 | video-production 旧管线退役 | G | W3 | 未开始 |
