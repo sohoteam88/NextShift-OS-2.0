@@ -15,7 +15,9 @@ export type ViolationCode =
   | 'brand_hidden'
   | 'brand_residual_rewritten'
   | 'income_promise'
-  | 'medical_claim';
+  | 'medical_claim'
+  | 'weight_claim'
+  | 'public_price';
 
 export interface Violation {
   code: ViolationCode;

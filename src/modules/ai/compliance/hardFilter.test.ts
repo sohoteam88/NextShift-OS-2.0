@@ -50,6 +50,9 @@ describe('enforceComplianceHardFilter', () => {
     ['income promise', { ...cleanFields, body: '加入后月入RM8,000，包赚。' }, 'income_promise'],
     ['medical claim', { ...cleanFields, body: '这个方法可以治愈问题并保证瘦。' }, 'medical_claim'],
     ['single-character treatment claim', { ...cleanFields, cta: '这个方案能治问题。' }, 'medical_claim'],
+    // This wording is allowed in private chat, but public output must reject the numeric claim.
+    ['weight number promise', { ...cleanFields, body: '通常一个月可以瘦3-5公斤。' }, 'weight_claim'],
+    ['public price', { ...cleanFields, body: '公开页面显示 RM1,000。' }, 'public_price'],
   ])('rejects a %s for regeneration', (_name, fields, expectedCode) => {
     const verdict = enforceComplianceHardFilter({ track: 'retail', fields });
 
@@ -57,6 +60,33 @@ describe('enforceComplianceHardFilter', () => {
     if (verdict.status !== 'rejected') return;
     expect(verdict.violations.some((violation) => violation.code === expectedCode)).toBe(true);
     expect(verdict).not.toHaveProperty('fields');
+  });
+
+  it('does not reject ordinary health copy without a numeric weight promise', () => {
+    const verdict = enforceComplianceHardFilter({
+      track: 'retail',
+      fields: { ...cleanFields, body: '早睡早起，身体自然轻盈。' },
+    });
+
+    expect(verdict.status).not.toBe('rejected');
+  });
+
+  it('keeps the rewrite path working when no public price is present', () => {
+    const verdict = enforceComplianceHardFilter({
+      track: 'retail',
+      fields: { ...cleanFields, body: 'Herbalife 奶昔适合融入日常健康管理。' },
+    });
+
+    expect(verdict.status).toBe('rewritten');
+  });
+
+  it('does not treat 自治 as a medical claim', () => {
+    const verdict = enforceComplianceHardFilter({
+      track: 'retail',
+      fields: { ...cleanFields, cta: '自治区推广健康生活。' },
+    });
+
+    expect(verdict.status).not.toBe('rejected');
   });
 
   it('replaces unlisted bare brands and product trademarks with a generic public term', () => {

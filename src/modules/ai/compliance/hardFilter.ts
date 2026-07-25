@@ -19,7 +19,11 @@ const INCOME_PROMISE_PATTERNS: RegExp[] = [
 
 // Matches the business pack's public `allowed-verbs` red-line: use support
 // language (促进／帮助／支持／维持／有助于), never medical or guaranteed-result claims.
-const MEDICAL_CLAIM_PATTERN = /(?:治(?!理)|降三高|减肥药|保证瘦|\b(?:cure|cures|curing|guaranteed\s+weight\s+loss)\b)/i;
+// Known trade-off: exclude the three common prefixes 政／自／法, not every safe combination; the
+// occasional false positive costs one extra retry, which is acceptable for the public gate.
+const MEDICAL_CLAIM_PATTERN = /(?:(?<![政自法])治(?!理)|降三高|减肥药|保证瘦|\b(?:cure|cures|curing|guaranteed\s+weight\s+loss)\b)/i;
+const WEIGHT_NUMBER_PATTERN = /(?:瘦|减|掉)\s*\d+(?:\s*(?:[-~至到]\s*\d+))?\s*(?:公斤|kg|斤)/i;
+const PUBLIC_PRICE_PATTERN = /RM\s*[\d,]+/i;
 
 const BARE_BRAND_PATTERN = /(?:\bherbalife\b|贺宝芙|康宝莱)/gi;
 const PRODUCT_TRADEMARK_PATTERN = /(?:\bformula\s*1\b|\bn-?r-?g\b|\baloe\s+concentrate\b)/gi;
@@ -67,6 +71,26 @@ function findRejectedViolations(fields: ComplianceFields): Violation[] {
         field,
         match: medicalMatch,
         message: 'Public content cannot make medical or guaranteed-result claims.',
+      });
+    }
+
+    const weightMatch = text.match(WEIGHT_NUMBER_PATTERN)?.[0];
+    if (weightMatch) {
+      violations.push({
+        code: 'weight_claim',
+        field,
+        match: weightMatch,
+        message: 'Public content cannot promise specific weight-loss numbers.',
+      });
+    }
+
+    const publicPriceMatch = text.match(PUBLIC_PRICE_PATTERN)?.[0];
+    if (publicPriceMatch) {
+      violations.push({
+        code: 'public_price',
+        field,
+        match: publicPriceMatch,
+        message: 'Public content cannot display price; price is private-visibility only.',
       });
     }
   });
