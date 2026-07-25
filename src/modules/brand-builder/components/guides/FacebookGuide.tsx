@@ -9,12 +9,13 @@ type BrandProfile = Record<string, unknown>;
 
 type Props = {
   brandProfile: BrandProfile;
+  facebookPageUrl?: string;
   phone?: string;
   stepsDone: number[];
   onStepComplete: (step: number) => void;
 };
 
-function buildSteps(profile: BrandProfile, phone: string): GuideStepData[] {
+function buildSteps(profile: BrandProfile, phone: string, facebookPageUrl: string): GuideStepData[] {
   const username = String(profile.username ?? profile.identity ?? '');
   const fbBio = String((profile.bios as Record<string, string> | undefined)?.facebook ?? '');
 
@@ -31,9 +32,9 @@ function buildSteps(profile: BrandProfile, phone: string): GuideStepData[] {
     },
     {
       title: '填写 Page 名称',
-      instruction: '输入你的品牌名称。建议使用以下名称：',
-      action: { type: 'copy', value: username },
-      tip: '建议使用你在上一步选择的用户名，保持品牌一致性',
+      instruction: facebookPageUrl ? '使用你刚提供的主页名称或链接作为参考：' : '输入你的品牌名称。建议使用以下名称：',
+      action: { type: 'copy', value: facebookPageUrl || username },
+      tip: facebookPageUrl ? '主页名称可以随时调整，链接会方便你回到正确页面。' : '建议使用你在上一步选择的用户名，保持品牌一致性',
     },
     {
       title: '选择分类',
@@ -70,10 +71,10 @@ function buildSteps(profile: BrandProfile, phone: string): GuideStepData[] {
   ];
 }
 
-export function FacebookGuide({ brandProfile, phone = '', stepsDone, onStepComplete }: Props) {
+export function FacebookGuide({ brandProfile, facebookPageUrl = '', phone = '', stepsDone, onStepComplete }: Props) {
   const t = useTranslations('brandBuilder');
   const [currentStep, setCurrentStep] = React.useState(0);
-  const steps = buildSteps(brandProfile, phone);
+  const steps = buildSteps(brandProfile, phone, facebookPageUrl);
 
   const step = steps[currentStep];
   if (!step) return null;

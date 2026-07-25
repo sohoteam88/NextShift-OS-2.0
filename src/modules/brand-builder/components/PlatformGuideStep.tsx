@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { triggerMissionCelebrationFromResponse } from '@/stores/mission-celebration-store';
 import { FacebookGuide } from './guides/FacebookGuide';
 import { InstagramGuide } from './guides/InstagramGuide';
+import { JustInTimeFieldPrompt } from './JustInTimeFieldPrompt';
 
 type BrandProfile = Record<string, unknown>;
 
@@ -59,6 +60,7 @@ export function PlatformGuideStep({
   const [activePlatform, setActivePlatform] = React.useState(activePlatforms[0] ?? 'facebook');
   const [progress, setProgress] = React.useState<SetupProgress>({});
   const [loadingProgress, setLoadingProgress] = React.useState(true);
+  const [facebookPageUrl, setFacebookPageUrl] = React.useState(() => String(brandProfile.facebookPageUrl ?? ''));
 
   React.useEffect(() => {
     void fetch('/api/v1/brand-builder/guide-progress')
@@ -180,12 +182,25 @@ export function PlatformGuideStep({
       )}
 
       {activePlatform === 'facebook' && (
-        <FacebookGuide
-          brandProfile={brandProfile}
-          phone={phone}
-          stepsDone={fbDone}
-          onStepComplete={(step) => void handleStepComplete('facebook', step)}
-        />
+        <>
+          {!facebookPageUrl ? (
+            <JustInTimeFieldPrompt
+              field="facebookPageUrl"
+              label="帖子要发到你的主页，把主页名称或链接贴给我？"
+              whyNow="现在要开始 Facebook 发布指引，这样我能把步骤对准你的主页。"
+              placeholder="主页名称或 https://facebook.com/..."
+              inputMode="url"
+              onSaved={setFacebookPageUrl}
+            />
+          ) : null}
+          <FacebookGuide
+            brandProfile={brandProfile}
+            facebookPageUrl={facebookPageUrl}
+            phone={phone}
+            stepsDone={fbDone}
+            onStepComplete={(step) => void handleStepComplete('facebook', step)}
+          />
+        </>
       )}
 
       {activePlatform === 'instagram' && (

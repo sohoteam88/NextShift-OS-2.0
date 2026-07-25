@@ -67,7 +67,10 @@ function profileUpdatesToDnaPatch(updates: Record<string, unknown>): BrandDnaPat
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
-  const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { metadata: true } });
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { metadata: true, phone: true, avatarUrl: true },
+  });
   const meta = (dbUser?.metadata as Record<string, unknown>) ?? {};
   const legacyProfile = (meta.brand_profile as Record<string, unknown>) ?? {};
   const dna = await brandDnaService.getBrandDNA(user.id);
@@ -97,6 +100,8 @@ export const GET = apiHandler(async (request: NextRequest) => {
       // messaging signal until that dedicated field exists.
       trust_proof: dna.messaging.uniqueAngle,
       brandDnaVersion: dna.meta.version,
+      phone: dbUser?.phone ?? '',
+      avatarUrl: dbUser?.avatarUrl ?? '',
     },
   });
 });
@@ -119,9 +124,16 @@ export const PATCH = apiHandler(async (request: NextRequest) => {
     brand_profile: { ...existingProfile, ...legacyUpdates },
   };
 
+  const phone = typeof updates.phone === 'string' ? updates.phone.trim() : undefined;
+  const avatarUrl = typeof updates.avatarUrl === 'string' ? updates.avatarUrl.trim() : undefined;
+
   await prisma.user.update({
     where: { id: user.id },
-    data: { metadata: newMeta as Prisma.InputJsonValue },
+    data: {
+      metadata: newMeta as Prisma.InputJsonValue,
+      ...(phone !== undefined ? { phone: phone || null } : {}),
+      ...(avatarUrl !== undefined ? { avatarUrl: avatarUrl || null } : {}),
+    },
   });
 
   const missionResults = [];

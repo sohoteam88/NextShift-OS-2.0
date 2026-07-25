@@ -408,7 +408,7 @@ function LegacyInterviewStepClient({ existingInterviewId }: Props) {
       });
       if (!res.ok) throw new Error('分析失败，请稍后再试');
       await res.json() as { data: ExtractedProfile };
-      router.push('/brand-builder/step/profile');
+      router.push('/brand-builder/step/accounts');
     } catch (err) {
       setError(err instanceof Error ? err.message : '分析失败，请稍后再试');
       setAnalyzing(false);
@@ -485,7 +485,7 @@ function LegacyInterviewStepClient({ existingInterviewId }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stepId: 'interview' }),
     });
-    router.push('/brand-builder/step/profile');
+    router.push('/brand-builder/step/accounts');
   }
 
   if (loading) {
