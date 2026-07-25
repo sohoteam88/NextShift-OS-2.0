@@ -5,6 +5,23 @@ import { logAIUsage } from '@/modules/ai/usage/tracker';
 import { enforceQuota } from '@/modules/ai/usage/quota';
 import { validateAIOutput } from '@/modules/ai/prompt/validator';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
+// Canonical Brand DNA write gateway required by O2 versioning.
+// eslint-disable-next-line no-restricted-imports
+import { brandDnaService } from '@/modules/brand-dna/services/brandDnaService';
+// O2's data-driven state machine is owned by brand discovery.
+// eslint-disable-next-line no-restricted-imports
+import {
+  confirmTopic,
+  createForkedInterviewState,
+  funnelProfileForInterview,
+  mapConfirmedFunnelToBrandDna,
+  setTopicConfirmation,
+  setTopicFacts,
+  setTopicOption,
+  type ForkedInterviewState,
+} from '@/modules/brand-discovery/forkedInterview/funnelDefinition';
+// eslint-disable-next-line no-restricted-imports
+import { generateFunnelConfirmation } from '@/modules/brand-discovery/forkedInterview/funnelConfirmationService';
 
 const EXTRACTION_SYSTEM_PROMPT = `You are a social media brand consultant specializing in the Malaysian market.
 Analyze the following self-introduction and extract a complete brand profile.
@@ -41,6 +58,7 @@ If information is not mentioned, make a reasonable inference based on context. D
 Respond in the same language as the input.`;
 
 const DIALOGUE_KEY = '__dialogue';
+const FUNNEL_KEY = '__forked_funnel';
 const SOFT_TURN_LIMIT = 8;
 const HARD_TURN_LIMIT = 12;
 
@@ -190,6 +208,18 @@ function saveDialogueState(answers: Record<string, unknown>, state: DialogueStat
   } as Prisma.InputJsonValue;
 }
 
+function getForkedInterviewState(answers: Record<string, unknown>): ForkedInterviewState {
+  const candidate = answers[FUNNEL_KEY];
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return createForkedInterviewState();
+  const state = candidate as Partial<ForkedInterviewState>;
+  if (state.version !== 1 || !state.currentTopicId || !state.phase || !state.topics) return createForkedInterviewState();
+  return state as ForkedInterviewState;
+}
+
+function saveForkedInterviewState(answers: Record<string, unknown>, state: ForkedInterviewState): Prisma.InputJsonValue {
+  return { ...answers, [FUNNEL_KEY]: state } as Prisma.InputJsonValue;
+}
+
 function parseJsonObject(text: string): Record<string, unknown> {
   const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
   const start = cleaned.indexOf('{');
@@ -256,8 +286,12 @@ function dialogueToText(state: DialogueState) {
 }
 
 export const brandInterviewService = {
-  async create(user: AuthUser, mode: 'voice' | 'text' | 'dialogue', opening?: string) {
-    const answers = mode === 'dialogue' ? saveDialogueState({}, createDialogueState(opening)) : {};
+  async create(user: AuthUser, mode: 'voice' | 'text' | 'dialogue' | 'funnel', opening?: string) {
+    const answers = mode === 'dialogue'
+      ? saveDialogueState({}, createDialogueState(opening))
+      : mode === 'funnel'
+        ? saveForkedInterviewState({}, createForkedInterviewState())
+        : {};
     return prisma.brandInterview.create({
       data: {
         tenantId: user.tenantId,
@@ -280,6 +314,100 @@ export const brandInterviewService = {
       where: { id: interviewId },
       data: { answers },
     });
+  },
+
+  async getForkedInterview(interviewId: string, user: Pick<AuthUser, 'id' | 'tenantId'>) {
+    const interview = await prisma.brandInterview.findFirst({ where: { id: interviewId, tenantId: user.tenantId, userId: user.id } });
+    if (!interview) throw new Error('Interview not found');
+    if (interview.mode !== 'funnel') throw new Error('Interview is not a forked funnel');
+    return { interview, state: getForkedInterviewState(getAnswersObject(interview.answers)) };
+  },
+
+  async selectForkedInterviewOption(interviewId: string, user: Pick<AuthUser, 'id' | 'tenantId'>, optionId: string) {
+    const { interview, state } = await this.getForkedInterview(interviewId, user);
+    const next = setTopicOption(state, optionId);
+    const updated = await prisma.brandInterview.update({
+      where: { id: interview.id },
+      data: { answers: saveForkedInterviewState(getAnswersObject(interview.answers), next), status: 'in_progress' },
+    });
+    return { interview: updated, state: next };
+  },
+
+  async saveForkedInterviewFacts(
+    interviewId: string,
+    user: Pick<AuthUser, 'id' | 'tenantId'>,
+    facts: string[],
+    skip = false,
+  ) {
+    const { interview, state } = await this.getForkedInterview(interviewId, user);
+    const next = setTopicFacts(state, facts, skip);
+    const updated = await prisma.brandInterview.update({
+      where: { id: interview.id },
+      data: { answers: saveForkedInterviewState(getAnswersObject(interview.answers), next), status: 'in_progress' },
+    });
+    return { interview: updated, state: next };
+  },
+
+  async generateForkedInterviewConfirmation(interviewId: string, user: Pick<AuthUser, 'id' | 'tenantId'>) {
+    const { interview, state } = await this.getForkedInterview(interviewId, user);
+    if (state.phase !== 'confirmation') throw new Error('Facts must be completed before generating confirmation');
+    const generated = await generateFunnelConfirmation(user, state);
+    if (generated.status !== 'success') return { interview, state, generated };
+    const next = setTopicConfirmation(state, generated.sentence);
+    const updated = await prisma.brandInterview.update({
+      where: { id: interview.id },
+      data: { answers: saveForkedInterviewState(getAnswersObject(interview.answers), next), status: 'in_progress' },
+    });
+    return { interview: updated, state: next, generated };
+  },
+
+  async confirmForkedInterviewTopic(interviewId: string, user: AuthUser) {
+    const { interview, state } = await this.getForkedInterview(interviewId, user);
+    const next = confirmTopic(state);
+    if (next.phase !== 'completed') {
+      const updated = await prisma.brandInterview.update({
+        where: { id: interview.id },
+        data: { answers: saveForkedInterviewState(getAnswersObject(interview.answers), next), status: 'in_progress' },
+      });
+      return { interview: updated, state: next, dna: null };
+    }
+
+    // The funnel never calls extractBrandProfile. Each confirmed sentence is
+    // mapped directly into the canonical DNA and saved through versioning.
+    const currentDna = await brandDnaService.getBrandDNA(user.id);
+    const savedDna = await brandDnaService.saveBrandDNA(user.id, mapConfirmedFunnelToBrandDna(currentDna, next));
+    const profile = funnelProfileForInterview(next, savedDna);
+    const updated = await prisma.brandInterview.update({
+      where: { id: interview.id },
+      data: {
+        answers: saveForkedInterviewState(getAnswersObject(interview.answers), next),
+        extractedProfile: profile as Prisma.InputJsonValue,
+        status: 'confirmed',
+      },
+    });
+    const existingUser = await prisma.user.findUnique({ where: { id: user.id }, select: { metadata: true } });
+    const metadata = getAnswersObject(existingUser?.metadata ?? {});
+    const existingProfile = getAnswersObject(metadata.brand_profile ?? {});
+    const wizardState = getAnswersObject(metadata.brand_builder_state ?? {});
+    const completedSteps = Array.isArray(wizardState.completed_steps)
+      ? wizardState.completed_steps.filter((step): step is string => typeof step === 'string')
+      : [];
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        metadata: {
+          ...metadata,
+          brand_profile: { ...existingProfile, ...profile, builder_completed: false, interview_id: interview.id },
+          brand_builder_state: {
+            ...wizardState,
+            current_step: Math.max(typeof wizardState.current_step === 'number' ? wizardState.current_step : 1, 2),
+            completed_steps: Array.from(new Set([...completedSteps, 'interview'])),
+            interview_id: interview.id,
+          },
+        } as Prisma.InputJsonValue,
+      },
+    });
+    return { interview: updated, state: next, dna: savedDna };
   },
 
   async linkVoiceProfile(interviewId: string, voiceProfileId: string) {
