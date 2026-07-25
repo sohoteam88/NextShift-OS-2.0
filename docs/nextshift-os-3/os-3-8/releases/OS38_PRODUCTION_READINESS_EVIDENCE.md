@@ -7,7 +7,7 @@ VERIFICATION_ID=OS38-PR-20260725T031918Z
 VERIFIED_AT=2026-07-25T03:19:18Z
 MIGRATION_REHEARSAL=PASS
 MIGRATION_IMAGE_REHEARSAL=PASS
-MIGRATION_IMAGE_DIGEST=sha256:43189ded4c4d72ba0f27e326feec610520f39cb297bb3da29a15f07d9fbdc08
+MIGRATION_IMAGE_DIGEST=sha256:43189ded4c4d72ba0f27e326feec610520f39cb297bb3bda29a15f07d9fbdc08
 MIGRATION_IMAGE_REVISION=2a6fd20552573efedd884a578384923a084e69f0
 BACKUP_SHA256=90192a8c71fe7b3fa57a0011909a1cf2fbc4f2e93fe4b6fc29ce9a7ff3360ffb
 RESTORE_VERIFIED_AT=2026-07-21T06:11:49Z
@@ -69,7 +69,7 @@ production mutation.
 
 - A migration image was rebuilt locally from the exact release SHA with
   `scripts/deployment/Dockerfile.migrations`. Its image ID (Config digest) is
-  `sha256:43189ded4c4d72ba0f27e326feec610520f39cb297bb3da29a15f07d9fbdc08`,
+  `sha256:43189ded4c4d72ba0f27e326feec610520f39cb297bb3bda29a15f07d9fbdc08`,
   matching `MIGRATION_IMAGE_DIGEST`; its OCI revision is the exact release
   SHA.
 - `scripts/deployment/validate-migration-image-runtime.sh` passed all six
