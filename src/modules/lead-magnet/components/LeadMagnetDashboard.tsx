@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -174,79 +174,26 @@ function LoadingState() {
   );
 }
 
-function ReadinessGate({
-  brandReady,
-  contentReady,
+function GenerationQualityNotice({
+  children,
+  tone = 'amber',
 }: {
-  brandReady: boolean;
-  contentReady: boolean;
+  children: ReactNode;
+  tone?: 'amber' | 'blue';
 }) {
   return (
-    <div className="mx-auto max-w-5xl pb-12">
-      <section className="rounded-[var(--radius-lg)] border border-amber-200 bg-white p-6 shadow-sm">
-        <div className="flex items-start gap-3">
-          <AlertCircle
-            className="mt-1 h-5 w-5 shrink-0 text-amber-600"
-            aria-hidden="true"
-          />
-          <div className="flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
-              Lead Magnet Required Inputs
-            </p>
-            <h1 className="mt-2 text-2xl font-bold text-[var(--color-text)]">
-              引流资源还不能生成。
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-text-muted)]">
-              系统需要先完成 Brand DNA 和内容计划，才能生成对准受众的 Retail 与
-              Recruitment 引流资源。
-            </p>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <div
-                className={`rounded-[var(--radius-md)] border p-4 ${brandReady ? 'border-emerald-100 bg-emerald-50' : 'border-amber-100 bg-amber-50'}`}
-              >
-                <p className="text-sm font-semibold text-[var(--color-text)]">
-                  Brand DNA
-                </p>
-                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                  {brandReady
-                    ? '已准备，可以读取受众、Offer 和信任证明。'
-                    : '还需要确认定位、受众和 Offer。'}
-                </p>
-              </div>
-              <div
-                className={`rounded-[var(--radius-md)] border p-4 ${contentReady ? 'border-emerald-100 bg-emerald-50' : 'border-amber-100 bg-amber-50'}`}
-              >
-                <p className="text-sm font-semibold text-[var(--color-text)]">
-                  内容计划
-                </p>
-                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                  {contentReady
-                    ? '已准备，可以读取 Retail / Recruitment 内容方向。'
-                    : '还需要先生成内容主题和双方向文案。'}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/content-engine"
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                回到内容引擎{' '}
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-              <Link
-                href="/brand-builder/profile"
-                className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
-              >
-                查看 Brand DNA
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
+    <section
+      className={`rounded-[var(--radius-lg)] border p-4 shadow-sm ${tone === 'amber' ? 'border-amber-200 bg-amber-50' : 'border-blue-200 bg-blue-50'}`}
+      role="status"
+    >
+      <div className="flex items-start gap-3">
+        <AlertCircle
+          className={`mt-0.5 h-5 w-5 shrink-0 ${tone === 'amber' ? 'text-amber-600' : 'text-blue-600'}`}
+          aria-hidden="true"
+        />
+        <div className="flex-1 text-sm leading-6">{children}</div>
+      </div>
+    </section>
   );
 }
 
@@ -377,12 +324,6 @@ export function LeadMagnetDashboard() {
     contentCalendars?.retail && contentCalendars?.recruitment,
   );
 
-  if (!brandReady || !contentReady) {
-    return (
-      <ReadinessGate brandReady={brandReady} contentReady={contentReady} />
-    );
-  }
-
   const trackLeadMagnets = leadMagnetQuery.data?.trackLeadMagnets ?? {
     retail: null,
     recruitment: null,
@@ -471,6 +412,55 @@ export function LeadMagnetDashboard() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
       <RevenueDriverIntentResolver route="/lead-magnet" />
+      {brandProfileQuery.isError ? (
+        <GenerationQualityNotice>
+          <p className="font-semibold text-amber-950">Brand DNA 暂时无法读取。</p>
+          <p className="mt-1 text-amber-900">
+            现在仍可生成引流资源；读取成功后，系统会使用最新资料让成品更贴合你。
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              void brandProfileQuery.refetch();
+            }}
+            disabled={brandProfileQuery.isFetching}
+            className="mt-3 inline-flex items-center gap-2 font-semibold text-amber-900 underline underline-offset-4 disabled:opacity-60"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${brandProfileQuery.isFetching ? 'animate-spin' : ''}`}
+              aria-hidden="true"
+            />
+            重试读取资料
+          </button>
+        </GenerationQualityNotice>
+      ) : !brandReady ? (
+        <GenerationQualityNotice>
+          <p className="font-semibold text-amber-950">资料越全，成品越像你。</p>
+          <p className="mt-1 text-amber-900">
+            现在就能生成引流资源；补充 Brand DNA 后会更贴合你的受众和方向。
+          </p>
+          <Link
+            href="/brand-builder/step/profile"
+            className="mt-3 inline-flex items-center gap-2 font-semibold text-amber-900 underline underline-offset-4 hover:text-amber-950"
+          >
+            补充 Brand DNA <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </GenerationQualityNotice>
+      ) : null}
+      {!contentReady ? (
+        <GenerationQualityNotice tone="blue">
+          <p className="font-semibold text-blue-950">内容计划还没有生成。</p>
+          <p className="mt-1 text-blue-900">
+            现在仍可生成引流资源；先补充内容计划，后续方向会更贴合你。
+          </p>
+          <Link
+            href="/content-engine"
+            className="mt-3 inline-flex items-center gap-2 font-semibold text-blue-900 underline underline-offset-4 hover:text-blue-950"
+          >
+            生成内容计划 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </GenerationQualityNotice>
+      ) : null}
       {!whatsappPhone ? (
         <JustInTimeFieldPrompt
           field="phone"
@@ -516,7 +506,7 @@ export function LeadMagnetDashboard() {
                   根据什么生成
                 </p>
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                  根据 Brand DNA + 内容计划自动生成，不重新问基础资料。
+                  根据现有 Brand DNA 与内容计划生成；缺少的资料会先用默认信息补齐。
                 </p>
               </div>
               <div>
