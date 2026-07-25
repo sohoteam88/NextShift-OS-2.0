@@ -46,6 +46,11 @@ export function toBrandBuilderProfileViewModel(
   legacyProfile?: Record<string, unknown> | null,
 ): BrandBuilderProfileViewModel {
   const legacy = legacyProfile ?? {};
+  const dnaIdentity = toRecord(legacy.identity);
+  const dnaAudience = toRecord(legacy.audience);
+  const dnaMessaging = toRecord(legacy.messaging);
+  const dnaOffer = toRecord(legacy.offer);
+  const dnaMeta = toRecord(legacy.meta);
   const contentPillars = Array.isArray(legacy.contentPillars)
     ? legacy.contentPillars
     : derivePillarsFromSkills(authority.profile.primarySkills);
@@ -55,17 +60,22 @@ export function toBrandBuilderProfileViewModel(
 
   return {
     ...legacy,
-    identity: pickString(authority.profile.professionalRole, legacy.identity),
-    personalName: pickString(authority.profile.fullName, legacy.personalName),
-    brandName: pickString(authority.profile.professionalRole, legacy.brandName),
-    positioning: pickString(authority.profile.missionStatement, legacy.positioning),
-    brandPositioning: pickString(authority.profile.missionStatement, legacy.brandPositioning),
-    target_audience: pickString(authority.audience.primaryAudience, legacy.target_audience),
-    targetAudience: pickString(authority.audience.primaryAudience, legacy.targetAudience),
-    audience_pain_points: pickArray(authority.audience.audienceProblems, legacy.audience_pain_points),
-    audienceGoals: pickArray(authority.audience.audienceGoals, legacy.audienceGoals),
-    audienceObjections: pickArray(authority.audience.audienceObjections, legacy.audienceObjections),
-    primaryOffer: pickString(authority.businessContext.primaryOffer, legacy.primaryOffer),
+    identity: pickString(authority.profile.professionalRole, legacy.identity) || pickString(undefined, dnaIdentity.brandPositioning),
+    personalName: pickString(authority.profile.fullName, legacy.personalName) || pickString(undefined, dnaIdentity.personalName),
+    brandName: pickString(authority.profile.professionalRole, legacy.brandName) || pickString(undefined, dnaIdentity.brandName),
+    positioning: pickString(authority.profile.missionStatement, legacy.positioning) || pickString(undefined, dnaIdentity.brandPositioning),
+    brandPositioning: pickString(authority.profile.missionStatement, legacy.brandPositioning) || pickString(undefined, dnaIdentity.brandPositioning),
+    target_audience: pickString(authority.audience.primaryAudience, legacy.target_audience) || pickString(undefined, dnaAudience.targetAudience),
+    targetAudience: pickString(authority.audience.primaryAudience, legacy.targetAudience) || pickString(undefined, dnaAudience.targetAudience),
+    audience_pain_points: pickArray(authority.audience.audienceProblems, legacy.audience_pain_points).length > 0 ? pickArray(authority.audience.audienceProblems, legacy.audience_pain_points) : pickArray(undefined, dnaAudience.audiencePainPoints),
+    audienceGoals: pickArray(authority.audience.audienceGoals, legacy.audienceGoals).length > 0 ? pickArray(authority.audience.audienceGoals, legacy.audienceGoals) : pickArray(undefined, dnaAudience.audienceGoals),
+    audienceObjections: pickArray(authority.audience.audienceObjections, legacy.audienceObjections).length > 0 ? pickArray(authority.audience.audienceObjections, legacy.audienceObjections) : pickArray(undefined, dnaAudience.audienceObjections),
+    value_proposition: pickString(undefined, legacy.value_proposition) || pickString(undefined, dnaMessaging.coreMessage),
+    differentiator: pickString(undefined, legacy.differentiator) || pickString(undefined, dnaMessaging.uniqueAngle),
+    story: pickString(undefined, legacy.story) || pickString(undefined, dnaMessaging.elevatorPitch),
+    offer: pickString(undefined, legacy.offer) || pickString(undefined, dnaOffer.primaryOffer),
+    primaryOffer: pickString(authority.businessContext.primaryOffer, legacy.primaryOffer) || pickString(undefined, dnaOffer.primaryOffer),
+    brandDnaFieldProvenance: toRecord(dnaMeta.fieldProvenance),
     contentPillars,
     contentStrategy: pickLegacyOnly(legacy, 'contentStrategy'),
     platforms,

@@ -54,6 +54,16 @@ export interface BrandVisual {
   coverBannerPrompt: string;
 }
 
+export type BrandDnaFieldProvenance = 'user_confirmed' | 'coach_defaulted';
+
+export type BrandDnaFieldKey =
+  | 'identity.brandName' | 'identity.personalName' | 'identity.brandPositioning' | 'identity.slogan'
+  | 'audience.targetAudience' | 'audience.audiencePainPoints' | 'audience.audienceGoals' | 'audience.audienceObjections'
+  | 'messaging.coreMessage' | 'messaging.uniqueAngle' | 'messaging.elevatorPitch'
+  | 'content.contentTone' | 'content.contentPillars' | 'content.storytellingStyle'
+  | 'offer.primaryOffer' | 'offer.secondaryOffer' | 'offer.transformationPromise'
+  | 'visual.brandColors' | 'visual.profileImagePrompt' | 'visual.coverBannerPrompt';
+
 // ---- Metadata ----
 export interface BrandDNAMeta {
   confidenceScore: number;
@@ -61,6 +71,8 @@ export interface BrandDNAMeta {
   updatedAt: string;
   version: number;
   publishedAt: string | null;
+  /** Additive metadata; persisted in User.metadata because BrandProfile has no JSON column for it. */
+  fieldProvenance?: Partial<Record<BrandDnaFieldKey, BrandDnaFieldProvenance>>;
 }
 
 // ---- Complete Brand DNA ----
@@ -73,6 +85,16 @@ export interface BrandDNA {
   visual: BrandVisual;
   meta: BrandDNAMeta;
 }
+
+export type BrandDnaPatch = {
+  identity?: Partial<BrandIdentity>;
+  audience?: Partial<BrandAudience>;
+  messaging?: Partial<BrandMessaging>;
+  content?: Partial<BrandContent>;
+  offer?: Partial<BrandOffer>;
+  visual?: Partial<BrandVisual>;
+  meta?: Partial<BrandDNAMeta>;
+};
 
 // ---- Brand DNA Snapshot (for versioning) ----
 export interface BrandDNASnapshot {

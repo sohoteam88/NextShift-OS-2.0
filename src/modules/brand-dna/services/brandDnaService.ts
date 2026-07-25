@@ -5,7 +5,15 @@
 
 import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
-import { type BrandDNA, type BrandDNASnapshot, EMPTY_BRAND_DNA, mapLegacyProfileToDNA } from '../types';
+import {
+  type BrandDNA,
+  type BrandDnaPatch,
+  type BrandDnaFieldKey,
+  type BrandDnaFieldProvenance,
+  type BrandDNASnapshot,
+  EMPTY_BRAND_DNA,
+  mapLegacyProfileToDNA,
+} from '../types';
 import { validateBrandDNA } from './brandDnaValidator';
 import { generateBrandDNA } from '@/modules/brand-discovery/brandDnaGenerator';
 
@@ -38,12 +46,34 @@ function dnaToBrandProfileRow(dna: BrandDNA, tenantId: string, userId: string) {
   };
 }
 
+const FIELD_PROVENANCE_METADATA_KEY = 'brand_dna_field_provenance';
+
+function readFieldProvenance(metadata: Record<string, unknown>): Partial<Record<BrandDnaFieldKey, BrandDnaFieldProvenance>> | undefined {
+  const value = metadata[FIELD_PROVENANCE_METADATA_KEY];
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  return value as Partial<Record<BrandDnaFieldKey, BrandDnaFieldProvenance>>;
+}
+
+function withFieldProvenance(dna: BrandDNA, metadata: Record<string, unknown>): BrandDNA {
+  const fieldProvenance = readFieldProvenance(metadata) ?? dna.meta.fieldProvenance;
+  return fieldProvenance ? { ...dna, meta: { ...dna.meta, fieldProvenance } } : dna;
+}
+
+function patchedDnaFields(patch: BrandDnaPatch): BrandDnaFieldKey[] {
+  const sections = ['identity', 'audience', 'messaging', 'content', 'offer', 'visual'] as const;
+  return sections.flatMap((section) => Object.keys(patch[section] ?? {}).map((field) => `${section}.${field}` as BrandDnaFieldKey));
+}
+
 export const brandDnaService = {
   async getBrandDNA(userId: string): Promise<BrandDNA> {
     // PRIMARY: BrandProfile table
-    const bp = await prisma.brandProfile.findUnique({ where: { userId } });
+    const [bp, user] = await Promise.all([
+      prisma.brandProfile.findUnique({ where: { userId } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } }),
+    ]);
+    const metadata = (user?.metadata as Record<string, unknown>) ?? {};
     if (bp) {
-      return mapLegacyProfileToDNA({
+      return withFieldProvenance(mapLegacyProfileToDNA({
         brandName: bp.brandName, personalName: bp.personalName,
         brandPositioning: bp.brandPositioning, slogan: bp.slogan,
         target_audience: bp.targetAudience, targetAudience: bp.targetAudience,
@@ -60,11 +90,13 @@ export const brandDnaService = {
         confidenceScore: bp.confidenceScore, version: bp.version,
         publishedAt: bp.publishedAt?.toISOString() ?? null,
         generatedAt: bp.createdAt.toISOString(), updatedAt: bp.updatedAt.toISOString(),
-      });
+      }), metadata);
     }
     // FALLBACK
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } });
-    return mapLegacyProfileToDNA((user?.metadata as Record<string, unknown>)?.brand_profile as Record<string, unknown> | null);
+    return withFieldProvenance(
+      mapLegacyProfileToDNA(metadata.brand_profile as Record<string, unknown> | null),
+      metadata,
+    );
   },
 
   async saveBrandDNA(userId: string, dna: BrandDNA): Promise<BrandDNA> {
@@ -85,14 +117,22 @@ export const brandDnaService = {
     const existingMeta = (existingUser?.metadata as Record<string, unknown>) ?? {};
     await prisma.user.update({
       where: { id: userId },
-      data: { metadata: { ...existingMeta, brand_profile: updated as unknown as Prisma.InputJsonValue } as Prisma.InputJsonValue },
+      data: {
+        metadata: {
+          ...existingMeta,
+          brand_profile: updated as unknown as Prisma.InputJsonValue,
+          ...(updated.meta.fieldProvenance ? { [FIELD_PROVENANCE_METADATA_KEY]: updated.meta.fieldProvenance } : {}),
+        } as Prisma.InputJsonValue,
+      },
     });
 
     return updated;
   },
 
-  async updateBrandDNA(userId: string, patch: Partial<BrandDNA>): Promise<BrandDNA> {
+  async updateBrandDNA(userId: string, patch: BrandDnaPatch): Promise<BrandDNA> {
     const current = await this.getBrandDNA(userId);
+    const fieldProvenance = { ...current.meta.fieldProvenance };
+    for (const field of patchedDnaFields(patch)) fieldProvenance[field] = 'user_confirmed';
     return this.saveBrandDNA(userId, {
       identity: { ...current.identity, ...patch.identity },
       audience: { ...current.audience, ...patch.audience },
@@ -100,7 +140,9 @@ export const brandDnaService = {
       content: { ...current.content, ...patch.content },
       offer: { ...current.offer, ...patch.offer },
       visual: { ...current.visual, ...patch.visual },
-      meta: { ...current.meta, ...patch.meta, updatedAt: new Date().toISOString(), version: current.meta.version + 1 },
+      // saveBrandDNA is the sole version incrementer. Keeping the current
+      // value here guarantees a profile correction advances exactly one version.
+      meta: { ...current.meta, ...patch.meta, fieldProvenance, updatedAt: new Date().toISOString(), version: current.meta.version },
     });
   },
 

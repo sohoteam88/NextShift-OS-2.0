@@ -22,6 +22,9 @@ import {
 } from '@/modules/brand-discovery/forkedInterview/funnelDefinition';
 // eslint-disable-next-line no-restricted-imports
 import { generateFunnelConfirmation } from '@/modules/brand-discovery/forkedInterview/funnelConfirmationService';
+// eslint-disable-next-line no-restricted-imports
+import { fillForkedInterviewBrandDnaDefaults } from '@/modules/brand-discovery/forkedInterview/brandDnaDefaults';
+import { businessPack } from '@/modules/ai/business-pack';
 
 const EXTRACTION_SYSTEM_PROMPT = `You are a social media brand consultant specializing in the Malaysian market.
 Analyze the following self-introduction and extract a complete brand profile.
@@ -375,7 +378,12 @@ export const brandInterviewService = {
     // The funnel never calls extractBrandProfile. Each confirmed sentence is
     // mapped directly into the canonical DNA and saved through versioning.
     const currentDna = await brandDnaService.getBrandDNA(user.id);
-    const savedDna = await brandDnaService.saveBrandDNA(user.id, mapConfirmedFunnelToBrandDna(currentDna, next));
+    const completedDna = fillForkedInterviewBrandDnaDefaults(
+      mapConfirmedFunnelToBrandDna(currentDna, next),
+      next,
+      businessPack,
+    );
+    const savedDna = await brandDnaService.saveBrandDNA(user.id, completedDna);
     const profile = funnelProfileForInterview(next, savedDna);
     const updated = await prisma.brandInterview.update({
       where: { id: interview.id },

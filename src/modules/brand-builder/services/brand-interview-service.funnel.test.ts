@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EMPTY_BRAND_DNA } from '@/modules/brand-dna/types';
+import { validateBrandDNA } from '@/modules/brand-dna/services/brandDnaValidator';
 import {
   confirmTopic,
   createForkedInterviewState,
@@ -39,7 +40,10 @@ describe('forked interview persistence', () => {
     prismaMocks.user.findUnique.mockResolvedValue({ metadata: {} });
     prismaMocks.user.update.mockResolvedValue({});
     dnaMocks.getBrandDNA.mockResolvedValue(EMPTY_BRAND_DNA);
-    dnaMocks.saveBrandDNA.mockResolvedValue({ ...EMPTY_BRAND_DNA, meta: { ...EMPTY_BRAND_DNA.meta, version: 2 } });
+    dnaMocks.saveBrandDNA.mockImplementation(async (_userId: string, dna: typeof EMPTY_BRAND_DNA) => ({
+      ...dna,
+      meta: { ...dna.meta, version: dna.meta.version + 1 },
+    }));
     const extractionSpy = vi.spyOn(brandInterviewService, 'extractBrandProfile');
 
     const result = await brandInterviewService.confirmForkedInterviewTopic('interview-1', { id: 'user-1', tenantId: 'tenant-1' } as any);
@@ -48,6 +52,9 @@ describe('forked interview persistence', () => {
     expect(dnaMocks.saveBrandDNA).toHaveBeenCalledWith('user-1', expect.objectContaining({
       content: expect.objectContaining({ storytellingStyle: '我会在晚上安排稳定的分享节奏。' }),
     }));
+    const savedInput = dnaMocks.saveBrandDNA.mock.calls[0]?.[1];
+    expect(validateBrandDNA(savedInput)).toMatchObject({ missingFields: [] });
+    expect(result.dna?.meta.version).toBe(2);
     expect(extractionSpy).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { EMPTY_BRAND_DNA } from '@/modules/brand-dna/types';
+import { businessPack } from '@/modules/ai/business-pack';
+import { validateBrandDNA } from '@/modules/brand-dna/services/brandDnaValidator';
+import { fillForkedInterviewBrandDnaDefaults } from './brandDnaDefaults';
 import {
   confirmTopic,
   createForkedInterviewState,
@@ -45,5 +48,33 @@ describe('forked interview definition and state machine', () => {
     expect(dna.identity.brandPositioning).toContain('八年上班族');
     expect(dna.audience.targetAudience).toBe('同事');
     expect(dna.content.storytellingStyle).toContain('五到十小时');
+  });
+
+  it.each([
+    ['A', 'product_first', 'energy', '我开始记录更稳定的日常状态。'],
+    ['B', 'opportunity_first', 'time', '我想把时间安排得更自主一些。'],
+  ] as const)('fills every required DNA field and provenance for path %s', (_path, entryOption, changeOption, changeSentence) => {
+    let state = createForkedInterviewState();
+    state = answerCurrent(state, entryOption, '这是我确认过的入场故事。');
+    state = answerCurrent(state, changeOption, changeSentence);
+    state = answerCurrent(state, 'employee', '我过去是上班族，也理解忙碌后的疲惫。');
+    state = answerCurrent(state, 'retail', '我想先服务身边愿意交流的同事。', ['身边同事']);
+    state = answerCurrent(state, 'five_to_ten_hours', '我会在晚上安排稳定的分享节奏。');
+
+    const completed = fillForkedInterviewBrandDnaDefaults(
+      mapConfirmedFunnelToBrandDna(EMPTY_BRAND_DNA, state),
+      state,
+      businessPack,
+    );
+
+    expect(validateBrandDNA(completed).missingFields).toEqual([]);
+    expect(completed.meta.fieldProvenance).toMatchObject({
+      'messaging.coreMessage': 'user_confirmed',
+      'offer.primaryOffer': 'user_confirmed',
+      'identity.brandName': 'coach_defaulted',
+      'messaging.elevatorPitch': 'coach_defaulted',
+      'visual.profileImagePrompt': 'coach_defaulted',
+    });
+    expect(JSON.stringify(completed)).not.toMatch(/herbalife|贺宝芙|康宝莱|RM\d|\d+\s*(公斤|kg)|收入保证/i);
   });
 });
