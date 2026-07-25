@@ -11,11 +11,15 @@ const routerMocks = vi.hoisted(() => ({
 }));
 const quotaMocks = vi.hoisted(() => ({ enforceQuota: vi.fn() }));
 const trackerMocks = vi.hoisted(() => ({ logAIUsage: vi.fn() }));
+const fallbackLoggerMocks = vi.hoisted(() => ({ warn: vi.fn() }));
 
 vi.mock('@/modules/brand-dna/services/BrandContextProvider', () => brandContextMocks);
 vi.mock('@/modules/ai/router', () => ({ getRouterForTenant: routerMocks.getRouterForTenant }));
 vi.mock('@/modules/ai/usage/quota', () => ({ enforceQuota: quotaMocks.enforceQuota }));
 vi.mock('@/modules/ai/usage/tracker', () => ({ logAIUsage: trackerMocks.logAIUsage }));
+vi.mock('@/lib/runtime-fallback-logger', () => ({
+  runtimeFallbackLogger: fallbackLoggerMocks,
+}));
 
 import { buildGenerationContext, composeGenerationSystemPrompt, runGeneration } from './index';
 
@@ -73,6 +77,7 @@ describe('generation gateway', () => {
     routerMocks.getRouterForTenant.mockResolvedValue({ generate: routerMocks.generate });
     routerMocks.generate.mockResolvedValue(routedResult);
     trackerMocks.logAIUsage.mockResolvedValue(undefined);
+    fallbackLoggerMocks.warn.mockImplementation(() => undefined);
   });
 
   it('builds a context and prompt with brand version, mode, and platform guidance', async () => {
@@ -150,5 +155,38 @@ describe('generation gateway', () => {
       reason: 'Router unavailable',
     }));
     expect(trackerMocks.logAIUsage).not.toHaveBeenCalled();
+    expect(fallbackLoggerMocks.warn).toHaveBeenCalledTimes(1);
+    expect(fallbackLoggerMocks.warn).toHaveBeenCalledWith(
+      '[ai-generation] provider failed, degraded to template',
+      {
+        feature: 'generation_gateway_test',
+        taskCategory: 'content_generation',
+        tenantId: 'tenant-1',
+        reason: 'Router unavailable',
+      },
+    );
+  });
+
+  it('still returns the labelled fallback when telemetry reporting fails', async () => {
+    routerMocks.generate.mockRejectedValue(new Error('Router unavailable'));
+    fallbackLoggerMocks.warn.mockImplementation(() => {
+      throw new Error('Sentry unavailable');
+    });
+    const context = await buildGenerationContext(user, { mode: 'retail', platform: 'instagram' });
+
+    const outcome = await runGeneration(user, {
+      context,
+      userMessage: 'Write a post',
+      taskCategory: 'content_generation',
+      feature: 'generation_gateway_test',
+      fallback: 'Template fallback',
+    });
+
+    expect(outcome).toMatchObject({
+      status: 'degraded',
+      source: 'template_fallback',
+      value: 'Template fallback',
+      reason: 'Router unavailable',
+    });
   });
 });

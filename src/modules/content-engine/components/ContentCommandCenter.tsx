@@ -29,6 +29,8 @@ import {
   type ContentTrack,
   type GeneratedPost,
 } from '@/modules/content-engine/types';
+import { GENERATION_DEGRADE_LABEL } from '@/modules/ai/generation/types';
+import { ContentGenerationDegradedNotice } from './ContentGenerationDegradedNotice';
 import {
   applyPersistedContent,
   canSaveDraft,
@@ -272,6 +274,10 @@ export function ContentCommandCenter() {
   const [recoverableDraft, setRecoverableDraft] = useState<EditableContentDraft | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<'idle' | 'success' | 'error'>('idle');
   const [copyError, setCopyError] = useState<string | null>(null);
+  // The command center currently generates one post per request. Keep this
+  // state request-scoped so a future batch surface can retain degradation and
+  // retry controls per item instead of treating one fallback as a batch error.
+  const [generationDegradedLabel, setGenerationDegradedLabel] = useState<string | null>(null);
   const [pendingEditStarted, setPendingEditStarted] =
     useState<ContentEditStartedProperties | null>(null);
   const savedAfterEditRef = useRef<string | null>(null);
@@ -330,6 +336,7 @@ export function ContentCommandCenter() {
     onMutate: () => {
       setCopyFeedback('idle');
       setCopyError(null);
+      setGenerationDegradedLabel(null);
     },
     onSuccess: ({ data: post }) => {
       const draft = toEditableContentDraft(post);
@@ -342,6 +349,9 @@ export function ContentCommandCenter() {
       trackedEditingRef.current = null;
       reportedEditingRef.current = null;
       setPendingEditStarted(null);
+      setGenerationDegradedLabel(
+        post.degradedLabel ?? (post.generatedByAi === false ? GENERATION_DEGRADE_LABEL : null),
+      );
       window.localStorage.removeItem(`draft:content-engine:${post.id}`);
       recoveryCheckedRef.current = post.id;
       const userId = telemetryUserQuery.data;
@@ -946,6 +956,10 @@ export function ContentCommandCenter() {
               </button>
             </div>
           ) : null}
+          <ContentGenerationDegradedNotice
+            label={generationDegradedLabel}
+            onRetry={handleGeneratePost}
+          />
           {copyFeedback === 'success' ? (
             <p className="text-sm font-semibold text-emerald-700">已复制当前编辑版本。</p>
           ) : null}

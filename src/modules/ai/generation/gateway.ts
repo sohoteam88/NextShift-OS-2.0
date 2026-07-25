@@ -1,4 +1,5 @@
 import type { AuthUser } from '@/modules/auth/services/auth-service';
+import { runtimeFallbackLogger } from '@/lib/runtime-fallback-logger';
 import { getRouterForTenant } from '../router';
 import { enforceQuota } from '../usage/quota';
 import { logAIUsage } from '../usage/tracker';
@@ -48,12 +49,27 @@ export async function runGeneration<T>(
       result,
     };
   } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+
+    // Provider/router retries are exhausted before this gateway boundary. The
+    // fallback must remain available even when the telemetry transport fails.
+    try {
+      runtimeFallbackLogger.warn('[ai-generation] provider failed, degraded to template', {
+        feature: options.feature,
+        taskCategory: options.taskCategory,
+        tenantId: user.tenantId,
+        reason,
+      });
+    } catch {
+      // Observability is best-effort and must never block the labelled fallback.
+    }
+
     return {
       status: 'degraded',
       source: 'template_fallback',
       value: options.fallback,
       userVisibleLabel: GENERATION_DEGRADE_LABEL,
-      reason: error instanceof Error ? error.message : String(error),
+      reason,
     };
   }
 }
