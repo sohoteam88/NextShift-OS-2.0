@@ -5,8 +5,65 @@ import { requireAuthApi } from '@/modules/auth/middleware/require-auth-api';
 import prisma from '@/lib/prisma';
 import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission';
 import { brandDnaService } from '@/modules/brand-dna/services/brandDnaService';
+import type { BrandDNA, BrandDnaPatch } from '@/modules/brand-dna/types';
 
 export const dynamic = 'force-dynamic';
+
+function stringUpdate(updates: Record<string, unknown>, ...keys: string[]) {
+  const value = keys.map((key) => updates[key]).find((candidate) => typeof candidate === 'string');
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** Maps only known DNA aliases; unrelated legacy profile keys remain metadata-only. */
+function profileUpdatesToDnaPatch(updates: Record<string, unknown>): BrandDnaPatch {
+  const explicitlyEdited = Array.isArray(updates.__dnaEditedFields)
+    ? new Set(updates.__dnaEditedFields.filter((key): key is string => typeof key === 'string'))
+    : null;
+  const includes = (...keys: string[]) => !explicitlyEdited || keys.some((key) => explicitlyEdited.has(key));
+  const identity = {
+    brandName: includes('brandName') ? stringUpdate(updates, 'brandName') : undefined,
+    personalName: includes('personalName') ? stringUpdate(updates, 'personalName') : undefined,
+    brandPositioning: includes('brandPositioning', 'positioning', 'identity') ? stringUpdate(updates, 'brandPositioning', 'positioning', 'identity') : undefined,
+    slogan: includes('slogan') ? stringUpdate(updates, 'slogan') : undefined,
+  };
+  const audience = {
+    targetAudience: includes('targetAudience', 'target_audience') ? stringUpdate(updates, 'targetAudience', 'target_audience') : undefined,
+    audiencePainPoints: includes('audiencePainPoints', 'audience_pain_points') && Array.isArray(updates.audiencePainPoints) ? updates.audiencePainPoints as string[] : includes('audiencePainPoints', 'audience_pain_points') && Array.isArray(updates.audience_pain_points) ? updates.audience_pain_points as string[] : undefined,
+    audienceGoals: includes('audienceGoals') && Array.isArray(updates.audienceGoals) ? updates.audienceGoals as string[] : undefined,
+    audienceObjections: includes('audienceObjections') && Array.isArray(updates.audienceObjections) ? updates.audienceObjections as string[] : undefined,
+  };
+  const messaging = {
+    coreMessage: includes('coreMessage', 'value_proposition') ? stringUpdate(updates, 'coreMessage', 'value_proposition') : undefined,
+    uniqueAngle: includes('uniqueAngle', 'differentiator') ? stringUpdate(updates, 'uniqueAngle', 'differentiator') : undefined,
+    elevatorPitch: includes('elevatorPitch', 'story') ? stringUpdate(updates, 'elevatorPitch', 'story') : undefined,
+  };
+  const content = {
+    contentTone: includes('contentTone', 'content_voice') ? stringUpdate(updates, 'contentTone', 'content_voice') : undefined,
+    contentPillars: includes('contentPillars') && Array.isArray(updates.contentPillars) ? updates.contentPillars as BrandDNA['content']['contentPillars'] : undefined,
+    storytellingStyle: includes('storytellingStyle') ? stringUpdate(updates, 'storytellingStyle') : undefined,
+  };
+  const offer = {
+    primaryOffer: includes('primaryOffer', 'offer') ? stringUpdate(updates, 'primaryOffer', 'offer') : undefined,
+    secondaryOffer: includes('secondaryOffer') ? stringUpdate(updates, 'secondaryOffer') : undefined,
+    transformationPromise: includes('transformationPromise') ? stringUpdate(updates, 'transformationPromise') : undefined,
+  };
+  const visual = {
+    brandColors: includes('brandColors') && Array.isArray(updates.brandColors) ? updates.brandColors as string[] : undefined,
+    profileImagePrompt: includes('profileImagePrompt') ? stringUpdate(updates, 'profileImagePrompt') : undefined,
+    coverBannerPrompt: includes('coverBannerPrompt') ? stringUpdate(updates, 'coverBannerPrompt') : undefined,
+  };
+  const populated = <T extends Record<string, unknown>>(section: T) => Object.fromEntries(
+    Object.entries(section).filter(([, value]) => value !== undefined),
+  ) as Partial<T>;
+  return {
+    ...(Object.keys(populated(identity)).length ? { identity: populated(identity) } : {}),
+    ...(Object.keys(populated(audience)).length ? { audience: populated(audience) } : {}),
+    ...(Object.keys(populated(messaging)).length ? { messaging: populated(messaging) } : {}),
+    ...(Object.keys(populated(content)).length ? { content: populated(content) } : {}),
+    ...(Object.keys(populated(offer)).length ? { offer: populated(offer) } : {}),
+    ...(Object.keys(populated(visual)).length ? { visual: populated(visual) } : {}),
+  };
+}
 
 export const GET = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
@@ -47,6 +104,11 @@ export const GET = apiHandler(async (request: NextRequest) => {
 export const PATCH = apiHandler(async (request: NextRequest) => {
   const user = await requireAuthApi(request);
   const updates = (await request.json()) as Record<string, unknown>;
+  const legacyUpdates = Object.fromEntries(Object.entries(updates).filter(([key]) => key !== '__dnaEditedFields'));
+
+  const dnaPatch = profileUpdatesToDnaPatch(updates);
+  const hasDnaPatch = Object.values(dnaPatch).some((section) => section && Object.keys(section).length > 0);
+  const savedDna = hasDnaPatch ? await brandDnaService.updateBrandDNA(user.id, dnaPatch) : null;
 
   const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { metadata: true } });
   const existingMeta = (dbUser?.metadata as Record<string, unknown>) ?? {};
@@ -54,7 +116,7 @@ export const PATCH = apiHandler(async (request: NextRequest) => {
 
   const newMeta = {
     ...existingMeta,
-    brand_profile: { ...existingProfile, ...updates },
+    brand_profile: { ...existingProfile, ...legacyUpdates },
   };
 
   await prisma.user.update({
@@ -77,5 +139,8 @@ export const PATCH = apiHandler(async (request: NextRequest) => {
     missionResults.push(await notifyMissionProgress(user, 'avatar_completed'));
   }
 
-  return NextResponse.json({ data: newMeta.brand_profile, mission: missionResults.find((result) => result.isNewMilestone) ?? missionResults[0] });
+  return NextResponse.json({
+    data: { ...newMeta.brand_profile, ...(savedDna ? { brandDnaVersion: savedDna.meta.version } : {}) },
+    mission: missionResults.find((result) => result.isNewMilestone) ?? missionResults[0],
+  });
 });

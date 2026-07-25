@@ -42,18 +42,19 @@ type ReviewField = {
   keyName: string;
   title: string;
   hint: string;
+  provenanceKey?: string;
   multiline?: boolean;
   required?: boolean;
 };
 
 const CORE_FIELDS: ReviewField[] = [
-  { keyName: 'identity', title: '你是谁 / 身份定位', hint: '例如：帮助新手从零开始建立个人品牌的导师', required: true },
-  { keyName: 'target_audience', title: '目标受众', hint: '你最想吸引哪一种人？', required: true },
-  { keyName: 'value_proposition', title: '价值主张', hint: '你能帮他们得到什么结果？', required: true },
-  { keyName: 'story', title: '品牌故事', hint: '你的经历、转折、为什么做这件事', multiline: true, required: true },
-  { keyName: 'differentiator', title: '你的差异化', hint: '为什么不是别人，而是你？' },
+  { keyName: 'identity', title: '你是谁 / 身份定位', hint: '例如：帮助新手从零开始建立个人品牌的导师', provenanceKey: 'identity.brandPositioning', required: true },
+  { keyName: 'target_audience', title: '目标受众', hint: '你最想吸引哪一种人？', provenanceKey: 'audience.targetAudience', required: true },
+  { keyName: 'value_proposition', title: '价值主张', hint: '你能帮他们得到什么结果？', provenanceKey: 'messaging.coreMessage', required: true },
+  { keyName: 'story', title: '品牌故事', hint: '你的经历、转折、为什么做这件事', provenanceKey: 'messaging.elevatorPitch', multiline: true, required: true },
+  { keyName: 'differentiator', title: '你的差异化', hint: '为什么不是别人，而是你？', provenanceKey: 'messaging.uniqueAngle' },
   { keyName: 'trust_proof', title: '信任证明', hint: '案例、结果、经验、资格、客户反馈', multiline: true, required: true },
-  { keyName: 'offer', title: 'Offer / 产品服务', hint: '你现在主推的产品、服务或机会是什么？', required: true },
+  { keyName: 'offer', title: 'Offer / 产品服务', hint: '你现在主推的产品、服务或机会是什么？', provenanceKey: 'offer.primaryOffer', required: true },
   { keyName: 'cta', title: '行动入口', hint: '私信、WhatsApp、预约、领取资料、加入社群' },
 ];
 
@@ -172,11 +173,13 @@ function InlineEditText({
   value,
   placeholder,
   multiline = false,
+  coachDefaulted = false,
   onChange,
 }: {
   value: string;
   placeholder?: string;
   multiline?: boolean;
+  coachDefaulted?: boolean;
   onChange: (next: string) => void;
 }) {
   const [editing, setEditing] = React.useState(false);
@@ -236,9 +239,12 @@ function InlineEditText({
 
   return (
     <div className="group flex items-start gap-2">
-      <p className="flex-1 text-sm leading-6 text-[var(--color-text)]">
-        {value || <span className="text-[var(--color-text-muted)] italic">{placeholder || '（未填写）'}</span>}
-      </p>
+      <div className="flex-1">
+        {coachDefaulted ? <Button type="button" variant="ghost" size="sm" className="mb-1 h-6 px-2 text-amber-700 hover:bg-amber-50 hover:text-amber-800" onClick={() => setEditing(true)}>教练猜的，点此改</Button> : null}
+        <p className="text-sm leading-6 text-[var(--color-text)]">
+          {value || <span className="text-[var(--color-text-muted)] italic">{placeholder || '（未填写）'}</span>}
+        </p>
+      </div>
       <button
         type="button"
         onClick={() => setEditing(true)}
@@ -264,6 +270,8 @@ function ReviewFieldCard({
 }) {
   const value = valueOf(profile, field.keyName);
   const missing = field.required && !value.trim();
+  const provenance = profile.brandDnaFieldProvenance as Record<string, unknown> | undefined;
+  const coachDefaulted = field.provenanceKey ? provenance?.[field.provenanceKey] === 'coach_defaulted' : false;
 
   return (
     <div className={cn(FIELD_CLASS, missing && 'border-amber-200 bg-amber-50')}>
@@ -279,6 +287,7 @@ function ReviewFieldCard({
         value={value}
         placeholder={field.hint}
         multiline={field.multiline}
+        coachDefaulted={coachDefaulted}
         onChange={(next) => onChange(field.keyName, next)}
       />
     </div>
@@ -322,34 +331,33 @@ function ReviewSection({
 
 export function BrandProfileStep({ interviewId, initialProfile, onComplete }: Props) {
   const [profile, setProfile] = React.useState<BrandProfile>(initialProfile);
+  const [editedFields, setEditedFields] = React.useState<string[]>([]);
   const [confirming, setConfirming] = React.useState(false);
   const [reanalyzing, setReanalyzing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   function setField(key: string, value: unknown) {
     setProfile((p) => ({ ...p, [key]: value }));
+    setEditedFields((fields) => fields.includes(key) ? fields : [...fields, key]);
   }
 
   async function handleConfirm() {
     setConfirming(true);
     setError(null);
+    const profileUpdate = { ...profile, __dnaEditedFields: editedFields };
     try {
-      if (interviewId) {
+      // O2 has already confirmed and versioned its funnel interview. Sending
+      // its review through the legacy interview confirmer would overwrite the
+      // primary row without field provenance, so corrections use profile PATCH.
+      if (interviewId && !profile.brandDnaFieldProvenance) {
         const res = await fetch(`/api/v1/brand-builder/interview/${interviewId}/confirm`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile }),
-        });
-        if (!res.ok) throw new Error('保存失败');
-      } else {
-        const res = await fetch('/api/v1/brand-builder/profile', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(profile),
+          body: JSON.stringify({ profile: profileUpdate }),
         });
         if (!res.ok) throw new Error('保存失败');
       }
-      onComplete(profile);
+      onComplete(profileUpdate);
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存失败，请重试');
     } finally {
