@@ -206,48 +206,61 @@ async function responseError(response: Response, fallback: string) {
   return message;
 }
 
-function BrandDNAGate({ isError }: { isError: boolean }) {
+function BrandDnaQualityNotice({
+  isError,
+  isRetrying,
+  onRetry,
+}: {
+  isError: boolean;
+  isRetrying: boolean;
+  onRetry: () => void;
+}) {
   return (
-    <div className="mx-auto max-w-5xl pb-12">
-      <section className="rounded-[var(--radius-lg)] border border-amber-200 bg-white p-6 shadow-sm">
+    <section
+      className="rounded-[var(--radius-lg)] border border-amber-200 bg-amber-50 p-4 shadow-sm"
+      role={isError ? 'alert' : 'status'}
+    >
         <div className="flex items-start gap-3">
           <AlertCircle
             className="mt-1 h-5 w-5 shrink-0 text-amber-600"
             aria-hidden="true"
           />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-amber-700">
-              Brand DNA Required
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-950">
+              {isError ? 'Brand DNA 暂时无法读取。' : '资料越全，成品越像你。'}
             </p>
-            <h1 className="mt-2 text-2xl font-bold text-[var(--color-text)]">
-              Brand DNA 还不完整。
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--color-text-muted)]">
-              内容引擎需要先知道你的受众、Offer、品牌方向和信任证明，才可以自动生成
-              Retail 与 Recruitment 两套内容计划。
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-amber-900">
               {isError
-                ? ' 目前读取 Brand DNA 时出现问题，你可以先回到确认页检查资料。'
-                : ''}
+                ? '现在仍可生成内容；读取成功后，系统会使用最新资料让成品更贴合你。'
+                : '现在就能生成内容；补充后会更贴合你。'}
             </p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+              {isError ? (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  disabled={isRetrying}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-amber-700 px-4 text-sm font-semibold text-white hover:bg-amber-800 disabled:opacity-60"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${isRetrying ? 'animate-spin' : ''}`}
+                    aria-hidden="true"
+                  />
+                  重试读取资料
+                </button>
+              ) : (
               <Link
                 href="/brand-builder/step/profile"
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700"
+                className="inline-flex h-10 items-center justify-center gap-2 self-start text-sm font-semibold text-amber-900 underline underline-offset-4 hover:text-amber-950"
               >
-                返回确认 Brand DNA{' '}
+                补充 Brand DNA{' '}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <Link
-                href="/dashboard"
-                className="inline-flex h-11 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-5 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
-              >
-                回到 AI COO
-              </Link>
+              )}
             </div>
           </div>
         </div>
-      </section>
-    </div>
+    </section>
   );
 }
 
@@ -598,10 +611,8 @@ export function ContentCommandCenter() {
   }
 
   const profile = brandProfileQuery.data;
-
-  if (brandProfileQuery.isError || !hasBrandDNA(profile)) {
-    return <BrandDNAGate isError={brandProfileQuery.isError} />;
-  }
+  const shouldShowBrandDnaNotice =
+    brandProfileQuery.isError || !hasBrandDNA(profile);
 
   const trackCalendars = contentQuery.data?.data.trackCalendars ?? {
     retail: null,
@@ -717,6 +728,15 @@ export function ContentCommandCenter() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-12">
       <RevenueDriverIntentResolver route="/content-engine" onResolved={handleIntentResolved} />
+      {shouldShowBrandDnaNotice ? (
+        <BrandDnaQualityNotice
+          isError={brandProfileQuery.isError}
+          isRetrying={brandProfileQuery.isFetching}
+          onRetry={() => {
+            void brandProfileQuery.refetch();
+          }}
+        />
+      ) : null}
       {recoverableDraft ? (
         <section className="rounded-[var(--radius-lg)] border border-amber-200 bg-amber-50 p-4 shadow-sm" role="alert">
           <p className="text-sm font-semibold text-amber-900">检测到上次未保存的编辑。</p>
@@ -756,7 +776,7 @@ export function ContentCommandCenter() {
                   根据什么生成
                 </p>
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                  根据已确认的 Brand DNA 自动生成，不重新问基础资料。
+                  根据现有 Brand DNA 自动生成；资料不全时会先用默认信息补齐，不重新问基础资料。
                 </p>
               </div>
               <div>
