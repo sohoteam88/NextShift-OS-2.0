@@ -17,6 +17,18 @@ import type { WorkspaceContext } from '@/modules/workspace/types';
 import { generateLeadMagnet } from './leadMagnetGenerators';
 import { validateLeadMagnet } from './leadMagnetValidator';
 import { AppError } from '@/lib/errors';
+import {
+  buildGenerationContext,
+  GENERATION_DEGRADE_LABEL,
+  runGeneration,
+} from '@/modules/ai/generation';
+import { getBusinessPackSlice } from '@/modules/ai/business-pack';
+import { enforceComplianceHardFilter } from '@/modules/ai/compliance';
+import {
+  buildLeadMagnetUserMessage,
+  LEAD_MAGNET_JSON_SYSTEM_INSTRUCTION,
+  parseGeneratedLeadMagnet,
+} from './leadMagnetPostGeneration';
 
 const DEFAULT_THEME: FunnelTheme = {
   primary_color: '#2563eb',
@@ -198,9 +210,76 @@ function buildLandingPageConfig(config: LeadMagnetConfig): FunnelConfig {
   };
 }
 
+const MAX_COMPLIANCE_RETRIES = 2;
+
+/** Filters every public copy destination through G4 before it can be returned or stored. */
+function filterLeadMagnetForPublicOutput(config: LeadMagnetConfig, track: LeadMagnetTrack): LeadMagnetConfig | null {
+  let rejected = false;
+  const text = (value: string) => {
+    const verdict = enforceComplianceHardFilter({
+      fields: { title: '', hook: '', body: value, cta: '', hashtags: [] },
+      track,
+    });
+    if (verdict.status === 'rejected') {
+      rejected = true;
+      return value;
+    }
+    return verdict.fields.body;
+  };
+  const texts = (values: string[]) => values.map(text);
+  const landingPage = config.landingPage && {
+    ...config.landingPage,
+    headline: text(config.landingPage.headline), subheadline: text(config.landingPage.subheadline),
+    painBullets: texts(config.landingPage.painBullets), mechanism: text(config.landingPage.mechanism),
+    benefitBullets: texts(config.landingPage.benefitBullets), formTitle: text(config.landingPage.formTitle), ctaText: text(config.landingPage.ctaText),
+  };
+  const cta = {
+    ...config.cta,
+    headline: text(config.cta.headline), buttonText: text(config.cta.buttonText),
+    description: text(config.cta.description), whatsappCta: text(config.cta.whatsappCta), funnelCta: text(config.cta.funnelCta),
+  };
+  const resultCta = {
+    ...config.resultPage.cta,
+    headline: text(config.resultPage.cta.headline), buttonText: text(config.resultPage.cta.buttonText),
+    description: text(config.resultPage.cta.description), whatsappCta: text(config.resultPage.cta.whatsappCta), funnelCta: text(config.resultPage.cta.funnelCta),
+  };
+  const next: LeadMagnetConfig = {
+    ...config,
+    title: text(config.title), promise: text(config.promise), description: text(config.description), audiencePain: text(config.audiencePain),
+    ...(landingPage ? { landingPage } : {}), cta,
+    ...(config.sections ? { sections: config.sections.map((section) => ({ ...section, title: text(section.title), body: text(section.body), bullets: texts(section.bullets) })) } : {}),
+    ...(config.checklistItems ? { checklistItems: config.checklistItems.map((item) => ({ ...item, text: text(item.text) })) } : {}),
+    resultPage: {
+      ...config.resultPage,
+      scoreLabel: text(config.resultPage.scoreLabel), categoryLabel: text(config.resultPage.categoryLabel),
+      explanation: text(config.resultPage.explanation), recommendations: texts(config.resultPage.recommendations),
+      nextAction: text(config.resultPage.nextAction), cta: resultCta,
+    },
+    segmentation: {
+      ...config.segmentation,
+      nextAction: text(config.segmentation.nextAction), followUpStrategy: text(config.segmentation.followUpStrategy),
+    },
+  };
+  return rejected ? null : next;
+}
+
+function buildSafeBaseLeadMagnet(config: LeadMagnetConfig): LeadMagnetConfig {
+  const cta = { headline: '准备好开始下一步吗？', buttonText: '领取资源', description: '留下联系方式以接收资源和下一步说明。', whatsappCta: '你好，我想领取这份资源。', funnelCta: '进入领取页' };
+  return {
+    ...config,
+    title: '实用行动资源', promise: '用一份清晰资源整理你的下一步行动。', description: '用一份清晰资源整理你的下一步行动。', audiencePain: '不知道下一步该从哪里开始。', cta,
+    ...(config.landingPage ? { landingPage: { ...config.landingPage, headline: '从一个清晰的小行动开始', subheadline: '领取资源，整理适合自己的下一步。', painBullets: ['不知道先做什么', '行动容易中断', '需要一份清晰指引'], mechanism: '通过简单步骤，把想法整理成可执行行动。', benefitBullets: ['看清当前重点', '完成一个小行动', '获得下一步指引'], formTitle: '领取资源', ctaText: '领取资源' } } : {}),
+    ...(config.sections ? { sections: config.sections.map((section, index) => ({ ...section, title: `行动步骤 ${index + 1}`, body: '从一个小行动开始，并根据自己的情况调整。', bullets: ['确认当前重点', '完成一个小行动', '记录你的发现'] })) } : {}),
+    ...(config.checklistItems ? { checklistItems: config.checklistItems.map((item, index) => ({ ...item, text: `完成行动步骤 ${index + 1}` })) } : {}),
+    resultPage: { ...config.resultPage, scoreLabel: '你的下一步', categoryLabel: '资源已准备好', explanation: '从一个小行动开始，慢慢建立适合自己的节奏。', recommendations: ['阅读资源', '完成第一步', '需要时寻求支持'], nextAction: '领取资源后完成第一步', cta },
+    segmentation: { ...config.segmentation, nextAction: '领取资源后完成第一步', followUpStrategy: '先了解对方的目标和当前需要。' },
+  };
+}
+
 export const leadMagnetService = {
   async generate(
     userId: string,
+    tenantId: string,
     type: LeadMagnetType,
     track: LeadMagnetTrack = 'retail',
     workspaceContext?: WorkspaceContext,
@@ -209,11 +288,49 @@ export const leadMagnetService = {
     if (!ctx) throw new Error('请先完成品牌资料');
 
     const activeTrack = resolveWorkspaceTrack(track, workspaceContext);
-    const config = {
+    const fallback = {
       ...adaptConfigForTrack(generateLeadMagnet(ctx, type), activeTrack),
       brandDnaVersion: await getBrandDnaVersion(userId),
       workspaceContext: workspaceMetadata(workspaceContext),
     };
+    const user = { id: userId, tenantId };
+    const platform = 'blog' as const;
+    const businessPack = getBusinessPackSlice({ track: activeTrack, platform });
+    const context = await buildGenerationContext(user, {
+      mode: activeTrack,
+      platform,
+      businessPack: {
+        ...businessPack,
+        promptContext: [businessPack.promptContext, LEAD_MAGNET_JSON_SYSTEM_INSTRUCTION].filter(Boolean).join('\n\n'),
+      },
+    });
+    const options = {
+      context,
+      userMessage: buildLeadMagnetUserMessage({ type, track: activeTrack, fallback }),
+      taskCategory: 'content_generation' as const,
+      feature: 'lead_magnet_generation',
+      fallback,
+      parse: (text: string) => parseGeneratedLeadMagnet(text, fallback),
+      temperature: 0.7,
+      maxTokens: 2_000,
+    };
+    let outcome = await runGeneration(user, options);
+    let config = filterLeadMagnetForPublicOutput(outcome.value, activeTrack);
+    let retries = 0;
+    while (!config && outcome.source === 'ai' && retries < MAX_COMPLIANCE_RETRIES) {
+      retries += 1;
+      outcome = await runGeneration(user, options);
+      config = filterLeadMagnetForPublicOutput(outcome.value, activeTrack);
+    }
+    let generatedByAi = outcome.source === 'ai';
+    let degradedLabel = outcome.status === 'degraded' ? outcome.userVisibleLabel : undefined;
+    if (!config) {
+      config = filterLeadMagnetForPublicOutput(fallback, activeTrack)
+        ?? filterLeadMagnetForPublicOutput(buildSafeBaseLeadMagnet(fallback), activeTrack)!;
+      generatedByAi = false;
+      degradedLabel = GENERATION_DEGRADE_LABEL;
+    }
+    config = { ...config, generatedByAi, ...(degradedLabel ? { degradedLabel } : {}) };
     config.qualityScore = validateLeadMagnet(config).score;
     await this.saveTrack(userId, activeTrack, config);
     return config;

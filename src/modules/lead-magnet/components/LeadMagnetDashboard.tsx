@@ -696,6 +696,11 @@ export function LeadMagnetDashboard() {
                       <p className="mt-1 text-xs leading-5 text-emerald-800">
                         {resource.promise}
                       </p>
+                      {resource.degradedLabel ? (
+                        <p role="alert" className="mt-2 text-xs font-semibold text-amber-800">
+                          {resource.degradedLabel}
+                        </p>
+                      ) : null}
                       <button
                         type="button"
                         disabled={

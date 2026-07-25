@@ -278,6 +278,11 @@ export function WebinarDashboard() {
         route="/webinar-center"
         onResolved={handleIntentResolved}
       />
+      {pkg?.degradedLabel ? (
+        <div role="alert" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+          {pkg.degradedLabel}
+        </div>
+      ) : null}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button

@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 
 export function generateStrategy(ctx: BrandContext): WebinarStrategy {
   return {
-    targetAudience: ctx.audience || '在职人士想要副业收入',
+    targetAudience: ctx.audience || '希望建立个人品牌行动节奏的人',
     desiredOutcome: ctx.offer.transformation || '掌握一套简单的AI辅助商业系统',
     trustBuildingAngle: ctx.personalName ? `${ctx.personalName}的亲身经历和转变故事` : '真实案例和数据',
     authorityPositioning: ctx.positioning || '个人品牌与AI系统专家',
@@ -15,7 +15,7 @@ export function generateStrategy(ctx: BrandContext): WebinarStrategy {
 
 export function generateTopic(ctx: BrandContext): WebinarTopic {
   return {
-    title: `${ctx.personalName || ''}: 如何在30天内用AI建立${ctx.audience || '个人品牌'}系统`,
+    title: `${ctx.personalName || ctx.brandName || 'NextShift'}：用 AI 建立个人品牌行动系统`,
     promise: `即使你${ctx.audiencePainPoints?.[0] || '很忙'}，也能建立自动运转的客户获取系统`,
     subtitle: `${ctx.messaging.coreMessage || '不需要辞职，不需要大预算，只需要一套系统。'}`,
   };
@@ -28,9 +28,9 @@ export function generateOutline(ctx: BrandContext, topic: WebinarTopic): Webinar
     problem: `大多数${ctx.audience || '人'}的问题是：想建立个人品牌但不知道从哪开始、没时间做内容、不知道如何变现。`,
     opportunity: `AI改变了游戏规则。现在你可以用AI写内容、做视频、跟进客户——把原来需要团队的事情，一个人搞定。`,
     framework: `${ctx.brandName || '我'}的3步框架：1. Brand DNA（明确定位）→ 2. Content Engine（自动内容）→ 3. Funnel（自动成交）`,
-    caseStudy: '案例：一位学员用了这个系统，30天内从0到第一笔成交。',
+    caseStudy: '案例：一位学员用这套方法整理内容与跟进节奏，并持续完成每周行动。',
     offer: `如果你想更快实现，我提供${ctx.offer.primary || '1对1策略咨询'}。${ctx.offer.transformation || ''}`,
-    qa: '现在可以提问。常见问题：需要多少钱？需要什么技能？多久能看到结果？',
+    qa: '现在可以提问。常见问题：需要什么准备？适合什么阶段？如何开始？',
     cta: `点击下方链接预约${ctx.offer.primary || '免费策略咨询'}，名额有限。`,
     recommendedDuration: '45分钟',
   };
@@ -89,7 +89,7 @@ export function generateFollowupSequence(ctx: BrandContext): FollowupMessage[] {
     { day: 0, label: '注册确认', message: `感谢注册${ctx.brandName || '我'}的Webinar！讲座链接稍后发送。先想想：你最大的挑战是什么？` },
     { day: 1, label: '提醒', message: `明天就是${ctx.brandName || '我'}的Webinar了！准备好纸笔，内容很干货。` },
     { day: 2, label: '回放提醒', message: `错过了直播？没关系，这里有回放链接。看完回复我，聊聊你的想法。` },
-    { day: 3, label: '案例分享', message: `分享一个学员案例：她用这个方法30天做到第一笔成交。想看完整故事吗？` },
+    { day: 3, label: '案例分享', message: '分享一个学员案例：她用这套方法建立了更稳定的内容与行动节奏。想看完整故事吗？' },
     { day: 4, label: 'Offer介绍', message: `很多人问${ctx.offer.primary || '这个服务'}包含什么？我整理了详细方案，发给你看看？` },
     { day: 5, label: '紧迫感', message: `提醒一下：${ctx.offer.primary || '专属优惠'}还剩24小时。如果还在考虑，有什么问题我可以解答？` },
     { day: 6, label: '最后机会', message: `最后一天！${ctx.offer.primary || '优惠'}即将结束。决定好了吗？` },
