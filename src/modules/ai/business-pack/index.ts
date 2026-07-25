@@ -1,8 +1,12 @@
 export { businessPack, loadBusinessPack } from './loader';
-export { getBusinessPackSlice } from './provider';
+export { getBusinessPackSlice, getComplianceRewriteRules } from './provider';
 export type {
   BusinessPack,
   BusinessPackTrack,
   BusinessPackVisibility,
 } from './types';
-export type { GetBusinessPackSliceOptions } from './provider';
+export type {
+  ComplianceRewriteRules,
+  GetBusinessPackSliceOptions,
+  GetComplianceRewriteRulesOptions,
+} from './provider';

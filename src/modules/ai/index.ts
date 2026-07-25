@@ -61,8 +61,25 @@ export type {
 } from './generation';
 
 // ── Business pack (public, track-scoped generation context) ────────────────
-export { getBusinessPackSlice } from './business-pack';
-export type { BusinessPack, BusinessPackTrack, BusinessPackVisibility, GetBusinessPackSliceOptions } from './business-pack';
+export { getBusinessPackSlice, getComplianceRewriteRules } from './business-pack';
+export type {
+  BusinessPack,
+  BusinessPackTrack,
+  BusinessPackVisibility,
+  ComplianceRewriteRules,
+  GetBusinessPackSliceOptions,
+  GetComplianceRewriteRulesOptions,
+} from './business-pack';
+
+// ── Output compliance hard filter ──────────────────────────────────────────
+export { enforceComplianceHardFilter } from './compliance';
+export type {
+  ComplianceFields,
+  ComplianceTrack,
+  ComplianceVerdict,
+  Violation,
+  ViolationCode,
+} from './compliance';
 
 // ── Policies ─────────────────────────────────────────────────────────────────
 export { decidePolicy, getTaskDefinition } from './services/model-policy-engine';

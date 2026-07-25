@@ -184,6 +184,144 @@ describe('contentEngineService.generatePlatformPost', () => {
       body: 'Generated body',
     });
   });
+
+  it('rewrites brand-hidden AI output while retaining generatedByAi', async () => {
+    generationMocks.runGeneration.mockResolvedValue({
+      status: 'success',
+      source: 'ai',
+      value: {
+        ...generatorMocks.generatePost.mock.results[0]?.value,
+        id: 'post-temporary-id',
+        pillar: '教育内容',
+        pillarEmoji: '📚',
+        title: 'Herbalife 奶昔的减肥习惯',
+        hook: 'Herbalife 产品（整体）如何融入日常？',
+        body: '很多人想让生活习惯更稳定，可以先为自己准备一份简单早餐，并记录每天的感受和变化。持续执行小行动，比突然改变所有事情更容易坚持下来。',
+        cta: '留言了解 Herbalife 奶昔。',
+        hashtags: ['#Herbalife', '#减肥'],
+        platform: 'facebook',
+        format: 'text_post',
+        funnelStage: 'awareness',
+        status: 'generated',
+        qualityScore: 75,
+        createdAt: '2026-07-15T00:00:00.000Z',
+        updatedAt: '2026-07-15T00:00:00.000Z',
+      },
+      text: 'unused',
+      result: {},
+    });
+
+    const result = await contentEngineService.generatePlatformPost(
+      'owner-1',
+      'tenant-1',
+      'facebook',
+      'text_post',
+      'awareness',
+    );
+
+    expect(result.generatedByAi).toBe(true);
+    expect(JSON.stringify(result)).not.toMatch(/Herbalife|贺宝芙|康宝莱|减肥/i);
+    expect(result.title).toContain('营养早餐／营养代餐');
+    expect(result.title).toContain('体重管理');
+    expect(prismaMocks.content.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ generatedByAi: true, title: result.title, body: result.body }),
+    });
+  });
+
+  it('retries rejected AI posts twice, then persists only the labelled clean template fallback', async () => {
+    const rejectedAiOutcome = (body: string) => ({
+      status: 'success' as const,
+      source: 'ai' as const,
+      value: {
+        ...generatorMocks.generatePost.mock.results[0]?.value,
+        id: 'post-temporary-id',
+        pillar: '教育内容',
+        pillarEmoji: '📚',
+        title: 'Unsafe title',
+        hook: 'Unsafe hook',
+        body,
+        cta: 'Unsafe CTA',
+        hashtags: ['#unsafe'],
+        platform: 'facebook',
+        format: 'text_post',
+        funnelStage: 'awareness',
+        status: 'generated',
+        qualityScore: 75,
+        createdAt: '2026-07-15T00:00:00.000Z',
+        updatedAt: '2026-07-15T00:00:00.000Z',
+      },
+      text: 'unused',
+      result: {},
+    });
+    generationMocks.runGeneration
+      .mockResolvedValueOnce(rejectedAiOutcome('加入后月入RM8,000，包赚。'))
+      .mockResolvedValueOnce(rejectedAiOutcome('这个方法可以治愈问题并保证瘦。'))
+      .mockResolvedValueOnce(rejectedAiOutcome('这是一款减肥药，能保证瘦下来。'));
+
+    const result = await contentEngineService.generatePlatformPost(
+      'owner-1',
+      'tenant-1',
+      'facebook',
+      'text_post',
+      'awareness',
+    );
+
+    expect(generationMocks.runGeneration).toHaveBeenCalledTimes(3);
+    expect(result).toMatchObject({
+      generatedByAi: false,
+      degradedLabel: GENERATION_DEGRADE_LABEL,
+      title: 'Temporary generated title',
+    });
+    expect(JSON.stringify(result)).not.toMatch(/月入|包赚|治愈|减肥药|保证瘦/i);
+    expect(prismaMocks.content.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ generatedByAi: false, title: 'Temporary generated title' }),
+    });
+  });
+
+  it('keeps 20 mixed dirty generations out of persisted and returned public content', async () => {
+    const dirtyBodies = [
+      'Herbalife 奶昔可以配合日常节奏，让你更容易安排早餐和运动时间。',
+      '加入后日入RM500，包赚的机会就在这里。',
+      '这不是普通建议，它可以治愈问题并保证瘦下来。',
+    ];
+    let call = 0;
+    generationMocks.runGeneration.mockImplementation(async (_user, options) => {
+      const body = dirtyBodies[call % dirtyBodies.length];
+      call += 1;
+      return {
+        status: 'success',
+        source: 'ai',
+        value: {
+          ...options.fallback,
+          title: body.includes('Herbalife') ? 'Herbalife 奶昔日常' : '安全标题',
+          hook: '从日常的小行动开始。',
+          body,
+          cta: '留言了解更多。',
+          hashtags: body.includes('Herbalife') ? ['#Herbalife', '#减肥'] : ['#健康习惯'],
+        },
+        text: 'unused',
+        result: {},
+      };
+    });
+
+    const results = await Promise.all(Array.from({ length: 20 }, () => contentEngineService.generatePlatformPost(
+      'owner-1',
+      'tenant-1',
+      'facebook',
+      'text_post',
+      'awareness',
+    )));
+    const badOutput = /Herbalife|贺宝芙|康宝莱|月入|日入\s*RM|包赚|治愈|减肥药|保证瘦/i;
+
+    expect(results).toHaveLength(20);
+    expect(prismaMocks.content.create).toHaveBeenCalledTimes(20);
+    for (const result of results) {
+      expect(JSON.stringify(result)).not.toMatch(badOutput);
+    }
+    for (const call of prismaMocks.content.create.mock.calls) {
+      expect(JSON.stringify(call[0].data)).not.toMatch(badOutput);
+    }
+  });
 });
 
 describe('contentEngineService.getLastPost', () => {

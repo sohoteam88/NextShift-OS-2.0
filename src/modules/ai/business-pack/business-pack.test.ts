@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { BusinessPackSlice } from '../generation/types';
-import { businessPack, getBusinessPackSlice, loadBusinessPack } from './index';
+import {
+  businessPack,
+  getBusinessPackSlice,
+  getComplianceRewriteRules,
+  loadBusinessPack,
+} from './index';
 
 describe('business pack loader', () => {
   it('loads the versioned JSON asset through the validating loader', () => {
@@ -61,5 +66,36 @@ describe('getBusinessPackSlice', () => {
     expect(retailPrompt).toContain('营养早餐／营养代餐');
     expect(recruitmentPrompt).toContain('在家创业系统');
     expect(recruitmentPrompt).toContain('健康教练');
+  });
+});
+
+describe('getComplianceRewriteRules', () => {
+  it('returns only public, track-scoped substitution and red-line data', () => {
+    const retail = getComplianceRewriteRules({ track: 'retail' });
+    const recruitment = getComplianceRewriteRules({ track: 'recruitment' });
+
+    expect(retail.rewriteRules).toContainEqual({
+      internalTerm: '减肥',
+      publicTerm: '体重管理',
+    });
+    expect(retail.rewriteRules).toContainEqual({
+      internalTerm: 'Herbalife 奶昔',
+      publicTerm: '营养早餐／营养代餐',
+    });
+    expect(recruitment.rewriteRules).toContainEqual({
+      internalTerm: '这份事业',
+      publicTerm: '在家创业系统',
+    });
+    expect(recruitment.rewriteRules).not.toContainEqual({
+      internalTerm: '减肥',
+      publicTerm: '体重管理',
+    });
+    expect(retail.redLines.some((entry) => entry.id === 'allowed-verbs')).toBe(true);
+
+    const exposed = JSON.stringify({ retail, recruitment });
+    expect(exposed).not.toContain('weight-framework');
+    expect(exposed).not.toContain('通常一个月可以瘦3-5公斤');
+    expect(exposed).not.toMatch(/RM[\d,.]+/);
+    expect(exposed).not.toContain('price');
   });
 });

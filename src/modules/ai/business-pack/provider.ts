@@ -9,6 +9,27 @@ export interface GetBusinessPackSliceOptions {
   platform?: string;
 }
 
+export interface GetComplianceRewriteRulesOptions {
+  track: PublicGenerationTrack;
+}
+
+/**
+ * Destination-safe compliance inputs for post-generation filtering. These are
+ * intentionally a narrow public projection: consumers never receive private
+ * scripts, prices, or the private weight-management framework.
+ */
+export interface ComplianceRewriteRules {
+  rewriteRules: Array<{
+    internalTerm: string;
+    publicTerm: string;
+  }>;
+  redLines: Array<{
+    id: string;
+    destination: string;
+    rule: string;
+  }>;
+}
+
 function isInScope(
   entry: { track: BusinessPackTrack; visibility: BusinessPackVisibility },
   track: PublicGenerationTrack,
@@ -16,9 +37,28 @@ function isInScope(
   return entry.visibility === 'public' && (entry.track === track || entry.track === 'both');
 }
 
+/**
+ * Provides the public, track-scoped rules needed by output compliance checks.
+ * Do not widen this projection: it is safe to pass only because `isInScope`
+ * excludes every private business-pack entry before returning it.
+ */
+export function getComplianceRewriteRules(
+  options: GetComplianceRewriteRulesOptions,
+): ComplianceRewriteRules {
+  const { track } = options;
+
+  return {
+    rewriteRules: businessPack.substitutionTable
+      .filter((entry) => isInScope(entry, track))
+      .map(({ internalTerm, publicTerm }) => ({ internalTerm, publicTerm })),
+    redLines: businessPack.complianceRedLines
+      .filter((entry) => isInScope(entry, track))
+      .map(({ id, destination, rule }) => ({ id, destination, rule })),
+  };
+}
+
 function applyPublicSubstitutions(text: string, track: PublicGenerationTrack): string {
-  return businessPack.substitutionTable
-    .filter((entry) => isInScope(entry, track))
+  return getComplianceRewriteRules({ track }).rewriteRules
     .reduce((result, entry) => result.replaceAll(entry.internalTerm, entry.publicTerm), text);
 }
 
