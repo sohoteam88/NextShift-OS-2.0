@@ -31,7 +31,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | G1 | content-engine 首个接入 | G | W1 | 已完成(generatePlatformPost 帖子正文经 G0 网关走 LLM:结构化产物 title/hook/body/cta/hashtags 落库,模板降为显式 fallback,generatedByAi 诚实反映来源+降级带 GENERATION_DEGRADE_LABEL,parseGeneratedPostJson 五处拒绝路径+一条正向路径单测覆盖;PR #148 / 2e56a3b) |
 | O1 | 事业包 data pack | O | W1(并行,Steven 口述) | 已完成(事业包数据落地 src/modules/ai/business-pack:版本化 JSON 资产 version+priceListEffectiveDate,含产品线/双轨话术/异议库/合规红线/替代词表/追问模板/B路径默认引导,每条目带 track+visibility 目的地分级(价格/体重框架标 private);typed 校验 loader + getBusinessPackSlice({track}) 公开安全切片经 G0 seam 注入,替代词表脱敏后零品牌名/价格/体重数字承诺;content-engine 首个真实消费者接入且保留 CONTENT_POST_JSON_SYSTEM_INSTRUCTION,G1 解析与 F-15 护栏不回归;PR #149 / 3b8e80d) |
 | G4 | 输出硬过滤层(合规闸) | G | W2 | 已完成(公开面三判定硬过滤 src/modules/ai/compliance/hardFilter.ts:income_promise/medical_claim/weight_claim/public_price 四类拒绝码,命中即拒绝并要求重生成;品牌/商标残留自动改写为安全通用词,替代词表来自事业包;体重数字承诺按动词锚定拦截(瘦/减重/减脂/掉+数字+单位),价格公开面硬拒绝(价格私聊专属);Fable 复审两轮(阻断项+微修正)后放行;PR #151 / f33c60d) |
-| G5 | 失败可见性 | G | W2 | 未开始(review 强制暂停) |
+| G5 | 失败可见性 | G | W2 | 已完成(LLM 失败重试耗尽后经 src/modules/ai/generation/gateway.ts runGeneration 明示标注失败+可点击重试,不再静默回退模板;成功路径 logAIUsage 遥测改为 best-effort(try/catch 吞掉,失败不污染真实成功结果,补测覆盖);provider 错误经 runtimeFallbackLogger 上报;UI 端 ContentGenerationDegradedNotice 呈现降级提示+重试按钮;'点此重试'硬编码中文记入后续跨模块文案迁移批次;Fable 复审后放行;PR #152 / b5b1dc9)
 | G2 | lead-magnet + webinar-center 接入 | G | W2 | 未开始 |
 | O2 | 分叉访谈 | O | W3 | 未开始 |
 | O3 | 默认值全填满 + confidence | O | W3 | 未开始 |
