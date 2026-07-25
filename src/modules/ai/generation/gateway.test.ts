@@ -135,6 +135,22 @@ describe('generation gateway', () => {
     expect(outcome).toMatchObject({ status: 'success', source: 'ai', value: 'AI output' });
   });
 
+  it('keeps a successful generation when usage telemetry fails', async () => {
+    trackerMocks.logAIUsage.mockRejectedValue(new Error('Usage tracker unavailable'));
+    const context = await buildGenerationContext(user, { mode: 'retail', platform: 'instagram' });
+
+    const outcome = await runGeneration(user, {
+      context,
+      userMessage: 'Write a post',
+      taskCategory: 'content_generation',
+      feature: 'generation_gateway_test',
+      fallback: 'Template fallback',
+    });
+
+    expect(outcome).toMatchObject({ status: 'success', source: 'ai', value: 'AI output' });
+    expect(routerMocks.generate).toHaveBeenCalledTimes(1);
+  });
+
   it('returns an explicitly labelled fallback when the router fails', async () => {
     routerMocks.generate.mockRejectedValue(new Error('Router unavailable'));
     const context = await buildGenerationContext(user, { mode: 'retail', platform: 'instagram' });

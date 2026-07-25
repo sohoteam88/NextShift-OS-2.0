@@ -33,13 +33,18 @@ export async function runGeneration<T>(
       options.taskCategory,
     );
 
-    await logAIUsage({
-      tenantId: user.tenantId,
-      userId: user.id,
-      feature: options.feature,
-      result,
-      routing: result.routing,
-    });
+    try {
+      await logAIUsage({
+        tenantId: user.tenantId,
+        userId: user.id,
+        feature: options.feature,
+        result,
+        routing: result.routing,
+      });
+    } catch {
+      // Usage telemetry is best-effort and must never mask a real successful
+      // generation as a degraded fallback.
+    }
 
     return {
       status: 'success',
