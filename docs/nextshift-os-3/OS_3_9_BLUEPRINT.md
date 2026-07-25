@@ -33,7 +33,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | G4 | 输出硬过滤层(合规闸) | G | W2 | 已完成(公开面三判定硬过滤 src/modules/ai/compliance/hardFilter.ts:income_promise/medical_claim/weight_claim/public_price 四类拒绝码,命中即拒绝并要求重生成;品牌/商标残留自动改写为安全通用词,替代词表来自事业包;体重数字承诺按动词锚定拦截(瘦/减重/减脂/掉+数字+单位),价格公开面硬拒绝(价格私聊专属);Fable 复审两轮(阻断项+微修正)后放行;PR #151 / f33c60d) |
 | G5 | 失败可见性 | G | W2 | 已完成(LLM 失败重试耗尽后经 src/modules/ai/generation/gateway.ts runGeneration 明示标注失败+可点击重试,不再静默回退模板;成功路径 logAIUsage 遥测改为 best-effort(try/catch 吞掉,失败不污染真实成功结果,补测覆盖);provider 错误经 runtimeFallbackLogger 上报;UI 端 ContentGenerationDegradedNotice 呈现降级提示+重试按钮;'点此重试'硬编码中文记入后续跨模块文案迁移批次;Fable 复审后放行;PR #152 / b5b1dc9)
 | G2 | lead-magnet + webinar-center 接入 | G | W2 | 已完成(经 G0 网关真实接入 LLM;PR #155 / 8d208df) |
-| O2 | 分叉访谈 | O | W3 | 未开始 |
+| O2 | 分叉访谈 | O | W3 | 已完成(数据驱动 5 主题 A/B 三步漏斗接入向导;确认句经 G0+G4/B 路径加严后直接写入版本化 Brand DNA,无二次提取;PR #163 / 1e1f2f9) |
 | O3 | 默认值全填满 + confidence | O | W3 | 未开始 |
 | O4 | Review Room 下线 → just-in-time 字段 | O | W3 | 未开始 |
 | O5 | F-14 硬闸门拆除 | O | W3 | 未开始 |
