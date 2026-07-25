@@ -35,7 +35,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | G2 | lead-magnet + webinar-center 接入 | G | W2 | 已完成(经 G0 网关真实接入 LLM;PR #155 / 8d208df) |
 | O2 | 分叉访谈 | O | W3 | 已完成(数据驱动 5 主题 A/B 三步漏斗接入向导;确认句经 G0+G4/B 路径加严后直接写入版本化 Brand DNA,无二次提取;PR #163 / 1e1f2f9) |
 | O3 | 默认值全填满 + confidence | O | W3 | 已完成(纯函数 brandDnaDefaults(src/modules/brand-discovery/forkedInterview/brandDnaDefaults.ts):5 确认答案+推断+事业包中性合规默认→零空字段(content.contentPillars≥3),validateBrandDNA(...).missingFields 输出为空;BrandDNAMeta 增可选 fieldProvenance,按 ${section}.${field} 键(复用 findMissingFields 约定)区分 user-confirmed/coach-defaulted,存 User.metadata 专用键并在 getBrandDNA 读路径回并,跨主路径 BrandProfile 重载存活、无 schema 迁移;confirmForkedInterviewTopic 于 saveBrandDNA 前一次性填充并记 provenance,v(n+1) 首版即零空字段、无二次保存;profile PATCH 的 DNA 字段编辑改走 brandDnaService.updateBrandDNA 使 meta.version +1 并把该字段 provenance 翻回 user-confirmed,非 DNA 遗留 metadata 键行为不变;BrandProfileStep 仅在 coach-defaulted 字段渲染"教练猜的,点此改"标注;A/B 双路径默认填充/provenance/版本+1 均有 co-located 单测,默认文案零品牌名/价格/体重/收入承诺;PR #164 / 7403202) |
-| O4 | Review Room 下线 → just-in-time 字段 | O | W3 | 已完成(移除入门 profile 补填墙，DNA 权威资料直达 accounts/guides；Facebook 主页、头像、WhatsApp 在首次需要处单字段可跳过追问；PR/commit TBD) |
+| O4 | Review Room 下线 → just-in-time 字段 | O | W3 | 已完成(移除入门 profile 补填墙，DNA 权威资料直达 accounts/guides；Facebook 主页、头像、WhatsApp 在首次需要处单字段可跳过追问；PR #165 / 0504707) |
 | O5 | F-14 硬闸门拆除 | O | W3 | 未开始 |
 | G3 | video-production 旧管线退役 | G | W3 | 未开始 |
 | G6 | 内容库卫生(F-28 库污染) | G | W3 | 未开始 |
