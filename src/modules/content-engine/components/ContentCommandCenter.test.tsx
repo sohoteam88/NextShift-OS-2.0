@@ -61,3 +61,13 @@ describe('ContentCommandCenter Brand DNA quality states', () => {
     expect(commandCenterSource).toContain('void brandProfileQuery.refetch()');
   });
 });
+
+describe('ContentCommandCenter content hygiene actions', () => {
+  it('regenerates an active draft in place and offers an explicit save-as-copy action', () => {
+    expect(commandCenterSource).toContain('targetContentId: editorDraft.id');
+    expect(commandCenterSource).toContain("editorDraft.status === 'draft'");
+    expect(commandCenterSource).toContain("fetch('/api/v1/ai/content', {");
+    expect(commandCenterSource).toContain("status: 'draft'");
+    expect(commandCenterSource).toContain('另存副本');
+  });
+});

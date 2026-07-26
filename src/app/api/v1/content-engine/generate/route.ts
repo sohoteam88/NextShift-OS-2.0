@@ -13,6 +13,7 @@ const GenSchema = z.object({
   format: z.enum(['text_post', 'carousel', 'reel', 'short_video', 'story', 'email', 'blog']),
   funnelStage: z.enum(['awareness', 'consideration', 'conversion', 'retention']),
   pillarName: z.string().optional(),
+  targetContentId: z.string().uuid().optional(),
   workspaceId: z.string().optional(),
 });
 
@@ -24,7 +25,7 @@ export const POST = apiHandler(async (request: NextRequest) => {
   const workspaceContext = await resolveRequestWorkspaceContext({ user, request, body });
   const post = await contentEngineService.generatePlatformPost(
     user.id, user.tenantId, input.platform, input.format, input.funnelStage, input.pillarName,
-    workspaceContext,
+    workspaceContext, input.targetContentId,
   );
   await notifyMissionProgress(user, 'first_content_generated');
   return NextResponse.json({ data: post });

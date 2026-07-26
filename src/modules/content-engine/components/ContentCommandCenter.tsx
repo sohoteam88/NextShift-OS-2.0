@@ -337,6 +337,9 @@ export function ContentCommandCenter() {
           platform: selectedPlatform,
           format: 'text_post',
           funnelStage: 'awareness',
+          ...(editorDraft?.id && editorDraft.status === 'draft'
+            ? { targetContentId: editorDraft.id }
+            : {}),
         }),
       });
 
@@ -375,6 +378,41 @@ export function ContentCommandCenter() {
           contentType: draft.format,
         });
       }
+      void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
+      void queryClient.invalidateQueries({ queryKey: ['content-library'] });
+    },
+  });
+
+  const saveAsCopy = useMutation({
+    mutationFn: async (draft: EditableContentDraft) => {
+      const response = await fetch('/api/v1/ai/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: draft.body,
+          platform: draft.platform,
+          title: draft.title,
+          status: 'draft',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await responseError(response, '副本暂时无法保存。'));
+      }
+
+      const payload = (await response.json()) as { data: PersistedContent };
+      return { content: payload.data, sourceDraft: draft };
+    },
+    onSuccess: ({ content, sourceDraft }) => {
+      const copy = applyPersistedContent(sourceDraft, content);
+      setEditorDraft(copy);
+      setSavedDraft(copy);
+      savedAfterEditRef.current = null;
+      trackedEditingRef.current = null;
+      reportedEditingRef.current = null;
+      setPendingEditStarted(null);
+      clearRecoverableContentDraft(window.localStorage, copy.id);
+      recoveryCheckedRef.current = copy.id;
       void queryClient.invalidateQueries({ queryKey: ['content-engine'] });
       void queryClient.invalidateQueries({ queryKey: ['content-library'] });
     },
@@ -1061,6 +1099,19 @@ export function ContentCommandCenter() {
                     <Save className="h-4 w-4" aria-hidden="true" />
                   )}
                   保存草稿
+                </button>
+                <button
+                  type="button"
+                  onClick={() => editorDraft && saveAsCopy.mutate(editorDraft)}
+                  disabled={!editorDraft.body.trim() || saveAsCopy.isPending}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 text-sm font-semibold text-[var(--color-text)] hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saveAsCopy.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <FileText className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  另存副本
                 </button>
                 <button
                   type="button"

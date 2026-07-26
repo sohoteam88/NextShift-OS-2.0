@@ -149,6 +149,28 @@ describe('contentService', () => {
     expect(result.items[0]).not.toHaveProperty('promptUsed');
   });
 
+  it('marks only duplicate drafts from the same owner and excludes published content', async () => {
+    const draftA = contentRow({ id: 'draft-a', ownerId: 'u1' });
+    const draftB = contentRow({
+      id: 'draft-b',
+      ownerId: 'u1',
+      title: '  Saved title ',
+      body: 'Saved   body',
+    });
+    const published = contentRow({ id: 'published-a', ownerId: 'u1', status: 'published' });
+    prismaMocks.content.findMany
+      .mockResolvedValueOnce([draftA, published])
+      .mockResolvedValueOnce([draftA, draftB]);
+    prismaMocks.content.count.mockResolvedValue(2);
+
+    const result = await contentService.listSavedContent(makeMember(), { page: 1, limit: 10 });
+
+    expect(result.items).toEqual([
+      expect.objectContaining({ id: 'draft-a', isDuplicate: true, contentHash: expect.any(String) }),
+      expect.objectContaining({ id: 'published-a', isDuplicate: false }),
+    ]);
+  });
+
   it.each(['operator', 'platform_admin'])('lists %s content within the current tenant only', async (role) => {
     prismaMocks.content.findMany.mockResolvedValue([]);
     prismaMocks.content.count.mockResolvedValue(0);
