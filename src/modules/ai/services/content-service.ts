@@ -6,6 +6,7 @@ import type { AuthUser } from '@/modules/auth/services/auth-service';
 import {
   contentBodyPreview,
   contentDisplayTitle,
+  contentHash,
   type ContentLibraryItem,
   type ContentLibraryListItem,
   type ContentLibraryListQuery,
@@ -53,7 +54,7 @@ function toContentItem(row: ContentSafeRow): ContentLibraryItem {
   };
 }
 
-function toContentListItem(row: ContentSafeRow): ContentLibraryListItem {
+function toContentListItem(row: ContentSafeRow, isDuplicate: boolean): ContentLibraryListItem {
   return {
     id: row.id,
     title: row.title,
@@ -62,6 +63,8 @@ function toContentListItem(row: ContentSafeRow): ContentLibraryListItem {
     type: row.type,
     status: row.status,
     preview: contentBodyPreview(row.body),
+    contentHash: contentHash(row.title, row.body),
+    isDuplicate,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -239,7 +242,7 @@ export const contentService = {
       ...(opts.platform ? { platform: opts.platform } : {}),
     };
 
-    const [items, total] = await Promise.all([
+    const [items, total, draftRows] = await Promise.all([
       prisma.content.findMany({
         where,
         select: CONTENT_SAFE_SELECT,
@@ -248,10 +251,34 @@ export const contentService = {
         take: limit,
       }),
       prisma.content.count({ where }),
+      prisma.content.findMany({
+        where: { ...ownershipWhere(user), status: 'draft' },
+        select: {
+          id: true,
+          ownerId: true,
+          title: true,
+          body: true,
+        },
+      }),
     ]);
 
+    const draftHashCounts = new Map<string, number>();
+    for (const row of draftRows) {
+      const key = `${row.ownerId}\u001f${contentHash(row.title, row.body)}`;
+      draftHashCounts.set(key, (draftHashCounts.get(key) ?? 0) + 1);
+    }
+
+    const duplicateDraftIds = new Set(
+      draftRows
+        .filter((row) => draftHashCounts.get(`${row.ownerId}\u001f${contentHash(row.title, row.body)}`)! > 1)
+        .map((row) => row.id),
+    );
+
     return {
-      items: items.map(toContentListItem),
+      items: items.map((item) => toContentListItem(
+        item,
+        item.status === 'draft' && duplicateDraftIds.has(item.id),
+      )),
       meta: {
         page,
         limit,

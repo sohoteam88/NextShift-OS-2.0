@@ -1,52 +1,27 @@
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import {
   CONTENT_RECORD_PATCH_PLATFORMS,
-  type ContentRecordPatchPlatform,
 } from '@/lib/content-platforms';
+import {
+  CONTENT_LIBRARY_DEFAULT_LIMIT,
+  CONTENT_LIBRARY_MAX_LIMIT,
+  CONTENT_LIBRARY_PREVIEW_LENGTH,
+  CONTENT_LIBRARY_STATUSES,
+  type ContentLibraryListQuery,
+} from './content-library-shared';
 
-export const CONTENT_LIBRARY_STATUSES = ['draft', 'published'] as const;
-export const CONTENT_LIBRARY_DEFAULT_LIMIT = 10;
-export const CONTENT_LIBRARY_MAX_LIMIT = 50;
-export const CONTENT_LIBRARY_PREVIEW_LENGTH = 180;
-
-export type ContentLibraryStatus = (typeof CONTENT_LIBRARY_STATUSES)[number];
-
-export type ContentLibraryListItem = {
-  id: string;
-  title: string | null;
-  displayTitle: string;
-  platform: string | null;
-  type: string;
-  status: string;
-  preview: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ContentLibraryItem = {
-  id: string;
-  title: string | null;
-  body: string;
-  platform: string | null;
-  type: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ContentLibraryListMeta = {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-};
-
-export type ContentLibraryListQuery = {
-  page: number;
-  limit: number;
-  status?: ContentLibraryStatus;
-  platform?: ContentRecordPatchPlatform;
-};
+export {
+  CONTENT_LIBRARY_DEFAULT_LIMIT,
+  CONTENT_LIBRARY_MAX_LIMIT,
+  CONTENT_LIBRARY_PREVIEW_LENGTH,
+  CONTENT_LIBRARY_STATUSES,
+  type ContentLibraryItem,
+  type ContentLibraryListItem,
+  type ContentLibraryListMeta,
+  type ContentLibraryListQuery,
+  type ContentLibraryStatus,
+} from './content-library-shared';
 
 const ListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -83,4 +58,20 @@ export function contentBodyPreview(body: string) {
   const normalized = body.replace(/\s+/g, ' ').trim();
   if (normalized.length <= CONTENT_LIBRARY_PREVIEW_LENGTH) return normalized;
   return `${normalized.slice(0, CONTENT_LIBRARY_PREVIEW_LENGTH - 1)}…`;
+}
+
+/**
+ * Produces the canonical, runtime-only identity used for draft hygiene.
+ * Whitespace-only edits are intentionally treated as the same content.
+ */
+export function contentHash(title: string | null, body: string): string {
+  const normalizedTitle = normalizeContentHashPart(title ?? '');
+  const normalizedBody = normalizeContentHashPart(body);
+  return createHash('sha256')
+    .update(`${normalizedTitle}\u001f${normalizedBody}`, 'utf8')
+    .digest('hex');
+}
+
+function normalizeContentHashPart(value: string): string {
+  return value.trim().replace(/\s+/g, ' ');
 }

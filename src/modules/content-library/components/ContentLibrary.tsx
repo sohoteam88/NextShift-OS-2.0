@@ -32,7 +32,7 @@ import {
   type ContentLibraryListItem,
   type ContentLibraryListMeta,
   type ContentLibraryStatus,
-} from '@/lib/content-library-contracts';
+} from '@/lib/content-library-shared';
 import {
   contentLibraryPatchPayload,
   isContentLibraryDraftDirty,
@@ -471,7 +471,12 @@ export function ContentLibrary() {
                     >
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <h3 className="font-semibold text-[var(--color-text)]">{item.displayTitle}</h3>
-                        <Badge variant={item.status === 'published' ? 'success' : 'info'}>{item.status}</Badge>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {item.isDuplicate ? (
+                            <Badge variant="warning">疑似重复</Badge>
+                          ) : null}
+                          <Badge variant={item.status === 'published' ? 'success' : 'info'}>{item.status}</Badge>
+                        </div>
                       </div>
                       <p className="mt-2 text-xs font-medium uppercase tracking-wide text-[var(--color-text-muted)]">
                         {item.platform ?? 'unknown'} · {item.type}

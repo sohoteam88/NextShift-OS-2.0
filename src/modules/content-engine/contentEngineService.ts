@@ -213,6 +213,7 @@ export const contentEngineService = {
     funnelStage: FunnelStage,
     pillarName?: string,
     workspaceContext?: WorkspaceContext,
+    targetContentId?: string,
   ): Promise<GeneratedPost> {
     const ctx = await getBrandContext(userId);
     if (!ctx) throw new Error('Brand DNA not found');
@@ -293,20 +294,39 @@ export const contentEngineService = {
 
     // Save to the canonical Content model and return its identity. The client
     // must PATCH this record rather than using the temporary generator ID.
-    const content = await prisma.content.create({
-      data: {
-        tenantId,
-        ownerId: userId,
-        type: format,
-        platform,
-        title: post.title,
-        body: post.body,
-        language: 'zh',
-        generatedByAi,
-        promptUsed: workspacePromptUsed,
-        status: 'draft',
-      },
-    });
+    const contentData = {
+      type: format,
+      platform,
+      title: post.title,
+      body: post.body,
+      generatedByAi,
+      promptUsed: workspacePromptUsed,
+    };
+    const targetDraft = targetContentId
+      ? await prisma.content.findFirst({
+        where: {
+          id: targetContentId,
+          tenantId,
+          ownerId: userId,
+          status: 'draft',
+        },
+        select: { id: true },
+      })
+      : null;
+    const content = targetDraft
+      ? await prisma.content.update({
+        where: { id: targetDraft.id },
+        data: contentData,
+      })
+      : await prisma.content.create({
+        data: {
+          tenantId,
+          ownerId: userId,
+          ...contentData,
+          language: 'zh',
+          status: 'draft',
+        },
+      });
 
     return {
       ...post,

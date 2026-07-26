@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const prismaMocks = vi.hoisted(() => ({
   brandProfile: { findUnique: vi.fn(), update: vi.fn() },
-  content: { create: vi.fn(), findFirst: vi.fn(), count: vi.fn(), updateMany: vi.fn() },
+  content: {
+    create: vi.fn(), findFirst: vi.fn(), count: vi.fn(), update: vi.fn(), updateMany: vi.fn(),
+  },
   contentCalendar: { findMany: vi.fn(), deleteMany: vi.fn(), createMany: vi.fn() },
   user: { findUnique: vi.fn(), update: vi.fn() },
 }));
@@ -148,6 +150,69 @@ describe('contentEngineService.generatePlatformPost', () => {
     expect(options.userMessage).toContain('图文帖子');
     expect(options.userMessage).not.toContain('awareness');
     expect(options.userMessage).not.toContain('text_post');
+  });
+
+  it('overwrites an owned draft target instead of creating another record', async () => {
+    prismaMocks.content.findFirst.mockResolvedValue({ id: 'draft-target-id' });
+    prismaMocks.content.update.mockResolvedValue({
+      id: 'draft-target-id',
+      title: 'Updated generated title',
+      body: 'Updated generated body',
+      platform: 'facebook',
+      type: 'text_post',
+      status: 'draft',
+      createdAt: new Date('2026-07-15T01:02:03.000Z'),
+      updatedAt: new Date('2026-07-15T01:04:05.000Z'),
+    });
+
+    const result = await contentEngineService.generatePlatformPost(
+      'owner-1',
+      'tenant-1',
+      'facebook',
+      'text_post',
+      'awareness',
+      undefined,
+      undefined,
+      'draft-target-id',
+    );
+
+    expect(prismaMocks.content.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'draft-target-id',
+        tenantId: 'tenant-1',
+        ownerId: 'owner-1',
+        status: 'draft',
+      },
+      select: { id: true },
+    });
+    expect(prismaMocks.content.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'draft-target-id' },
+      data: expect.objectContaining({
+        type: 'text_post',
+        platform: 'facebook',
+        generatedByAi: true,
+      }),
+    }));
+    expect(prismaMocks.content.create).not.toHaveBeenCalled();
+    expect(result.id).toBe('draft-target-id');
+  });
+
+  it('creates a new record when the target is published or otherwise not an owned draft', async () => {
+    prismaMocks.content.findFirst.mockResolvedValue(null);
+
+    await contentEngineService.generatePlatformPost(
+      'owner-1',
+      'tenant-1',
+      'facebook',
+      'text_post',
+      'awareness',
+      undefined,
+      undefined,
+      'published-target-id',
+    );
+
+    expect(prismaMocks.content.update).not.toHaveBeenCalled();
+    expect(prismaMocks.content.create).toHaveBeenCalledTimes(1);
   });
 
   it('persists a labelled template fallback without misrepresenting it as AI output', async () => {

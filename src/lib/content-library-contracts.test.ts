@@ -3,6 +3,7 @@ import {
   CONTENT_LIBRARY_PREVIEW_LENGTH,
   contentBodyPreview,
   contentDisplayTitle,
+  contentHash,
   parseContentLibraryQuery,
 } from './content-library-contracts';
 
@@ -22,5 +23,18 @@ describe('Content Library contracts', () => {
     expect(preview).toHaveLength(CONTENT_LIBRARY_PREVIEW_LENGTH);
     expect(preview.endsWith('…')).toBe(true);
     expect(contentBodyPreview('line one\n line two')).toBe('line one line two');
+  });
+
+  it('hashes equivalent content identically after whitespace normalization', () => {
+    const canonical = contentHash('  A useful title  ', 'Line one\n\nline two');
+
+    expect(contentHash('A useful title', 'Line one line two')).toBe(canonical);
+    expect(contentHash(' A   useful  title ', ' Line one\tline two ')).toBe(canonical);
+  });
+
+  it('hashes different body content differently', () => {
+    expect(contentHash('A useful title', 'First body')).not.toBe(
+      contentHash('A useful title', 'Second body'),
+    );
   });
 });
