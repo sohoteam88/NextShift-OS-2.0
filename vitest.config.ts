@@ -18,7 +18,7 @@ export default defineConfig({
     include: [
       'src/**/*.test.ts',
       'src/**/*.test.tsx',
-      'scripts/**/*.test.ts',
+      'scripts/content-hygiene/**/*.test.ts',
     ],
     exclude: [
       'node_modules/**',
