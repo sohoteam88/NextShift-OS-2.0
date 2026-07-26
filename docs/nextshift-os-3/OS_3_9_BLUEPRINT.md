@@ -39,7 +39,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | O5 | F-14 硬闸门拆除 | O | W3 | 已完成(拆除下游生成前的 Brand-DNA-完整度 UI 硬闸:content-engine 的 BrandDNAGate 与 lead-magnet 的 ReadinessGate 早退拦截移除,生成面永远渲染并经既有 G0 网关走 O3 默认值填充+G4 硬过滤,不再 bounce 回 /brand-builder/step/profile;资料不全只降质不锁门——改以内联、非阻断、教练口吻质量提示("资料越全成品越像你",零品牌名/价格/体重/收入承诺)呈现;区分"资料不完整(永不锁门,显示教练提示)"与"资料加载失败(可点击重试,沿用 G5 模式)"两态,后者不再是须补完 Brand DNA 的死胡同;server generate 路由与 G0/G4/G5/O3/sharedAiRateLimitGuard 均无回归;ContentCommandCenter 补测(不完整档案渲染生成控件而非 BrandDNAGate、完整档案不回归、加载错误呈现重试)+ 新增 LeadMagnetDashboard co-located 测试证明不再硬锁;PR #166 / f4c9c0e) |
 | G3 | video-production 旧管线退役 | G | W3 | 已完成(旧 video-production 模块代码删除,功能并入 video/;PR #167 / fde5660) |
 | G6 | 内容库卫生(F-28 库污染) | G | W3 | 已完成(草稿去重防污染;PR #169 / 5c64867) |
-| M1 | 双轨隔离贯通验收(F-29 根治) | M | W3(贯穿,验收收尾) | 未开始 |
+| M1 | 双轨隔离贯通验收(F-29 根治) | M | W3(贯穿,验收收尾) | 已完成(mode 作为一等字段贯穿 G1-G3 与漏斗文案,track 缺省安全默认 retail 与内容引擎既有惯例一致;PR #171 / 34779f2) |
 
 ---
 
