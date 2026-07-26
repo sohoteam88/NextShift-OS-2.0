@@ -7,7 +7,7 @@ import { funnelCopyService } from '@/modules/ai/services/funnel-copy-service';
 
 const Schema = z.object({
   funnelType: z.enum(['landing', 'quiz', 'lead_magnet']),
-  track: z.enum(['retail', 'recruitment']),
+  track: z.enum(['retail', 'recruitment']).default('retail'),
   audience: z.string().min(1).max(200),
   offer: z.string().min(1).max(200),
   product: z.string().max(200).optional(),
