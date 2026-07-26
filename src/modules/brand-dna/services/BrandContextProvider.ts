@@ -9,6 +9,80 @@ import type { BrandContext, ContentPillar } from '../types';
 import { validateBrandDNA } from './brandDnaValidator';
 import { mapLegacyProfileToDNA } from '../types';
 
+type ContentTrack = 'retail' | 'recruitment';
+type TrackAudience = NonNullable<BrandContext['trackAudience']>;
+
+const TRACK_AUDIENCE_METADATA_KEY = 'brand_dna_track_audience';
+
+function readTrackAudience(metadata: Record<string, unknown>): TrackAudience | undefined {
+  const value = metadata[TRACK_AUDIENCE_METADATA_KEY];
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+
+  const parsed: TrackAudience = {};
+  for (const track of ['retail', 'recruitment'] as const) {
+    const candidate = (value as Record<string, unknown>)[track];
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) continue;
+    const record = candidate as Record<string, unknown>;
+    const targetAudience = typeof record.targetAudience === 'string'
+      ? record.targetAudience
+      : undefined;
+    const audience = typeof record.audience === 'string' ? record.audience : undefined;
+    const audiencePainPoints = Array.isArray(record.audiencePainPoints)
+      && record.audiencePainPoints.every((item) => typeof item === 'string')
+      ? record.audiencePainPoints as string[]
+      : undefined;
+    if (targetAudience || audience || audiencePainPoints) parsed[track] = { targetAudience, audience, audiencePainPoints };
+  }
+
+  return Object.keys(parsed).length > 0 ? parsed : undefined;
+}
+
+/**
+ * Selects the current workspace's audience data without changing the shared
+ * BrandProfile schema. Existing single-value DNA remains visible to both
+ * tracks. Older values that contain labelled dual-track prose are split at
+ * read time, so neither direction is injected into the other prompt.
+ */
+export function projectBrandContextForTrack(context: BrandContext, track: ContentTrack): BrandContext {
+  const override = context.trackAudience?.[track];
+  return {
+    ...context,
+    audience: override?.targetAudience ?? override?.audience ?? projectTrackText(context.audience, track),
+    audiencePainPoints: override?.audiencePainPoints ?? projectTrackTexts(context.audiencePainPoints, track),
+  };
+}
+
+function projectTrackTexts(values: string[], track: ContentTrack): string[] {
+  return values
+    .map((value) => projectTrackText(value, track))
+    .filter((value): value is string => Boolean(value));
+}
+
+function projectTrackText(value: string, track: ContentTrack): string {
+  const labels = [...value.matchAll(/(零售(?:侧|模式)?|retail|招募(?:侧|模式)?|recruitment)\s*[：:—-]\s*/gi)];
+  if (labels.length === 0) return value;
+
+  if (labels.length === 1) {
+    const label = labels[0];
+    const labelTrack: ContentTrack = /零售|retail/.test(label[1].toLowerCase()) ? 'retail' : 'recruitment';
+    return labelTrack === track
+      ? value.slice((label.index ?? 0) + label[0].length).replace(/^[；;|\s]+|[；;|\s]+$/g, '')
+      : '';
+  }
+
+  for (let index = 0; index < labels.length; index += 1) {
+    const label = labels[index];
+    const labelText = label[1].toLowerCase();
+    const labelTrack: ContentTrack = /零售|retail/.test(labelText) ? 'retail' : 'recruitment';
+    if (labelTrack !== track) continue;
+    const start = (label.index ?? 0) + label[0].length;
+    const end = labels[index + 1]?.index ?? value.length;
+    return value.slice(start, end).replace(/^[；;|\s]+|[；;|\s]+$/g, '');
+  }
+
+  return '';
+}
+
 // ============================================================
 // getBrandContext — the ONE function all AI modules call
 // ============================================================
@@ -26,9 +100,12 @@ import { mapLegacyProfileToDNA } from '../types';
  */
 export async function getBrandContext(userId: string): Promise<BrandContext | null> {
   // PRIMARY: Read from BrandProfile table
-  const bp = await prisma.brandProfile.findUnique({
-    where: { userId },
-  });
+  const [bp, user] = await Promise.all([
+    prisma.brandProfile.findUnique({ where: { userId } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { metadata: true } }),
+  ]);
+  const metadata = (user?.metadata as Record<string, unknown>) ?? {};
+  const trackAudience = readTrackAudience(metadata);
 
   if (bp) {
     return {
@@ -53,15 +130,11 @@ export async function getBrandContext(userId: string): Promise<BrandContext | nu
       },
       personalName: bp.personalName,
       brandName: bp.brandName,
+      ...(trackAudience ? { trackAudience } : {}),
     };
   }
 
   // FALLBACK: Legacy metadata for unmigrated users
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { metadata: true },
-  });
-  const metadata = (user?.metadata as Record<string, unknown>) ?? {};
   const profile = metadata.brand_profile as Record<string, unknown> | null;
   if (!profile) return null;
 
@@ -85,6 +158,7 @@ export async function getBrandContext(userId: string): Promise<BrandContext | nu
     },
     personalName: dna.identity.personalName,
     brandName: dna.identity.brandName,
+    ...(trackAudience ? { trackAudience } : {}),
   };
 }
 
@@ -97,19 +171,20 @@ export async function getBrandDnaVersion(userId: string): Promise<number> {
   return typeof version === 'number' && version > 0 ? version : 1;
 }
 
-export function buildBrandContextPrompt(context: BrandContext): string {
+export function buildBrandContextPrompt(context: BrandContext, track?: ContentTrack): string {
+  const projected = track ? projectBrandContextForTrack(context, track) : context;
   const parts: string[] = [];
-  if (context.brandName) parts.push(`品牌: ${context.brandName}`);
-  if (context.positioning) parts.push(`定位: ${context.positioning}`);
-  if (context.audience) parts.push(`目标受众: ${context.audience}`);
-  if (context.audiencePainPoints.length > 0) parts.push(`受众痛点: ${context.audiencePainPoints.join('、')}`);
-  if (context.messaging.coreMessage) parts.push(`核心信息: ${context.messaging.coreMessage}`);
-  if (context.tone) parts.push(`内容调性: ${context.tone}`);
-  if (context.contentPillars.length > 0) {
-    parts.push(`内容支柱: ${context.contentPillars.map((p) => `${p.emoji} ${p.name}`).join('、')}`);
+  if (projected.brandName) parts.push(`品牌: ${projected.brandName}`);
+  if (projected.positioning) parts.push(`定位: ${projected.positioning}`);
+  if (projected.audience) parts.push(`目标受众: ${projected.audience}`);
+  if (projected.audiencePainPoints.length > 0) parts.push(`受众痛点: ${projected.audiencePainPoints.join('、')}`);
+  if (projected.messaging.coreMessage) parts.push(`核心信息: ${projected.messaging.coreMessage}`);
+  if (projected.tone) parts.push(`内容调性: ${projected.tone}`);
+  if (projected.contentPillars.length > 0) {
+    parts.push(`内容支柱: ${projected.contentPillars.map((p) => `${p.emoji} ${p.name}`).join('、')}`);
   }
-  if (context.offer.primary) parts.push(`主要服务: ${context.offer.primary}`);
-  if (context.offer.transformation) parts.push(`转变承诺: ${context.offer.transformation}`);
+  if (projected.offer.primary) parts.push(`主要服务: ${projected.offer.primary}`);
+  if (projected.offer.transformation) parts.push(`转变承诺: ${projected.offer.transformation}`);
   return parts.length === 0 ? '' : `【品牌上下文 — 所有内容必须一致】\n${parts.join('\n')}`;
 }
 

@@ -94,7 +94,7 @@ describe('generation gateway', () => {
       mode: 'retail',
       platform: { platform: 'xhs', label: '小红书' },
     });
-    expect(brandContextMocks.buildBrandContextPrompt).toHaveBeenCalledWith(brandContext);
+    expect(brandContextMocks.buildBrandContextPrompt).toHaveBeenCalledWith(brandContext, 'retail');
     expect(prompt).toContain('测试品牌');
     expect(prompt).toContain('品牌 DNA 版本】7');
     expect(prompt).toContain('零售模式');

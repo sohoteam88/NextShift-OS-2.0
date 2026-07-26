@@ -127,6 +127,16 @@ export interface BrandContext {
   };
   personalName: string;
   brandName: string;
+  /**
+   * Additive, metadata-backed audience overrides for the dual-workspace read
+   * path. BrandProfile remains the canonical shared record; generation selects
+   * this narrow projection only when a track is explicitly supplied.
+   */
+  trackAudience?: Partial<Record<'retail' | 'recruitment', {
+    targetAudience?: string;
+    audience?: string;
+    audiencePainPoints?: string[];
+  }>>;
 }
 
 // ---- Health Score ----

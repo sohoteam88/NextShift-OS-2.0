@@ -82,7 +82,7 @@ export async function buildGenerationContext(
 /** Builds the shared system prompt without reimplementing the Brand DNA prompt. */
 export function composeGenerationSystemPrompt(context: GenerationContext): string {
   const brandPrompt = context.brandContext
-    ? buildBrandContextPrompt(context.brandContext)
+    ? buildBrandContextPrompt(context.brandContext, context.mode)
     : '';
   const businessPackPrompt = context.businessPack?.promptContext?.trim()
     ? `【事业包上下文】\n${context.businessPack.promptContext.trim()}`
