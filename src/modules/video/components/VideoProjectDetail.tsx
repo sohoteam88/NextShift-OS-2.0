@@ -62,6 +62,7 @@ export function VideoProjectDetail({ projectId }: { projectId: string }) {
     subtitleSrt?: string | null;
     platformAdaptations?: PlatformAdaptation[];
   } | null>(null);
+  const [degradedLabel, setDegradedLabel] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     fetch(`/api/v1/video/projects/${projectId}`)
@@ -110,8 +111,11 @@ export function VideoProjectDetail({ projectId }: { projectId: string }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chosen_hook: selectedHook, input }),
     });
-    const json = await res.json() as { data?: { masterScript: MasterScript } };
-    if (res.ok && json.data) setScript(json.data.masterScript);
+    const json = await res.json() as { data?: { masterScript: MasterScript; generation?: { degradedLabel?: string } } };
+    if (res.ok && json.data) {
+      setScript(json.data.masterScript);
+      setDegradedLabel(json.data.generation?.degradedLabel ?? null);
+    }
     setGenerating(false);
   }
 
@@ -125,9 +129,13 @@ export function VideoProjectDetail({ projectId }: { projectId: string }) {
         brollList: BRollItem[];
         veoPrompts?: AIVideoPromptResult | null;
         minimaxPrompts?: AIVideoPromptResult | null;
+        generation?: { degradedLabel?: string };
       };
     };
-    if (res.ok && json.data) setProductionPlan(json.data);
+    if (res.ok && json.data) {
+      setProductionPlan(json.data);
+      setDegradedLabel(json.data.generation?.degradedLabel ?? null);
+    }
     setPlanning(false);
   }
 
@@ -139,8 +147,11 @@ export function VideoProjectDetail({ projectId }: { projectId: string }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ additional_platforms: platforms }),
     });
-    const json = await res.json() as { data?: { capcutScript: CapCutScript; subtitleSrt: string; platformAdaptations: PlatformAdaptation[] } };
-    if (res.ok && json.data) setFinalAssets(json.data);
+    const json = await res.json() as { data?: { capcutScript: CapCutScript; subtitleSrt: string; platformAdaptations: PlatformAdaptation[]; generation?: { degradedLabel?: string } } };
+    if (res.ok && json.data) {
+      setFinalAssets(json.data);
+      setDegradedLabel(json.data.generation?.degradedLabel ?? null);
+    }
     setFinalizing(false);
   }
 
@@ -194,6 +205,7 @@ export function VideoProjectDetail({ projectId }: { projectId: string }) {
           })}
         </div>
       </div>
+      {degradedLabel ? <div className="rounded-[var(--radius-md)] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{degradedLabel}。已提供基础版本，请检查内容后重试。</div> : null}
       {project.masterScript?.hook && selectedHook ? (
         <VideoStrategyStep
           strategy={project.strategy}

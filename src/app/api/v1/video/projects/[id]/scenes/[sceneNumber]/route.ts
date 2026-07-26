@@ -14,6 +14,6 @@ export const PATCH = apiHandler(async (request: NextRequest, context) => {
   const user = await requireAuthApi(request);
   const params = await getParams(context);
   const body = Schema.parse(await request.json());
-  const scene = await videoProjectService.regenerateScene(user, params.id, Number(params.sceneNumber), body.instruction);
-  return NextResponse.json({ data: scene });
+  const result = await videoProjectService.regenerateScene(user, params.id, Number(params.sceneNumber), body.instruction);
+  return NextResponse.json({ data: result });
 });

@@ -9,6 +9,7 @@ import { subtitleService } from './subtitle-service';
 
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
 import { requireOwnedVideoProject, updateOwnedVideoProject } from './video-project-service';
+import { generationMetadata } from './json';
 
 /** @deprecated Use getBrandContext() directly. Maps to legacy shape. */
 async function getBrandProfile(userId: string): Promise<Record<string, unknown> | null> {
@@ -26,10 +27,12 @@ export const videoFinalizeService = {
     if (!script?.scenes?.length) throw new Error('Master script not ready');
 
     const brandProfile = await getBrandProfile(user.id);
-    const [capcutScript, platformAdaptations] = await Promise.all([
-      capcutService.generate(user, script, String(brandProfile?.personality ?? 'friendly')),
+    const [capcutGeneration, platformAdaptationsGeneration] = await Promise.all([
+      capcutService.generate(user, script, String(brandProfile?.personality ?? 'friendly'), project.platform),
       platformAdaptationService.generate(user, script, strategy, project.platform as PlatformType, additionalPlatforms),
     ]);
+    const capcutScript = capcutGeneration.value;
+    const platformAdaptations = platformAdaptationsGeneration.value;
     const subtitleSrt = subtitleService.generateSRT(script);
     const existingAdaptations = (project.platformAdaptations as Record<string, unknown> | null) ?? {};
 
@@ -43,7 +46,12 @@ export const videoFinalizeService = {
         status: 'ready',
     });
 
-    return { capcutScript, subtitleSrt, platformAdaptations };
+    return {
+      capcutScript,
+      subtitleSrt,
+      platformAdaptations,
+      generation: generationMetadata([capcutGeneration, platformAdaptationsGeneration]),
+    };
   },
 
   async markPublished(

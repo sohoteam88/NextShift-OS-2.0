@@ -1,8 +1,6 @@
-import { getRouterForTenant } from '@/modules/ai/router';
-import { logAIUsage } from '@/modules/ai/usage/tracker';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { MasterScript, ScriptScene, VideoHook, VideoProductionInput, VideoStrategy } from '../types';
-import { parseJsonFromAI } from './json';
+import { generateVideoJson } from './json';
 
 const SCENE_COUNT_BY_DURATION: Record<VideoProductionInput['duration'], number> = {
   '15s': 3,
@@ -51,8 +49,7 @@ function defaultScript(input: VideoProductionInput, strategy: VideoStrategy, hoo
 }
 
 export const masterScriptService = {
-  async generateHook(user: AuthUser, input: VideoProductionInput, strategy: VideoStrategy): Promise<VideoHook> {
-    const router = await getRouterForTenant(user.tenantId);
+  async generateHook(user: AuthUser, input: VideoProductionInput, strategy: VideoStrategy) {
     const firstEmotion = strategy.emotional_arc.split('→')[0]?.trim() || '好奇';
 
     const systemPrompt = `Generate the opening hook for a short video.
@@ -69,20 +66,15 @@ Generate:
 Return ONLY JSON:
 { "text": "...", "visual_concept": "...", "hook_type": "...", "alternates": [{ "text": "...", "hook_type": "..." }, { "text": "...", "hook_type": "..." }] }`;
 
-    const result = await router.generate(
-      { systemPrompt, userMessage: JSON.stringify(input), temperature: 0.9, maxTokens: 500 },
-      'video_script',
-    );
-
-    await logAIUsage({
-      tenantId: user.tenantId,
-      userId: user.id,
+    return generateVideoJson<VideoHook>(user, {
+      systemPrompt,
+      userMessage: JSON.stringify(input),
       feature: 'video_hook',
-      result,
-      routing: result.routing,
+      fallback: DEFAULT_HOOK,
+      platform: input.platform,
+      temperature: 0.9,
+      maxTokens: 500,
     });
-
-    return parseJsonFromAI<VideoHook>(result.text, DEFAULT_HOOK);
   },
 
   async generateScript(
@@ -90,8 +82,7 @@ Return ONLY JSON:
     input: VideoProductionInput,
     strategy: VideoStrategy,
     chosenHook: VideoHook,
-  ): Promise<MasterScript> {
-    const router = await getRouterForTenant(user.tenantId);
+  ) {
     const sceneCount = SCENE_COUNT_BY_DURATION[input.duration] ?? 5;
 
     const systemPrompt = `Write a complete master script for a ${input.duration} ${input.platform} video.
@@ -116,35 +107,24 @@ Requirements:
 Return ONLY JSON matching MasterScript:
 { "title": "...", "total_duration": "...", "hook": {...}, "scenes": [...], "cta": {...}, "pacing_notes": "..." }`;
 
-    const result = await router.generate(
-      {
-        systemPrompt,
-        userMessage: JSON.stringify({
+    return generateVideoJson<MasterScript>(user, {
+      systemPrompt,
+      userMessage: JSON.stringify({
           topic: input.topic,
           content_pillar: input.content_pillar,
           audience_pain: input.audience_pain,
           funnel_stage: input.funnel_stage,
           personal_story_excerpt: input.personal_story_excerpt,
-        }),
-        temperature: 0.7,
-        maxTokens: 2200,
-      },
-      'video_script',
-    );
-
-    await logAIUsage({
-      tenantId: user.tenantId,
-      userId: user.id,
+      }),
       feature: 'master_script',
-      result,
-      routing: result.routing,
+      fallback: defaultScript(input, strategy, chosenHook),
+      platform: input.platform,
+      temperature: 0.7,
+      maxTokens: 2200,
     });
-
-    return parseJsonFromAI<MasterScript>(result.text, defaultScript(input, strategy, chosenHook));
   },
 
-  async regenerateScene(user: AuthUser, fullScript: MasterScript, sceneNumber: number, instruction: string): Promise<ScriptScene> {
-    const router = await getRouterForTenant(user.tenantId);
+  async regenerateScene(user: AuthUser, fullScript: MasterScript, sceneNumber: number, instruction: string) {
     const targetScene = fullScript.scenes.find((scene) => scene.scene_number === sceneNumber) ?? fullScript.cta;
 
     const systemPrompt = `Rewrite ONE scene of this video script based on user instruction.
@@ -157,19 +137,14 @@ User instruction: ${instruction}
 
 Return ONLY JSON for one ScriptScene: { "scene_number": 1, "time_range": "...", "purpose": "...", "visual": "...", "text_overlay": "...", "voiceover": "...", "emotion": "..." }`;
 
-    const result = await router.generate(
-      { systemPrompt, userMessage: instruction, temperature: 0.7, maxTokens: 500 },
-      'video_script',
-    );
-
-    await logAIUsage({
-      tenantId: user.tenantId,
-      userId: user.id,
+    return generateVideoJson<ScriptScene>(user, {
+      systemPrompt,
+      userMessage: instruction,
       feature: 'video_scene_edit',
-      result,
-      routing: result.routing,
+      fallback: targetScene,
+      platform: 'tiktok',
+      temperature: 0.7,
+      maxTokens: 500,
     });
-
-    return parseJsonFromAI<ScriptScene>(result.text, targetScene);
   },
 };

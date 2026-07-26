@@ -32,9 +32,9 @@ function SceneCard({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ instruction }),
     });
-    const json = await res.json() as { data?: ScriptScene };
+    const json = await res.json() as { data?: { scene: ScriptScene; generation?: { degradedLabel?: string } }; error?: { message?: string } };
     if (res.ok && json.data) {
-      onSceneUpdated(json.data);
+      onSceneUpdated(json.data.scene);
       setEditing(false);
       setInstruction('');
     }

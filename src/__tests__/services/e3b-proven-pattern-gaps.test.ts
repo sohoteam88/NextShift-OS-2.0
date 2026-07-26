@@ -64,6 +64,7 @@ const script = { scenes: [scene], cta: scene } as unknown as MasterScript;
 const brand = { personalName: 'Steven', brandName: 'NextShift', positioning: 'AI operator', audience: 'founders', audiencePainPoints: [], messaging: { coreMessage: 'system', uniqueAngle: 'clarity', elevatorPitch: 'clarity' }, offer: { primary: 'OS', transformation: 'growth' } };
 const cta = { headline: 'CTA', buttonText: 'Go', description: 'CTA', whatsappCta: 'WhatsApp', funnelCta: 'Funnel' };
 const lead = (track: 'retail' | 'recruitment', id = `lm-${track}`): LeadMagnetConfig => ({ id, type: 'guide', track, title: `${track} title`, promise: 'promise', description: 'body', audiencePain: 'pain', resultPage: { scoreLabel: 'A', categoryLabel: 'A', explanation: 'A', recommendations: [], nextAction: 'A', cta }, cta, segmentation: { leadScore: 'A', nextAction: 'A', followUpStrategy: 'A' }, qualityScore: 80, status: 'generated', createdAt: '2026-07-19T00:00:00.000Z', updatedAt: '2026-07-19T00:00:00.000Z' });
+const aiSuccess = <T,>(value: T) => ({ status: 'success' as const, source: 'ai' as const, value, text: '', result: {} });
 
 describe('E3B stable GAP executable fixtures', () => {
   let metadata: Record<string, unknown>;
@@ -138,9 +139,9 @@ describe('E3B stable GAP executable fixtures', () => {
     mocks.prisma.videoProject.findFirst.mockResolvedValue(project);
     mocks.prisma.videoProject.updateMany.mockResolvedValue({ count: 1 });
     mocks.prisma.videoProject.count.mockResolvedValue(0);
-    mocks.masterScript.generateScript.mockResolvedValue(script);
-    mocks.shotList.generate.mockResolvedValue([]); mocks.broll.generate.mockResolvedValue([]);
-    mocks.capcut.generate.mockResolvedValue({}); mocks.adaptation.generate.mockResolvedValue([]); mocks.subtitle.generateSRT.mockReturnValue('subtitle');
+    mocks.masterScript.generateScript.mockResolvedValue(aiSuccess(script));
+    mocks.shotList.generate.mockResolvedValue(aiSuccess([])); mocks.broll.generate.mockResolvedValue(aiSuccess([]));
+    mocks.capcut.generate.mockResolvedValue(aiSuccess({})); mocks.adaptation.generate.mockResolvedValue(aiSuccess([])); mocks.subtitle.generateSRT.mockReturnValue('subtitle');
     await expect(videoProjectService.get(user, 'video-1')).resolves.toEqual(project);
     await videoProjectService.generateFullScript(user, 'video-1', {} as never, {} as never);
     await productionPlanService.generateProductionPlan(user, 'video-1');

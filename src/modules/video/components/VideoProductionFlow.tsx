@@ -14,6 +14,7 @@ type StageOneResult = {
   project: { id: string };
   strategy: VideoStrategy;
   hook: VideoHook;
+  generation?: { degradedLabel?: string };
 };
 
 const PLATFORM_OPTIONS: VideoProductionInput['platform'][] = ['facebook_reel', 'instagram_reel', 'tiktok', 'instagram_story', 'xiaohongshu', 'youtube_shorts'];
@@ -38,6 +39,7 @@ export function VideoProductionFlow({ initialInput }: Props) {
   const [script, setScript] = React.useState<MasterScript | null>(null);
   const [loading, setLoading] = React.useState<'strategy' | 'script' | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [degradedLabel, setDegradedLabel] = React.useState<string | null>(null);
 
   function set<K extends keyof VideoProductionInput>(key: K, value: VideoProductionInput[K]) {
     setInput((prev) => ({ ...prev, [key]: value }));
@@ -46,6 +48,7 @@ export function VideoProductionFlow({ initialInput }: Props) {
   async function startProject() {
     setLoading('strategy');
     setError(null);
+    setDegradedLabel(null);
     setStageOne(null);
     setScript(null);
     const res = await fetch('/api/v1/video/projects', {
@@ -61,24 +64,27 @@ export function VideoProductionFlow({ initialInput }: Props) {
     }
     setStageOne(json.data);
     setSelectedHook(json.data.hook);
+    setDegradedLabel(json.data.generation?.degradedLabel ?? null);
   }
 
   async function generateScript() {
     if (!stageOne || !selectedHook) return;
     setLoading('script');
     setError(null);
+    setDegradedLabel(null);
     const res = await fetch(`/api/v1/video/projects/${stageOne.project.id}/script`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chosen_hook: selectedHook, input }),
     });
-    const json = await res.json() as { data?: { masterScript: MasterScript }; error?: { message?: string }; message?: string };
+    const json = await res.json() as { data?: { masterScript: MasterScript; generation?: { degradedLabel?: string } }; error?: { message?: string }; message?: string };
     setLoading(null);
     if (!res.ok || !json.data) {
       setError(json.error?.message ?? json.message ?? '脚本生成失败');
       return;
     }
     setScript(json.data.masterScript);
+    setDegradedLabel(json.data.generation?.degradedLabel ?? null);
   }
 
   function updateScene(scene: MasterScript['scenes'][number]) {
@@ -93,7 +99,7 @@ export function VideoProductionFlow({ initialInput }: Props) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
+      <section id="video-generator-controls" className="scroll-mt-24 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
         <div className="mb-5">
           <h1 className="text-2xl font-semibold text-[var(--color-text)]">视频策略与主脚本</h1>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">先生成策略和 Hook，再选择一个 Hook 生成完整主脚本。</p>
@@ -119,6 +125,7 @@ export function VideoProductionFlow({ initialInput }: Props) {
       </section>
 
       {error ? <div className="rounded-[var(--radius-md)] border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+      {degradedLabel ? <div className="rounded-[var(--radius-md)] border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{degradedLabel}。已提供基础版本，请检查内容后重试。</div> : null}
 
       {stageOne && selectedHook ? (
         <VideoStrategyStep

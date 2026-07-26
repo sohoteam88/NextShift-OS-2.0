@@ -1,8 +1,6 @@
-import { getRouterForTenant } from '@/modules/ai/router';
-import { logAIUsage } from '@/modules/ai/usage/tracker';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { CapCutScript, MasterScript } from '../types';
-import { parseJsonFromAI } from './json';
+import { generateVideoJson } from './json';
 
 function fallbackCapCut(script: MasterScript): CapCutScript {
   return {
@@ -24,8 +22,7 @@ function fallbackCapCut(script: MasterScript): CapCutScript {
 }
 
 export const capcutService = {
-  async generate(user: AuthUser, script: MasterScript, brandPersonality: string): Promise<CapCutScript> {
-    const router = await getRouterForTenant(user.tenantId);
+  async generate(user: AuthUser, script: MasterScript, brandPersonality: string, platform: string) {
     const systemPrompt = `Generate a CapCut editing guide for this video script, written so a beginner can follow it step-by-step.
 
 For each scene specify clip_duration, text_overlay, effects, optional sound_effect.
@@ -33,12 +30,14 @@ Also define text_styles, transitions, music_suggestion, overall_pacing.
 Text styles should match brand personality "${brandPersonality}".
 Return ONLY JSON matching CapCutScript.`;
 
-    const result = await router.generate(
-      { systemPrompt, userMessage: JSON.stringify(script), temperature: 0.5, maxTokens: 1500 },
-      'video_script',
-    );
-
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'capcut_script', result, routing: result.routing });
-    return parseJsonFromAI<CapCutScript>(result.text, fallbackCapCut(script));
+    return generateVideoJson<CapCutScript>(user, {
+      systemPrompt,
+      userMessage: JSON.stringify(script),
+      feature: 'capcut_script',
+      fallback: fallbackCapCut(script),
+      platform,
+      temperature: 0.5,
+      maxTokens: 1500,
+    });
   },
 };

@@ -69,6 +69,7 @@ const brandContext = {
     transformation: 'move from fragmented work to repeatable growth',
   },
 };
+const aiSuccess = <T,>(value: T) => ({ status: 'success' as const, source: 'ai' as const, value, text: '', result: {} });
 
 describe('E3A capability revalidation', () => {
   let userMetadata: Record<string, unknown>;
@@ -237,8 +238,8 @@ describe('E3A capability revalidation', () => {
     };
 
     it('creates a stable canonical VideoProject owned by the authenticated tenant and user', async () => {
-      videoStrategyMocks.buildStrategy.mockResolvedValue({ recommended_angle: 'Founder lesson' });
-      masterScriptMocks.generateHook.mockResolvedValue({ selected: 'A', options: [] });
+      videoStrategyMocks.buildStrategy.mockResolvedValue(aiSuccess({ recommended_angle: 'Founder lesson' }));
+      masterScriptMocks.generateHook.mockResolvedValue(aiSuccess({ selected: 'A', options: [] }));
       prismaMocks.videoProject.create.mockResolvedValue({ id: 'video-project-1' });
 
       const result = await videoProjectService.startProject(user, input);
@@ -301,7 +302,7 @@ describe('E3A capability revalidation', () => {
         userId: 'user-b',
         masterScript: { scenes: [originalScene], cta: originalScene },
       });
-      masterScriptMocks.regenerateScene.mockResolvedValue(replacement);
+      masterScriptMocks.regenerateScene.mockResolvedValue(aiSuccess(replacement));
       prismaMocks.videoProject.updateMany.mockResolvedValue({ count: 1 });
 
       await videoProjectService.regenerateScene(

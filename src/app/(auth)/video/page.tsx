@@ -1,6 +1,6 @@
 import { CapabilityViewNavigation } from '@/components/navigation/CapabilityViewNavigation';
+import { VideoProductionFlow } from '@/modules/video/components/VideoProductionFlow';
 import { VideoProjectsList } from '@/modules/video/components/VideoProjectsList';
-import { VideoProductionDashboard } from '@/modules/video-production/components/VideoProductionDashboard';
 import { resolveVideoView } from '@/lib/navigation/merged-capability-views';
 
 const views = [
@@ -17,7 +17,7 @@ export default async function VideoPage({
   return (
     <div className="px-4 py-6">
       <CapabilityViewNavigation activeId={activeView} items={views} label="Video views" />
-      {activeView === 'production' ? <VideoProductionDashboard /> : <VideoProjectsList />}
+      {activeView === 'production' ? <VideoProductionFlow /> : <VideoProjectsList />}
     </div>
   );
 }
