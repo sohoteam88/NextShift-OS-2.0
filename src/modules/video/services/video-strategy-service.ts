@@ -1,10 +1,7 @@
 import prisma from '@/lib/prisma';
-import { getRouterForTenant } from '@/modules/ai/router';
-import { logAIUsage } from '@/modules/ai/usage/tracker';
-import { enforceQuota } from '@/modules/ai/usage/quota';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { VideoProductionInput, VideoStrategy } from '../types';
-import { parseJsonFromAI } from './json';
+import { generateVideoJson } from './json';
 import { getBrandContext } from '@/modules/brand-dna/services/BrandContextProvider';
 
 const FUNNEL_STAGE_GUIDANCE: Record<string, string> = {
@@ -44,10 +41,7 @@ async function getBrandProfile(userId: string): Promise<Record<string, unknown> 
 }
 
 export const videoStrategyService = {
-  async buildStrategy(user: AuthUser, input: VideoProductionInput): Promise<VideoStrategy> {
-    await enforceQuota(user.tenantId);
-
-    const router = await getRouterForTenant(user.tenantId);
+  async buildStrategy(user: AuthUser, input: VideoProductionInput) {
     const brandProfile = await getBrandProfile(user.id);
 
     const systemPrompt = `You are a short-form video strategist for the Malaysian Chinese social media market.
@@ -65,31 +59,21 @@ Funnel stage guidance: ${FUNNEL_STAGE_GUIDANCE[input.funnel_stage]}
 
 Return ONLY JSON matching VideoStrategy.`;
 
-    const result = await router.generate(
-      {
-        systemPrompt,
-        userMessage: JSON.stringify({
+    return generateVideoJson<VideoStrategy>(user, {
+      systemPrompt,
+      userMessage: JSON.stringify({
           ...input,
           brand: {
             identity: brandProfile?.identity,
             personality: brandProfile?.personality,
             story: brandProfile?.story,
           },
-        }),
-        temperature: 0.6,
-        maxTokens: 800,
-      },
-      'video_script',
-    );
-
-    await logAIUsage({
-      tenantId: user.tenantId,
-      userId: user.id,
+      }),
       feature: 'video_strategy',
-      result,
-      routing: result.routing,
+      fallback: DEFAULT_STRATEGY,
+      platform: input.platform,
+      temperature: 0.6,
+      maxTokens: 800,
     });
-
-    return parseJsonFromAI<VideoStrategy>(result.text, DEFAULT_STRATEGY);
   },
 };

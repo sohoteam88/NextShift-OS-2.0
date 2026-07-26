@@ -5,6 +5,7 @@ import { aiVideoPromptService } from './ai-video-prompt-service';
 import { brollService } from './broll-service';
 import { shotListService } from './shot-list-service';
 import { requireOwnedVideoProject, updateOwnedVideoProject } from './video-project-service';
+import { generationMetadata } from './json';
 
 export const productionPlanService = {
   async generateProductionPlan(user: AuthUser, projectId: string) {
@@ -13,10 +14,12 @@ export const productionPlanService = {
     const script = project.masterScript as unknown as MasterScript;
     if (!script?.scenes?.length) throw new Error('Master script not ready');
 
-    const [shotList, brollList] = await Promise.all([
-      shotListService.generate(user, script, project.style),
-      brollService.generate(user, script, project.style),
+    const [shotListGeneration, brollListGeneration] = await Promise.all([
+      shotListService.generate(user, script, project.style, project.platform),
+      brollService.generate(user, script, project.style, project.platform),
     ]);
+    const shotList = shotListGeneration.value;
+    const brollList = brollListGeneration.value;
 
     let aiScenes = [...new Set(
       brollList
@@ -30,12 +33,19 @@ export const productionPlanService = {
 
     let veoResult: AIVideoPromptResult | null = null;
     let minimaxResult: AIVideoPromptResult | null = null;
+    const generations: Array<{ status: 'success' | 'degraded'; userVisibleLabel?: string }> = [
+      shotListGeneration,
+      brollListGeneration,
+    ];
 
     if (aiScenes.length > 0) {
-      [veoResult, minimaxResult] = await Promise.all([
+      const [veoGeneration, minimaxGeneration] = await Promise.all([
         aiVideoPromptService.generateVeoPrompt(user, script, project.platform, aiScenes),
         aiVideoPromptService.generateMiniMaxPrompt(user, script, project.platform, aiScenes),
       ]);
+      veoResult = veoGeneration.value;
+      minimaxResult = minimaxGeneration.value;
+      generations.push(veoGeneration, minimaxGeneration);
     }
 
     await updateOwnedVideoProject(user, projectId, {
@@ -52,6 +62,13 @@ export const productionPlanService = {
         status: 'shot_planned',
     });
 
-    return { shotList, brollList, veoPrompts: veoResult, minimaxPrompts: minimaxResult, aiScenes };
+    return {
+      shotList,
+      brollList,
+      veoPrompts: veoResult,
+      minimaxPrompts: minimaxResult,
+      aiScenes,
+      generation: generationMetadata(generations),
+    };
   },
 };

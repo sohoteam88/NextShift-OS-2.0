@@ -1,8 +1,6 @@
-import { getRouterForTenant } from '@/modules/ai/router';
-import { logAIUsage } from '@/modules/ai/usage/tracker';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { AIVideoPrompt, AIVideoPromptResult, MasterScript } from '../types';
-import { parseJsonFromAI } from './json';
+import { generateVideoJson, parseJsonFromAI } from './json';
 
 const PLATFORM_ASPECT: Record<string, '9:16' | '1:1' | '16:9'> = {
   facebook_reel: '9:16',
@@ -33,9 +31,17 @@ function fallbackPrompts(script: MasterScript, platform: string, scenes: number[
   };
 }
 
+function parsePromptResult(text: string, label: string): AIVideoPromptResult {
+  const parsed = parseJsonFromAI<{ scenes: AIVideoPrompt[] }>(text);
+  if (!Array.isArray(parsed.scenes)) throw new Error('AI returned malformed JSON');
+  return {
+    scenes: parsed.scenes,
+    combined: parsed.scenes.map((scene) => `[${label} ${scene.scene_number}] ${scene.prompt}`).join('\n\n'),
+  };
+}
+
 export const aiVideoPromptService = {
-  async generateVeoPrompt(user: AuthUser, script: MasterScript, platform: string, brollScenes: number[]): Promise<AIVideoPromptResult> {
-    const router = await getRouterForTenant(user.tenantId);
+  async generateVeoPrompt(user: AuthUser, script: MasterScript, platform: string, brollScenes: number[]) {
     const aspect = PLATFORM_ASPECT[platform] ?? '9:16';
 
     const systemPrompt = `Convert these video scenes into Google Veo prompts.
@@ -49,21 +55,20 @@ export const aiVideoPromptService = {
 Only generate prompts for scene numbers: ${brollScenes.join(', ')}
 Return ONLY JSON: { "scenes": [{ scene_number, prompt, aspect_ratio, duration_hint, style_modifiers, negative_prompt }] }`;
 
-    const result = await router.generate(
-      { systemPrompt, userMessage: JSON.stringify(script.scenes.filter((s) => brollScenes.includes(s.scene_number))), temperature: 0.7, maxTokens: 1200 },
-      'video_script',
-    );
-
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'veo_prompt', result, routing: result.routing });
-
     const fallback = fallbackPrompts(script, platform, brollScenes, 'en');
-    const parsed = parseJsonFromAI<{ scenes: AIVideoPrompt[] }>(result.text, { scenes: fallback.scenes });
-    const scenes = parsed.scenes ?? fallback.scenes;
-    return { scenes, combined: scenes.map((scene) => `[Scene ${scene.scene_number}] ${scene.prompt}`).join('\n\n') };
+    return generateVideoJson<AIVideoPromptResult>(user, {
+      systemPrompt,
+      userMessage: JSON.stringify(script.scenes.filter((scene) => brollScenes.includes(scene.scene_number))),
+      feature: 'veo_prompt',
+      fallback,
+      platform,
+      temperature: 0.7,
+      maxTokens: 1200,
+      parse: (text) => parsePromptResult(text, 'Scene'),
+    });
   },
 
-  async generateMiniMaxPrompt(user: AuthUser, script: MasterScript, platform: string, brollScenes: number[]): Promise<AIVideoPromptResult> {
-    const router = await getRouterForTenant(user.tenantId, { mode: 'zh_optimized' });
+  async generateMiniMaxPrompt(user: AuthUser, script: MasterScript, platform: string, brollScenes: number[]) {
     const aspect = PLATFORM_ASPECT[platform] ?? '9:16';
 
     const systemPrompt = `将这些视频场景转换为 MiniMax 视频生成提示词。
@@ -77,16 +82,16 @@ Return ONLY JSON: { "scenes": [{ scene_number, prompt, aspect_ratio, duration_hi
 只为以下场景编号生成提示词: ${brollScenes.join(', ')}
 Return ONLY JSON: { "scenes": [{ scene_number, prompt, aspect_ratio, duration_hint, style_modifiers, negative_prompt }] }`;
 
-    const result = await router.generate(
-      { systemPrompt, userMessage: JSON.stringify(script.scenes.filter((s) => brollScenes.includes(s.scene_number))), temperature: 0.7, maxTokens: 1200 },
-      'video_script',
-    );
-
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'minimax_prompt', result, routing: result.routing });
-
     const fallback = fallbackPrompts(script, platform, brollScenes, 'zh');
-    const parsed = parseJsonFromAI<{ scenes: AIVideoPrompt[] }>(result.text, { scenes: fallback.scenes });
-    const scenes = parsed.scenes ?? fallback.scenes;
-    return { scenes, combined: scenes.map((scene) => `[场景 ${scene.scene_number}] ${scene.prompt}`).join('\n\n') };
+    return generateVideoJson<AIVideoPromptResult>(user, {
+      systemPrompt,
+      userMessage: JSON.stringify(script.scenes.filter((scene) => brollScenes.includes(scene.scene_number))),
+      feature: 'minimax_prompt',
+      fallback,
+      platform,
+      temperature: 0.7,
+      maxTokens: 1200,
+      parse: (text) => parsePromptResult(text, '场景'),
+    });
   },
 };

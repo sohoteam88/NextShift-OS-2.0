@@ -1,8 +1,6 @@
-import { getRouterForTenant } from '@/modules/ai/router';
-import { logAIUsage } from '@/modules/ai/usage/tracker';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { MasterScript, ShotListItem } from '../types';
-import { parseJsonFromAI } from './json';
+import { generateVideoJson } from './json';
 
 function secondsFromRange(range: string): number {
   const match = range.match(/(\d+)\s*-\s*(\d+)/);
@@ -24,8 +22,7 @@ function fallbackShotList(script: MasterScript): ShotListItem[] {
 }
 
 export const shotListService = {
-  async generate(user: AuthUser, script: MasterScript, style: string): Promise<ShotListItem[]> {
-    const router = await getRouterForTenant(user.tenantId);
+  async generate(user: AuthUser, script: MasterScript, style: string, platform: string) {
     const systemPrompt = `Convert this video script into a filmable shot list for a BEGINNER creator using only a smartphone.
 
 For EACH scene, specify:
@@ -40,15 +37,15 @@ For EACH scene, specify:
 Style context: ${style}
 Return ONLY JSON array of ShotListItem, one per scene including CTA.`;
 
-    const result = await router.generate(
-      { systemPrompt, userMessage: JSON.stringify(script), temperature: 0.4, maxTokens: 1500 },
-      'video_script',
-    );
-
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'shot_list', result, routing: result.routing });
-
     const fallback = fallbackShotList(script);
-    const parsed = parseJsonFromAI<{ items?: ShotListItem[] } | ShotListItem[]>(result.text, fallback);
-    return Array.isArray(parsed) ? parsed : parsed.items ?? fallback;
+    return generateVideoJson<ShotListItem[]>(user, {
+      systemPrompt,
+      userMessage: JSON.stringify(script),
+      feature: 'shot_list',
+      fallback,
+      platform,
+      temperature: 0.4,
+      maxTokens: 1500,
+    });
   },
 };

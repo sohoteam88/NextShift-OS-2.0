@@ -173,7 +173,7 @@ export const REVENUE_DRIVER_INTENTS: IntentDefinition[] = [
   },
   {
     driverId: 'video',
-    route: '/video-production',
+    route: '/video',
     intent: 'hook-generator',
     toolId: 'video.hook-generator',
     titleKey: 'intent.tools.video.hookGenerator.title',
@@ -183,7 +183,7 @@ export const REVENUE_DRIVER_INTENTS: IntentDefinition[] = [
   },
   {
     driverId: 'video',
-    route: '/video-production',
+    route: '/video',
     intent: 'video-script',
     aliases: ['master-script'],
     toolId: 'video.video-script',
@@ -194,7 +194,7 @@ export const REVENUE_DRIVER_INTENTS: IntentDefinition[] = [
   },
   {
     driverId: 'video',
-    route: '/video-production',
+    route: '/video',
     intent: 'shot-list',
     aliases: ['b-roll-plan'],
     toolId: 'video.shot-list',
@@ -205,7 +205,7 @@ export const REVENUE_DRIVER_INTENTS: IntentDefinition[] = [
   },
   {
     driverId: 'video',
-    route: '/video-production',
+    route: '/video',
     intent: 'capcut-script',
     toolId: 'video.capcut-script',
     titleKey: 'intent.tools.video.capcutScript.title',
@@ -215,7 +215,7 @@ export const REVENUE_DRIVER_INTENTS: IntentDefinition[] = [
   },
   {
     driverId: 'video',
-    route: '/video-production',
+    route: '/video',
     intent: 'veo-prompt',
     aliases: ['google-veo-prompt'],
     toolId: 'video.veo-prompt',
@@ -226,7 +226,7 @@ export const REVENUE_DRIVER_INTENTS: IntentDefinition[] = [
   },
   {
     driverId: 'video',
-    route: '/video-production',
+    route: '/video',
     intent: 'minimax-prompt',
     toolId: 'video.minimax-prompt',
     titleKey: 'intent.tools.video.miniMaxPrompt.title',
@@ -236,7 +236,7 @@ export const REVENUE_DRIVER_INTENTS: IntentDefinition[] = [
   },
   {
     driverId: 'video',
-    route: '/video-production',
+    route: '/video',
     intent: 'subtitle-generator',
     aliases: ['platform-adaptation'],
     toolId: 'video.subtitle-generator',

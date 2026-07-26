@@ -40,7 +40,7 @@ describe('UX-002 revenue driver discovery', () => {
     ['/traffic-engine', 'facebook-ad', 'ads.facebook-ad'],
     ['/webinar-center', 'presentation-slides', 'webinar.presentation-slides'],
     ['/webinar-center', 'speaker-script', 'webinar.speaker-script'],
-    ['/video-production', 'veo-prompt', 'video.veo-prompt'],
+    ['/video', 'veo-prompt', 'video.veo-prompt'],
     ['/whatsapp-ai', 'objection-handler', 'whatsapp.objection-handler'],
   ])('resolves %s?intent=%s to %s', (route, intent, toolId) => {
     expect(resolveRevenueDriverIntent({ route, intent })).toMatchObject({

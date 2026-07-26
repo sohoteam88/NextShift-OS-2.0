@@ -1,8 +1,6 @@
-import { getRouterForTenant } from '@/modules/ai/router';
-import { logAIUsage } from '@/modules/ai/usage/tracker';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { MasterScript, PlatformAdaptation, PlatformType, VideoStrategy } from '../types';
-import { parseJsonFromAI } from './json';
+import { generateVideoJson } from './json';
 
 const PLATFORM_NOTES: Record<string, string> = {
   facebook_reel: 'Facebook Reels 适合较长描述，可以包含故事性 caption。',
@@ -31,8 +29,7 @@ export const platformAdaptationService = {
     strategy: VideoStrategy,
     primaryPlatform: PlatformType,
     additionalPlatforms: PlatformType[] = [],
-  ): Promise<PlatformAdaptation[]> {
-    const router = await getRouterForTenant(user.tenantId);
+  ) {
     const platforms = [primaryPlatform, ...additionalPlatforms.filter((p) => p !== primaryPlatform)];
     const systemPrompt = `Generate platform-specific posting adaptations for: ${platforms.join(', ')}.
 
@@ -49,13 +46,14 @@ Strategy angle: ${strategy.recommended_angle}
 
 Return ONLY JSON array of PlatformAdaptation in Chinese Malaysian style.`;
 
-    const result = await router.generate(
-      { systemPrompt, userMessage: JSON.stringify({ script, strategy }), temperature: 0.7, maxTokens: 1200 },
-      'video_script',
-    );
-
-    await logAIUsage({ tenantId: user.tenantId, userId: user.id, feature: 'platform_adaptation', result, routing: result.routing });
-    const parsed = parseJsonFromAI<{ items?: PlatformAdaptation[] } | PlatformAdaptation[]>(result.text, fallbackAdaptations(script, platforms));
-    return Array.isArray(parsed) ? parsed : parsed.items ?? fallbackAdaptations(script, platforms);
+    return generateVideoJson<PlatformAdaptation[]>(user, {
+      systemPrompt,
+      userMessage: JSON.stringify({ script, strategy }),
+      feature: 'platform_adaptation',
+      fallback: fallbackAdaptations(script, platforms),
+      platform: primaryPlatform,
+      temperature: 0.7,
+      maxTokens: 1200,
+    });
   },
 };

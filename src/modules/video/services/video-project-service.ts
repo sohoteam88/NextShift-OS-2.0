@@ -5,6 +5,7 @@ import { notifyMissionProgress } from '@/modules/mission/utils/complete-mission'
 import type { MasterScript, VideoHook, VideoProductionInput, VideoStrategy } from '../types';
 import { masterScriptService } from './master-script-service';
 import { videoStrategyService } from './video-strategy-service';
+import { generationMetadata } from './json';
 import { AppError } from '@/lib/errors';
 
 const ownerWhere = (user: AuthUser, id: string) => ({ id, tenantId: user.tenantId, userId: user.id });
@@ -22,8 +23,10 @@ export async function updateOwnedVideoProject(user: AuthUser, id: string, data: 
 
 export const videoProjectService = {
   async startProject(user: AuthUser, input: VideoProductionInput) {
-    const strategy = await videoStrategyService.buildStrategy(user, input);
-    const hook = await masterScriptService.generateHook(user, input, strategy);
+    const strategyGeneration = await videoStrategyService.buildStrategy(user, input);
+    const strategy = strategyGeneration.value;
+    const hookGeneration = await masterScriptService.generateHook(user, input, strategy);
+    const hook = hookGeneration.value;
 
     const project = await prisma.videoProject.create({
       data: {
@@ -42,14 +45,15 @@ export const videoProjectService = {
       },
     });
 
-    return { project, strategy, hook };
+    return { project, strategy, hook, generation: generationMetadata([strategyGeneration, hookGeneration]) };
   },
 
   async generateFullScript(user: AuthUser, projectId: string, chosenHook: VideoHook, input: VideoProductionInput) {
     const project = await requireOwnedVideoProject(user, projectId);
 
     const strategy = project.strategy as unknown as VideoStrategy;
-    const masterScript = await masterScriptService.generateScript(user, input, strategy, chosenHook);
+    const masterScriptGeneration = await masterScriptService.generateScript(user, input, strategy, chosenHook);
+    const masterScript = masterScriptGeneration.value;
 
     await updateOwnedVideoProject(user, projectId, { masterScript: masterScript as unknown as Prisma.InputJsonValue, status: 'scripted' });
 
@@ -58,14 +62,15 @@ export const videoProjectService = {
     });
     const mission = scriptedCount === 1 ? await notifyMissionProgress(user, 'first_video_generated') : null;
 
-    return { masterScript, mission };
+    return { masterScript, mission, generation: generationMetadata([masterScriptGeneration]) };
   },
 
   async regenerateScene(user: AuthUser, projectId: string, sceneNumber: number, instruction: string) {
     const project = await requireOwnedVideoProject(user, projectId);
 
     const script = project.masterScript as unknown as MasterScript;
-    const newScene = await masterScriptService.regenerateScene(user, script, sceneNumber, instruction);
+    const newSceneGeneration = await masterScriptService.regenerateScene(user, script, sceneNumber, instruction);
+    const newScene = newSceneGeneration.value;
     const scenes = script.scenes.map((scene) => scene.scene_number === sceneNumber ? newScene : scene);
     const nextScript = {
       ...script,
@@ -75,14 +80,14 @@ export const videoProjectService = {
 
     await updateOwnedVideoProject(user, projectId, { masterScript: nextScript as unknown as Prisma.InputJsonValue });
 
-    return newScene;
+    return { scene: newScene, generation: generationMetadata([newSceneGeneration]) };
   },
 
   async get(user: AuthUser, projectId: string) {
     return prisma.videoProject.findFirst({ where: ownerWhere(user, projectId) });
   },
 
-  async list(user: AuthUser, filters?: { status?: string; platform?: string }) {
+  async list(user: Pick<AuthUser, 'id' | 'tenantId'>, filters?: { status?: string; platform?: string }) {
     return prisma.videoProject.findMany({
       where: {
         tenantId: user.tenantId,

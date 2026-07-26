@@ -28,7 +28,7 @@ export type RevenueDriverDefinition = {
 };
 
 function withIntent(route: string, intent: string) {
-  return `${route}?intent=${encodeURIComponent(intent)}`;
+  return `${route}${route.includes('?') ? '&' : '?'}intent=${encodeURIComponent(intent)}`;
 }
 
 export const REVENUE_DRIVERS: RevenueDriverDefinition[] = [
@@ -71,22 +71,22 @@ export const REVENUE_DRIVERS: RevenueDriverDefinition[] = [
   {
     id: 'video',
     priority: 3,
-    route: '/video-production',
+    route: '/video?view=production',
     titleKey: 'drivers.video.title',
     descriptionKey: 'drivers.video.description',
     outcomeKey: 'drivers.video.outcome',
     primaryActionKey: 'drivers.video.primaryAction',
     actions: [
-      { id: 'hook-generator', labelKey: 'actions.hookGenerator', href: withIntent('/video-production', 'hook-generator') },
-      { id: 'video-script', labelKey: 'actions.videoScript', href: withIntent('/video-production', 'video-script') },
-      { id: 'master-script', labelKey: 'actions.masterScript', href: withIntent('/video-production', 'master-script') },
-      { id: 'shot-list', labelKey: 'actions.shotList', href: withIntent('/video-production', 'shot-list') },
-      { id: 'b-roll-plan', labelKey: 'actions.bRollPlan', href: withIntent('/video-production', 'b-roll-plan') },
-      { id: 'capcut-script', labelKey: 'actions.capCutScript', href: withIntent('/video-production', 'capcut-script') },
-      { id: 'subtitle-generator', labelKey: 'actions.subtitleGenerator', href: withIntent('/video-production', 'subtitle-generator') },
-      { id: 'google-veo-prompt', labelKey: 'actions.googleVeoPrompt', href: withIntent('/video-production', 'veo-prompt') },
-      { id: 'minimax-prompt', labelKey: 'actions.miniMaxPrompt', href: withIntent('/video-production', 'minimax-prompt') },
-      { id: 'platform-adaptation', labelKey: 'actions.platformAdaptation', href: withIntent('/video-production', 'platform-adaptation') },
+      { id: 'hook-generator', labelKey: 'actions.hookGenerator', href: withIntent('/video?view=production', 'hook-generator') },
+      { id: 'video-script', labelKey: 'actions.videoScript', href: withIntent('/video?view=production', 'video-script') },
+      { id: 'master-script', labelKey: 'actions.masterScript', href: withIntent('/video?view=production', 'master-script') },
+      { id: 'shot-list', labelKey: 'actions.shotList', href: withIntent('/video?view=production', 'shot-list') },
+      { id: 'b-roll-plan', labelKey: 'actions.bRollPlan', href: withIntent('/video?view=production', 'b-roll-plan') },
+      { id: 'capcut-script', labelKey: 'actions.capCutScript', href: withIntent('/video?view=production', 'capcut-script') },
+      { id: 'subtitle-generator', labelKey: 'actions.subtitleGenerator', href: withIntent('/video?view=production', 'subtitle-generator') },
+      { id: 'google-veo-prompt', labelKey: 'actions.googleVeoPrompt', href: withIntent('/video?view=production', 'veo-prompt') },
+      { id: 'minimax-prompt', labelKey: 'actions.miniMaxPrompt', href: withIntent('/video?view=production', 'minimax-prompt') },
+      { id: 'platform-adaptation', labelKey: 'actions.platformAdaptation', href: withIntent('/video?view=production', 'platform-adaptation') },
     ],
   },
   {
