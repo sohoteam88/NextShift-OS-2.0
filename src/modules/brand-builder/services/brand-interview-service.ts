@@ -712,7 +712,8 @@ export const brandInterviewService = {
 
   async getUserLatestInterview(userId: string, tenantId: string) {
     return prisma.brandInterview.findFirst({
-      where: { userId, tenantId },
+      // Restarting the interview must not resurrect an already completed run.
+      where: { userId, tenantId, status: { not: 'completed' } },
       orderBy: { createdAt: 'desc' },
     });
   },
