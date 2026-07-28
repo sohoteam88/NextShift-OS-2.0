@@ -80,7 +80,7 @@ FORBIDDEN_PATH_PATTERNS=(
   'prisma/migrations/'   # migrations are reviewed manually until this pipeline has a track record
 )
 
-HUMAN_GATE_ITEMS=("G4" "G5")
+HUMAN_GATE_ITEMS=("G4" "G5" "SA1")
 
 # C0 is the sole approved exception to the packages/ freeze. Keep this list exact: a C0 diff
 # that touches any other package file still aborts, as does any packages/ edit in another task.
