@@ -2,21 +2,21 @@
 
 EVIDENCE_ID=OS3.8-PRODUCTION-READINESS
 STATUS=READY
-RELEASE_SHA=9bc0cb82f7549a23fc72304f28087eafb7f1842d
-VERIFICATION_ID=OS38-PR-20260726T083250Z
-VERIFIED_AT=2026-07-26T08:32:50Z
+RELEASE_SHA=c8d08a504ec8477880f3cd0fd8c125cdbeee3691
+VERIFICATION_ID=OS38-PR-20260728T122043Z
+VERIFIED_AT=2026-07-28T12:20:43Z
 MIGRATION_REHEARSAL=PASS
 MIGRATION_IMAGE_REHEARSAL=PASS
-MIGRATION_IMAGE_DIGEST=sha256:3626d26f604a1dc1befd27d2e2e6247460c3eab990e18f962899c7ba2c4674d4
-MIGRATION_IMAGE_REVISION=9bc0cb82f7549a23fc72304f28087eafb7f1842d
-BACKUP_SHA256=90192a8c71fe7b3fa57a0011909a1cf2fbc4f2e93fe4b6fc29ce9a7ff3360ffb
+MIGRATION_IMAGE_DIGEST=sha256:f480dc17a807857a6d65cba86f1bca4a017a4edd12c21df53ba8494214912c18
+MIGRATION_IMAGE_REVISION=c8d08a504ec8477880f3cd0fd8c125cdbeee3691
+BACKUP_SHA256=8f084cd0a2bb393089514eb6e7c989c358712d876996a5dcbd7ba64f37d3bed9
 RESTORE_VERIFIED_AT=2026-07-21T06:11:49Z
-ROLLBACK_IMAGE_SHA=2a6fd20552573efedd884a578384923a084e69f0
+ROLLBACK_IMAGE_SHA=9bc0cb82f7549a23fc72304f28087eafb7f1842d
 PRODUCTION_ENVIRONMENT=production
 REQUIRED_REVIEWER=Steven
 ENVIRONMENT_PROTECTION=PASS
-ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260726T083250Z
-ENVIRONMENT_VERIFIED_AT=2026-07-26T08:32:50Z
+ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260728T122043Z
+ENVIRONMENT_VERIFIED_AT=2026-07-28T12:20:43Z
 
 ## Decision boundary
 
@@ -28,40 +28,45 @@ production mutation.
 ## Repository and exact-release evidence
 
 - Repository: `sohoteam88/NextShift-OS-2.0`.
-- Exact merged `main` release: `9bc0cb82f7549a23fc72304f28087eafb7f1842d`.
+- Exact merged `main` release: `c8d08a504ec8477880f3cd0fd8c125cdbeee3691`.
   The release delta from the previous readiness baseline
-  (`2a6fd20552573efedd884a578384923a084e69f0`, currently running in
-  production) is the full OS 3.9 Wave 3 delivery plus a dogfood-diary commit:
-  G2 lead-magnet + webinar-center gateway integration (PR #155, blueprint
-  mark PR #162), O2 forked interview funnel (PR #163), O3 Brand DNA default
-  fill-in with provenance tracking (PR #164), O4 Review Room retirement in
-  favor of just-in-time fields (PR #165), O5 removal of the pre-generation
-  hard readiness gate (PR #166), G3 retirement of the legacy video-production
-  pipeline plus an ESLint boundaries config fix (PR #167, blueprint mark PR
-  #168), G6 content-library draft deduplication plus a vitest include-scope
-  fix (PR #169, blueprint mark PR #170), M1 dual-track isolation follow-through
-  for the funnel-copy generation route with a safe `track` default (PR #171),
-  and the F-33 root-cause blueprint documentation update (PR #161).
+  (`9bc0cb82f7549a23fc72304f28087eafb7f1842d`, currently running in
+  production) is: the brand-builder interview-restart fix (PR #178,
+  `8b1370d` — `getUserLatestInterview` now excludes completed interviews so
+  restarting the interview cannot resurrect a finished run), documentation
+  preservation for the product shape amendment and Fable role charter plus
+  business-pack additions (PR #179), the M1 blueprint reversion recording
+  that PR #171 only added a `track` default and folding the real
+  dual-track-isolation work into W4/T2 (PR #180), the SA1 super-admin user
+  data reset work order entering the blueprint index under
+  `HUMAN_GATE_ITEMS` (PR #181), and the SA1 implementation itself (PR #182,
+  `94ec9b7`/`657e012`/`a516374` — transactional per-user business-data reset
+  across 21 tables plus `User.metadata` Brand DNA and wizard-progress keys,
+  gated to `platform_admin`, with a deletion receipt and success/failure
+  audit trail; Fable-reviewed with two follow-up fixes for confirmation-email
+  normalization and best-effort failure-audit isolation).
 - The release delta from the prior readiness baseline contains no Prisma
-  schema or database migration file. This was confirmed twice in this same
-  verification session by a full `git diff --stat` against `prisma/` across
-  every commit between the two SHAs (empty diff both times).
+  schema or database migration file. This was confirmed by a `git diff
+  --stat` against `prisma/` between the two SHAs (empty diff) in this same
+  verification session.
 - The production-readiness contract suite completed all 58 fixtures,
   including its disposable PostgreSQL migration rehearsal, at this
   verification session.
 
 ## Backup and restore evidence
 
-- Per Fable's release-train #2 ruling (2026-07-26): since this release delta
-  contains no Prisma schema or migration file, the backup and restore
-  evidence carries forward unchanged from the prior approved readiness
-  baseline, on the same basis as the 2a6fd20 carry-forward — the daily
-  `pg_dump` cron (PR #130) continues running with a checksum manifest for
-  every run, bounding any data-loss window to at most 24 hours, and Steven's
-  standing pre-real-user execution posture accepts this residual data risk.
-  `BACKUP_SHA256` and `RESTORE_VERIFIED_AT` are the same values already
-  approved for the prior release; no new backup or restore action was
-  performed for this release.
+- Per Fable's release-train #2 ruling (2026-07-26, reaffirmed for this
+  release): since this release delta contains no Prisma schema or migration
+  file, the full isolated backup-and-restore rehearsal was not rerun.
+  `RESTORE_VERIFIED_AT` carries forward unchanged from the last actual
+  rehearsal.
+- The daily `pg_dump` cron (PR #130) was freshly confirmed healthy in this
+  same verification session: the most recent dump is
+  `nextshift-20260727-190001.dump` (2026-07-27T19:00:01Z, roughly 16 hours
+  before this verification), with checksum
+  `BACKUP_SHA256` above recorded directly from the VPS `SHA256SUMS`
+  manifest — not hand-typed. This bounds any data-loss window to at most 24
+  hours, consistent with Steven's standing pre-real-user execution posture.
 - **Standing rule (reaffirmed again):** the next release that includes a
   Prisma schema or migration file must rerun a full backup-and-isolated-
   restore rehearsal before Production Readiness can be recorded, using the
@@ -71,7 +76,7 @@ production mutation.
 
 - A migration image was rebuilt locally from the exact release SHA with
   `scripts/deployment/Dockerfile.migrations`. Its image ID (Config digest) is
-  `sha256:3626d26f604a1dc1befd27d2e2e6247460c3eab990e18f962899c7ba2c4674d4`,
+  `sha256:f480dc17a807857a6d65cba86f1bca4a017a4edd12c21df53ba8494214912c18`,
   matching `MIGRATION_IMAGE_DIGEST`; its OCI revision is the exact release
   SHA.
 - `scripts/deployment/validate-migration-image-runtime.sh` passed all six
@@ -96,9 +101,9 @@ production mutation.
 
 - The exact rollback target was read directly from the VPS over the deploy
   SSH identity in this same session. `nextshift-app:latest` is healthy and
-  its revision/tag is `2a6fd20552573efedd884a578384923a084e69f0`, exactly
+  its revision/tag is `9bc0cb82f7549a23fc72304f28087eafb7f1842d`, exactly
   matching `ROLLBACK_IMAGE_SHA`, with image ID
-  `sha256:4f9c5d7e15611775176b9198da52e80da9608cb3e1d0ea574fd1b3454794f432`.
+  `sha256:0ad284250ba791cec4fb29d67282ebd8c5f056ef783b356b5653c4f69edf933c`.
   This is the currently running, verified healthy production image and is
   the exact rollback target if this release must be reverted.
 - No container, image, tag, runtime environment, credential, or service was
