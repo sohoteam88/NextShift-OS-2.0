@@ -47,7 +47,7 @@ export async function resetUserBusinessDataWithAudit(
     return await db.$transaction(async (tx) => {
       const target = await loadPlatformUserTarget(tx, actorId, targetUserId);
       targetTenantId = target.tenantId;
-      if (target.email !== confirmedEmail) {
+      if (target.email.trim().toLowerCase() !== confirmedEmail.trim().toLowerCase()) {
         throw new AppError('VALIDATION_ERROR', 400, 'Confirmation email does not match the target user');
       }
 
@@ -121,20 +121,24 @@ export async function resetUserBusinessDataWithAudit(
       return { perTableCounts, metadataKeysCleared: clearedKeys };
     });
   } catch (error) {
-    await writePlatformAuditUsing(db, {
-      actorId,
-      actorRole: 'platform_admin',
-      action: 'user.data.reset',
-      targetType: 'user',
-      targetId: targetUserId,
-      targetKey: targetUserId,
-      outcome: 'failure',
-      correlationId,
-      metadata: {
-        target_tenant_id: targetTenantId,
-        failure_code: failureCode(error),
-      },
-    });
+    try {
+      await writePlatformAuditUsing(db, {
+        actorId,
+        actorRole: 'platform_admin',
+        action: 'user.data.reset',
+        targetType: 'user',
+        targetId: targetUserId,
+        targetKey: targetUserId,
+        outcome: 'failure',
+        correlationId,
+        metadata: {
+          target_tenant_id: targetTenantId,
+          failure_code: failureCode(error),
+        },
+      });
+    } catch {
+      // Failure auditing is best-effort and must never mask the original reset error.
+    }
     throw error;
   }
 }

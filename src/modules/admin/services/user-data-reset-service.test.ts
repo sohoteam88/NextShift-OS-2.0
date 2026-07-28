@@ -108,6 +108,25 @@ describe('resetUserBusinessDataWithAudit', () => {
     }));
   });
 
+  it('normalizes email casing and surrounding whitespace before confirmation', async () => {
+    const fixture = createDatabase();
+    mutation.loadPlatformUserTarget.mockResolvedValue({
+      id: targetId, tenantId: 'same-tenant', name: 'Target', email: 'Reset@Example.test',
+      role: 'member', status: 'active',
+    });
+
+    const receipt = await resetUserBusinessDataWithAudit(
+      actorId,
+      targetId,
+      ' reset@example.test ',
+      'reset-normalized-email',
+      fixture.db,
+    );
+
+    expect(receipt.perTableCounts).toEqual(initialCounts);
+    expect(fixture.targetCounts).toEqual(Object.fromEntries(Object.keys(initialCounts).map((table) => [table, 0])));
+  });
+
   it('rejects a mismatched email before deleting anything and records a failure audit', async () => {
     const fixture = createDatabase();
 
@@ -133,5 +152,15 @@ describe('resetUserBusinessDataWithAudit', () => {
     expect(audit.writePlatformAuditUsing).toHaveBeenCalledWith(fixture.db, expect.objectContaining({
       action: 'user.data.reset', outcome: 'failure', metadata: expect.objectContaining({ failure_code: 'Error' }),
     }));
+  });
+
+  it('preserves the original reset error when failure auditing also fails', async () => {
+    const fixture = createDatabase({ failTable: 'activity' });
+    audit.writePlatformAuditUsing.mockRejectedValueOnce(new Error('Audit unavailable'));
+
+    await expect(resetUserBusinessDataWithAudit(actorId, targetId, targetEmail, 'reset-audit-failure', fixture.db))
+      .rejects.toThrow('Injected activity failure');
+
+    expect(audit.writePlatformAuditUsing).toHaveBeenCalledOnce();
   });
 });
