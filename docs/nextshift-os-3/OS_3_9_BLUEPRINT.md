@@ -40,6 +40,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | G3 | video-production 旧管线退役 | G | W3 | 已完成(旧 video-production 模块代码删除,功能并入 video/;PR #167 / fde5660) |
 | G6 | 内容库卫生(F-28 库污染) | G | W3 | 已完成(草稿去重防污染;PR #169 / 5c64867) |
 | M1 | 双轨隔离贯通验收(F-29 根治) | M | W4/T2(并入模板实例化) | 未完成——2026-07-27 Fable 改判撤回:PR #171 实际仅为 funnel-copy 路由 track 字段加 `.default('retail')` 一行,未实现 mode 贯穿漏斗文案全链路隔离;漏斗编辑器降级 admin 工具,缺口并入 W4/T2,验收标准见下方 M1 章节 2026-07-27 更新 |
+| SA1 | 超管用户数据重置(走查前置工具) | U | W3.5(走查前置,HUMAN_GATE) | 待启动(Fable 2026-07-28 批准立项,详见下方 SA1 章节) |
 
 ---
 
@@ -114,6 +115,32 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 - 验收: 零售页 grep 无"创业/副业/收入"词根;招募页 grep 无疗效词根;以 F-33 截图场景为复现基准逐条验证
 
 **2026-07-27 Fable 改判(撤回本项独立完成状态)**:产品形态修正案第五节定漏斗编辑器降为 admin 工具(用户面不再暴露),Fable 判定"修一条即将拆除的路径是浪费圈数"。PR #171 的真实范围重新核实为仅 1 行改动(`track` 字段加 `.default('retail')`,funnel-copy 路由),并未实现本节标题所称"mode 贯穿漏斗文案"的全链路隔离。本项状态改回未完成,原验收标准(零售页无创业/副业/收入词根、招募页无疗效词根、F-33 场景复验)不变但整体并入 W4/T2 模板实例化重做,一并解决:①`track` 必填,缺失即 400,禁止静默默认(现状 `AIFunnelCopyButton` 不发 `track`,招募漏斗会被静默当零售生成);②`Funnel` 表加 `track` 归属列(现状 schema 无此字段)。现有用户面自由生成的漏斗页按既有破坏性简化授权全部作废清库(不做兼容迁移、不做过期横幅),清库脚本另行执行,不在本次文档改动范围内。
+
+### SA1 超管用户数据重置(走查前置工具)
+
+**背景**:无真实用户期需要反复跑"全新账号端到端走查",每次换邮箱注册会撞 F-02/F-03(auth 不级联、软删占唯一键、FK 拦截)。做 reset 而非 delete,可完全绕开 auth 层。
+
+**范围**:super admin 界面对指定用户一键重置业务数据。
+- auth 账号、User 行、租户归属、角色 一律保留(用户仍能用原邮箱密码登录)
+- 清除 user-scoped 表中该 userId 的全部记录(以 prisma/schema.prisma 为准复核实际表清单,不得照抄任何草稿清单;参考范围含 UserProgress/Mission/Achievement/BrandProfile/Lead/Note/Activity/Funnel/AIUsageLog/ScheduledMessage/DailyAction/TrainingProgress/Content/VoiceProfile/AnalyticsEvent/Customer/BrandInterview/PostPerformance/ContentCalendar/VideoProject 等约 22 张表)
+- 同时清 `User.metadata` 中 Brand DNA 相关键(`brand_dna`/`brand_profile`/`fieldProvenance`/`brand_dna_track_audience`)——漏清会导致重置后访谈仍显示已完成
+- 不清:`AuditLog`(审计完整性)、`Feedback`(dogfood findings)
+
+**硬性安全要求(缺一不予通过)**:
+1. 删除条件严格按 userId/ownerId;禁止出现任何仅以 tenantId 为条件的删除语句(同租户存在其他账号,按租户删会连坐)
+2. 二次确认需操作者输入目标账号完整 email 字符串,非布尔确认
+3. 全部删除包在单一事务内,任一步失败整体回滚
+4. 写 AuditLog:操作者/时间/目标 userId+email/逐表删除条数
+5. API 返回逐表删除条数收据并在 UI 呈现
+6. 仅 super admin 可见可调用,普通 admin 与用户面零入口
+
+**验收**:
+- 对测试账号执行 reset → 用原邮箱密码仍可登录 → 首页呈现全新用户状态 → 访谈可从头做(不显示已完成) → 内容库/漏斗/日历全空
+- 同租户另一账号数据零变化(多租户连坐防回归,必须有测试覆盖)
+- AuditLog 有本次记录且未被清除
+- 收据条数与实际删除一致
+
+**闸门**:进 `HUMAN_GATE_ITEMS`,PR 留 open 等 Fable 复审,不自动合并。排在端到端走查之前,是走查的前置工具。
 
 ---
 
