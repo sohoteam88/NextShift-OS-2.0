@@ -283,7 +283,7 @@ fi
 
 BLOCKED_ITEM_IDS=""
 if [[ -s "$BLOCKED_ITEMS_FILE" ]]; then
-  BLOCKED_ITEM_IDS="$(awk -F'\t' 'NF { print $1 }' "$BLOCKED_ITEMS_FILE" | sort -u | paste -sd ',')"
+  BLOCKED_ITEM_IDS="$(awk -F'\t' 'NF { print $1 }' "$BLOCKED_ITEMS_FILE" | sort -u | paste -sd ',' -)"
 fi
 
 # ============================================================================
