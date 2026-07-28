@@ -39,7 +39,7 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | O5 | F-14 硬闸门拆除 | O | W3 | 已完成(拆除下游生成前的 Brand-DNA-完整度 UI 硬闸:content-engine 的 BrandDNAGate 与 lead-magnet 的 ReadinessGate 早退拦截移除,生成面永远渲染并经既有 G0 网关走 O3 默认值填充+G4 硬过滤,不再 bounce 回 /brand-builder/step/profile;资料不全只降质不锁门——改以内联、非阻断、教练口吻质量提示("资料越全成品越像你",零品牌名/价格/体重/收入承诺)呈现;区分"资料不完整(永不锁门,显示教练提示)"与"资料加载失败(可点击重试,沿用 G5 模式)"两态,后者不再是须补完 Brand DNA 的死胡同;server generate 路由与 G0/G4/G5/O3/sharedAiRateLimitGuard 均无回归;ContentCommandCenter 补测(不完整档案渲染生成控件而非 BrandDNAGate、完整档案不回归、加载错误呈现重试)+ 新增 LeadMagnetDashboard co-located 测试证明不再硬锁;PR #166 / f4c9c0e) |
 | G3 | video-production 旧管线退役 | G | W3 | 已完成(旧 video-production 模块代码删除,功能并入 video/;PR #167 / fde5660) |
 | G6 | 内容库卫生(F-28 库污染) | G | W3 | 已完成(草稿去重防污染;PR #169 / 5c64867) |
-| M1 | 双轨隔离贯通验收(F-29 根治) | M | W3(贯穿,验收收尾) | 已完成(mode 作为一等字段贯穿 G1-G3 与漏斗文案,track 缺省安全默认 retail 与内容引擎既有惯例一致;PR #171 / 34779f2) |
+| M1 | 双轨隔离贯通验收(F-29 根治) | M | W4/T2(并入模板实例化) | 未完成——2026-07-27 Fable 改判撤回:PR #171 实际仅为 funnel-copy 路由 track 字段加 `.default('retail')` 一行,未实现 mode 贯穿漏斗文案全链路隔离;漏斗编辑器降级 admin 工具,缺口并入 W4/T2,验收标准见下方 M1 章节 2026-07-27 更新 |
 
 ---
 
@@ -112,6 +112,8 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 - 漏斗落地页文案纳入 brandDnaVersion 同源体系(批 2 延伸)
 - **F-33 根因补充(截图实证 @2a6fd20,2026-07-25)**:双层根因——①Brand DNA 目标字段用"零售侧——…;招募侧——…"两轨拼接存储在同一个字段里,读取时没有做 track-scoped 拆分,导致跨轨内容互相泄漏;②漏斗「AI 生成文案」路径没有接入 G0 的 mode 隔离与 G4 硬过滤,是一条绕开生成管线的独立路径。复现基准:DOGFOOD_DIARY F-33 截图场景,修复后须以同一场景逐条复验。
 - 验收: 零售页 grep 无"创业/副业/收入"词根;招募页 grep 无疗效词根;以 F-33 截图场景为复现基准逐条验证
+
+**2026-07-27 Fable 改判(撤回本项独立完成状态)**:产品形态修正案第五节定漏斗编辑器降为 admin 工具(用户面不再暴露),Fable 判定"修一条即将拆除的路径是浪费圈数"。PR #171 的真实范围重新核实为仅 1 行改动(`track` 字段加 `.default('retail')`,funnel-copy 路由),并未实现本节标题所称"mode 贯穿漏斗文案"的全链路隔离。本项状态改回未完成,原验收标准(零售页无创业/副业/收入词根、招募页无疗效词根、F-33 场景复验)不变但整体并入 W4/T2 模板实例化重做,一并解决:①`track` 必填,缺失即 400,禁止静默默认(现状 `AIFunnelCopyButton` 不发 `track`,招募漏斗会被静默当零售生成);②`Funnel` 表加 `track` 归属列(现状 schema 无此字段)。现有用户面自由生成的漏斗页按既有破坏性简化授权全部作废清库(不做兼容迁移、不做过期横幅),清库脚本另行执行,不在本次文档改动范围内。
 
 ---
 
