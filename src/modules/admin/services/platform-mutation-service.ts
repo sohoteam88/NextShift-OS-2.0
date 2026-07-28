@@ -221,7 +221,7 @@ export async function revokePlatformOverrideWithAudit(
   });
 }
 
-async function loadPlatformUserTarget(tx: Prisma.TransactionClient, actorId: string, userId: string) {
+export async function loadPlatformUserTarget(tx: Prisma.TransactionClient, actorId: string, userId: string) {
   const actor = await tx.user.findFirst({ where: { id: actorId, deletedAt: null }, select: { id: true, role: true } });
   if (!actor || actor.role !== 'platform_admin') throw new AppError('FORBIDDEN', 403, 'Platform administrator required');
   const target = await tx.user.findFirst({

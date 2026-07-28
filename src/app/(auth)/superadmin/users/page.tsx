@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { Clock, ShieldCheck, UserCheck, Users } from 'lucide-react';
 import { getAuthUser } from '@/modules/auth/services/auth-service';
 import { platformAdminService } from '@/modules/admin/services/platform-admin-service';
+import { UserDataResetControl } from '@/modules/admin/components/UserDataResetControl';
 
 const ROLE_LABEL: Record<string, string> = {
   platform_admin: '平台管理员',
@@ -104,7 +105,7 @@ export default async function SuperadminUsersPage() {
             <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
               <thead>
                 <tr className="text-xs font-medium text-[var(--color-text-muted)]">
-                  {['用户', '租户', '计划', '角色', '状态', '加入时间'].map((heading) => (
+                  {['用户', '租户', '计划', '角色', '状态', '加入时间', '操作'].map((heading) => (
                     <th key={heading} className="border-b border-[var(--color-border)] px-4 py-3">
                       {heading}
                     </th>
@@ -136,6 +137,9 @@ export default async function SuperadminUsersPage() {
                     </td>
                     <td className="whitespace-nowrap border-b border-[var(--color-border)] px-4 py-3 text-[var(--color-text-muted)]">
                       {formatDate(item.createdAt)}
+                    </td>
+                    <td className="border-b border-[var(--color-border)] px-4 py-3">
+                      {item.id === user.id ? <span className="text-xs text-[var(--color-text-muted)]">当前账号不可操作</span> : <UserDataResetControl userId={item.id} email={item.email} />}
                     </td>
                   </tr>
                 ))}
