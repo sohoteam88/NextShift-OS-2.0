@@ -39,6 +39,7 @@ function createDatabase(options: { failTable?: string } = {}) {
         brand_dna_field_provenance: { identity: 'user_confirmed' },
         brand_dna_track_audience: { retail: 'owners' },
         brand_dna_versions: [{ version: 2 }],
+        brand_builder_state: { current_step: 3, completed_steps: ['interview', 'accounts'] },
         onboarding_note: 'keep me',
       } }),
       update: vi.fn().mockResolvedValue({}),
@@ -95,8 +96,10 @@ describe('resetUserBusinessDataWithAudit', () => {
       where: { id: targetId },
       data: expect.objectContaining({ metadata: { onboarding_note: 'keep me' } }),
     }));
+    const metadataUpdate = fixture.tx.user.update.mock.calls[0]?.[0] as { data: { metadata: Record<string, unknown> } };
+    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_builder_state');
     expect(receipt.metadataKeysCleared).toEqual([
-      'brand_profile', 'brand_dna_field_provenance', 'brand_dna_track_audience', 'brand_dna_versions',
+      'brand_profile', 'brand_dna_field_provenance', 'brand_dna_track_audience', 'brand_dna_versions', 'brand_builder_state',
     ]);
     expect(audit.writePlatformAuditInTransaction).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       action: 'user.data.reset',

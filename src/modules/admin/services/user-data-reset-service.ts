@@ -22,7 +22,9 @@ function removeBrandDnaMetadata(metadata: Prisma.JsonValue): {
   const current = metadata && typeof metadata === 'object' && !Array.isArray(metadata)
     ? metadata as Record<string, unknown>
     : {};
-  const clearedKeys = Object.keys(current).filter((key) => key === 'brand_profile' || key.startsWith('brand_dna'));
+  const clearedKeys = Object.keys(current).filter(
+    (key) => key === 'brand_profile' || key === 'brand_builder_state' || key.startsWith('brand_dna'),
+  );
   const next = { ...current };
   for (const key of clearedKeys) delete next[key];
   return { metadata: next as Prisma.InputJsonValue, clearedKeys };
