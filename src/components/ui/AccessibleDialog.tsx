@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { X } from 'lucide-react';
 
 type Props = {
@@ -10,6 +10,7 @@ type Props = {
   children: ReactNode;
   onRequestClose: () => void;
   className?: string;
+  initialFocusRef?: RefObject<HTMLElement | null>;
 };
 
 const FOCUSABLE = [
@@ -18,7 +19,15 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export function AccessibleDialog({ open, title, description, children, onRequestClose, className = 'max-w-3xl' }: Props) {
+export function AccessibleDialog({
+  open,
+  title,
+  description,
+  children,
+  onRequestClose,
+  className = 'max-w-3xl',
+  initialFocusRef,
+}: Props) {
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -30,7 +39,7 @@ export function AccessibleDialog({ open, title, description, children, onRequest
     if (!open) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const dialog = dialogRef.current;
-    (dialog?.querySelector<HTMLElement>(FOCUSABLE) ?? dialog)?.focus();
+    (initialFocusRef?.current ?? dialog?.querySelector<HTMLElement>(FOCUSABLE) ?? dialog)?.focus();
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); close(); return; }
       if (event.key !== 'Tab' || !dialog) return;
@@ -41,7 +50,7 @@ export function AccessibleDialog({ open, title, description, children, onRequest
     };
     document.addEventListener('keydown', keydown);
     return () => { document.removeEventListener('keydown', keydown); previous?.focus(); };
-  }, [open, close]);
+  }, [open, close, initialFocusRef]);
 
   if (!open) return null;
   return (
