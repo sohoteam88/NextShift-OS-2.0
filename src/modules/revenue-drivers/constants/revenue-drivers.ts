@@ -158,6 +158,18 @@ export const REVENUE_DRIVERS: RevenueDriverDefinition[] = [
   },
 ];
 
+// Stopgap until W4/T1 gives these admin-only tools their permanent home.
+const SHOW_ADMIN_ONLY_DRIVERS_ON_USER_GROWTH_PAGE = false;
+const ADMIN_ONLY_REVENUE_DRIVER_IDS = new Set<RevenueDriverId>([
+  'webinar',
+  'leadMagnet',
+  'funnels',
+]);
+
+export const USER_GROWTH_REVENUE_DRIVERS = SHOW_ADMIN_ONLY_DRIVERS_ON_USER_GROWTH_PAGE
+  ? REVENUE_DRIVERS
+  : REVENUE_DRIVERS.filter((driver) => !ADMIN_ONLY_REVENUE_DRIVER_IDS.has(driver.id));
+
 const DRIVER_BY_ID = new Map(REVENUE_DRIVERS.map((driver) => [driver.id, driver]));
 
 const DRIVER_BY_ROUTE = new Map(
