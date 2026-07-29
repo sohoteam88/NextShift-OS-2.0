@@ -6,6 +6,13 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 type AuditContext = Record<string, unknown>;
 
+export class InvalidAuditTargetIdError extends Error {
+  constructor(targetId: string) {
+    super(`AuditLog.targetId must be a UUID: ${targetId}`);
+    this.name = 'InvalidAuditTargetIdError';
+  }
+}
+
 type AuditTargetInput = {
   targetId?: string | null;
   targetKey: string;
@@ -37,14 +44,14 @@ export function resolveAuditTarget(input: AuditTargetInput): ResolvedAuditTarget
   const suppliedTargetId = input.targetId ?? null;
 
   if (suppliedTargetId && !UUID_PATTERN.test(suppliedTargetId)) {
-    const error = new Error(`AuditLog.targetId must be a UUID: ${suppliedTargetId}`);
+    const error = new InvalidAuditTargetIdError(suppliedTargetId);
 
     if (process.env.NODE_ENV !== 'production') {
       throw error;
     }
 
     try {
-      Sentry.captureMessage('Invalid AuditLog.targetId was downgraded to metadata.target_key', {
+      Sentry.captureMessage('Invalid AuditLog.targetId was downgraded to metadata.invalid_target_id', {
         level: 'warning',
         extra: {
           subsystem: 'audit_log',
@@ -58,10 +65,11 @@ export function resolveAuditTarget(input: AuditTargetInput): ResolvedAuditTarget
 
     return {
       targetId: null,
-      targetKey: suppliedTargetId,
+      targetKey: input.targetKey,
       metadata: {
         ...(input.metadata ?? {}),
-        target_key: suppliedTargetId,
+        target_key: input.targetKey,
+        invalid_target_id: suppliedTargetId,
       } as Prisma.InputJsonObject,
     };
   }
@@ -170,6 +178,9 @@ export async function runAuditBestEffort(
   try {
     await writer();
   } catch (error) {
+    if (process.env.NODE_ENV !== 'production' && error instanceof InvalidAuditTargetIdError) {
+      throw error;
+    }
     reportAuditFailure(error, context);
   }
 }

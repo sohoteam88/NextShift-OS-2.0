@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import prisma from '@/lib/prisma';
 import {
+  InvalidAuditTargetIdError,
   resolveAuditTarget,
+  runAuditBestEffort,
   writeAuditIfMissing,
 } from './audit-log-writer';
 
@@ -41,24 +43,58 @@ describe('audit-log-writer target identity guard', () => {
     })).toThrow('AuditLog.targetId must be a UUID: outcome-first_lead');
   });
 
-  it('downgrades an invalid production targetId into metadata.target_key and reports it', () => {
+  it('preserves fail-fast through runAuditBestEffort outside production', async () => {
+    vi.stubEnv('NODE_ENV', 'test');
+
+    await expect(runAuditBestEffort(
+      { operation: 'test-invalid-target' },
+      () => writeAuditIfMissing({
+        tenantId: '00000000-0000-4000-8000-000000000001',
+        actorId: '00000000-0000-4000-8000-000000000002',
+        action: 'outcome.created',
+        targetType: 'business_outcome',
+        targetId: 'outcome-first_lead',
+        targetKey: 'outcome:first_lead',
+      }),
+    )).rejects.toBeInstanceOf(InvalidAuditTargetIdError);
+    expect(sentryMocks.captureException).not.toHaveBeenCalled();
+  });
+
+  it('keeps the caller target_key when an invalid production targetId is downgraded', async () => {
     vi.stubEnv('NODE_ENV', 'production');
 
-    expect(resolveAuditTarget({
+    await writeAuditIfMissing({
+      tenantId: '00000000-0000-4000-8000-000000000001',
+      actorId: '00000000-0000-4000-8000-000000000002',
+      action: 'workforce.plan.created',
+      targetType: 'workforce_plan',
       targetId: 'mission-plan-lead_magnet',
-      targetKey: 'unused-explicit-key',
+      targetKey: 'workforce-plan:lead_magnet',
       metadata: { missionType: 'LEAD_MAGNET' },
-      context: { action: 'workforce.plan.created' },
-    })).toEqual({
-      targetId: null,
-      targetKey: 'mission-plan-lead_magnet',
-      metadata: {
-        missionType: 'LEAD_MAGNET',
-        target_key: 'mission-plan-lead_magnet',
-      },
+    });
+
+    expect(prisma.auditLog.findFirst).toHaveBeenCalledWith({
+      where: expect.objectContaining({
+        targetId: null,
+        metadata: {
+          path: ['target_key'],
+          equals: 'workforce-plan:lead_magnet',
+        },
+      }),
+      select: { id: true },
+    });
+    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        targetId: null,
+        metadata: expect.objectContaining({
+          missionType: 'LEAD_MAGNET',
+          target_key: 'workforce-plan:lead_magnet',
+          invalid_target_id: 'mission-plan-lead_magnet',
+        }),
+      }),
     });
     expect(sentryMocks.captureMessage).toHaveBeenCalledWith(
-      'Invalid AuditLog.targetId was downgraded to metadata.target_key',
+      'Invalid AuditLog.targetId was downgraded to metadata.invalid_target_id',
       expect.objectContaining({
         level: 'warning',
         extra: expect.objectContaining({
