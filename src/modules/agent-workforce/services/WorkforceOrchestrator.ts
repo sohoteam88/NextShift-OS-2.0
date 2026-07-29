@@ -1,5 +1,4 @@
-import { Prisma } from '@prisma/client';
-import prisma from '@/lib/prisma';
+import { runAuditBestEffort, writeAuditIfMissing } from '@/lib/audit-log-writer';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { guardrailEngine } from '@/modules/autonomous-execution/services/guardrail-engine';
 import type { MissionPlan, MissionType } from '@/modules/mission-engine/contracts/MissionAuthority';
@@ -308,36 +307,20 @@ export function createWorkforcePlan(input: {
   };
 }
 
-async function writeAuditIfMissing(input: {
+async function writeWorkforceAuditIfMissing(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   metadata: Record<string, unknown>;
 }) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'agent_workforce',
-      targetId: input.targetId,
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'agent_workforce',
-      targetId: input.targetId,
-      metadata: {
-        ...input.metadata,
-        timestamp: new Date().toISOString(),
-      } as Prisma.InputJsonValue,
-    },
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'agent_workforce',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: input.metadata,
   });
 }
 
@@ -345,40 +328,47 @@ export async function ensureWorkforcePlanAudit(input: {
   user: AuthUser;
   workforcePlan: WorkforcePlan;
 }) {
-  await writeAuditIfMissing({
-    user: input.user,
-    action: WORKFORCE_AUDIT_ACTIONS.planCreated,
-    targetId: input.workforcePlan.missionId,
-    metadata: {
-      missionId: input.workforcePlan.missionId,
-      missionType: input.workforcePlan.missionType,
-      mode: input.workforcePlan.mode,
-      agents: input.workforcePlan.agents.map((assignment) => ({
-        assignmentId: assignment.assignmentId,
-        agentId: assignment.agentId,
-        task: assignment.task,
-        dependsOn: assignment.dependsOn,
-        executionLevel: assignment.executionLevel,
-        status: assignment.status,
-      })),
-      dependencyGraph: input.workforcePlan.dependencyGraph,
-      verificationBoundary: input.workforcePlan.verificationBoundary,
-    },
-  });
-
-  await Promise.all(input.workforcePlan.agents
-    .filter((assignment) => assignment.handoffFrom.length > 0 && assignment.status === 'READY')
-    .map((assignment) => writeAuditIfMissing({
+  await runAuditBestEffort({
+    operation: 'ensureWorkforcePlanAudit',
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    missionId: input.workforcePlan.missionId,
+  }, async () => {
+    await writeWorkforceAuditIfMissing({
       user: input.user,
-      action: WORKFORCE_AUDIT_ACTIONS.assetHandoffCompleted,
-      targetId: `${input.workforcePlan.missionId}:${assignment.assignmentId}`,
+      action: WORKFORCE_AUDIT_ACTIONS.planCreated,
+      targetKey: input.workforcePlan.missionId,
       metadata: {
         missionId: input.workforcePlan.missionId,
-        assignmentId: assignment.assignmentId,
-        handoffFrom: assignment.handoffFrom,
-        handoffTo: assignment.assignmentId,
+        missionType: input.workforcePlan.missionType,
+        mode: input.workforcePlan.mode,
+        agents: input.workforcePlan.agents.map((assignment) => ({
+          assignmentId: assignment.assignmentId,
+          agentId: assignment.agentId,
+          task: assignment.task,
+          dependsOn: assignment.dependsOn,
+          executionLevel: assignment.executionLevel,
+          status: assignment.status,
+        })),
+        dependencyGraph: input.workforcePlan.dependencyGraph,
+        verificationBoundary: input.workforcePlan.verificationBoundary,
       },
-    })));
+    });
+
+    await Promise.all(input.workforcePlan.agents
+      .filter((assignment) => assignment.handoffFrom.length > 0 && assignment.status === 'READY')
+      .map((assignment) => writeWorkforceAuditIfMissing({
+        user: input.user,
+        action: WORKFORCE_AUDIT_ACTIONS.assetHandoffCompleted,
+        targetKey: `${input.workforcePlan.missionId}:${assignment.assignmentId}`,
+        metadata: {
+          missionId: input.workforcePlan.missionId,
+          assignmentId: assignment.assignmentId,
+          handoffFrom: assignment.handoffFrom,
+          handoffTo: assignment.assignmentId,
+        },
+      })));
+  });
 }
 
 export const workforceOrchestrator = {

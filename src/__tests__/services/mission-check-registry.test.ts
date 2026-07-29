@@ -180,7 +180,9 @@ describe('HOTFIX-010 Mission Check Registry', () => {
       data: expect.objectContaining({
         action: 'completion_check.rejected',
         targetType: 'mission_workspace_check',
+        targetId: null,
         metadata: expect.objectContaining({
+          target_key: 'mission-plan-lead_magnet',
           missionId: 'mission-plan-lead_magnet',
           missionType: 'LEAD_MAGNET',
           checkKey: 'positioning_completed',

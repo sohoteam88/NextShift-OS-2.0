@@ -1,5 +1,4 @@
-import { Prisma } from '@prisma/client';
-import prisma from '@/lib/prisma';
+import { runAuditBestEffort, writeAuditIfMissing } from '@/lib/audit-log-writer';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { MissionPlan, MissionType } from '../contracts/MissionAuthority';
 import type { BottleneckSignals } from './BottleneckEngine';
@@ -303,36 +302,20 @@ export function createOutcomePlan(input: {
   };
 }
 
-async function writeAuditIfMissing(input: {
+async function writeOutcomeAuditIfMissing(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   metadata: Record<string, unknown>;
 }) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'business_outcome',
-      targetId: input.targetId,
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'business_outcome',
-      targetId: input.targetId,
-      metadata: {
-        ...input.metadata,
-        timestamp: new Date().toISOString(),
-      } as Prisma.InputJsonValue,
-    },
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'business_outcome',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: input.metadata,
   });
 }
 
@@ -340,48 +323,55 @@ export async function ensureOutcomeAudit(input: {
   user: AuthUser;
   outcome: BusinessOutcome;
 }) {
-  const baseMetadata = {
+  await runAuditBestEffort({
+    operation: 'ensureOutcomeAudit',
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
     outcomeId: input.outcome.id,
-    templateId: input.outcome.templateId,
-    status: input.outcome.status,
-    completionPercentage: input.outcome.completionPercentage,
-    missionIds: input.outcome.missions.map((mission) => mission.missionId),
-    requiredSignal: input.outcome.requiredSignal,
-    verificationBoundary: input.outcome.verificationBoundary,
-  };
+  }, async () => {
+    const baseMetadata = {
+      outcomeId: input.outcome.id,
+      templateId: input.outcome.templateId,
+      status: input.outcome.status,
+      completionPercentage: input.outcome.completionPercentage,
+      missionIds: input.outcome.missions.map((mission) => mission.missionId),
+      requiredSignal: input.outcome.requiredSignal,
+      verificationBoundary: input.outcome.verificationBoundary,
+    };
 
-  await writeAuditIfMissing({
-    user: input.user,
-    action: OUTCOME_AUDIT_ACTIONS.created,
-    targetId: input.outcome.id,
-    metadata: baseMetadata,
+    await writeOutcomeAuditIfMissing({
+      user: input.user,
+      action: OUTCOME_AUDIT_ACTIONS.created,
+      targetKey: input.outcome.id,
+      metadata: baseMetadata,
+    });
+
+    const lifecycleAction = input.outcome.status === 'COMPLETED'
+      ? OUTCOME_AUDIT_ACTIONS.completed
+      : input.outcome.status === 'BLOCKED'
+        ? OUTCOME_AUDIT_ACTIONS.blocked
+        : input.outcome.status === 'ACTIVE'
+          ? OUTCOME_AUDIT_ACTIONS.started
+          : null;
+
+    if (lifecycleAction) {
+      await writeOutcomeAuditIfMissing({
+        user: input.user,
+        action: lifecycleAction,
+        targetKey: `${input.outcome.id}:${input.outcome.status}`,
+        metadata: baseMetadata,
+      });
+    }
+
+    if (input.outcome.completionPercentage > 0 && input.outcome.status !== 'COMPLETED') {
+      await writeOutcomeAuditIfMissing({
+        user: input.user,
+        action: OUTCOME_AUDIT_ACTIONS.progressed,
+        targetKey: `${input.outcome.id}:${input.outcome.completionPercentage}`,
+        metadata: baseMetadata,
+      });
+    }
   });
-
-  const lifecycleAction = input.outcome.status === 'COMPLETED'
-    ? OUTCOME_AUDIT_ACTIONS.completed
-    : input.outcome.status === 'BLOCKED'
-      ? OUTCOME_AUDIT_ACTIONS.blocked
-      : input.outcome.status === 'ACTIVE'
-        ? OUTCOME_AUDIT_ACTIONS.started
-        : null;
-
-  if (lifecycleAction) {
-    await writeAuditIfMissing({
-      user: input.user,
-      action: lifecycleAction,
-      targetId: `${input.outcome.id}:${input.outcome.status}`,
-      metadata: baseMetadata,
-    });
-  }
-
-  if (input.outcome.completionPercentage > 0 && input.outcome.status !== 'COMPLETED') {
-    await writeAuditIfMissing({
-      user: input.user,
-      action: OUTCOME_AUDIT_ACTIONS.progressed,
-      targetId: `${input.outcome.id}:${input.outcome.completionPercentage}`,
-      metadata: baseMetadata,
-    });
-  }
 }
 
 export const outcomeOrchestrator = {

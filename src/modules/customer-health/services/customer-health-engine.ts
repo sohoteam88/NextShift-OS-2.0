@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { runAuditBestEffort, writeAuditIfMissing } from '@/lib/audit-log-writer';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { activationEngine } from '@/modules/activation/services/activation-engine';
 import { userSuccessEngine } from '@/modules/user-success/services/user-success-engine';
@@ -78,42 +78,28 @@ export async function getCustomerHealthProjection(userId: string, tenantId?: str
 async function writeHealthAuditIfMissing(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   projection: CustomerHealthProjection;
 }) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'customer_health',
-      targetId: input.targetId,
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'customer_health',
-      targetId: input.targetId,
-      metadata: {
-        healthLevel: input.projection.customerHealth.healthLevel,
-        healthScore: input.projection.customerHealth.healthScore,
-        interventionRequired: input.projection.customerHealth.interventionRequired,
-        trend: input.projection.healthTrend.direction,
-        recommendedAction: input.projection.recommendedAction.action,
-        riskFactors: input.projection.customerHealth.riskFactors.map((risk) => risk.type),
-        healthDrivers: input.projection.customerHealth.healthDrivers.map((driver) => driver.type),
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKeys: input.projection.localization.messageKeys,
-        timestamp: new Date().toISOString(),
-      } as Prisma.InputJsonValue,
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'customer_health',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: {
+      healthLevel: input.projection.customerHealth.healthLevel,
+      healthScore: input.projection.customerHealth.healthScore,
+      interventionRequired: input.projection.customerHealth.interventionRequired,
+      trend: input.projection.healthTrend.direction,
+      recommendedAction: input.projection.recommendedAction.action,
+      riskFactors: input.projection.customerHealth.riskFactors.map((risk) => risk.type),
+      healthDrivers: input.projection.customerHealth.healthDrivers.map((driver) => driver.type),
+      locale: input.projection.localization.locale,
+      translationSource: input.projection.localization.translationSource,
+      fallbackUsed: input.projection.localization.fallbackUsed,
+      messageKeys: input.projection.localization.messageKeys,
     },
   });
 }
@@ -122,48 +108,54 @@ export async function ensureCustomerHealthAudit(input: {
   user: AuthUser;
   projection: CustomerHealthProjection;
 }) {
-  await writeHealthAuditIfMissing({
-    user: input.user,
-    action: CUSTOMER_HEALTH_AUDIT_ACTIONS.levelChanged,
-    targetId: `${input.projection.customerHealth.healthLevel}:${input.projection.customerHealth.healthScore}`,
-    projection: input.projection,
+  await runAuditBestEffort({
+    operation: 'ensureCustomerHealthAudit',
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+  }, async () => {
+    await writeHealthAuditIfMissing({
+      user: input.user,
+      action: CUSTOMER_HEALTH_AUDIT_ACTIONS.levelChanged,
+      targetKey: `${input.projection.customerHealth.healthLevel}:${input.projection.customerHealth.healthScore}`,
+      projection: input.projection,
+    });
+
+    if (input.projection.customerHealth.riskFactors.length > 0) {
+      await writeHealthAuditIfMissing({
+        user: input.user,
+        action: CUSTOMER_HEALTH_AUDIT_ACTIONS.riskDetected,
+        targetKey: input.projection.customerHealth.riskFactors[0].type,
+        projection: input.projection,
+      });
+    }
+
+    if (input.projection.customerHealth.interventionRequired) {
+      await writeHealthAuditIfMissing({
+        user: input.user,
+        action: CUSTOMER_HEALTH_AUDIT_ACTIONS.interventionGenerated,
+        targetKey: input.projection.recommendedAction.action,
+        projection: input.projection,
+      });
+    }
+
+    if (input.projection.customerHealth.healthLevel === 'STABLE' && input.projection.healthTrend.direction === 'UP') {
+      await writeHealthAuditIfMissing({
+        user: input.user,
+        action: CUSTOMER_HEALTH_AUDIT_ACTIONS.recovered,
+        targetKey: 'stable_up',
+        projection: input.projection,
+      });
+    }
+
+    if (input.projection.customerHealth.healthLevel === 'THRIVING') {
+      await writeHealthAuditIfMissing({
+        user: input.user,
+        action: CUSTOMER_HEALTH_AUDIT_ACTIONS.thriving,
+        targetKey: 'thriving',
+        projection: input.projection,
+      });
+    }
   });
-
-  if (input.projection.customerHealth.riskFactors.length > 0) {
-    await writeHealthAuditIfMissing({
-      user: input.user,
-      action: CUSTOMER_HEALTH_AUDIT_ACTIONS.riskDetected,
-      targetId: input.projection.customerHealth.riskFactors[0].type,
-      projection: input.projection,
-    });
-  }
-
-  if (input.projection.customerHealth.interventionRequired) {
-    await writeHealthAuditIfMissing({
-      user: input.user,
-      action: CUSTOMER_HEALTH_AUDIT_ACTIONS.interventionGenerated,
-      targetId: input.projection.recommendedAction.action,
-      projection: input.projection,
-    });
-  }
-
-  if (input.projection.customerHealth.healthLevel === 'STABLE' && input.projection.healthTrend.direction === 'UP') {
-    await writeHealthAuditIfMissing({
-      user: input.user,
-      action: CUSTOMER_HEALTH_AUDIT_ACTIONS.recovered,
-      targetId: 'stable_up',
-      projection: input.projection,
-    });
-  }
-
-  if (input.projection.customerHealth.healthLevel === 'THRIVING') {
-    await writeHealthAuditIfMissing({
-      user: input.user,
-      action: CUSTOMER_HEALTH_AUDIT_ACTIONS.thriving,
-      targetId: 'thriving',
-      projection: input.projection,
-    });
-  }
 }
 
 export const customerHealthEngine = {

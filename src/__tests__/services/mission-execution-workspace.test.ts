@@ -6,6 +6,13 @@ import { missionEngineAuthorityService } from '@/modules/mission-engine/services
 import { missionService } from '@/modules/mission/services/mission-service';
 import { getMissionExecutionWorkspace } from '@/modules/mission-workspace/services/MissionExecutionWorkspaceService';
 
+const sentryMocks = vi.hoisted(() => ({
+  captureException: vi.fn(),
+  captureMessage: vi.fn(),
+}));
+
+vi.mock('@sentry/nextjs', () => sentryMocks);
+
 vi.mock('@/modules/mission-engine/services/MissionEngineAuthorityService', () => ({
   missionEngineAuthorityService: {
     getCurrentMission: vi.fn(),
@@ -165,6 +172,7 @@ const authority: MissionAuthoritySnapshot = {
 
 describe('EXEC-001 Mission Execution Workspace', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(missionEngineAuthorityService.getCurrentMission).mockResolvedValue(authority);
     vi.mocked(prisma.auditLog.findMany).mockResolvedValue([]);
     vi.mocked(prisma.auditLog.findFirst).mockResolvedValue({ id: 'existing-workforce-plan-audit' } as never);
@@ -301,5 +309,29 @@ describe('EXEC-001 Mission Execution Workspace', () => {
 
   it('rejects stale workspace ids', async () => {
     await expect(getMissionExecutionWorkspace(user, 'mission-plan-content')).rejects.toThrow('MISSION_WORKSPACE_NOT_FOUND');
+  });
+
+  it('returns the workspace and reports the error when an audit write fails', async () => {
+    vi.mocked(prisma.auditLog.findFirst)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValue({ id: 'existing-workforce-plan-audit' } as never);
+    vi.mocked(prisma.auditLog.create).mockRejectedValueOnce(new Error('Audit storage unavailable'));
+
+    await expect(getMissionExecutionWorkspace(user, 'mission-plan-lead_magnet')).resolves.toMatchObject({
+      missionId: 'mission-plan-lead_magnet',
+      businessOutcome: {
+        id: 'outcome-first_lead',
+      },
+    });
+    expect(sentryMocks.captureException).toHaveBeenCalledTimes(1);
+    expect(sentryMocks.captureException).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'Audit storage unavailable' }),
+      expect.objectContaining({
+        extra: expect.objectContaining({
+          operation: 'ensureOutcomeAudit',
+          outcomeId: 'outcome-first_lead',
+        }),
+      }),
+    );
   });
 });

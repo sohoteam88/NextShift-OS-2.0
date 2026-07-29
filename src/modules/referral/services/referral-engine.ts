@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { runAuditBestEffort, writeAuditIfMissing } from '@/lib/audit-log-writer';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { getInterviewAuthorityProjection } from '@/modules/interview-authority/services/interview-authority-service';
 import { expansionEngine } from '@/modules/expansion/services/expansion-engine';
@@ -144,41 +144,27 @@ export async function getReferralProjection(userId: string, tenantId?: string): 
 async function writeReferralAuditIfMissing(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   projection: ReferralProjection;
 }) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'referral',
-      targetId: input.targetId,
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'referral',
-      targetId: input.targetId,
-      metadata: {
-        referralLevel: input.projection.referralState.referralLevel,
-        referralReady: input.projection.referralState.referralReady,
-        referralCount: input.projection.referralState.referralCount,
-        successfulReferrals: input.projection.referralState.successfulReferrals,
-        pendingReferrals: input.projection.referralState.pendingReferrals,
-        opportunity: input.projection.referralState.nextReferralOpportunity,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKeys: input.projection.localization.messageKeys,
-        timestamp: new Date().toISOString(),
-      } as Prisma.InputJsonValue,
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'referral',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: {
+      referralLevel: input.projection.referralState.referralLevel,
+      referralReady: input.projection.referralState.referralReady,
+      referralCount: input.projection.referralState.referralCount,
+      successfulReferrals: input.projection.referralState.successfulReferrals,
+      pendingReferrals: input.projection.referralState.pendingReferrals,
+      opportunity: input.projection.referralState.nextReferralOpportunity,
+      locale: input.projection.localization.locale,
+      translationSource: input.projection.localization.translationSource,
+      fallbackUsed: input.projection.localization.fallbackUsed,
+      messageKeys: input.projection.localization.messageKeys,
     },
   });
 }
@@ -187,47 +173,53 @@ export async function ensureReferralAudit(input: {
   user: AuthUser;
   projection: ReferralProjection;
 }) {
-  if (input.projection.referralState.referralReady) {
+  await runAuditBestEffort({
+    operation: 'ensureReferralAudit',
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+  }, async () => {
+    if (input.projection.referralState.referralReady) {
+      await writeReferralAuditIfMissing({
+        user: input.user,
+        action: REFERRAL_AUDIT_ACTIONS.ready,
+        targetKey: `${input.projection.referralState.referralLevel}:ready`,
+        projection: input.projection,
+      });
+    }
+
+    if (input.projection.referralState.referralCount > 0) {
+      await writeReferralAuditIfMissing({
+        user: input.user,
+        action: REFERRAL_AUDIT_ACTIONS.invited,
+        targetKey: `${input.projection.referralState.referralCount}:invites`,
+        projection: input.projection,
+      });
+    }
+
+    if (input.projection.signals.activatedReferrals > 0) {
+      await writeReferralAuditIfMissing({
+        user: input.user,
+        action: REFERRAL_AUDIT_ACTIONS.activated,
+        targetKey: `${input.projection.signals.activatedReferrals}:activated`,
+        projection: input.projection,
+      });
+    }
+
+    if (input.projection.referralState.successfulReferrals > 0) {
+      await writeReferralAuditIfMissing({
+        user: input.user,
+        action: REFERRAL_AUDIT_ACTIONS.successful,
+        targetKey: `${input.projection.referralState.successfulReferrals}:successful`,
+        projection: input.projection,
+      });
+    }
+
     await writeReferralAuditIfMissing({
       user: input.user,
-      action: REFERRAL_AUDIT_ACTIONS.ready,
-      targetId: `${input.projection.referralState.referralLevel}:ready`,
+      action: REFERRAL_AUDIT_ACTIONS.levelChanged,
+      targetKey: `${input.projection.referralState.referralLevel}:level`,
       projection: input.projection,
     });
-  }
-
-  if (input.projection.referralState.referralCount > 0) {
-    await writeReferralAuditIfMissing({
-      user: input.user,
-      action: REFERRAL_AUDIT_ACTIONS.invited,
-      targetId: `${input.projection.referralState.referralCount}:invites`,
-      projection: input.projection,
-    });
-  }
-
-  if (input.projection.signals.activatedReferrals > 0) {
-    await writeReferralAuditIfMissing({
-      user: input.user,
-      action: REFERRAL_AUDIT_ACTIONS.activated,
-      targetId: `${input.projection.signals.activatedReferrals}:activated`,
-      projection: input.projection,
-    });
-  }
-
-  if (input.projection.referralState.successfulReferrals > 0) {
-    await writeReferralAuditIfMissing({
-      user: input.user,
-      action: REFERRAL_AUDIT_ACTIONS.successful,
-      targetId: `${input.projection.referralState.successfulReferrals}:successful`,
-      projection: input.projection,
-    });
-  }
-
-  await writeReferralAuditIfMissing({
-    user: input.user,
-    action: REFERRAL_AUDIT_ACTIONS.levelChanged,
-    targetId: `${input.projection.referralState.referralLevel}:level`,
-    projection: input.projection,
   });
 }
 

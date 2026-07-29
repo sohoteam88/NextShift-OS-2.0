@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { runAuditBestEffort, writeAuditIfMissing } from '@/lib/audit-log-writer';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { missionEngineAuthorityService } from '@/modules/mission-engine/services/MissionEngineAuthorityService';
 import { outcomeOrchestrator } from '@/modules/mission-engine/services/OutcomeOrchestrator';
@@ -22,40 +22,26 @@ function daysBetween(start: Date, end: Date) {
 async function writeSuccessAuditIfMissing(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   projection: UserSuccessProjection;
 }) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'user_success',
-      targetId: input.targetId,
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'user_success',
-      targetId: input.targetId,
-      metadata: {
-        outcome: input.projection.successState.currentOutcome,
-        successLevel: input.projection.successState.successLevel,
-        progress: input.projection.successState.progressPercentage,
-        successful: input.projection.successState.successful,
-        blockedReason: input.projection.successState.blockedReason,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKeys: input.projection.localization.messageKeys,
-        timestamp: new Date().toISOString(),
-      } as Prisma.InputJsonValue,
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'user_success',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: {
+      outcome: input.projection.successState.currentOutcome,
+      successLevel: input.projection.successState.successLevel,
+      progress: input.projection.successState.progressPercentage,
+      successful: input.projection.successState.successful,
+      blockedReason: input.projection.successState.blockedReason,
+      locale: input.projection.localization.locale,
+      translationSource: input.projection.localization.translationSource,
+      fallbackUsed: input.projection.localization.fallbackUsed,
+      messageKeys: input.projection.localization.messageKeys,
     },
   });
 }
@@ -108,42 +94,48 @@ export async function ensureUserSuccessAudit(input: {
   user: AuthUser;
   projection: UserSuccessProjection;
 }) {
-  if (input.projection.successState.successful) {
-    await writeSuccessAuditIfMissing({
-      user: input.user,
-      action: USER_SUCCESS_AUDIT_ACTIONS.completed,
-      targetId: `${input.projection.successState.currentOutcome}:completed`,
-      projection: input.projection,
-    });
-    return;
-  }
+  await runAuditBestEffort({
+    operation: 'ensureUserSuccessAudit',
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+  }, async () => {
+    if (input.projection.successState.successful) {
+      await writeSuccessAuditIfMissing({
+        user: input.user,
+        action: USER_SUCCESS_AUDIT_ACTIONS.completed,
+        targetKey: `${input.projection.successState.currentOutcome}:completed`,
+        projection: input.projection,
+      });
+      return;
+    }
 
-  if (input.projection.successState.successLevel === 'BLOCKED') {
-    await writeSuccessAuditIfMissing({
-      user: input.user,
-      action: USER_SUCCESS_AUDIT_ACTIONS.blocked,
-      targetId: `${input.projection.successState.currentOutcome}:${input.projection.successState.blockedReason ?? 'blocked'}`,
-      projection: input.projection,
-    });
-  }
+    if (input.projection.successState.successLevel === 'BLOCKED') {
+      await writeSuccessAuditIfMissing({
+        user: input.user,
+        action: USER_SUCCESS_AUDIT_ACTIONS.blocked,
+        targetKey: `${input.projection.successState.currentOutcome}:${input.projection.successState.blockedReason ?? 'blocked'}`,
+        projection: input.projection,
+      });
+    }
 
-  if (input.projection.recoveryActions.length > 0) {
-    await writeSuccessAuditIfMissing({
-      user: input.user,
-      action: USER_SUCCESS_AUDIT_ACTIONS.recovered,
-      targetId: `${input.projection.successState.currentOutcome}:recovery`,
-      projection: input.projection,
-    });
-  }
+    if (input.projection.recoveryActions.length > 0) {
+      await writeSuccessAuditIfMissing({
+        user: input.user,
+        action: USER_SUCCESS_AUDIT_ACTIONS.recovered,
+        targetKey: `${input.projection.successState.currentOutcome}:recovery`,
+        projection: input.projection,
+      });
+    }
 
-  if (input.projection.successState.progressPercentage > 0) {
-    await writeSuccessAuditIfMissing({
-      user: input.user,
-      action: USER_SUCCESS_AUDIT_ACTIONS.progressed,
-      targetId: `${input.projection.successState.currentOutcome}:${input.projection.successState.progressPercentage}`,
-      projection: input.projection,
-    });
-  }
+    if (input.projection.successState.progressPercentage > 0) {
+      await writeSuccessAuditIfMissing({
+        user: input.user,
+        action: USER_SUCCESS_AUDIT_ACTIONS.progressed,
+        targetKey: `${input.projection.successState.currentOutcome}:${input.projection.successState.progressPercentage}`,
+        projection: input.projection,
+      });
+    }
+  });
 }
 
 export const userSuccessEngine = {

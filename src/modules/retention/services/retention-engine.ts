@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { runAuditBestEffort, writeAuditIfMissing } from '@/lib/audit-log-writer';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { MomentumWin, RetentionProjection } from '../contracts/RetentionProjection';
 import { buildRetentionProjection } from './retention-projection';
@@ -331,40 +331,26 @@ export async function getRetentionProjection(userId: string, tenantId?: string):
 async function writeRetentionAuditIfMissing(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   projection: RetentionProjection;
 }) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'retention',
-      targetId: input.targetId,
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'retention',
-      targetId: input.targetId,
-      metadata: {
-        retentionLevel: input.projection.outcomeRetention.retentionLevel,
-        outcomeCount: input.projection.momentum.outcomesCompleted,
-        progressPercentage: input.projection.outcomeRetention.progressPercentage,
-        nextOutcome: input.projection.outcomeRetention.nextOutcome,
-        retained: input.projection.outcomeRetention.retained,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKeys: input.projection.localization.messageKeys,
-        timestamp: new Date().toISOString(),
-      } as Prisma.InputJsonValue,
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'retention',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: {
+      retentionLevel: input.projection.outcomeRetention.retentionLevel,
+      outcomeCount: input.projection.momentum.outcomesCompleted,
+      progressPercentage: input.projection.outcomeRetention.progressPercentage,
+      nextOutcome: input.projection.outcomeRetention.nextOutcome,
+      retained: input.projection.outcomeRetention.retained,
+      locale: input.projection.localization.locale,
+      translationSource: input.projection.localization.translationSource,
+      fallbackUsed: input.projection.localization.fallbackUsed,
+      messageKeys: input.projection.localization.messageKeys,
     },
   });
 }
@@ -373,50 +359,56 @@ export async function ensureRetentionAudit(input: {
   user: AuthUser;
   projection: RetentionProjection;
 }) {
-  if (input.projection.outcomeRetention.retentionLevel === 'EXPANDING') {
-    await writeRetentionAuditIfMissing({
-      user: input.user,
-      action: RETENTION_AUDIT_ACTIONS.expanding,
-      targetId: `${input.projection.outcomeRetention.nextOutcome}:expanding`,
-      projection: input.projection,
-    });
-  }
+  await runAuditBestEffort({
+    operation: 'ensureRetentionAudit',
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+  }, async () => {
+    if (input.projection.outcomeRetention.retentionLevel === 'EXPANDING') {
+      await writeRetentionAuditIfMissing({
+        user: input.user,
+        action: RETENTION_AUDIT_ACTIONS.expanding,
+        targetKey: `${input.projection.outcomeRetention.nextOutcome}:expanding`,
+        projection: input.projection,
+      });
+    }
 
-  if (input.projection.outcomeRetention.retentionLevel === 'AT_RISK') {
-    await writeRetentionAuditIfMissing({
-      user: input.user,
-      action: RETENTION_AUDIT_ACTIONS.atRisk,
-      targetId: `${input.projection.outcomeRetention.nextOutcome}:at_risk`,
-      projection: input.projection,
-    });
-  }
+    if (input.projection.outcomeRetention.retentionLevel === 'AT_RISK') {
+      await writeRetentionAuditIfMissing({
+        user: input.user,
+        action: RETENTION_AUDIT_ACTIONS.atRisk,
+        targetKey: `${input.projection.outcomeRetention.nextOutcome}:at_risk`,
+        projection: input.projection,
+      });
+    }
 
-  if (input.projection.outcomeRetention.retentionLevel === 'STALLED') {
-    await writeRetentionAuditIfMissing({
-      user: input.user,
-      action: RETENTION_AUDIT_ACTIONS.stalled,
-      targetId: `${input.projection.outcomeRetention.nextOutcome}:stalled`,
-      projection: input.projection,
-    });
-  }
+    if (input.projection.outcomeRetention.retentionLevel === 'STALLED') {
+      await writeRetentionAuditIfMissing({
+        user: input.user,
+        action: RETENTION_AUDIT_ACTIONS.stalled,
+        targetKey: `${input.projection.outcomeRetention.nextOutcome}:stalled`,
+        projection: input.projection,
+      });
+    }
 
-  if (input.projection.retentionRecovery.needed) {
-    await writeRetentionAuditIfMissing({
-      user: input.user,
-      action: RETENTION_AUDIT_ACTIONS.recovered,
-      targetId: `${input.projection.outcomeRetention.nextOutcome}:recovery`,
-      projection: input.projection,
-    });
-  }
+    if (input.projection.retentionRecovery.needed) {
+      await writeRetentionAuditIfMissing({
+        user: input.user,
+        action: RETENTION_AUDIT_ACTIONS.recovered,
+        targetKey: `${input.projection.outcomeRetention.nextOutcome}:recovery`,
+        projection: input.projection,
+      });
+    }
 
-  if (input.projection.outcomeRetention.progressPercentage > 0) {
-    await writeRetentionAuditIfMissing({
-      user: input.user,
-      action: RETENTION_AUDIT_ACTIONS.progressed,
-      targetId: `${input.projection.outcomeRetention.nextOutcome}:${input.projection.outcomeRetention.progressPercentage}`,
-      projection: input.projection,
-    });
-  }
+    if (input.projection.outcomeRetention.progressPercentage > 0) {
+      await writeRetentionAuditIfMissing({
+        user: input.user,
+        action: RETENTION_AUDIT_ACTIONS.progressed,
+        targetKey: `${input.projection.outcomeRetention.nextOutcome}:${input.projection.outcomeRetention.progressPercentage}`,
+        projection: input.projection,
+      });
+    }
+  });
 }
 
 export const retentionEngine = {
