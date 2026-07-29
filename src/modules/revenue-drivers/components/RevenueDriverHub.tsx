@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
-  REVENUE_DRIVERS,
+  USER_GROWTH_REVENUE_DRIVERS,
   revenueDriverHubRoute,
   type RevenueDriverDefinition,
   type RevenueDriverId,
@@ -42,7 +42,7 @@ function visibleActions(driver: RevenueDriverDefinition, limit: number) {
 
 export function RevenueDriverDashboardSection() {
   const t = useTranslations('revenueDrivers');
-  const featured = REVENUE_DRIVERS[0];
+  const featured = USER_GROWTH_REVENUE_DRIVERS[0];
 
   return (
     <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm">
@@ -68,7 +68,7 @@ export function RevenueDriverDashboardSection() {
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {REVENUE_DRIVERS.map((driver) => (
+        {USER_GROWTH_REVENUE_DRIVERS.map((driver) => (
           <Link
             key={driver.id}
             href={revenueDriverHubRoute(driver.id)}
@@ -99,7 +99,7 @@ export function RevenueDriverHub() {
   const t = useTranslations('revenueDrivers');
   const searchParams = useSearchParams();
   const focused = searchParams.get('driver') as RevenueDriverId | null;
-  const featured = REVENUE_DRIVERS[0];
+  const featured = USER_GROWTH_REVENUE_DRIVERS[0];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-8">
@@ -127,7 +127,7 @@ export function RevenueDriverHub() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {REVENUE_DRIVERS.map((driver) => {
+        {USER_GROWTH_REVENUE_DRIVERS.map((driver) => {
           const isFocused = focused === driver.id;
           const actions = visibleActions(driver, driver.id === 'webinar' || driver.id === 'video' ? 6 : 4);
 
