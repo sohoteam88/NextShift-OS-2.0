@@ -134,14 +134,70 @@ export function getSelectedOption(topic: FunnelTopic, topicState?: FunnelTopicSt
   return topic.options.find((option) => option.id === topicState?.optionId);
 }
 
+export type EntryPathChangeImpact = {
+  changesPath: boolean;
+  invalidatedTopicCount: number;
+};
+
+function hasAnswer(topic?: FunnelTopicState): boolean {
+  return Boolean(
+    topic?.optionId
+    || topic?.facts.length
+    || topic?.factsSkipped
+    || topic?.confirmation
+    || topic?.confirmed,
+  );
+}
+
+export function getEntryPathChangeImpact(
+  state: ForkedInterviewState,
+  optionId: string,
+): EntryPathChangeImpact {
+  if (state.currentTopicId !== 'entry_path' || !state.entryPath) {
+    return { changesPath: false, invalidatedTopicCount: 0 };
+  }
+  const changesPath = entryPathForOption(optionId) !== state.entryPath;
+  return {
+    changesPath,
+    invalidatedTopicCount: changesPath
+      ? Object.entries(state.topics)
+          .filter(([topicId, topic]) => topicId !== 'entry_path' && hasAnswer(topic))
+          .length
+      : 0,
+  };
+}
+
 export function setTopicOption(state: ForkedInterviewState, optionId: string): ForkedInterviewState {
   const topic = getTopic(state);
   if (!topic.options.some((option) => option.id === optionId)) throw new Error('Invalid funnel option');
   const next: ForkedInterviewState = structuredClone(state);
-  next.topics[topic.id] = { facts: [], factsSkipped: false, confirmed: false, optionId };
-  if (topic.id === 'entry_path') next.entryPath = entryPathForOption(optionId);
+  const topicAnswer: FunnelTopicState = { facts: [], factsSkipped: false, confirmed: false, optionId };
+  if (topic.id === 'entry_path') {
+    const nextEntryPath = entryPathForOption(optionId);
+    if (next.entryPath && next.entryPath !== nextEntryPath) {
+      // Answers after the fork belong to a different question sequence. Keeping
+      // any of them would silently mix path A and B into one Brand DNA.
+      next.topics = { entry_path: topicAnswer };
+      delete next.businessMode;
+    } else {
+      next.topics[topic.id] = topicAnswer;
+    }
+    next.entryPath = nextEntryPath;
+  } else {
+    next.topics[topic.id] = topicAnswer;
+  }
   if (topic.id === 'business_direction') next.businessMode = optionId as BusinessMode;
   next.phase = 'facts';
+  return next;
+}
+
+export function goToPreviousTopic(state: ForkedInterviewState): ForkedInterviewState {
+  const sequence = getFunnelTopicSequence(state.entryPath);
+  const currentIndex = sequence.indexOf(state.currentTopicId);
+  if (currentIndex <= 0) throw new Error('Already at the first funnel topic');
+  const next = structuredClone(state);
+  next.currentTopicId = sequence[currentIndex - 1];
+  next.phase = 'choice';
   return next;
 }
 

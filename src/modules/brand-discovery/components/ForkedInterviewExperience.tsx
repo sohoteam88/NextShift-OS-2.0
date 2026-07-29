@@ -1,11 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { AlertCircle, CheckCircle2, ChevronRight, Loader2, RotateCcw, Sparkles } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Loader2, RotateCcw, Sparkles } from 'lucide-react';
+import { AccessibleDialog } from '@/components/ui/AccessibleDialog';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import {
   FORKED_INTERVIEW_TOPICS,
+  getEntryPathChangeImpact,
   getFunnelTopicSequence,
   getTopic,
   type ForkedInterviewState,
@@ -35,6 +37,11 @@ export function ForkedInterviewExperience({ existingInterviewId }: { existingInt
   const [loading, setLoading] = React.useState(true);
   const [working, setWorking] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [pendingEntryPathChange, setPendingEntryPathChange] = React.useState<{
+    optionId: string;
+    invalidatedTopicCount: number;
+  } | null>(null);
+  const cancelEntryPathChangeRef = React.useRef<HTMLButtonElement>(null);
 
   React.useEffect(() => {
     let active = true;
@@ -99,6 +106,30 @@ export function ForkedInterviewExperience({ existingInterviewId }: { existingInt
     }
   }
 
+  async function goBack() {
+    const previous = await action({ action: 'previous' });
+    if (!previous) return;
+    const previousTopic = previous.state.topics[previous.state.currentTopicId];
+    setFacts(previousTopic?.facts.join('。') ?? '');
+  }
+
+  async function selectOption(optionId: string) {
+    if (!state) return;
+    const impact = getEntryPathChangeImpact(state, optionId);
+    if (impact.changesPath && impact.invalidatedTopicCount > 0) {
+      setPendingEntryPathChange({ optionId, invalidatedTopicCount: impact.invalidatedTopicCount });
+      return;
+    }
+    await action({ action: 'select', option_id: optionId });
+  }
+
+  async function confirmEntryPathChange() {
+    if (!pendingEntryPathChange) return;
+    const { optionId } = pendingEntryPathChange;
+    setPendingEntryPathChange(null);
+    await action({ action: 'select', option_id: optionId });
+  }
+
   if (loading || !state) {
     return <div className="mx-auto flex min-h-[460px] max-w-3xl items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-[var(--color-primary)]" /></div>;
   }
@@ -134,7 +165,21 @@ export function ForkedInterviewExperience({ existingInterviewId }: { existingInt
       ) : (
         <section className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-white p-5 shadow-sm sm:p-6">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-[var(--color-text)]">主题 {position} / 5 · {topic.label}</p>
+            <div className="flex items-center gap-2">
+              {position > 1 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={working}
+                  onClick={() => void goBack()}
+                  icon={<ChevronLeft className="h-4 w-4" />}
+                >
+                  上一题
+                </Button>
+              ) : null}
+              <p className="text-sm font-semibold text-[var(--color-text)]">主题 {position} / 5 · {topic.label}</p>
+            </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-[var(--color-text-muted)]">{state.entryPath ? `路径 ${state.entryPath}` : '开始'}</span>
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[var(--color-primary)] transition-all" style={{ width: `${Math.max(8, (position / 5) * 100)}%` }} /></div>
@@ -143,7 +188,7 @@ export function ForkedInterviewExperience({ existingInterviewId }: { existingInt
             <div className="mt-7">
               <h2 className="text-xl font-bold text-[var(--color-text)]">{topic.question}</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {topic.options.map((option) => <button key={option.id} type="button" disabled={working} onClick={() => void action({ action: 'select', option_id: option.id })} className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-white px-4 py-3 text-left text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:bg-blue-50 disabled:opacity-50">{option.label}</button>)}
+                {topic.options.map((option) => <button key={option.id} type="button" disabled={working} aria-pressed={topicState?.optionId === option.id} onClick={() => void selectOption(option.id)} className={cn('rounded-[var(--radius-md)] border bg-white px-4 py-3 text-left text-sm font-medium text-[var(--color-text)] transition hover:border-[var(--color-primary)] hover:bg-blue-50 disabled:opacity-50', topicState?.optionId === option.id ? 'border-[var(--color-primary)] bg-blue-50' : 'border-[var(--color-border)]')}>{option.label}</button>)}
               </div>
             </div>
           ) : null}
@@ -173,6 +218,24 @@ export function ForkedInterviewExperience({ existingInterviewId }: { existingInt
           ) : null}
         </section>
       )}
+
+      <AccessibleDialog
+        open={pendingEntryPathChange !== null}
+        title="改这一题，后面几题要重答"
+        description={pendingEntryPathChange
+          ? `你改的这一题会影响后面的问题——因为答案不一样，后面要问的东西也不一样。后面已经答的 ${pendingEntryPathChange.invalidatedTopicCount} 题会清掉，你需要重新答一次。`
+          : undefined}
+        onRequestClose={() => setPendingEntryPathChange(null)}
+        initialFocusRef={cancelEntryPathChangeRef}
+        className="max-w-md"
+      >
+        <div className="flex justify-end gap-3 p-5">
+          <Button ref={cancelEntryPathChangeRef} variant="secondary" onClick={() => setPendingEntryPathChange(null)}>
+            取消
+          </Button>
+          <Button onClick={() => void confirmEntryPathChange()}>好，我要改</Button>
+        </div>
+      </AccessibleDialog>
 
       <p className="text-center text-xs text-[var(--color-text-muted)]">只收集真实事实；不会要求你写一大段故事。</p>
     </div>

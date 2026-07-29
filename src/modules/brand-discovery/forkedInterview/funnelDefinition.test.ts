@@ -6,7 +6,9 @@ import { fillForkedInterviewBrandDnaDefaults } from './brandDnaDefaults';
 import {
   confirmTopic,
   createForkedInterviewState,
+  getEntryPathChangeImpact,
   getFunnelTopicSequence,
+  goToPreviousTopic,
   mapConfirmedFunnelToBrandDna,
   setTopicConfirmation,
   setTopicFacts,
@@ -31,6 +33,54 @@ describe('forked interview definition and state machine', () => {
     const skipped = setTopicFacts(selected, [], true);
     expect(skipped.phase).toBe('confirmation');
     expect(skipped.topics.entry_path).toMatchObject({ facts: [], factsSkipped: true });
+  });
+
+  it('keeps later answers when topic 1 is revised within the same entry path', () => {
+    let state = createForkedInterviewState();
+    state = answerCurrent(state, 'product_first', '我先体验到变化，才决定认真开始。');
+    state = answerCurrent(state, 'energy', '我现在会记录自己更稳定的日常状态。');
+    state = answerCurrent(state, 'employee', '做过上班族的我，理解下班后的疲惫。');
+    const productChange = structuredClone(state.topics.product_change);
+    const pastCareer = structuredClone(state.topics.past_career);
+
+    state = goToPreviousTopic(goToPreviousTopic(goToPreviousTopic(state)));
+    const impact = getEntryPathChangeImpact(state, 'simultaneous');
+    const revised = setTopicOption(state, 'simultaneous');
+
+    expect(impact).toEqual({ changesPath: false, invalidatedTopicCount: 0 });
+    expect(revised.entryPath).toBe('A');
+    expect(revised.topics.entry_path?.optionId).toBe('simultaneous');
+    expect(revised.topics.product_change).toEqual(productChange);
+    expect(revised.topics.past_career).toEqual(pastCareer);
+  });
+
+  it('clears every answered topic after topic 1 when its entry path changes', () => {
+    let state = createForkedInterviewState();
+    state = answerCurrent(state, 'product_first', '我先体验到变化，才决定认真开始。');
+    state = answerCurrent(state, 'energy', '我现在会记录自己更稳定的日常状态。');
+    state = answerCurrent(state, 'employee', '做过上班族的我，理解下班后的疲惫。');
+    state = goToPreviousTopic(goToPreviousTopic(goToPreviousTopic(state)));
+
+    const impact = getEntryPathChangeImpact(state, 'opportunity_first');
+    const revised = setTopicOption(state, 'opportunity_first');
+
+    expect(impact).toEqual({ changesPath: true, invalidatedTopicCount: 2 });
+    expect(revised.entryPath).toBe('B');
+    expect(revised.topics.entry_path?.optionId).toBe('opportunity_first');
+    expect(revised.topics.product_change).toBeUndefined();
+    expect(revised.topics.change_reason).toBeUndefined();
+    expect(revised.topics.past_career).toBeUndefined();
+    expect(revised.topics.business_direction).toBeUndefined();
+    expect(revised.topics.weekly_rhythm).toBeUndefined();
+    expect(revised.businessMode).toBeUndefined();
+
+    const draftDna = mapConfirmedFunnelToBrandDna(EMPTY_BRAND_DNA, revised);
+    expect(draftDna.identity.brandPositioning).toBe('');
+    expect(draftDna.audience.targetAudience).toBe('');
+    expect(draftDna.messaging.coreMessage).toBe('');
+    expect(draftDna.offer.primaryOffer).toBe('');
+    expect(draftDna.offer.transformationPromise).toBe('');
+    expect(draftDna.content.storytellingStyle).toBe('');
   });
 
   it('maps confirmed sentences into the stable Brand DNA fields at completion', () => {

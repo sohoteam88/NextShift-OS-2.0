@@ -14,6 +14,7 @@ import {
   confirmTopic,
   createForkedInterviewState,
   funnelProfileForInterview,
+  goToPreviousTopic,
   mapConfirmedFunnelToBrandDna,
   setTopicConfirmation,
   setTopicFacts,
@@ -329,6 +330,16 @@ export const brandInterviewService = {
   async selectForkedInterviewOption(interviewId: string, user: Pick<AuthUser, 'id' | 'tenantId'>, optionId: string) {
     const { interview, state } = await this.getForkedInterview(interviewId, user);
     const next = setTopicOption(state, optionId);
+    const updated = await prisma.brandInterview.update({
+      where: { id: interview.id },
+      data: { answers: saveForkedInterviewState(getAnswersObject(interview.answers), next), status: 'in_progress' },
+    });
+    return { interview: updated, state: next };
+  },
+
+  async goToPreviousForkedInterviewTopic(interviewId: string, user: Pick<AuthUser, 'id' | 'tenantId'>) {
+    const { interview, state } = await this.getForkedInterview(interviewId, user);
+    const next = goToPreviousTopic(state);
     const updated = await prisma.brandInterview.update({
       where: { id: interview.id },
       data: { answers: saveForkedInterviewState(getAnswersObject(interview.answers), next), status: 'in_progress' },

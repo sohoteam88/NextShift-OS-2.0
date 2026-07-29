@@ -25,6 +25,10 @@ export const POST = apiHandler(async (request: NextRequest, context) => {
     const data = await brandInterviewService.selectForkedInterviewOption(id, user, body.option_id);
     return NextResponse.json({ data });
   }
+  if (body.action === 'previous') {
+    const data = await brandInterviewService.goToPreviousForkedInterviewTopic(id, user);
+    return NextResponse.json({ data });
+  }
   if (body.action === 'facts') {
     if (body.facts !== undefined && (!Array.isArray(body.facts) || !body.facts.every((fact) => typeof fact === 'string'))) {
       throw new AppError('VALIDATION_ERROR', 400, 'facts must be an array of strings');
