@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { runAuditBestEffort, writeAuditIfMissing } from '@/lib/audit-log-writer';
 import type { ActivationProjection } from '../contracts/ActivationProjection';
 import { buildActivationProjection } from './activation-projection';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
@@ -159,68 +160,35 @@ export async function getActivationProjection(userId: string, tenantId?: string)
 async function writeActivationAuditIfMissing(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   metadata: Record<string, unknown>;
 }) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'activation',
-      targetId: input.targetId,
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'activation',
-      targetId: input.targetId,
-      metadata: {
-        ...input.metadata,
-        timestamp: new Date().toISOString(),
-      },
-    },
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'activation',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: input.metadata,
   });
 }
 
 async function writeActivationAuditWithDailyThrottle(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   metadata: Record<string, unknown>;
 }) {
-  const since = new Date(Date.now() - 24 * 3_600_000);
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'activation',
-      targetId: input.targetId,
-      createdAt: { gte: since },
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'activation',
-      targetId: input.targetId,
-      metadata: {
-        ...input.metadata,
-        timestamp: new Date().toISOString(),
-      },
-    },
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'activation',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: input.metadata,
+    createdAtSince: new Date(Date.now() - 24 * 3_600_000),
   });
 }
 
@@ -228,94 +196,100 @@ export async function ensureActivationAudit(input: {
   user: AuthUser;
   projection: ActivationProjection;
 }) {
-  await Promise.all(input.projection.activationFunnel
-    .filter((step) => step.status === 'completed')
-    .map((step) => writeActivationAuditIfMissing({
-      user: input.user,
-      action: ACTIVATION_AUDIT_ACTIONS.stepCompleted,
-      targetId: step.id,
-      metadata: {
-        step: step.id,
-        completedAt: step.completedAt,
-        completionPercentage: input.projection.activationState.completionPercentage,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKeys: input.projection.localization.messageKeys,
-      },
-    })));
+  await runAuditBestEffort({
+    operation: 'ensureActivationAudit',
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+  }, async () => {
+    await Promise.all(input.projection.activationFunnel
+      .filter((step) => step.status === 'completed')
+      .map((step) => writeActivationAuditIfMissing({
+        user: input.user,
+        action: ACTIVATION_AUDIT_ACTIONS.stepCompleted,
+        targetKey: step.id,
+        metadata: {
+          step: step.id,
+          completedAt: step.completedAt,
+          completionPercentage: input.projection.activationState.completionPercentage,
+          locale: input.projection.localization.locale,
+          translationSource: input.projection.localization.translationSource,
+          fallbackUsed: input.projection.localization.fallbackUsed,
+          messageKeys: input.projection.localization.messageKeys,
+        },
+      })));
 
-  if (input.projection.dropOffStage !== 'none') {
-    await writeActivationAuditWithDailyThrottle({
-      user: input.user,
-      action: ACTIVATION_AUDIT_ACTIONS.dropoff,
-      targetId: input.projection.activationState.currentStep,
-      metadata: {
-        step: input.projection.activationState.currentStep,
-        state: input.projection.activationState.state,
-        blockedReason: input.projection.activationState.blockedReason,
-        hoursSinceActivity: input.projection.dropOffRisk.hoursSinceActivity,
-        interventions: input.projection.interventions,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKey: input.projection.interventions[0]?.messageKey ?? input.projection.localization.messageKeys[0],
-      },
-    });
-  }
+    if (input.projection.dropOffStage !== 'none') {
+      await writeActivationAuditWithDailyThrottle({
+        user: input.user,
+        action: ACTIVATION_AUDIT_ACTIONS.dropoff,
+        targetKey: input.projection.activationState.currentStep,
+        metadata: {
+          step: input.projection.activationState.currentStep,
+          state: input.projection.activationState.state,
+          blockedReason: input.projection.activationState.blockedReason,
+          hoursSinceActivity: input.projection.dropOffRisk.hoursSinceActivity,
+          interventions: input.projection.interventions,
+          locale: input.projection.localization.locale,
+          translationSource: input.projection.localization.translationSource,
+          fallbackUsed: input.projection.localization.fallbackUsed,
+          messageKey: input.projection.interventions[0]?.messageKey ?? input.projection.localization.messageKeys[0],
+        },
+      });
+    }
 
-  if (input.projection.dropOffRisk.state === 'AT_RISK') {
-    await writeActivationAuditWithDailyThrottle({
-      user: input.user,
-      action: ACTIVATION_AUDIT_ACTIONS.atRisk,
-      targetId: input.projection.activationState.currentStep,
-      metadata: {
-        step: input.projection.activationState.currentStep,
-        state: input.projection.activationState.state,
-        hoursSinceActivity: input.projection.dropOffRisk.hoursSinceActivity,
-        hoursRemaining: input.projection.dropOffRisk.hoursRemaining,
-        interventions: input.projection.interventions,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKey: input.projection.interventions[0]?.messageKey ?? input.projection.localization.messageKeys[0],
-      },
-    });
-  }
+    if (input.projection.dropOffRisk.state === 'AT_RISK') {
+      await writeActivationAuditWithDailyThrottle({
+        user: input.user,
+        action: ACTIVATION_AUDIT_ACTIONS.atRisk,
+        targetKey: input.projection.activationState.currentStep,
+        metadata: {
+          step: input.projection.activationState.currentStep,
+          state: input.projection.activationState.state,
+          hoursSinceActivity: input.projection.dropOffRisk.hoursSinceActivity,
+          hoursRemaining: input.projection.dropOffRisk.hoursRemaining,
+          interventions: input.projection.interventions,
+          locale: input.projection.localization.locale,
+          translationSource: input.projection.localization.translationSource,
+          fallbackUsed: input.projection.localization.fallbackUsed,
+          messageKey: input.projection.interventions[0]?.messageKey ?? input.projection.localization.messageKeys[0],
+        },
+      });
+    }
 
-  if (input.projection.dropOffRisk.state !== 'ON_TRACK') {
-    await writeActivationAuditWithDailyThrottle({
-      user: input.user,
-      action: ACTIVATION_AUDIT_ACTIONS.stateChanged,
-      targetId: `${input.projection.activationState.currentStep}:${input.projection.activationState.state}`,
-      metadata: {
-        step: input.projection.activationState.currentStep,
-        state: input.projection.activationState.state,
-        hoursSinceActivity: input.projection.dropOffRisk.hoursSinceActivity,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKeys: input.projection.localization.messageKeys,
-      },
-    });
-  }
+    if (input.projection.dropOffRisk.state !== 'ON_TRACK') {
+      await writeActivationAuditWithDailyThrottle({
+        user: input.user,
+        action: ACTIVATION_AUDIT_ACTIONS.stateChanged,
+        targetKey: `${input.projection.activationState.currentStep}:${input.projection.activationState.state}`,
+        metadata: {
+          step: input.projection.activationState.currentStep,
+          state: input.projection.activationState.state,
+          hoursSinceActivity: input.projection.dropOffRisk.hoursSinceActivity,
+          locale: input.projection.localization.locale,
+          translationSource: input.projection.localization.translationSource,
+          fallbackUsed: input.projection.localization.fallbackUsed,
+          messageKeys: input.projection.localization.messageKeys,
+        },
+      });
+    }
 
-  if (input.projection.activationState.activated) {
-    await writeActivationAuditIfMissing({
-      user: input.user,
-      action: ACTIVATION_AUDIT_ACTIONS.completed,
-      targetId: 'ACTIVATED',
-      metadata: {
-        step: 'ACTIVATED',
-        firstValue: input.projection.firstValue,
-        timeToFirstWinMinutes: input.projection.firstWin.timeToFirstWinMinutes,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKeys: input.projection.localization.messageKeys,
-      },
-    });
-  }
+    if (input.projection.activationState.activated) {
+      await writeActivationAuditIfMissing({
+        user: input.user,
+        action: ACTIVATION_AUDIT_ACTIONS.completed,
+        targetKey: 'ACTIVATED',
+        metadata: {
+          step: 'ACTIVATED',
+          firstValue: input.projection.firstValue,
+          timeToFirstWinMinutes: input.projection.firstWin.timeToFirstWinMinutes,
+          locale: input.projection.localization.locale,
+          translationSource: input.projection.localization.translationSource,
+          fallbackUsed: input.projection.localization.fallbackUsed,
+          messageKeys: input.projection.localization.messageKeys,
+        },
+      });
+    }
+  });
 }
 
 export const activationEngine = {

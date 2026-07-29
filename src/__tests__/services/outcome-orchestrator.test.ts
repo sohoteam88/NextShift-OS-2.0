@@ -130,19 +130,28 @@ describe('EXEC-006 Outcome Orchestrator', () => {
       data: expect.objectContaining({
         action: 'outcome.created',
         targetType: 'business_outcome',
-        targetId: 'outcome-first_lead',
+        targetId: null,
+        metadata: expect.objectContaining({
+          target_key: 'outcome-first_lead',
+        }),
       }),
     }));
     expect(prisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         action: 'outcome.started',
-        targetId: 'outcome-first_lead:ACTIVE',
+        targetId: null,
+        metadata: expect.objectContaining({
+          target_key: 'outcome-first_lead:ACTIVE',
+        }),
       }),
     }));
     expect(prisma.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
       data: expect.objectContaining({
         action: 'outcome.progressed',
-        targetId: 'outcome-first_lead:25',
+        targetId: null,
+        metadata: expect.objectContaining({
+          target_key: 'outcome-first_lead:25',
+        }),
       }),
     }));
   });

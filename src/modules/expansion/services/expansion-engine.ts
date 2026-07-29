@@ -1,5 +1,5 @@
-import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { runAuditBestEffort, writeAuditIfMissing } from '@/lib/audit-log-writer';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import { getInterviewAuthorityProjection } from '@/modules/interview-authority/services/interview-authority-service';
 import { retentionEngine } from '@/modules/retention/services/retention-engine';
@@ -185,41 +185,27 @@ export async function getExpansionProjection(userId: string, tenantId?: string):
 async function writeExpansionAuditIfMissing(input: {
   user: AuthUser;
   action: string;
-  targetId: string;
+  targetKey: string;
   projection: ExpansionProjection;
 }) {
-  const existing = await prisma.auditLog.findFirst({
-    where: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'expansion',
-      targetId: input.targetId,
-    },
-    select: { id: true },
-  });
-  if (existing) return;
-
-  await prisma.auditLog.create({
-    data: {
-      tenantId: input.user.tenantId,
-      actorId: input.user.id,
-      action: input.action,
-      targetType: 'expansion',
-      targetId: input.targetId,
-      metadata: {
-        expansionLevel: input.projection.expansionState.expansionLevel,
-        opportunity: input.projection.expansionState.nextExpansionOpportunity,
-        expanding: input.projection.expansionState.expanding,
-        progress: input.projection.expansionState.expansionProgress,
-        riskCode: input.projection.expansionRecovery.riskCode,
-        recoveryAction: input.projection.expansionRecovery.action,
-        locale: input.projection.localization.locale,
-        translationSource: input.projection.localization.translationSource,
-        fallbackUsed: input.projection.localization.fallbackUsed,
-        messageKeys: input.projection.localization.messageKeys,
-        timestamp: new Date().toISOString(),
-      } as Prisma.InputJsonValue,
+  await writeAuditIfMissing({
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+    action: input.action,
+    targetType: 'expansion',
+    targetId: null,
+    targetKey: input.targetKey,
+    metadata: {
+      expansionLevel: input.projection.expansionState.expansionLevel,
+      opportunity: input.projection.expansionState.nextExpansionOpportunity,
+      expanding: input.projection.expansionState.expanding,
+      progress: input.projection.expansionState.expansionProgress,
+      riskCode: input.projection.expansionRecovery.riskCode,
+      recoveryAction: input.projection.expansionRecovery.action,
+      locale: input.projection.localization.locale,
+      translationSource: input.projection.localization.translationSource,
+      fallbackUsed: input.projection.localization.fallbackUsed,
+      messageKeys: input.projection.localization.messageKeys,
     },
   });
 }
@@ -228,45 +214,51 @@ export async function ensureExpansionAudit(input: {
   user: AuthUser;
   projection: ExpansionProjection;
 }) {
-  await writeExpansionAuditIfMissing({
-    user: input.user,
-    action: EXPANSION_AUDIT_ACTIONS.opportunityCreated,
-    targetId: `${input.projection.expansionState.nextExpansionOpportunity}:opportunity`,
-    projection: input.projection,
-  });
-
-  if (input.projection.expansionState.expansionProgress > 0) {
+  await runAuditBestEffort({
+    operation: 'ensureExpansionAudit',
+    tenantId: input.user.tenantId,
+    actorId: input.user.id,
+  }, async () => {
     await writeExpansionAuditIfMissing({
       user: input.user,
-      action: EXPANSION_AUDIT_ACTIONS.progressed,
-      targetId: `${input.projection.expansionState.nextExpansionOpportunity}:${input.projection.expansionState.expansionProgress}`,
+      action: EXPANSION_AUDIT_ACTIONS.opportunityCreated,
+      targetKey: `${input.projection.expansionState.nextExpansionOpportunity}:opportunity`,
       projection: input.projection,
     });
-  }
 
-  if (input.projection.expansionRecovery.riskCode === 'PLATEAU') {
+    if (input.projection.expansionState.expansionProgress > 0) {
+      await writeExpansionAuditIfMissing({
+        user: input.user,
+        action: EXPANSION_AUDIT_ACTIONS.progressed,
+        targetKey: `${input.projection.expansionState.nextExpansionOpportunity}:${input.projection.expansionState.expansionProgress}`,
+        projection: input.projection,
+      });
+    }
+
+    if (input.projection.expansionRecovery.riskCode === 'PLATEAU') {
+      await writeExpansionAuditIfMissing({
+        user: input.user,
+        action: EXPANSION_AUDIT_ACTIONS.plateauDetected,
+        targetKey: `${input.projection.expansionState.nextExpansionOpportunity}:plateau`,
+        projection: input.projection,
+      });
+    }
+
+    if (input.projection.expansionRecovery.needed) {
+      await writeExpansionAuditIfMissing({
+        user: input.user,
+        action: EXPANSION_AUDIT_ACTIONS.recovered,
+        targetKey: `${input.projection.expansionState.nextExpansionOpportunity}:recovery`,
+        projection: input.projection,
+      });
+    }
+
     await writeExpansionAuditIfMissing({
       user: input.user,
-      action: EXPANSION_AUDIT_ACTIONS.plateauDetected,
-      targetId: `${input.projection.expansionState.nextExpansionOpportunity}:plateau`,
+      action: EXPANSION_AUDIT_ACTIONS.levelChanged,
+      targetKey: `${input.projection.expansionState.expansionLevel}:level`,
       projection: input.projection,
     });
-  }
-
-  if (input.projection.expansionRecovery.needed) {
-    await writeExpansionAuditIfMissing({
-      user: input.user,
-      action: EXPANSION_AUDIT_ACTIONS.recovered,
-      targetId: `${input.projection.expansionState.nextExpansionOpportunity}:recovery`,
-      projection: input.projection,
-    });
-  }
-
-  await writeExpansionAuditIfMissing({
-    user: input.user,
-    action: EXPANSION_AUDIT_ACTIONS.levelChanged,
-    targetId: `${input.projection.expansionState.expansionLevel}:level`,
-    projection: input.projection,
   });
 }
 

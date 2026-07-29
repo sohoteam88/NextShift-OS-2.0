@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import { createAudit, runAuditBestEffort } from '@/lib/audit-log-writer';
 import { autonomousExecutionEngine } from '@/modules/autonomous-execution/services/autonomous-execution-engine';
 import { executionQueue } from '@/modules/autonomous-execution/services/execution-queue';
 import type {
@@ -102,21 +103,24 @@ export const agentWorkforceService = {
 
     if (result.status === 'completed') {
       await assertTenantOperational(input.tenantId, 'pre_side_effect');
-      await prisma.auditLog.create({
-        data: {
-          tenantId: input.tenantId,
-          actorId: input.userId,
-          action: WORKFORCE_AUDIT_ACTIONS.assignmentStarted,
-          targetType: 'agent_workforce',
-          targetId: assignment.assignmentId,
-          metadata: {
-            assignmentId: assignment.assignmentId,
-            actionId: assignment.actionId,
-            agentType: assignment.agentType,
-            timestamp: new Date().toISOString(),
-          },
+      await runAuditBestEffort({
+        operation: 'executeAssignmentAudit',
+        tenantId: input.tenantId,
+        actorId: input.userId,
+        assignmentId: assignment.assignmentId,
+      }, () => createAudit({
+        tenantId: input.tenantId,
+        actorId: input.userId,
+        action: WORKFORCE_AUDIT_ACTIONS.assignmentStarted,
+        targetType: 'agent_workforce',
+        targetId: null,
+        targetKey: assignment.assignmentId,
+        metadata: {
+          assignmentId: assignment.assignmentId,
+          actionId: assignment.actionId,
+          agentType: assignment.agentType,
         },
-      });
+      }));
       if (assignment.action.state !== 'executing') {
         await executionQueue.transition({
           userId: input.userId,

@@ -1,5 +1,5 @@
-import prisma from '@/lib/prisma';
 import { AppError } from '@/lib/errors';
+import { createAudit, reportAuditFailure } from '@/lib/audit-log-writer';
 import type { AuthUser } from '@/modules/auth/services/auth-service';
 import type { MissionPlan, MissionStep, MissionType } from '@/modules/mission-engine/contracts/MissionAuthority';
 import { missionEngineAuthorityService } from '@/modules/mission-engine/services/MissionEngineAuthorityService';
@@ -36,24 +36,28 @@ async function recordCompletionCheckAudit(input: {
   result: 'accepted' | 'rejected';
 }) {
   try {
-    await prisma.auditLog.create({
-      data: {
-        tenantId: input.user.tenantId,
-        actorId: input.user.id,
-        action: `completion_check.${input.result}`,
-        targetType: 'mission_workspace_check',
-        targetId: input.missionId,
-        metadata: {
-          missionId: input.missionId,
-          missionType: input.missionType,
-          checkKey: input.checkKey,
-          result: input.result,
-          timestamp: new Date().toISOString(),
-        },
+    await createAudit({
+      tenantId: input.user.tenantId,
+      actorId: input.user.id,
+      action: `completion_check.${input.result}`,
+      targetType: 'mission_workspace_check',
+      targetId: null,
+      targetKey: input.missionId,
+      metadata: {
+        missionId: input.missionId,
+        missionType: input.missionType,
+        checkKey: input.checkKey,
+        result: input.result,
       },
     });
-  } catch {
-    // Check validation must not depend on telemetry availability.
+  } catch (error) {
+    reportAuditFailure(error, {
+      operation: 'recordCompletionCheckAudit',
+      tenantId: input.user.tenantId,
+      actorId: input.user.id,
+      missionId: input.missionId,
+      checkKey: input.checkKey,
+    });
   }
 }
 

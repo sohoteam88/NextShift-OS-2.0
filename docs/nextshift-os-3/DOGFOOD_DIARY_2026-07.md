@@ -34,10 +34,11 @@ Start: 2026-07-22(v3.8.0 生产)
 
 ### F-05 ⛔ P0:新用户黄金路径第一步是死路(截图实证)
 - 现象: 首页唯一被反复强调的 CTA【开始 AI 访谈】→ "Mission Workspace unavailable / 无法打开这个任务工作区"
-- 根因(代码定位): CTA 路由到 `/mission/<id>` 任务工作区;`MissionExecutionWorkspaceService` 构建计划依赖业务状态(authority 链),而业务状态要访谈完成才存在——**鸡生蛋死锁**。访谈真身在 /brand-builder,不在该路径上。`MissionExecutionWorkspaceClient.tsx:116` 的 isError 兜底渲染红卡
+- 根因(生产日志+代码定位): `AuditLog.targetId` 是 UUID 列,但 `OutcomeOrchestrator.ensureAudit()` 把纯内存 outcome 的非 UUID 合成 ID(如 `outcome-first_lead`)写入该列,Prisma 因此抛出 P2023,令 Mission Workspace 请求 500。`MissionExecutionWorkspaceClient.tsx:116` 的 isError 兜底随后渲染红卡
 - 影响: **每一个新用户 100% 撞墙**,种子用户到此即流失;严重度高于 F-04
 - 临时绕行: 直接访问 /brand-builder 完成访谈
 - 修复方向(OS 3.9 P0,或考虑热修): interview 类 mission 的 CTA 直接路由到 /brand-builder/step/interview(不经工作区);或工作区服务对 interview mission 类型优雅重定向;错误卡文案顺带修(中英混杂+无有效出路,"回到 Dashboard"是循环死路)
+- 根因于 2026-07-29 通过生产日志 + 只读数据库调查更正,原诊断为推测,无异常证据支撑
 
 ### F-06 Brand Builder 三 tab 迷宫 + 模板变量裸奔(截图实证)
 - 好的部分(记录以保护): 品牌探索的 **WhatsApp 式教练聊天 + 麦克风 + 就绪度进度条**是全站最接近愿景的交互;Brand DNA 已内置零售/招募双漏斗结构(§1.6 竟然在这里先落了);"确认后会发生什么"预览卡是好模式
