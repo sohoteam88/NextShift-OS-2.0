@@ -985,7 +985,7 @@
   },
   "final_release_review": {
     "id": "AR-OS3.8-FINAL-RELEASE",
-    "status": "awaiting_review",
+    "status": "pending",
     "reviewer_policy": {
       "allowed_logins": [
         "sohoteam88"
@@ -996,9 +996,9 @@
     },
     "request_artifact": "docs/nextshift-os-3/os-3-8/releases/OS38_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md",
     "release_sha": "962b4276ca493d354cceb27147bb336b553fb557",
-    "pre_request_main_sha": "ad8afd1352476d5559afdca2248343451239b165",
-    "requested_at": "2026-07-30T07:17:00Z",
-    "request_artifact_sha256": "c4d7558d9a921d2cca481f77d663635ffda0f899ec9355fe2f71b14c2ef35d73",
+    "pre_request_main_sha": null,
+    "requested_at": null,
+    "request_artifact_sha256": null,
     "request_pr_url": null,
     "request_pr_number": null,
     "request_pr_head": null,
