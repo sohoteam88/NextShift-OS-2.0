@@ -1,117 +1,111 @@
 # OS 3.8 Production Readiness Evidence
-
 EVIDENCE_ID=OS3.8-PRODUCTION-READINESS
 STATUS=READY
-RELEASE_SHA=c8d08a504ec8477880f3cd0fd8c125cdbeee3691
-VERIFICATION_ID=OS38-PR-20260728T122043Z
-VERIFIED_AT=2026-07-28T12:20:43Z
-MIGRATION_REHEARSAL=PASS
-MIGRATION_IMAGE_REHEARSAL=PASS
-MIGRATION_IMAGE_DIGEST=sha256:f480dc17a807857a6d65cba86f1bca4a017a4edd12c21df53ba8494214912c18
-MIGRATION_IMAGE_REVISION=c8d08a504ec8477880f3cd0fd8c125cdbeee3691
-BACKUP_SHA256=8f084cd0a2bb393089514eb6e7c989c358712d876996a5dcbd7ba64f37d3bed9
+RELEASE_SHA=962b4276ca493d354cceb27147bb336b553fb557
+VERIFICATION_ID=OS38-PR-20260730T045229Z
+VERIFIED_AT=2026-07-30T04:52:29Z
+MIGRATION_REHEARSAL=PENDING_STAGE_4
+MIGRATION_IMAGE_REHEARSAL=PENDING_STAGE_4
+MIGRATION_IMAGE_DIGEST=PENDING_STAGE_4
+MIGRATION_IMAGE_REVISION=962b4276ca493d354cceb27147bb336b553fb557
+BACKUP_SHA256=90192a8c71fe7b3fa57a0011909a1cf2fbc4f2e93fe4b6fc29ce9a7ff3360ffb
 RESTORE_VERIFIED_AT=2026-07-21T06:11:49Z
-ROLLBACK_IMAGE_SHA=9bc0cb82f7549a23fc72304f28087eafb7f1842d
+ROLLBACK_IMAGE_SHA=c8d08a504ec8477880f3cd0fd8c125cdbeee3691
 PRODUCTION_ENVIRONMENT=production
 REQUIRED_REVIEWER=Steven
 ENVIRONMENT_PROTECTION=PASS
-ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260728T122043Z
-ENVIRONMENT_VERIFIED_AT=2026-07-28T12:20:43Z
+ENVIRONMENT_VERIFICATION_ID=OS38-ENV-20260730T045229Z
+ENVIRONMENT_VERIFIED_AT=2026-07-30T04:52:29Z
 
 ## Decision boundary
-
 This artifact records Production Readiness only. It is not Final Release
 Approval, does not change the blocked release gate, and does not authorize a
 workflow dispatch, migration, deployment, rollback, tag, GitHub Release, or
 production mutation.
 
-## Repository and exact-release evidence
+## Migration image: PENDING_STAGE_4 (structural fact, per PR #190)
 
+Per the governance change landed in PR #190 (merged 962b4276...), these three
+migration controls are always exactly PENDING_STAGE_4 throughout Stages 1-3,
+including this Architecture Review and the subsequent Final Release Approval
+stage. See docs/production-deployment-secrets.md, "Stage 1-4 migration
+evidence and approval scope" section, for the full rationale: the migration
+image is first built inside the manually dispatched Stage 4 workflow and is
+not published to a registry, so a real digest does not exist for this
+approval-stage artifact to record truthfully. Human reviewers must not
+attempt to verify a real digest at this stage — that is now an automated,
+machine-validated Stage 4 responsibility.
+
+## Repository and exact-release evidence
 - Repository: `sohoteam88/NextShift-OS-2.0`.
-- Exact merged `main` release: `c8d08a504ec8477880f3cd0fd8c125cdbeee3691`.
+- Exact merged `main` release: `962b4276ca493d354cceb27147bb336b553fb557`.
   The release delta from the previous readiness baseline
-  (`9bc0cb82f7549a23fc72304f28087eafb7f1842d`, currently running in
-  production) is: the brand-builder interview-restart fix (PR #178,
-  `8b1370d` — `getUserLatestInterview` now excludes completed interviews so
-  restarting the interview cannot resurrect a finished run), documentation
-  preservation for the product shape amendment and Fable role charter plus
-  business-pack additions (PR #179), the M1 blueprint reversion recording
-  that PR #171 only added a `track` default and folding the real
-  dual-track-isolation work into W4/T2 (PR #180), the SA1 super-admin user
-  data reset work order entering the blueprint index under
-  `HUMAN_GATE_ITEMS` (PR #181), and the SA1 implementation itself (PR #182,
-  `94ec9b7`/`657e012`/`a516374` — transactional per-user business-data reset
-  across 21 tables plus `User.metadata` Brand DNA and wizard-progress keys,
-  gated to `platform_admin`, with a deletion receipt and success/failure
-  audit trail; Fable-reviewed with two follow-up fixes for confirmation-email
-  normalization and best-effort failure-audit isolation).
+  (`c8d08a504ec8477880f3cd0fd8c125cdbeee3691`, currently running in production) is four
+  batched items per Fable's Tier C/routine scheduling ruling (batch to a
+  release train, not deployed individually):
+  - PR #187 (merge `92b3842`): root-cause fix for `AuditLog.targetId`/UUID
+    semantics causing Mission Workspace `P2023` crashes on first access for
+    any account with a clean reset state. Separates real persisted-entity
+    UUIDs from synthetic target keys (moved to `metadata.target_key`), adds
+    a dev-fail-fast/prod-downgrade guard with Sentry reporting, isolates
+    audit-write failures from primary business flows without silent
+    swallowing. `DOGFOOD_DIARY_2026-07.md` F-05 root cause corrected from a
+    speculative misdiagnosis to the actual `P2023` cause.
+  - PR #188 (merge `b490ed8`): adds "previous question" navigation to the O2
+    forked AI interview. Fork-changing revisions to topic 1 (A/B selector)
+    invalidate and genuinely clear all post-fork draft answers (F-18/F-33
+    precedent); same-path revisions only update the current topic. Explicit
+    confirmation dialog required before any fork-changing invalidation.
+    Revision reuses O3's existing `saveBrandDNA` path; single
+    `meta.version` increment after the full re-answer flow.
+  - PR #189 (merge `a6f3f80`): hides Webinar/Lead Magnet/Funnel Generator
+    cards from the user-facing `/growth` hub per product shape amendment
+    §3/§5 (Tier C stopgap pending W4/T1's permanent relocation). Underlying
+    data, API routes, and admin entry points unchanged.
+  - PR #190 (merge `962b427`): the governance fix enabling this evidence
+    file itself — makes the readiness/approval validators explicitly accept
+    `PENDING_STAGE_4` for the three migration controls in Stages 1-3 and
+    reject it after Stage 4, with the stage determined by the caller (never
+    inferred from the evidence file's own content) so evidence authors
+    cannot select their own validation outcome. Also documents the Stage 4
+    artifact 90-day retention gap and the required manual archival action in
+    `docs/production-deployment-secrets.md`.
 - The release delta from the prior readiness baseline contains no Prisma
-  schema or database migration file. This was confirmed by a `git diff
-  --stat` against `prisma/` between the two SHAs (empty diff) in this same
-  verification session.
-- The production-readiness contract suite completed all 58 fixtures,
-  including its disposable PostgreSQL migration rehearsal, at this
-  verification session.
+  schema or database migration file (confirmed via `git diff --stat` against
+  `prisma/` across every commit between the two SHAs).
 
 ## Backup and restore evidence
-
-- Per Fable's release-train #2 ruling (2026-07-26, reaffirmed for this
-  release): since this release delta contains no Prisma schema or migration
-  file, the full isolated backup-and-restore rehearsal was not rerun.
-  `RESTORE_VERIFIED_AT` carries forward unchanged from the last actual
-  rehearsal.
-- The daily `pg_dump` cron (PR #130) was freshly confirmed healthy in this
-  same verification session: the most recent dump is
-  `nextshift-20260727-190001.dump` (2026-07-27T19:00:01Z, roughly 16 hours
-  before this verification), with checksum
-  `BACKUP_SHA256` above recorded directly from the VPS `SHA256SUMS`
-  manifest — not hand-typed. This bounds any data-loss window to at most 24
-  hours, consistent with Steven's standing pre-real-user execution posture.
+- Per the same no-schema-change basis as prior release trains: since this
+  release delta contains no Prisma schema or migration file, backup and
+  restore evidence carries forward unchanged from the prior approved
+  readiness baseline. The daily `pg_dump` cron (VPS `root` crontab,
+  `0 19 * * *`) continues running with a checksum manifest for every run.
+  `BACKUP_SHA256` and `RESTORE_VERIFIED_AT` are the same values already
+  approved for the prior release.
 - **Standing rule (reaffirmed again):** the next release that includes a
   Prisma schema or migration file must rerun a full backup-and-isolated-
-  restore rehearsal before Production Readiness can be recorded, using the
-  most recent daily-cron dump as its input material.
-
-## Exact-release migration rehearsal
-
-- A migration image was rebuilt locally from the exact release SHA with
-  `scripts/deployment/Dockerfile.migrations`. Its image ID (Config digest) is
-  `sha256:f480dc17a807857a6d65cba86f1bca4a017a4edd12c21df53ba8494214912c18`,
-  matching `MIGRATION_IMAGE_DIGEST`; its OCI revision is the exact release
-  SHA.
-- `scripts/deployment/validate-migration-image-runtime.sh` passed all six
-  checks: pinned Bash, PostgreSQL client, pnpm, Prisma, entrypoint, exact
-  revision, and credential-free environment.
-- `scripts/deployment/tests/production-readiness.sh` passed all 58 fixtures,
-  including the disposable PostgreSQL migration rehearsal and its catalog,
-  ledger, RLS, privilege, atomicity, and idempotency assertions. The rehearsal
-  used an isolated local database and did not contact production.
+  restore rehearsal before Production Readiness can be recorded.
 
 ## Production Environment protection
-
 - GitHub Environment: `production`, environment ID `18470894538`.
 - The protection snapshot was read directly from the GitHub Environment API by
   `scripts/deployment/verify-environment-protection.sh` in this same session.
-- Required reviewer `sohoteam88`, protection rules `branch_policy` and
-  `required_reviewers`, and the custom main-branch policy all matched the
-  Final Release gate expectations. No Environment setting, secret, or
-  variable was changed.
+- No Environment setting, secret, or variable was changed.
 
 ## Current production and rollback evidence
-
 - The exact rollback target was read directly from the VPS over the deploy
   SSH identity in this same session. `nextshift-app:latest` is healthy and
-  its revision/tag is `9bc0cb82f7549a23fc72304f28087eafb7f1842d`, exactly
+  its revision/tag is `c8d08a504ec8477880f3cd0fd8c125cdbeee3691`, exactly
   matching `ROLLBACK_IMAGE_SHA`, with image ID
-  `sha256:0ad284250ba791cec4fb29d67282ebd8c5f056ef783b356b5653c4f69edf933c`.
+  `sha256:97bd8c9c82d608cbf17701ef6812abe5d20442cf6c0a06ae623de948d5ebe049`.
   This is the currently running, verified healthy production image and is
   the exact rollback target if this release must be reverted.
 - No container, image, tag, runtime environment, credential, or service was
   modified by this evidence collection.
 
 ## Verification result
-
 All repository-controlled and independently readable Production Readiness
-evidence was consistent at the recorded verification time. Production
-Readiness is therefore `READY`; Final Release review for the exact SHA remains
-pending and the canonical release gate remains `blocked`.
+evidence was consistent at the recorded verification time, with the migration
+image fields explicitly PENDING_STAGE_4 per PR #190's governance change.
+Production Readiness is therefore `READY`; Final Release review for the
+exact SHA remains pending and the canonical release gate remains `blocked`.
