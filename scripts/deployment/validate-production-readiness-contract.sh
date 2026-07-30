@@ -8,6 +8,9 @@ deploy_workflow="${2:-$repo_root/.github/workflows/deploy.yml}"
 migration_runner="${3:-$repo_root/scripts/deployment/run-os38-production-migrations.sh}"
 migration_dockerfile="${4:-$repo_root/scripts/deployment/Dockerfile.migrations}"
 approval_validator="$repo_root/scripts/deployment/validate-final-release-approval.sh"
+readiness_evidence_validator="$repo_root/scripts/deployment/validate-production-readiness-evidence.sh"
+stage4_evidence_finalizer="$repo_root/scripts/deployment/finalize-production-readiness-stage4.sh"
+readiness_evidence_stage_test="$repo_root/scripts/deployment/tests/production-readiness-evidence-stage.sh"
 review_validator="$repo_root/scripts/deployment/validate-final-release-review-request.sh"
 request_creator="$repo_root/scripts/deployment/request-final-release-review.sh"
 manual_validator="$repo_root/scripts/deployment/validate-manual-production-workflow.sh"
@@ -53,7 +56,7 @@ require_order() {
     fail "$label: '$before' must precede '$after'"
 }
 
-for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$review_validator" "$request_creator" "$image_runtime_validator" "$application_dockerfile" "$application_healthcheck" "$application_image_validator" "$deploy_smoke" "$feedback_reconciliation_migration" "$feedback_authority_migration"; do
+for contract_file in "$ci_workflow" "$deploy_workflow" "$migration_runner" "$migration_dockerfile" "$approval_validator" "$readiness_evidence_validator" "$stage4_evidence_finalizer" "$readiness_evidence_stage_test" "$review_validator" "$request_creator" "$image_runtime_validator" "$application_dockerfile" "$application_healthcheck" "$application_image_validator" "$deploy_smoke" "$feedback_reconciliation_migration" "$feedback_authority_migration"; do
   [[ -f "$contract_file" && ! -L "$contract_file" ]] || \
     fail "contract input must be a regular, non-symlink file: $contract_file"
 done
@@ -69,6 +72,7 @@ grep -Eq '^[[:space:]]+[A-Za-z0-9_-]+: write$' "$ci_workflow" && \
   fail 'CI must not grant write permission to a non-main push'
 require_count "$ci_workflow" 1 'A main push may not skip the required E2E gate.' 'main E2E fail-closed guard'
 require_count "$ci_workflow" 1 'scripts/deployment/tests/final-release-review.sh' 'Final Release review contract CI gate'
+require_count "$ci_workflow" 1 'scripts/deployment/tests/production-readiness-evidence-stage.sh' 'Production Readiness evidence stage CI gate'
 require_count "$review_validator" 1 ".final_release_review.reviewer_policy" 'canonical Final Release reviewer policy'
 require_count "$review_validator" 1 'parse_review_controls "$body" "$release_sha"' 'strict Final Release review control parser'
 require_count "$review_validator" 1 'unexpected Final Release review authority control:' 'unknown Final Release review control rejection'
@@ -154,11 +158,17 @@ for readiness_control in \
   ENVIRONMENT_PROTECTION \
   ENVIRONMENT_VERIFICATION_ID \
   ENVIRONMENT_VERIFIED_AT \
-  MIGRATION_IMAGE_REHEARSAL \
-  MIGRATION_IMAGE_DIGEST \
   MIGRATION_IMAGE_REVISION; do
   require_count "$approval_validator" 2 "$readiness_control" 'immutable Production Readiness evidence control'
 done
+require_count "$approval_validator" 1 '"$readiness_evidence_validator" "$evidence_stage" "$evidence"' 'explicit readiness evidence stage validation'
+require_count "$request_creator" 1 '"$readiness_evidence_validator" stage-1-3 "$repo_root/$readiness_path"' 'review request Stage 1-3 evidence validation'
+for readiness_control in MIGRATION_REHEARSAL MIGRATION_IMAGE_REHEARSAL MIGRATION_IMAGE_DIGEST; do
+  require_count "$readiness_evidence_validator" 1 "control_value \"\$evidence\" $readiness_control" "$readiness_control stage authority"
+done
+require_count "$readiness_evidence_validator" 1 '[[ "$migration_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]' 'Stage 4 digest length guard'
+require_count "$stage4_evidence_finalizer" 1 '"$validator" stage-1-3 "$pending_evidence"' 'Stage 4 finalizer pending-input validation'
+require_count "$stage4_evidence_finalizer" 1 '"$validator" stage-4 "$stage4_evidence"' 'Stage 4 finalizer real-output validation'
 require_count "$approval_validator" 1 'rollback target is not the exact image authorized by readiness evidence' 'rollback evidence binding'
 require_count "$approval_validator" 1 'Production Environment protection evidence is stale' 'environment freshness binding'
 
@@ -200,7 +210,7 @@ require_count "$deploy_workflow" 1 '          printf '\''%s\n'\'' "$IMAGE_TAG" >
 require_count "$deploy_workflow" 1 '-e OS38_MIGRATION_MODE=production' 'production migration mode'
 require_count "$deploy_workflow" 1 '--file scripts/deployment/Dockerfile.migrations' 'immutable migration image build'
 require_count "$deploy_workflow" 1 '    name: Build exact migration deployment artifact' 'single migration artifact build job'
-require_count "$deploy_workflow" 1 'uses: actions/upload-artifact@v4' 'migration artifact upload'
+require_count "$deploy_workflow" 2 'uses: actions/upload-artifact@v4' 'migration and Stage 4 evidence artifact uploads'
 require_count "$deploy_workflow" 1 'uses: actions/download-artifact@v4' 'migration artifact download'
 require_count "$deploy_workflow" 1 '    needs: [validate-request, build-migration-artifact]' 'deploy waits for migration artifact'
 require_count "$deploy_workflow" 1 'printf '\''%s\n'\'' "$migration_image_digest" > migration-image-digest.txt' 'migration image digest evidence'
@@ -209,6 +219,16 @@ require_count "$deploy_workflow" 1 'migration_tar_config="$(tar -xzOf migration-
 require_count "$deploy_workflow" 1 'migration_tar_config_digest="sha256:$(tar -xzOf migration-image.tar.gz "$migration_tar_config" | sha256sum | awk '\''{print $1}'\'')"' 'migration archive Config digest calculation'
 require_count "$deploy_workflow" 1 "assert_equal 'migration artifact config digest' \"\$expected_migration_digest\" \"\$migration_tar_config_digest\"" 'migration archive Config digest verification'
 require_count "$deploy_workflow" 0 "assert_equal 'migration image ID' \"\$expected_migration_digest\" \"\$actual_migration_digest\"" 'cross-engine migration image ID equality is forbidden'
+require_count "$deploy_workflow" 3 'OS38_PRODUCTION_READINESS_EVIDENCE_PENDING.md' 'immutable pending readiness evidence snapshot'
+require_count "$deploy_workflow" 2 'install -m 700 \' 'control-plane readiness tool preservation'
+require_count "$deploy_workflow" 1 '      - name: Finalize and validate Stage 4 Production Readiness evidence' 'post-deploy Stage 4 evidence finalization'
+require_count "$deploy_workflow" 2 '"$RUNNER_TEMP/finalize-production-readiness-stage4.sh"' 'Stage 4 evidence finalizer preservation and invocation'
+require_count "$deploy_workflow" 1 '      - name: Upload immutable Stage 4 Production Readiness evidence' 'Stage 4 evidence artifact upload'
+require_count "$deploy_workflow" 1 'name: nextshift-production-readiness-stage4-${{ env.IMAGE_TAG }}' 'Stage 4 evidence artifact exact release binding'
+require_order "$deploy_workflow" \
+  '      - name: Migrate and deploy exact release SHA' \
+  '      - name: Finalize and validate Stage 4 Production Readiness evidence' \
+  'Stage 4 evidence must follow successful migration, deployment, and smoke'
 require_count "$deploy_workflow" 1 "assert_equal 'migration OCI revision' \"\${{ env.IMAGE_TAG }}\" \"\$migration_revision\"" 'migration image revision verification'
 require_count "$deploy_workflow" 1 'com.nextshift.migration.bash" }}' 'deploy-time Bash label verification'
 require_count "$deploy_workflow" 1 'docker run --rm --network none --entrypoint bash "$migration_image" -ceu' 'deploy-time migration runtime check uses Bash'

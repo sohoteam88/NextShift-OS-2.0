@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 action="${1:-}"
 requested_sha="${2:-}"
+evidence_stage="${3:-}"
 manifest="$repo_root/docs/nextshift-os-3/os-3-8/PIPELINE_MANIFEST.json"
 
 fail() {
@@ -61,6 +62,8 @@ case "$action" in
   deploy | rollback) ;;
   *) fail "unsupported production action: $action" ;;
 esac
+[[ "$evidence_stage" == 'stage-1-3' ]] || \
+  fail 'Final Release Approval must validate its immutable Stage 1-3 readiness evidence'
 [[ "$requested_sha" =~ ^[0-9a-f]{40}$ ]] || fail 'requested SHA must be a full lowercase 40-character Git SHA'
 [[ -f "$manifest" && ! -L "$manifest" ]] || fail 'canonical Pipeline Manifest must be a regular, non-symlink file'
 "$repo_root/scripts/os-pipeline/validate-manifest.sh" --manifest "$manifest" >/dev/null
@@ -142,9 +145,10 @@ reject_unknown_controls "$evidence" "$evidence_fields"
 [[ "$(control_value "$evidence" VERIFICATION_ID)" == "$verification_id" ]] || fail 'Production Readiness verification identity mismatch'
 verified_at="$(control_value "$evidence" VERIFIED_AT)"
 [[ "$verified_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'Production Readiness verification timestamp is invalid'
-[[ "$(control_value "$evidence" MIGRATION_REHEARSAL)" == 'PASS' ]] || fail 'Production migration rehearsal evidence is not PASS'
-[[ "$(control_value "$evidence" MIGRATION_IMAGE_REHEARSAL)" == 'PASS' ]] || fail 'exact-release migration image rehearsal evidence is not PASS'
-[[ "$(control_value "$evidence" MIGRATION_IMAGE_DIGEST)" =~ ^sha256:[0-9a-f]{64}$ ]] || fail 'migration image digest evidence is invalid'
+readiness_evidence_validator="$repo_root/scripts/deployment/validate-production-readiness-evidence.sh"
+[[ -f "$readiness_evidence_validator" && ! -L "$readiness_evidence_validator" && -x "$readiness_evidence_validator" ]] || \
+  fail 'Production Readiness evidence stage validator is unavailable or unsafe'
+"$readiness_evidence_validator" "$evidence_stage" "$evidence" >/dev/null
 [[ "$(control_value "$evidence" MIGRATION_IMAGE_REVISION)" == "$approved_release_sha" ]] || fail 'migration image revision evidence does not match the approved release'
 [[ "$(control_value "$evidence" BACKUP_SHA256)" =~ ^[0-9a-f]{64}$ ]] || fail 'logical backup checksum evidence is invalid'
 [[ "$(control_value "$evidence" RESTORE_VERIFIED_AT)" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'isolated restore verification timestamp is invalid'

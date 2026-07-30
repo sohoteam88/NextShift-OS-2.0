@@ -88,12 +88,14 @@ setup_request_repository() {
     "$request_repo/audit"
   cp "$repo_root/scripts/deployment/validate-production-request.sh" "$request_repo/scripts/deployment/validate-production-request.sh"
   cp "$approval_validator" "$request_repo/scripts/deployment/validate-final-release-approval.sh"
+  cp "$repo_root/scripts/deployment/validate-production-readiness-evidence.sh" "$request_repo/scripts/deployment/validate-production-readiness-evidence.sh"
   cp "$repo_root/scripts/deployment/validate-final-release-review-request.sh" "$request_repo/scripts/deployment/validate-final-release-review-request.sh"
   cp "$repo_root/scripts/os-pipeline/validate-manifest.sh" "$request_repo/scripts/os-pipeline/validate-manifest.sh"
   cp "$repo_root/audit/OS38_FINAL_CODE_REVIEW_REPORT.md" "$request_repo/audit/OS38_FINAL_CODE_REVIEW_REPORT.md"
   chmod +x \
     "$request_repo/scripts/deployment/validate-production-request.sh" \
     "$request_repo/scripts/deployment/validate-final-release-approval.sh" \
+    "$request_repo/scripts/deployment/validate-production-readiness-evidence.sh" \
     "$request_repo/scripts/deployment/validate-final-release-review-request.sh" \
     "$request_repo/scripts/os-pipeline/validate-manifest.sh"
   cp -R "$repo_root/docs/nextshift-os-3/os-3-8/." \
@@ -109,9 +111,9 @@ setup_request_repository() {
     "RELEASE_SHA=$request_release_sha" \
     'VERIFICATION_ID=OS38-PR-20260720T120000Z' \
     'VERIFIED_AT=2026-07-20T12:00:00Z' \
-    'MIGRATION_REHEARSAL=PASS' \
-    'MIGRATION_IMAGE_REHEARSAL=PASS' \
-    'MIGRATION_IMAGE_DIGEST=sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' \
+    'MIGRATION_REHEARSAL=PENDING_STAGE_4' \
+    'MIGRATION_IMAGE_REHEARSAL=PENDING_STAGE_4' \
+    'MIGRATION_IMAGE_DIGEST=PENDING_STAGE_4' \
     "MIGRATION_IMAGE_REVISION=$request_release_sha" \
     'BACKUP_SHA256=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' \
     'RESTORE_VERIFIED_AT=2026-07-20T11:30:00Z' \

@@ -117,6 +117,10 @@ candidate_manifest="$tmp_dir/PIPELINE_MANIFEST.json"
 candidate_request="$tmp_dir/REQUEST.md"
 requested_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 readiness_path="$(jq -r '.release_gate.readiness_evidence' "$manifest")"
+readiness_evidence_validator="$repo_root/scripts/deployment/validate-production-readiness-evidence.sh"
+[[ -f "$readiness_evidence_validator" && ! -L "$readiness_evidence_validator" && -x "$readiness_evidence_validator" ]] || \
+  fail 'Production Readiness evidence stage validator is unavailable or unsafe'
+"$readiness_evidence_validator" stage-1-3 "$repo_root/$readiness_path" >/dev/null
 readiness_sha="$(sha256_file "$repo_root/$readiness_path")"
 verification_id="$(control_value "$repo_root/$readiness_path" VERIFICATION_ID)"
 rollback_sha="$(control_value "$repo_root/$readiness_path" ROLLBACK_IMAGE_SHA)"

@@ -116,6 +116,9 @@ jobs:
       - name: Validate Final Release review request contract
         run: scripts/deployment/tests/final-release-review.sh
 
+      - name: Validate Production Readiness evidence stage contract
+        run: scripts/deployment/tests/production-readiness-evidence-stage.sh
+
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
