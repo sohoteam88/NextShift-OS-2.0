@@ -14,8 +14,14 @@ fail() {
 }
 
 case "$action" in
-  deploy) expected_confirmation='DEPLOY_PRODUCTION' ;;
-  rollback) expected_confirmation='ROLLBACK_PRODUCTION' ;;
+  deploy)
+    expected_confirmation='DEPLOY_PRODUCTION'
+    evidence_stage='stage-1-3'
+    ;;
+  rollback)
+    expected_confirmation='ROLLBACK_PRODUCTION'
+    evidence_stage='stage-1-3'
+    ;;
   *) fail "unsupported production action: $action" ;;
 esac
 
@@ -42,7 +48,7 @@ git merge-base --is-ancestor "$release_sha" refs/remotes/origin/main || \
 approval_validator="$repo_root/scripts/deployment/validate-final-release-approval.sh"
 [[ -f "$approval_validator" && ! -L "$approval_validator" && -x "$approval_validator" ]] || \
   fail 'Final Release Approval validator must be an executable, non-symlink file'
-"$approval_validator" "$action" "$release_sha"
+"$approval_validator" "$action" "$release_sha" "$evidence_stage"
 
 printf 'PASS: production request is bound to main control plane %s and release %s\n' \
   "$control_plane_sha" "$release_sha"

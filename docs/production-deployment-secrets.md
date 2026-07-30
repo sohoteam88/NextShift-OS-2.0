@@ -22,7 +22,7 @@ Manual workflow dispatch and GitHub Environment approval are execution safeguard
 - `final_release_review.status=passed` is bound to a merged Final Release Architecture Review Request PR, its exact GitHub head/merge identity, and one exact-head `PASS` review;
 - the canonical `STEVEN_FINAL_RELEASE_APPROVAL.md` exists as a regular, non-symlink Git file and has the exact SHA-256 recorded by the Manifest;
 - the approval contains one authoritative `APPROVED` decision, Steven as approver, the exact release/review identity, and the canonical Production Readiness evidence identity;
-- the canonical Production Readiness evidence exists as a regular, non-symlink Git file, matches its recorded SHA-256, says `STATUS=READY`, and binds the approved release SHA, exact-release migration-image rehearsal/digest/revision, repository-external logical-backup checksum, isolated restore verification, exact rollback image, and a fresh `production` GitHub Environment protection snapshot requiring Steven.
+- the canonical Production Readiness evidence exists as a regular, non-symlink Git file, matches its recorded SHA-256, says `STATUS=READY`, and binds the approved release SHA, exact-release migration-image revision, explicit Stage 4-pending migration controls, repository-external logical-backup checksum, isolated restore verification, exact rollback image, and a fresh `production` GitHub Environment protection snapshot requiring Steven.
 
 Missing, blocked, duplicate, stale, mismatched, untracked or symlink authority fails before Docker build, SCP, SSH, migration or deployment. The current repository deliberately has `final_release_review.status=pending`, `release_gate.status=blocked`, and no Final Release Approval artifact, so it is not deployable. The existing READY evidence is necessary but never sufficient production authority. This remediation creates neither a real review request nor an approval and does not unlock the gate.
 
@@ -85,11 +85,12 @@ PRODUCTION_READINESS_VERIFICATION_ID=<exact evidence ID>
 
 This is a validation contract only. A separate, reviewed governance change must create the genuine artifacts and approved Manifest state.
 
-The future readiness artifact must additionally contain exactly one of each of the following controls. `ENVIRONMENT_VERIFIED_AT` must equal the enclosing readiness `VERIFIED_AT`, so an older Environment snapshot cannot be carried into a newer READY decision.
+The canonical Stage 1-3 readiness artifact used by Architecture Review and Final Release Approval must additionally contain exactly one of each of the following controls. `ENVIRONMENT_VERIFIED_AT` must equal the enclosing readiness `VERIFIED_AT`, so an older Environment snapshot cannot be carried into a newer READY decision.
 
 ```text
-MIGRATION_IMAGE_REHEARSAL=PASS
-MIGRATION_IMAGE_DIGEST=sha256:<64 lowercase hex>
+MIGRATION_REHEARSAL=PENDING_STAGE_4
+MIGRATION_IMAGE_REHEARSAL=PENDING_STAGE_4
+MIGRATION_IMAGE_DIGEST=PENDING_STAGE_4
 MIGRATION_IMAGE_REVISION=<approved release SHA>
 PRODUCTION_ENVIRONMENT=production
 REQUIRED_REVIEWER=Steven
@@ -98,7 +99,35 @@ ENVIRONMENT_VERIFICATION_ID=OS38-ENV-<UTC compact timestamp>
 ENVIRONMENT_VERIFIED_AT=<same UTC as readiness VERIFIED_AT>
 ```
 
-This remediation does not create or configure the GitHub Environment. A future Production Readiness rehearsal must build and execute the immutable migration image from the exact release SHA before it may record `READY`.
+### Stage 1-4 migration evidence and approval scope
+
+Starting with PR #190, `MIGRATION_REHEARSAL`, `MIGRATION_IMAGE_REHEARSAL`, and `MIGRATION_IMAGE_DIGEST` are always exactly `PENDING_STAGE_4` throughout Stages 1-3, including the human Architecture Review and Final Release Approval stages. The migration image is first built inside the manually dispatched Stage 4 workflow and is not published to a registry, so a real digest does not exist for the approval-stage artifact to record truthfully.
+
+Human reviewers therefore cannot and must not try to verify a real migration-image digest during Final Release Approval. The earlier "63-character ghost" incident occurred during human inspection of a purported real digest; finding it demonstrated that visual inspection of digest characters is not a reliable integrity control. This is an intentional governance change from **pre-deployment human review of a digest** to **post-deployment automated generation and validation of the record**, not an approval omission or downgrade.
+
+After the migration image has been built, its runtime contract has passed, the production migration and deployment have succeeded, and the smoke check has passed, Stage 4 automatically creates a separate final evidence artifact. That artifact must contain:
+
+```text
+MIGRATION_REHEARSAL=PASS
+MIGRATION_IMAGE_REHEARSAL=PASS
+MIGRATION_IMAGE_DIGEST=sha256:<64 lowercase hex>
+```
+
+The Stage 4 validator rejects `PENDING_STAGE_4`, validates the 64-character lowercase digest format, and derives the digest from the CI-built migration artifact rather than from reviewer-authored prose. Machine validation is the authority for these three controls.
+
+### REQUIRED MANUAL ACTION — archive Stage 4 evidence before expiry
+
+GitHub Actions retains the Stage 4 final evidence artifact for only 90 days. **After every successful production deployment, an operator must manually download the artifact from that exact `Deploy to Production` workflow run and commit it to the repository before the 90-day retention period expires.** This is a required human operation; it is not automated by the deployment workflow.
+
+The artifact is named `nextshift-production-readiness-stage4-<release_sha>` and contains `OS38_PRODUCTION_READINESS_EVIDENCE_STAGE4.md` plus its SHA-256 checksum. Archive both files under a release-specific repository path such as:
+
+```text
+docs/nextshift-os-3/os-3-8/releases/deployed/<release_sha>/
+```
+
+The archive commit must preserve the workflow run URL, exact release SHA, evidence file, and checksum so a future operator can establish provenance. Do not wait until the next release: rollback-target derivation is repeated for every release and depends on durable historical deployment evidence. If the Actions artifact expires before repository archival, the real Stage 4 digest record is permanently lost and the rollback evidence chain is incomplete.
+
+The workflow intentionally does not write this evidence back to the repository automatically; allowing a production deployment job to mutate the control-plane repository is a separate risk and is outside PR #190.
 
 ## VPS Access Secrets
 

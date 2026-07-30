@@ -40,6 +40,7 @@ copy_contract_tree() {
   cp "$source_root/scripts/deployment/validate-final-release-review-request.sh" "$repo/scripts/deployment/"
   cp "$source_root/scripts/deployment/request-final-release-review.sh" "$repo/scripts/deployment/"
   cp "$source_root/scripts/deployment/validate-final-release-approval.sh" "$repo/scripts/deployment/"
+  cp "$source_root/scripts/deployment/validate-production-readiness-evidence.sh" "$repo/scripts/deployment/"
   cp "$source_root/scripts/deployment/validate-production-request.sh" "$repo/scripts/deployment/"
   cp "$source_root/scripts/os-pipeline/validate-manifest.sh" "$repo/scripts/os-pipeline/"
   cp -R "$source_root/docs/nextshift-os-3/os-3-8/." "$repo/docs/nextshift-os-3/os-3-8/"
@@ -63,7 +64,7 @@ setup_pending_repository() {
   request_artifact="$repo/$(jq -r '.final_release_review.request_artifact' "$manifest")"
   approval="$repo/$(jq -r '.release_gate.approval_artifact' "$manifest")"
   fixture_verified_at="$(grep -E '^VERIFIED_AT=' "$readiness" | cut -d= -f2-)"
-  perl -pi -e "s/^RELEASE_SHA=.*/RELEASE_SHA=$release_sha/; s/^MIGRATION_IMAGE_REVISION=.*/MIGRATION_IMAGE_REVISION=$release_sha/; s/^ENVIRONMENT_VERIFIED_AT=.*/ENVIRONMENT_VERIFIED_AT=$fixture_verified_at/" "$readiness"
+  perl -pi -e "s/^RELEASE_SHA=.*/RELEASE_SHA=$release_sha/; s/^MIGRATION_REHEARSAL=.*/MIGRATION_REHEARSAL=PENDING_STAGE_4/; s/^MIGRATION_IMAGE_REHEARSAL=.*/MIGRATION_IMAGE_REHEARSAL=PENDING_STAGE_4/; s/^MIGRATION_IMAGE_DIGEST=.*/MIGRATION_IMAGE_DIGEST=PENDING_STAGE_4/; s/^MIGRATION_IMAGE_REVISION=.*/MIGRATION_IMAGE_REVISION=$release_sha/; s/^ENVIRONMENT_VERIFIED_AT=.*/ENVIRONMENT_VERIFIED_AT=$fixture_verified_at/" "$readiness"
   jq --arg release "$release_sha" '
     .final_release_review.release_sha=$release |
     .final_release_review.status="pending" |
@@ -138,7 +139,7 @@ set_review_body() {
 }
 
 run_review_validator() { (cd "$repo" && PATH="$gh_dir:$PATH" GH_FIXTURE_DIR="$gh_data" scripts/deployment/validate-final-release-review-request.sh --verify-pr "${1:-https://github.com/sohoteam88/NextShift-OS-2.0/pull/42}"); }
-run_approval_validator() { (cd "$repo" && PATH="$gh_dir:$PATH" GH_FIXTURE_DIR="$gh_data" scripts/deployment/validate-final-release-approval.sh deploy "$release_sha"); }
+run_approval_validator() { (cd "$repo" && PATH="$gh_dir:$PATH" GH_FIXTURE_DIR="$gh_data" scripts/deployment/validate-final-release-approval.sh deploy "$release_sha" stage-1-3); }
 
 assert_transaction_rollback() {
   local fixture_name="$1" failure_point="$2" before_head before_manifest before_index before_remote common_dir
@@ -180,7 +181,7 @@ pass review_request_cannot_contain_future_review_id
 pass review_request_keeps_release_gate_blocked
 [[ "$(jq -r '[.release_gate.auto_tag,.release_gate.auto_deploy,.release_gate.auto_release,.execution_policy.auto_release,.execution_policy.auto_deploy] | all(. == false)' "$manifest")" == true ]] || fail 'request enabled auto actions'
 pass review_request_cannot_enable_auto_actions
-expect_reject production_dispatch_rejected_while_review_awaiting "$repo/scripts/deployment/validate-final-release-approval.sh" deploy "$release_sha"
+expect_reject production_dispatch_rejected_while_review_awaiting "$repo/scripts/deployment/validate-final-release-approval.sh" deploy "$release_sha" stage-1-3
 
 # A duplicate clean-stop is authorized only for the exact canonical release.
 before_duplicate="$(git -C "$repo" rev-parse HEAD):$(sha256_file "$manifest"):$(sha256_file "$request_artifact"):$(git -C "$repo" write-tree)"
@@ -204,7 +205,7 @@ pass duplicate_wrong_release_preserves_head_manifest_artifact_index_and_lock
 pending_manifest="$fixture_root/pending.json"
 jq '.final_release_review.status="pending" | .final_release_review.pre_request_main_sha=null | .final_release_review.requested_at=null | .final_release_review.request_artifact_sha256=null' "$manifest" >"$pending_manifest"
 cp "$manifest" "$fixture_root/awaiting.json"; cp "$pending_manifest" "$manifest"
-expect_reject production_dispatch_rejected_while_review_pending "$repo/scripts/deployment/validate-final-release-approval.sh" deploy "$release_sha"
+expect_reject production_dispatch_rejected_while_review_pending "$repo/scripts/deployment/validate-final-release-approval.sh" deploy "$release_sha" stage-1-3
 cp "$fixture_root/awaiting.json" "$manifest"
 
 # Simulate the request PR merge to main, then verify exact GitHub evidence.
