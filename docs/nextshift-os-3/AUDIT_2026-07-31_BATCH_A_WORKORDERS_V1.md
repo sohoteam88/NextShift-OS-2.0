@@ -103,12 +103,12 @@
 **先澄清一个岔路**：`docs/chatgpt-system-context/VERSION_AUTHORITY_POLICY.md` 已读——那是"文档版本号怎么升级"的治理规则（管 Engineering Playbook 这类文档该不该叫 v1.3），**不是**产品/构建版本注册表，字段语义完全不同，不能拿来当 `product` 字段的数据源。本工单需要的是运行时机器可读版本，两者不要混。
 
 1. `version/route.ts` 的 `APP_VERSION` 常量删除，改为读 `package.json` 的 `version` 字段（用项目现有读取 package.json 的惯用方式，Codex 执行前 `grep -rn "package.json" src/` 看看仓库里是否已有约定模式，保持一致，避免另起一套 import 方式）
-2. `product` 字段的值**本工单不擅自认定**——"OS 3.x 当前是几点几"这件事需要一个真实权威来源，而审计+本次调查都没找到一份"产品版本号=X"的机器可读记录（`docs/nextshift-os-3/OS_3_9_BLUEPRINT.md` 只是最新一份 blueprint 文档，不等于"当前生产运行的就是 3.9"）。Codex 执行前必须先问 Steven/Fable 一句"当前对外应报的产品版本号是什么"，拿到明确答案后写死为常量（或指向一个新建的极小 `docs/nextshift-os-3/VERSION_AUTHORITY.json` 单一来源），**不得自己拟一个"看起来合理"的版本号**——这正是审计通篇在批评的"漂移"本身，本工单不能反过来制造新的一份漂移源
+2. `product` 字段值已由 Fable 裁决为 `"3.9.0"`（v3.8.0 为最后一个 tag，OS 3.9 三波已全部上产，版本权威从此对齐产品语义）。Codex 直接使用此值写死为常量（或指向一个新建的极小 `docs/nextshift-os-3/VERSION_AUTHORITY.json` 单一来源），不需要再问 Steven/Fable。
 3. `version` 端点最终字段（`product` 值待上一步确认后填入）：
    ```json
    {
-     "product": "<Steven/Fable 确认的产品版本号>",
-     "packageVersion": "<package.json version>",
+     "product": "3.9.0",
+     "packageVersion": "3.9.0",
      "commit": "<git sha，沿用现有 NEXT_PUBLIC_COMMIT_SHA 机制>",
      "buildTime": "<ISO8601，沿用现有 NEXT_PUBLIC_BUILD_TIME 机制>",
      "environment": "production"
@@ -120,7 +120,7 @@
 ### 改动范围
 
 - `src/app/api/v1/version/route.ts`
-- `package.json`（`version` 字段，视调查结果决定是否同步；`name` 字段不动，见上）
+- `package.json`：`"version"` 字段从 `"0.1.0"` 改为 `"3.9.0"`（`"name"` 字段不动，见上）
 - 若新建 `VERSION_AUTHORITY.json`：单独一份新文件，不与 `VERSION_AUTHORITY_POLICY.md` 混用或改写后者
 
 ### 验收标准
@@ -130,6 +130,8 @@
 - [ ] `grep -rn "api/v1/version"` 找到的所有消费方（若有）在字段改名后仍能正常工作，或已同步更新
 - [ ] `pnpm build` 通过
 - [ ] PR 描述里贴出 `curl` 实测结果（本地/预览环境即可，生产验证要等部署后由 Steven 按惯例实测）
+- [ ] `package.json` 的 `version` 字段确认改为 `3.9.0`，且没有连带改动 `"name"` 字段
+- [ ] `version` 端点的 `product` 字段返回值确认为 `"3.9.0"`，不是占位符或旧值
 
 ---
 
