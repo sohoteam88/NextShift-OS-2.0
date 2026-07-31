@@ -1487,6 +1487,30 @@ const boundaryOverrides = [
     },
   },
   {
+    files: ['src/modules/user-shell/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'warn',
+        {
+          patterns: [
+            {
+              group: [
+                '@/modules/*',
+                '!@/modules/user-shell',
+                '!@/modules/user-shell/**',
+                '!@/modules/ai',
+                '!@/modules/ai/**',
+                '!@/modules/auth',
+                '!@/modules/auth/**',
+              ],
+              message: 'Module code should avoid cross-module imports unless routed through approved shared layers such as @/lib, @/components, @/modules/ai, @/modules/auth, or its own module boundary.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/modules/user-success/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
