@@ -13,6 +13,18 @@ enum AuditScope {
   PLATFORM
 }
 
+enum SocialPlatform {
+  fb
+  ig
+  xiaohongshu
+  tiktok
+}
+
+enum AccountTrack {
+  recruitment
+  retail
+}
+
 model Tenant {
   id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name              String
@@ -25,6 +37,7 @@ model Tenant {
   createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
   users             User[]
+  userAccounts      UserAccount[]
   tags              Tag[]
   pipelineStages    PipelineStage[]
   leads             Lead[]
@@ -69,6 +82,7 @@ model User {
   metadata            Json               @default("{}")
   onboardingCompleted Boolean            @default(false) @map("onboarding_completed")
   sponsorId           String?            @map("sponsor_id") @db.Uuid
+  businessStartAt     DateTime?           @map("business_start_at") @db.Timestamptz(6)
   createdAt           DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt           DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
   deletedAt           DateTime?          @map("deleted_at") @db.Timestamptz(6)
@@ -97,11 +111,33 @@ model User {
   missions             Mission[]
   achievements         Achievement[]
   brandProfile         BrandProfile?
+  accounts             UserAccount[]
 
   @@unique([tenantId, email])
+  @@unique([tenantId, id])
   @@index([tenantId])
   @@index([sponsorId])
   @@map("users")
+}
+
+model UserAccount {
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String         @map("tenant_id") @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
+  platform  SocialPlatform
+  track     AccountTrack
+  name      String         // 她填的号名，内容页切换器直接显示这个
+  url       String?
+  enabled   Boolean        @default(true)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant    Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([userId, platform, track])   // 一个号=一轨，现在加，不等脏数据
+  @@index([tenantId, userId])
+  @@index([userId, enabled])
+  @@map("user_accounts")
 }
 
 model UserProgress {
