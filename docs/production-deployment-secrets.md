@@ -35,6 +35,28 @@ The release contract deliberately separates four authorities:
 3. **Final Release Approval** is a later, independent governance change. It may be created only after the Request PR is merged and `scripts/deployment/validate-final-release-review-request.sh --verify-pr <PR_URL>` derives an exact head from GitHub metadata, finds exactly one exact-head `PASS` review from the immutable canonical reviewer policy (`sohoteam88`, `OWNER`), and proves the reviewed release, artifact digest, merge ancestry, and freshness. Request artifacts, review prose, transport envelopes, and caller input cannot alter reviewer authority.
 4. **Production Execution Approval** remains a separate explicit human action through the manual workflow and protected `production` Environment. A Final Release Approval never dispatches production automatically.
 
+### Request PR and Approval PR merge strategy: `--merge` only, never `--squash`
+
+Both the Architecture Review Request PR (step 2 above) and the Final Release Approval PR must be merged with `gh pr merge <PR> --merge`. Squash merging either PR is prohibited.
+
+`scripts/deployment/validate-final-release-review-request.sh --verify-pr` proves a four-link ancestry chain before it will trust an exact-head review:
+
+```text
+release_sha           ⊂ pre_request_main_sha
+pre_request_main_sha  ⊂ request_pr_head
+request_pr_head       ⊂ request_merge_sha
+request_merge_sha     ⊂ origin/main
+```
+
+The third link (`request_pr_head ⊂ request_merge_sha`) only holds for an ordinary merge commit. A squash merge produces a new, independent commit; the original branch-tip commit is never an ancestor of it, even when the merged tree is byte-identical to the squash commit's tree. This is not a corner case in theory — it was a real incident during Release Train #4: the original Architecture Review Request (PR #193) was merged with `--squash`, `--verify-pr` correctly rejected it (`request head is not contained in request merge commit`), and the entire Stage 2 request had to be redone from scratch: reset the Manifest's `final_release_review` back to `pending`, delete the stale request artifact, re-run `request-final-release-review.sh` to generate a brand-new request PR (PR #195) with a new head, obtain a fresh exact-head review bound to that new head, and merge the new PR with `--merge` (producing merge commit `ab1473bb799b6c7fd38f2da114d7c9db81180b40`, which correctly contains the request head `899103e61470f0f07cd51cda5688d3ade08a00d0` as an ancestor). No release content changed as a result of the redo; only the request PR's Git identity changed.
+
+Two weaker alternatives were considered and rejected before settling on the redo:
+
+- Verifying only that `request_pr_head` equals the GitHub API's reported PR head, without requiring ancestry into the merge commit, would replace a cryptographic proof (`git merge-base --is-ancestor`) with a self-reported API field. GitHub API fields are self-reported; `merge-base` ancestry is independently, cryptographically checkable. Accepting the former in place of the latter is a real gate downgrade, not an equivalent check.
+- Verifying that the merge commit message contains the PR number is weaker still: commit message text is freely writable by the merger and proves nothing about what was actually merged.
+
+The validator's ancestry requirement is correct as designed; `--squash` is the incompatible operation, not the gate. This rule applies to both the request PR and the approval PR, since both are the exact governance trust anchors the rest of the release chain is bound to.
+
 The request artifact intentionally has no `REQUEST_PR_HEAD`, future review ID, or reviewed SHA. A commit cannot truthfully contain its own final Git object ID. It instead binds the synchronized pre-request main SHA, release/readiness/audit/rollback evidence, timestamp, and blocked release gate. The GitHub verifier obtains the exact request head only from the Request PR metadata and requires the review `commit_id` to equal it.
 
 The exact-head GitHub review body has exactly three machine-authority controls. Each must occur once, with canonical case, spacing and delimiter; duplicate, conflicting, malformed, padded, or case-variant controls fail closed. Every other uppercase control-shaped key (including reviewer, approver, review/request identity, or release-gate fields) is forbidden rather than treated as prose. Explanatory prose that is not control-shaped may appear on other lines. A duplicate request invocation clean-stops only after the caller's release SHA matches both the canonical Manifest release and the digest-verified existing request artifact.
