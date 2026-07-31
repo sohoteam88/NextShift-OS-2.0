@@ -15,6 +15,7 @@ u3b_migration="$repo_root/supabase/migrations/20260717135456_u3b_three_space_aud
 audit_rls_migration="$repo_root/supabase/migrations/20260720134506_harden_audit_internal_tables_rls.sql"
 partial_index_installer="$repo_root/scripts/u3b-admin-migration/install-audit-idempotency-authority.sql"
 prisma_schema="$repo_root/prisma/schema.prisma"
+w1_user_accounts_migration="$repo_root/prisma/migrations/20260731072936_add_user_accounts_and_business_start_at/migration.sql"
 
 content_sha='31ca2c16224aee4184d4cb787428ae365bb5f1bafbac74196fb9f367738ffa5a'
 feedback_reconciliation_sha='385923f9172652cea404ff6c6ddbe802941a3072b911877ac632436b57b36dc6'
@@ -22,7 +23,8 @@ feedback_authority_sha='c4df1d6f70af7da4f64c6b8e5940c324fe9e51b9fd925be546c45776
 u3b_sha='cbce822033bb3ced502f2e6f104e275a064dd8516a98190dd8e2d4403622ae66'
 audit_rls_sha='f560a101bc912500cf924a6972b9abe6720b2a248785a4bf7c96ecaeb0521264'
 installer_sha='a97cee2918c934be7a3951732e210ee73365d18320740b98af7d8ff96fd92246'
-schema_sha='e5625065f2462cb6dfd631e327981eb62993b5cc8875fa05fe785810ffbdece5'
+schema_sha='f30d2dc785b2b25895ec9570277bdd1cc6d7827defe75544e7310c4f3a7cfe89'
+w1_user_accounts_sha='fcfeb86f417eeaab8078ad1b7f6123386c7d16954002cf5f7aa586119f173ceb'
 
 lock_directory=''
 lock_fifo=''
@@ -79,7 +81,8 @@ for inventory_item in \
   "$u3b_migration" \
   "$audit_rls_migration" \
   "$partial_index_installer" \
-  "$prisma_schema"; do
+  "$prisma_schema" \
+  "$w1_user_accounts_migration"; do
   [[ -f "$inventory_item" && ! -L "$inventory_item" ]] || \
     fail "migration inventory item must be a regular, non-symlink file: $inventory_item"
 done
@@ -93,6 +96,8 @@ done
 [[ "$(sha256_file "$audit_rls_migration")" == "$audit_rls_sha" ]] || fail 'audit-table RLS migration checksum drift'
 [[ "$(sha256_file "$partial_index_installer")" == "$installer_sha" ]] || fail 'partial-index installer checksum drift'
 [[ "$(sha256_file "$prisma_schema")" == "$schema_sha" ]] || fail 'Prisma schema checksum drift'
+[[ "$(sha256_file "$w1_user_accounts_migration")" == "$w1_user_accounts_sha" ]] || \
+  fail 'W1 UserAccount migration checksum drift'
 
 if git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   [[ "$(git -C "$repo_root" rev-parse HEAD)" == "$release_sha" ]] || \

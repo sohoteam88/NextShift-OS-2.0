@@ -83,6 +83,10 @@ new_fixture missing_supabase
 perl -0pi -e 's#supabase/migrations/20260717135456_u3b_three_space_audit\.sql#supabase/migrations/missing.sql#' "$fixture_runner"
 expect_reject missing_supabase_migration_rejected
 
+new_fixture missing_w1_user_accounts
+perl -0pi -e 's#prisma/migrations/20260731072936_add_user_accounts_and_business_start_at/migration\.sql#prisma/migrations/missing-w1.sql#' "$fixture_runner"
+expect_reject missing_w1_user_accounts_migration_rejected
+
 new_fixture missing_feedback_reconciliation
 perl -0pi -e 's#supabase/migrations/20260721074302_feedback_catalog_reconciliation\.sql#supabase/migrations/missing-feedback-reconciliation.sql#' "$fixture_runner"
 expect_reject missing_feedback_reconciliation_migration_rejected
@@ -254,6 +258,11 @@ ALTER TABLE "audit_logs"
   ALTER COLUMN "tenant_id" SET NOT NULL;
 DROP TYPE IF EXISTS "AuditScope" CASCADE;
 ALTER TABLE "contents" DROP COLUMN IF EXISTS "updated_at" CASCADE;
+DROP TABLE IF EXISTS "user_accounts" CASCADE;
+ALTER TABLE "users" DROP COLUMN IF EXISTS "business_start_at";
+DROP INDEX IF EXISTS "users_tenant_id_id_key";
+DROP TYPE IF EXISTS "AccountTrack" CASCADE;
+DROP TYPE IF EXISTS "SocialPlatform" CASCADE;
 -- Prisma db push does not reproduce the historical SQL default on Feedback.id.
 -- Normalize this disposable fixture to the preserved-production catalog that
 -- the exact historical Prisma migration created.
@@ -579,5 +588,5 @@ if OS38_MIGRATION_MODE=fixture DATABASE_URL="$fixture_url" DIRECT_URL="$fixture_
 fi
 pass partial_u3b_rls_ledger_state_rejected
 
-[[ "$pass_count" == 58 ]] || fail "expected 58 named fixtures, got $pass_count"
+[[ "$pass_count" == 59 ]] || fail "expected 59 named fixtures, got $pass_count"
 printf 'PASS: %s production-readiness fixtures\n' "$pass_count"

@@ -90,6 +90,7 @@ grep -Fq 'github.event.workflow_run' "$deploy_workflow" && fail 'workflow_run st
 
 for inventory_path in \
   'prisma/migrations/20260715220949_add_content_updated_at/migration.sql' \
+  'prisma/migrations/20260731072936_add_user_accounts_and_business_start_at/migration.sql' \
   'supabase/migrations/20260721074302_feedback_catalog_reconciliation.sql' \
   'supabase/migrations/20260721085431_feedback_catalog_authority_hardening.sql' \
   'supabase/migrations/20260717135456_u3b_three_space_audit.sql' \
