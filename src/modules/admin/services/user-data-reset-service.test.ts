@@ -18,7 +18,7 @@ const actorId = '10000000-0000-4000-8000-000000000001';
 const targetId = '10000000-0000-4000-8000-000000000002';
 const targetEmail = 'reset@example.test';
 const initialCounts: Record<string, number> = {
-  leadTag: 2, scheduledMessage: 3, note: 4, activity: 5, analyticsEvent: 6,
+  userAccount: 1, inviteCode: 2, leadTag: 2, scheduledMessage: 3, note: 4, activity: 5, analyticsEvent: 6,
   customer: 7, lead: 8, funnel: 9, content: 10, userProgress: 1, mission: 11,
   achievement: 12, brandProfile: 1, aiUsageLog: 13, dailyAction: 14,
   trainingProgress: 15, voiceProfile: 16, brandInterview: 17, postPerformance: 18,
@@ -28,6 +28,11 @@ const initialCounts: Record<string, number> = {
 function createDatabase(options: { failTable?: string } = {}) {
   const targetCounts = { ...initialCounts };
   const sameTenantOtherCounts = Object.fromEntries(Object.entries(initialCounts).map(([table, count]) => [table, count + 100]));
+  const sameTenantOtherMetadata = {
+    brand_profile: { completed: true },
+    brand_dna_versions: [{ version: 2 }],
+    onboarding_note: 'sibling must keep this',
+  };
   const deletions: Record<string, ReturnType<typeof vi.fn>> = {};
   const tx: {
     user: { findUnique: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
@@ -40,6 +45,12 @@ function createDatabase(options: { failTable?: string } = {}) {
         brand_dna_track_audience: { retail: 'owners' },
         brand_dna_versions: [{ version: 2 }],
         brand_builder_state: { current_step: 3, completed_steps: ['interview', 'accounts'] },
+        brand_extraction: { status: 'complete' },
+        brand_interview_extraction: { status: 'complete' },
+        brand_interview_dialogue: { turn_count: 8 },
+        brand_forked_interview_confirmation: { confirmed: true },
+        brand_residual: 'legacy interview state',
+        brand_builder_calendar: { generated: true },
         onboarding_note: 'keep me',
       } }),
       update: vi.fn().mockResolvedValue({}),
@@ -52,6 +63,7 @@ function createDatabase(options: { failTable?: string } = {}) {
       // This fake database only removes the target's partition when its ID is
       // present in the predicate; same-tenant data has a different owner ID.
       expect(JSON.stringify(args.where)).toContain(targetId);
+      expect(JSON.stringify(args.where)).not.toContain('same-tenant');
       const count = targetCounts[table];
       targetCounts[table] = 0;
       return { count };
@@ -72,7 +84,7 @@ function createDatabase(options: { failTable?: string } = {}) {
     }),
   } as unknown as PrismaClient;
 
-  return { db, targetCounts, sameTenantOtherCounts, deletions, tx };
+  return { db, targetCounts, sameTenantOtherCounts, sameTenantOtherMetadata, deletions, tx };
 }
 
 describe('resetUserBusinessDataWithAudit', () => {
@@ -91,21 +103,47 @@ describe('resetUserBusinessDataWithAudit', () => {
 
     expect(receipt.perTableCounts).toEqual(initialCounts);
     expect(fixture.targetCounts).toEqual(Object.fromEntries(Object.keys(initialCounts).map((table) => [table, 0])));
+    // UserProgress is the persisted carrier for brand_discovery_completed;
+    // deleting the target row makes the next interview start from scratch.
+    expect(fixture.deletions.userProgress).toHaveBeenCalledWith({ where: { userId: targetId } });
+    expect(fixture.deletions.userAccount).toHaveBeenCalledWith({ where: { userId: targetId } });
+    expect(fixture.deletions.inviteCode).toHaveBeenCalledWith({ where: { sponsorId: targetId } });
     expect(fixture.sameTenantOtherCounts).toEqual(Object.fromEntries(Object.entries(initialCounts).map(([table, count]) => [table, count + 100])));
+    expect(fixture.sameTenantOtherMetadata).toEqual({
+      brand_profile: { completed: true },
+      brand_dna_versions: [{ version: 2 }],
+      onboarding_note: 'sibling must keep this',
+    });
     expect(fixture.tx.user.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: targetId },
       data: expect.objectContaining({ metadata: { onboarding_note: 'keep me' } }),
     }));
-    const metadataUpdate = fixture.tx.user.update.mock.calls[0]?.[0] as { data: { metadata: Record<string, unknown> } };
-    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_builder_state');
-    expect(receipt.metadataKeysCleared).toEqual([
-      'brand_profile', 'brand_dna_field_provenance', 'brand_dna_track_audience', 'brand_dna_versions', 'brand_builder_state',
-    ]);
     expect(audit.writePlatformAuditInTransaction).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       action: 'user.data.reset',
       outcome: 'success',
       metadata: expect.objectContaining({ target_email: targetEmail, per_table_counts: initialCounts }),
     }));
+  });
+
+  it('clears every brand and interview metadata key while preserving unrelated metadata', async () => {
+    const fixture = createDatabase();
+
+    const receipt = await resetUserBusinessDataWithAudit(actorId, targetId, targetEmail, 'reset-metadata', fixture.db);
+
+    const metadataUpdate = fixture.tx.user.update.mock.calls[0]?.[0] as { data: { metadata: Record<string, unknown> } };
+    expect(metadataUpdate.data.metadata).toEqual({ onboarding_note: 'keep me' });
+    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_builder_state');
+    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_extraction');
+    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_interview_extraction');
+    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_interview_dialogue');
+    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_forked_interview_confirmation');
+    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_residual');
+    expect(metadataUpdate.data.metadata).not.toHaveProperty('brand_builder_calendar');
+    expect(receipt.metadataKeysCleared).toEqual([
+      'brand_profile', 'brand_dna_field_provenance', 'brand_dna_track_audience', 'brand_dna_versions', 'brand_builder_state',
+      'brand_extraction', 'brand_interview_extraction', 'brand_interview_dialogue', 'brand_forked_interview_confirmation',
+      'brand_residual', 'brand_builder_calendar',
+    ]);
   });
 
   it('normalizes email casing and surrounding whitespace before confirmation', async () => {
@@ -148,6 +186,11 @@ describe('resetUserBusinessDataWithAudit', () => {
 
     expect(fixture.targetCounts).toEqual(initialCounts);
     expect(fixture.sameTenantOtherCounts).toEqual(Object.fromEntries(Object.entries(initialCounts).map(([table, count]) => [table, count + 100])));
+    expect(fixture.sameTenantOtherMetadata).toEqual({
+      brand_profile: { completed: true },
+      brand_dna_versions: [{ version: 2 }],
+      onboarding_note: 'sibling must keep this',
+    });
     expect(audit.writePlatformAuditInTransaction).not.toHaveBeenCalled();
     expect(audit.writePlatformAuditUsing).toHaveBeenCalledWith(fixture.db, expect.objectContaining({
       action: 'user.data.reset', outcome: 'failure', metadata: expect.objectContaining({ failure_code: 'Error' }),
