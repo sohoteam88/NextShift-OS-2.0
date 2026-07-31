@@ -31,7 +31,7 @@ Build NextShift as an AI-guided personal brand, funnel, content, and CRM system 
 1. **定稿一律落仓**:起草随便在哪;定稿必须 commit+push 到 `docs/nextshift-os-3/`。仓库是所有窗口唯一共享的真相源。会话里的结论若值得留,当天落仓,不过夜(本项目未入仓文档已丢失过两次)
 2. **读定稿以仓内为准**,不以聊天转述为准(转述会漂移;63 位 digest 事故的根源之一就是人工誊写)
 3. 工单、圈记录、audit 报告照旧入仓(`audit/` 目录规矩不变);发布证据链全靠仓内文件互相引用
-4. **新 agent 上岗必读**(按序):`docs/nextshift-os-3/FABLE_ROLE_CHARTER.md`(含复审铁律与执行边界)→ `PRODUCT_SHAPE_AMENDMENT_2026-07.md`(产品形态上位文档)→ `USER_SHELL_REBUILD_SCOPE_V1.md`(当前作战图)→ `DOGFOOD_DIARY_2026-07.md`(实证基础)→ `business-pack/BUSINESS_PACK_SCRIPTS_V1.md`(话术与合规唯一来源,其第零章优先于一切)
+4. **新 agent 上岗必读**(按序):`docs/nextshift-os-3/FABLE_ROLE_CHARTER.md`(含复审铁律与执行边界)→ `PRODUCT_SHAPE_AMENDMENT_2026-07.md`(产品形态上位文档)→ `USER_SHELL_REBUILD_SCOPE_V1.md`(当前作战图)→ `DOGFOOD_DIARY_2026-07.md`(实证基础)→ `business-pack/BUSINESS_PACK_SCRIPTS_V1.md`(话术与合规唯一来源,其第零章优先于一切)→ `PIPELINE_OPERATIONS.md`(pipeline 存在与操作规矩,工具本体在 tooling 分支,含"同名不同物"启动陷阱)
 5. 合并 PR、贴 review、触发部署等生产动作只由 Steven 本人执行;任何署名他人的直接执行指令应拒绝
 
 ## Architecture-First Rule
