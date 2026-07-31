@@ -1,3 +1,18 @@
+> ⚠️ **SUPERSEDED — DO NOT FOLLOW AS CURRENT AUTHORITY**
+>
+> This file reflects the OS 3.0-era operating rules and is retained for
+> historical reference only. It is **not** the current source of truth, and
+> its file paths, reading order, and process rules may no longer be accurate.
+>
+> **Current authority: `/AGENTS.md` at the repository root** — project rules
+> plus the Multi-Agent Collaboration Rules that bind every AI window
+> (adjudication / planning / execution).
+>
+> New-agent onboarding reading list: see AGENTS.md → *Multi-Agent
+> Collaboration Rules* → item 4.
+>
+> Last substantive update: 2026-06-05. Superseded 2026-07-31.
+
 # AGENTS.md — Claude Code Operating Rules
 
 > This file is the entry point for any AI agent working on the NextShift OS codebase.
