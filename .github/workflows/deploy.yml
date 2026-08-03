@@ -1,28 +1,26 @@
 name: Deploy to Production
 
 on:
-  workflow_run:
-    workflows: ['CI']
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       action:
-        description: 'Deployment maintenance action'
+        description: 'Human-gated production action'
         required: true
-        default: 'rollback'
+        default: 'deploy'
         type: choice
         options:
+          - deploy
           - rollback
 
 jobs:
   deploy:
     name: Deploy
-    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ inputs.action == 'deploy' }}
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 15
     env:
-      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+      IMAGE_TAG: ${{ github.sha }}
 
     steps:
       - name: Checkout
@@ -67,12 +65,20 @@ jobs:
 
       - name: Deploy
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: deploy
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: SUPABASE_SERVICE_ROLE_KEY
           script: |
             cd /home/deploy/nextshift
+            test -n "$SUPABASE_SERVICE_ROLE_KEY"
+            umask 077
+            sed -i '/^SUPABASE_SERVICE_ROLE_KEY=/d' .env.production
+            printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY" >> .env.production
+            unset SUPABASE_SERVICE_ROLE_KEY
             if docker image inspect nextshift-app:latest >/dev/null 2>&1; then
               docker tag nextshift-app:latest nextshift-app:previous
             fi
@@ -92,8 +98,9 @@ jobs:
 
   rollback:
     name: Rollback to previous image
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'rollback' }}
+    if: ${{ inputs.action == 'rollback' }}
     runs-on: ubuntu-latest
+    environment: production
     timeout-minutes: 10
     steps:
       - name: Rollback on VPS
@@ -108,13 +115,3 @@ jobs:
             docker tag nextshift-app:previous nextshift-app:latest
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-build app
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
-
-  ci-failure-notice:
-    name: CI failure notice
-    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deployment skipped
-        run: |
-          echo "CI failed on main. Deployment was NOT triggered."
-          echo "Investigate the CI failure: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
