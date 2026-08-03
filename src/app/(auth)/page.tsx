@@ -6,10 +6,8 @@ import {
   type TodayTaskUser,
 } from '@/modules/user-shell/services/todayTaskResolver';
 import { getProgressLine } from '@/modules/user-shell/services/progressLineResolver';
-import {
-  getHomeTaskPresentation,
-  HomePage,
-} from '@/modules/user-shell/components/HomePage';
+import { getHomeTaskPresentation } from '@/modules/user-shell/services/homeTaskPresentation';
+import { HomePage } from '@/modules/user-shell/components/HomePage';
 
 export default async function Home() {
   const user = await getAuthUser();
