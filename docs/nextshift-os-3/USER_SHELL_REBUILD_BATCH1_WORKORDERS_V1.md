@@ -2,7 +2,9 @@
 
 > **定稿日期**：2026-07-31
 > **上位文档**：`USER_SHELL_REBUILD_SCOPE_V1.md` 第七章「批 1」
-> **裁决记录**：Fable 2026-07-31 对「我的账号」schema 的裁决（见本文 W1 工单）
+> **裁决记录**：
+> - Fable 2026-07-31（首次）对「我的账号」schema 的裁决——独立表 `UserAccount` + `@@unique([userId, platform, track])`
+> - Fable 2026-07-31（复审 APPROVE）追加两处修正：①`platform`/`track` 改 Prisma enum（AUD-007 落地，新表零迁移成本）；②`UserAccount.user` 关系改复合外键 `(tenantId, userId)`（AUD-003 首例执行，新表即用，存量表不动）；并裁定 W5 二选一——不自动建账号记录，留空引导用户主动开号
 > **性质**：把批 1 七项交付拆成可独立过 CI + 复审的工单，避免大爆炸合并（护栏第 5 条）
 > **执行顺序**：W1 → W2（含备份演练闸门）→ W3 → W4 → W5，W3/W4/W5 在 W1 落地后可并行
 
@@ -36,37 +38,63 @@ W1 Schema 迁移（UserAccount + businessStartAt）
 
 现有 Prisma schema（`prisma/schema.prisma`）实测确认：`Funnel` 表无 `track` 列，无任何账号/社交账号表，`User` 表无 `businessStartAt`。`src/modules/social-setup` 是内容文案生成器（单份 FB/IG bio 建议，存 `User.metadata.social_setup`），**不是**「我的账号」的数据地基，两者不要混淆、不要合并、不要互相改写。
 
-### Schema 定义（Fable 已裁决，逐字落地）
+### Schema 定义（Fable 复审 APPROVE，含两处修正，逐字落地）
 
 ```prisma
-model UserAccount {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String   @map("tenant_id") @db.Uuid
-  userId     String   @map("user_id") @db.Uuid
-  platform   String   // fb / ig / xiaohongshu / tiktok
-  track      String   // recruitment / retail
-  name       String   // 她填的号名，内容页切换器直接显示这个
-  url        String?
-  enabled    Boolean  @default(true)
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum SocialPlatform {
+  fb
+  ig
+  xiaohongshu
+  tiktok
+}
 
-  @@unique([userId, platform, track])   // Fable 裁决：一个号=一轨，现在加，不等脏数据
+enum AccountTrack {
+  recruitment
+  retail
+}
+
+model UserAccount {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String         @map("tenant_id") @db.Uuid
+  userId     String         @map("user_id") @db.Uuid
+  platform   SocialPlatform
+  track      AccountTrack
+  name       String         // 她填的号名，内容页切换器直接显示这个
+  url        String?
+  enabled    Boolean        @default(true)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [tenantId, userId], references: [tenantId, id], onDelete: Cascade)
+
+  @@unique([userId, platform, track])   // 一个号=一轨，现在加，不等脏数据
   @@index([tenantId, userId])
   @@index([userId, enabled])
   @@map("user_accounts")
 }
 ```
 
-`User` 表新增一列：
+`User` 表新增一列，并加一条复合唯一约束（供 `UserAccount` 的复合外键引用）：
 
 ```prisma
 businessStartAt DateTime? @map("business_start_at") @db.Timestamptz(6)
+
+@@unique([tenantId, id])
 ```
 
 `User` model 需补 `accounts UserAccount[]` 反向关系字段；`Tenant` model 补 `userAccounts UserAccount[]`。
+
+### 修正一 · enum 替代 String（AUD-007 落地）
+
+`platform`/`track` 原定义为 `String`，Fable 复审要求改为 Prisma enum。理由：`UserAccount` 是全新表、无存量数据，enum 迁移成本为零；typo（如把 `"recruitment"` 手滑写成 `"recruitement"`）从此在数据库层就被拒绝，不会进库；W5"切换器不得出现招募/零售内部词"的 grep 验收也因此多一层类型系统保险——即使某处遗漏了展示层过滤，脏值本身也不可能存在。
+
+### 修正二 · 复合外键替代单列外键（AUD-003 首例执行）
+
+`UserAccount.user` 原定义为 `fields: [userId], references: [id]`（只验证 `userId` 存在，不验证它属于同一 `tenantId`）。Fable 复审要求改为复合引用 `fields: [tenantId, userId], references: [tenantId, id]`，因此 `User` 表需新增 `@@unique([tenantId, id])`（复合外键的引用侧必须是唯一约束，`id` 本身已是主键但复合引用要求 `(tenantId, id)` 联合唯一，Prisma/Postgres 层面这是新增约束，不是重复）。
+
+效果：数据库层从此保证"这条账号记录的 user，必定属于这条账号记录自己的 tenant"——不可能出现 `UserAccount.tenantId = Tenant A` 但其 `user` 实际属于 `Tenant B` 的情况。
+
+**范围说明**：这是 AUD-003（tenant isolation 主要靠应用层过滤）在批 C 之前的首次数据库级 enforcement，但**只适用于本工单新建的 `UserAccount` 表**。现有表（`Mission`、`Lead`、`Activity` 等同样有 `tenantId`+`userId` 并存但未做复合约束的模型）本次不动，按批 C（绑首个真实用户闸门）排期处理——enforcement 不等大迁移一次性做完，从今天起的新表开始，存量表逐步补。
 
 ### 为什么是独立表不是 JSON（写进 PR 描述，Fable 会看）
 
@@ -76,7 +104,7 @@ businessStartAt DateTime? @map("business_start_at") @db.Timestamptz(6)
 
 ### 改动范围
 
-- `prisma/schema.prisma`：加 `UserAccount` model + `User.businessStartAt` + 两处反向关系字段
+- `prisma/schema.prisma`：加 `SocialPlatform`/`AccountTrack` 两个 enum + `UserAccount` model + `User.businessStartAt` + `User.@@unique([tenantId, id])` + 两处反向关系字段
 - `prisma/migrations/<timestamp>_add_user_accounts_and_business_start_at/migration.sql`：`prisma migrate dev` 生成，禁止手写 SQL 绕过 Prisma
 - 不写任何读写 `UserAccount` 的业务代码——本工单只落地基，消费方是 W2/W5
 
@@ -86,7 +114,8 @@ businessStartAt DateTime? @map("business_start_at") @db.Timestamptz(6)
 - [ ] `pnpm prisma migrate dev` 在本地干净生成迁移文件，无警告
 - [ ] `pnpm build` 通过（确认新 model 不破坏现有 Prisma Client 生成）
 - [ ] `pnpm lint` 通过
-- [ ] migration.sql 人工读一遍：只有 `CREATE TABLE user_accounts` + `ALTER TABLE users ADD COLUMN business_start_at` + 相关索引/约束，不含任何 `DROP`/`ALTER COLUMN ... TYPE`
+- [ ] migration.sql 人工读一遍：只有 `CREATE TYPE` ×2（enum）+ `CREATE TABLE user_accounts` + `ALTER TABLE users ADD COLUMN business_start_at` + `ALTER TABLE users ADD CONSTRAINT ... UNIQUE (tenant_id, id)` + 相关索引/约束，不含任何 `DROP`/`ALTER COLUMN ... TYPE`
+- [ ] `User.@@unique([tenantId, id])` 新增后，跑一次 `pnpm prisma validate` 确认没有与现有主键约束冲突
 - [ ] PR 描述里贴出完整最终 schema（Fable 要求）
 
 ---
@@ -297,10 +326,16 @@ W1（`UserAccount` 表落地）。可与 W2/W3/W4 并行起草，但涉及数据
 - `src/modules/user-shell/components/AccountSwitcher.tsx`（新建，供 W3 首页/未来内容页复用的切换器组件，本批只需支持"账号数≥2 时渲染"的基础展示，不用在首页出现）
 - `src/app/(auth)/settings/accounts/page.tsx`（新建，账号管理页，挂在现有 `settings` 路由下）
 
+### Fable 裁决 · 新账号是否自动建默认记录（已定案，不再是开放问题）
+
+**维持"留空，引导她主动开号"，不自动创建默认账号记录。**
+
+理由（Fable 原话）：账号记录应在她完成开号引导（真实建了 FB 专页）时创建；系统造不出她的专页，自动建空记录 = 又一个说谎的数字——与第三章"已发 X 条永不说谎"、G5"系统不得声称它不知道的事"同一条原则。新用户在完成开号引导前，`UserAccount` 表对她没有任何记录，这是预期状态，不是缺陷。
+
 ### 验收标准
 
-- [ ] 新账号注册后系统自动创建一个 `track=recruitment` 的默认账号记录（还是留空由用户主动开号，需 Steven 在工单执行前二选一——本工单默认写成"留空，引导她主动开号"，若 Steven 要改自动创建，Codex 执行前先确认）
-- [ ] `enabled` 账号数 = 1 时，任何页面不出现账号切换 UI，也不出现"招募/零售"字样
+- [ ] 新账号注册后**不**自动创建任何 `UserAccount` 记录；`UserAccount` 表对新用户为空是预期状态，直到她走完开号引导
+- [ ] `enabled` 账号数 = 0 或 1 时，任何页面不出现账号切换 UI，也不出现"招募/零售"字样
 - [ ] `enabled` 账号数 ≥ 2 时切换器显示号名文字，grep 确认源码和渲染文案都不含"招募"/"零售"硬编码字符串
 - [ ] `@@unique([userId, platform, track])` 约束生效：同用户同平台同轨道二次新建应报错并给出人话提示，不是数据库原始错误堆栈
 - [ ] `pnpm lint` / `pnpm build` 通过
@@ -310,9 +345,13 @@ W1（`UserAccount` 表落地）。可与 W2/W3/W4 并行起草，但涉及数据
 ## 待 Steven 口述/拍板才能解锁的已知缺口（不阻塞批 1，记录在案）
 
 - W2 节奏表"事业期第二周起"内容——事业包待补
-- W5 "新账号是否自动创建默认招募号"——本工单默认"留空引导"，Steven 若有不同判断需在执行前改
 - 首页任务标题的中文表述、「发好了✓」的夸语——USER_SHELL_REBUILD_SCOPE_V1.md 待补清单已列，批 2 会用到，不阻塞批 1
+
+## 已裁决关闭的问题（不再是开放项）
+
+- W1 schema：`platform`/`track` 用 enum、`UserAccount.user` 用复合外键——Fable 复审 APPROVE，见 W1 章节
+- W5：新账号不自动建默认记录，留空引导主动开号——Fable 裁决，见 W5 章节
 
 ---
 
-*批 1 工单拆解 v1 — 2026-07-31，五工单待 Steven 转发 Codex 执行*
+*批 1 工单拆解 v1 — 2026-07-31 定稿，Fable 复审 APPROVE（含两处 schema 修正）——五工单待 Steven 转发 Codex 执行*
