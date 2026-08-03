@@ -11,6 +11,17 @@ export type UserDataResetReceipt = {
   metadataKeysCleared: string[];
 };
 
+const BRAND_OR_INTERVIEW_METADATA_KEYS = new Set([
+  'brand_profile',
+  'brand_builder_state',
+  'brand_extraction',
+  'brand_interview_extraction',
+  'brand_interview_dialogue',
+  'brand_forked_interview_confirmation',
+  'brand_residual',
+  'brand_builder_calendar',
+]);
+
 function failureCode(error: unknown): string {
   return error instanceof AppError ? error.code : error instanceof Error ? error.name : 'UNKNOWN';
 }
@@ -23,7 +34,7 @@ function removeBrandDnaMetadata(metadata: Prisma.JsonValue): {
     ? metadata as Record<string, unknown>
     : {};
   const clearedKeys = Object.keys(current).filter(
-    (key) => key === 'brand_profile' || key === 'brand_builder_state' || key.startsWith('brand_dna'),
+    (key) => BRAND_OR_INTERVIEW_METADATA_KEYS.has(key) || key.startsWith('brand_dna'),
   );
   const next = { ...current };
   for (const key of clearedKeys) delete next[key];
@@ -54,6 +65,8 @@ export async function resetUserBusinessDataWithAudit(
       // Every predicate is bound to the target user (or a parent owned by that
       // user). This deliberately never treats a tenant as a reset boundary.
       const perTableCounts = {
+        userAccount: (await tx.userAccount.deleteMany({ where: { userId: targetUserId } })).count,
+        inviteCode: (await tx.inviteCode.deleteMany({ where: { sponsorId: targetUserId } })).count,
         leadTag: (await tx.leadTag.deleteMany({ where: { lead: { ownerId: targetUserId } } })).count,
         scheduledMessage: (await tx.scheduledMessage.deleteMany({
           where: { OR: [{ userId: targetUserId }, { lead: { ownerId: targetUserId } }] },
