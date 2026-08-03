@@ -39,8 +39,13 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | O5 | F-14 硬闸门拆除 | O | W3 | 已完成(拆除下游生成前的 Brand-DNA-完整度 UI 硬闸:content-engine 的 BrandDNAGate 与 lead-magnet 的 ReadinessGate 早退拦截移除,生成面永远渲染并经既有 G0 网关走 O3 默认值填充+G4 硬过滤,不再 bounce 回 /brand-builder/step/profile;资料不全只降质不锁门——改以内联、非阻断、教练口吻质量提示("资料越全成品越像你",零品牌名/价格/体重/收入承诺)呈现;区分"资料不完整(永不锁门,显示教练提示)"与"资料加载失败(可点击重试,沿用 G5 模式)"两态,后者不再是须补完 Brand DNA 的死胡同;server generate 路由与 G0/G4/G5/O3/sharedAiRateLimitGuard 均无回归;ContentCommandCenter 补测(不完整档案渲染生成控件而非 BrandDNAGate、完整档案不回归、加载错误呈现重试)+ 新增 LeadMagnetDashboard co-located 测试证明不再硬锁;PR #166 / f4c9c0e) |
 | G3 | video-production 旧管线退役 | G | W3 | 已完成(旧 video-production 模块代码删除,功能并入 video/;PR #167 / fde5660) |
 | G6 | 内容库卫生(F-28 库污染) | G | W3 | 已完成(草稿去重防污染;PR #169 / 5c64867) |
-| M1 | 双轨隔离贯通验收(F-29 根治) | M | W4/T2(并入模板实例化) | 未完成——2026-07-27 Fable 改判撤回:PR #171 实际仅为 funnel-copy 路由 track 字段加 `.default('retail')` 一行,未实现 mode 贯穿漏斗文案全链路隔离;漏斗编辑器降级 admin 工具,缺口并入 W4/T2,验收标准见下方 M1 章节 2026-07-27 更新 |
-| SA1 | 超管用户数据重置(走查前置工具) | U | W3.5(走查前置,HUMAN_GATE) | 待启动(Fable 2026-07-28 批准立项,详见下方 SA1 章节) |
+| W1 | UserAccount schema + businessStartAt | 批 1 | 地基 | 已完成（PR #204，2026-07-31 合并；完整 CI 全绿，59 条 readiness fixtures 含迁移登记断言） |
+| W2 | 「今天做什么」确定性逻辑 + 底部一句 | 批 1 | 地基 | 已完成（PR #203，2026-07-31 合并；lint/type-check/build exit code 均为 0） |
+| W3 | 新首页 `/` 骨架 | 批 1 | 下一批 | 待办（前置依赖已满足；本项是 pipeline 下一项） |
+| W4 | 路由占位 + 旧路由下线 | 批 1 | 下一批 | 待办（依赖 W3） |
+| W5 | 「我的账号」管理页 UI | 批 1 | 下一批 | 待办（依赖 W1，已满足） |
+| M1 | 双轨隔离贯通验收(F-29 根治) | M | W4/T2（并入模板实例化） | 已撤回（PR #180 / Fable 2026-07-28 决议：不作为独立待办；缺口并入批 1 W4/T2） |
+| SA1 | 超管用户数据重置(走查前置工具) | U | W3.5（走查前置，HUMAN_GATE） | 已完成（PR #182，2026-07-28 合并） |
 
 ---
 

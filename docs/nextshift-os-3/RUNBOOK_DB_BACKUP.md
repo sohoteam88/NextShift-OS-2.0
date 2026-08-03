@@ -17,6 +17,22 @@ PgBouncer URL, because `pg_dump` must not use the transaction pooler.
 
 19:00 UTC is 03:00 Malaysia time (UTC+8).
 
+## Transitional backup script record (2026-08-03)
+
+Before the first gated production deployment has copied a reviewed
+`nextshift-migrations:<release-sha>` image to the new VPS, the server uses the
+temporary root-owned script `/usr/local/sbin/nextshift-db-backup`. It runs at
+`19:00 UTC` from `/etc/cron.d/nextshift-db-backup`, writes root-only (`0600`)
+custom dumps and per-file `.sha256` checksums under
+`/var/backups/nextshift/postgres`, and appends a standard two-space-delimited
+`SHA256SUMS` manifest there. The temporary script is not the canonical
+release-backed implementation.
+
+At the first gated deployment that transfers the migration image, switch the
+cron entry to `scripts/ops/backup-production-db.sh` with that exact image tag,
+verify a new dump and `SHA256SUMS`, then archive the temporary script and its
+`/etc/cron.d` entry. Do not run both scripts on the same schedule.
+
 ## Verify and restore rehearsal
 
 Check: `tail -n 20 /home/deploy/backups/backup.log` and `ls -lt /home/deploy/backups/nextshift-*.dump | head`.

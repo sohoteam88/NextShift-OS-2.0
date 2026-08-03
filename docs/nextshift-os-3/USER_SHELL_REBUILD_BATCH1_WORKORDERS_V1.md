@@ -6,6 +6,12 @@
 > **性质**：把批 1 七项交付拆成可独立过 CI + 复审的工单，避免大爆炸合并（护栏第 5 条）
 > **执行顺序**：W1 → W2（含备份演练闸门）→ W3 → W4 → W5，W3/W4/W5 在 W1 落地后可并行
 
+## 状态追认（Fable，2026-08-03）
+
+- W1 已完成：PR #204 于 2026-07-31 合并；完整 CI 全绿，production-readiness fixtures 为 59 条，包含迁移登记断言。
+- W2 已完成：PR #203 于 2026-07-31 合并；PR 记录的本机 `pnpm lint`、`pnpm type-check`、`pnpm build` 均为 exit code 0。
+- W3、W4、W5 为下一批待办；依赖状态以 `OS_3_9_BLUEPRINT.md` 的 pipeline 索引为准。
+
 ---
 
 ## 工单依赖图
