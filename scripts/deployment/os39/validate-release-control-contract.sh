@@ -20,6 +20,16 @@ require_count() {
   actual="$(count "$1" "$3")"
   [[ "$actual" == "$2" ]] || fail "$4: expected $2 occurrence(s), found $actual"
 }
+require_job_timeout() {
+  local actual
+  actual="$(awk -v job="$2" -v timeout="$3" '
+    $0 == job { in_job=1; next }
+    in_job && /^  [A-Za-z0-9_-]+:$/ { in_job=0 }
+    in_job && $0 == timeout { count++ }
+    END { print count + 0 }
+  ' "$1")"
+  [[ "$actual" == 1 ]] || fail "$4: expected one exact occurrence in $2, found $actual"
+}
 
 for path in "$workflow" "$manifest" "$manifest_validator" "$readiness_validator" "$review_validator" "$request_creator" "$approval_validator" "$request_validator" "$preflight"; do
   [[ -f "$path" && ! -L "$path" ]] || fail "release-control input must be a regular file: $path"
@@ -29,6 +39,8 @@ pnpm exec prettier "$workflow" >/dev/null
 "$manifest_validator" --manifest "$manifest" >/dev/null
 
 require_count "$workflow" 1 '  workflow_dispatch:' 'manual-only deployment trigger'
+require_count "$workflow" 1 '    timeout-minutes: 40' 'deploy job timeout budget'
+require_job_timeout "$workflow" '  rollback:' '    timeout-minutes: 20' 'rollback job timeout budget'
 for forbidden in '  push:' '  pull_request:' '  workflow_run:' '  schedule:'; do
   require_count "$workflow" 0 "$forbidden" 'automatic production trigger'
 done

@@ -130,7 +130,7 @@ jobs:
     if: ${{ inputs.action == 'deploy' && inputs.confirmation == 'DEPLOY_PRODUCTION' }}
     needs: [validate-request, build-migration-artifact]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     environment: production
     env:
       GH_TOKEN: ${{ github.token }}
@@ -351,7 +351,7 @@ jobs:
     if: ${{ inputs.action == 'rollback' && inputs.confirmation == 'ROLLBACK_PRODUCTION' }}
     needs: validate-request
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     environment: production
     env:
       GH_TOKEN: ${{ github.token }}
