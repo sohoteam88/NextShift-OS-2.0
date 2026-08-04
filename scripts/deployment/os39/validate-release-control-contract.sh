@@ -56,7 +56,7 @@ require_count "$workflow" 3 'StrictHostKeyChecking=yes' 'native SSH host-key che
 require_count "$workflow" 0 'StrictHostKeyChecking=no' 'insecure SSH host-key bypass is forbidden'
 require_count "$workflow" 0 'StrictHostKeyChecking=accept-new' 'TOFU SSH host-key acceptance is forbidden'
 require_count "$workflow" 2 'scp -O' 'runner-native legacy SCP transport'
-require_count "$workflow" 2 'printf '\''%s'\'' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"' 'private key must be written without a trailing newline'
+require_count "$workflow" 2 'printf '\''%s\n'\'' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"' 'private key must be written with a trailing newline'
 require_count "$workflow" 0 'echo "$VPS_SSH_KEY"' 'private key logging is forbidden'
 
 require_count "$readiness_validator" 0 'PENDING_STAGE_4' 'OS 3.9 readiness validator rejects deferred state'

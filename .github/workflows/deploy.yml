@@ -216,7 +216,7 @@ jobs:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           set -euo pipefail
-          printf '%s' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"
+          printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"
           chmod 600 "$RUNNER_TEMP/id"
           printf '%s\n' '169.58.116.102 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPj4eqBtG5Oyx3ulN4rwVBqnM0NL+Sx0TpWqZlp8JsYJ' > "$RUNNER_TEMP/known_hosts"
           chmod 600 "$RUNNER_TEMP/known_hosts"
@@ -342,6 +342,10 @@ jobs:
             rm image.tar.gz migration-image.tar.gz migration-image.tar.gz.sha256 migration-image-digest.txt
           REMOTE_SCRIPT
 
+      - name: Remove temporary OpenSSH key
+        if: ${{ always() }}
+        run: rm -f "$RUNNER_TEMP/id"
+
   rollback:
     name: Roll back production to exact release SHA
     if: ${{ inputs.action == 'rollback' && inputs.confirmation == 'ROLLBACK_PRODUCTION' }}
@@ -380,7 +384,7 @@ jobs:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           set -euo pipefail
-          printf '%s' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"
+          printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"
           chmod 600 "$RUNNER_TEMP/id"
           printf '%s\n' '169.58.116.102 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPj4eqBtG5Oyx3ulN4rwVBqnM0NL+Sx0TpWqZlp8JsYJ' > "$RUNNER_TEMP/known_hosts"
           chmod 600 "$RUNNER_TEMP/known_hosts"
@@ -403,3 +407,7 @@ jobs:
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-build app
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
           REMOTE_SCRIPT
+
+      - name: Remove temporary OpenSSH key
+        if: ${{ always() }}
+        run: rm -f "$RUNNER_TEMP/id"
