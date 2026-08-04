@@ -6,10 +6,10 @@ export function isAdminRole(role: string) {
   return ADMIN_ROLES.has(role);
 }
 
-export function homeRouteForRole(role: string): '/superadmin' | '/admin' | '/dashboard' {
+export function homeRouteForRole(role: string): '/superadmin' | '/admin' | '/' {
   if (role === 'platform_admin') return '/superadmin';
   if (isAdminRole(role)) return '/admin';
-  return '/dashboard';
+  return '/';
 }
 
 export function resolveAuthRedirect(user: AuthUser): '/pending' | '/login' | null {
