@@ -211,23 +211,49 @@ jobs:
           name: nextshift-migration-${{ env.IMAGE_TAG }}
           path: .
 
+      - name: Configure pinned OpenSSH transport
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"
+          chmod 600 "$RUNNER_TEMP/id"
+          printf '%s\n' '169.58.116.102 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPj4eqBtG5Oyx3ulN4rwVBqnM0NL+Sx0TpWqZlp8JsYJ' > "$RUNNER_TEMP/known_hosts"
+          chmod 600 "$RUNNER_TEMP/known_hosts"
+
       - name: Copy exact release artifacts to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "image.tar.gz,migration-image.tar.gz,migration-image.tar.gz.sha256,migration-image-digest.txt,docker-compose.prod.yml,os38-release-sha.txt,scripts/deploy-smoke.sh"
-          target: "/home/deploy/nextshift"
-          overwrite: true
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          set -euo pipefail
+          ssh_options=(
+            -i "$RUNNER_TEMP/id"
+            -o UserKnownHostsFile="$RUNNER_TEMP/known_hosts"
+            -o StrictHostKeyChecking=yes
+          )
+          ssh "${ssh_options[@]}" "deploy@$VPS_HOST" \
+            'install -d -m 775 /home/deploy/nextshift/scripts'
+          scp -O "${ssh_options[@]}" \
+            image.tar.gz \
+            migration-image.tar.gz \
+            migration-image.tar.gz.sha256 \
+            migration-image-digest.txt \
+            docker-compose.prod.yml \
+            os38-release-sha.txt \
+            "deploy@$VPS_HOST:/home/deploy/nextshift/"
+          scp -O "${ssh_options[@]}" \
+            scripts/deploy-smoke.sh \
+            "deploy@$VPS_HOST:/home/deploy/nextshift/scripts/deploy-smoke.sh"
 
       - name: Migrate and deploy exact release SHA
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/id" \
+            -o UserKnownHostsFile="$RUNNER_TEMP/known_hosts" \
+            -o StrictHostKeyChecking=yes \
+            "deploy@$VPS_HOST" 'bash -euo pipefail -s' <<'REMOTE_SCRIPT'
             set -euo pipefail
 
             fail_check() {
@@ -314,6 +340,11 @@ jobs:
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
             docker image prune -f
             rm image.tar.gz migration-image.tar.gz migration-image.tar.gz.sha256 migration-image-digest.txt
+          REMOTE_SCRIPT
+
+      - name: Remove temporary OpenSSH key
+        if: ${{ always() }}
+        run: rm -f "$RUNNER_TEMP/id"
 
   rollback:
     name: Roll back production to exact release SHA
@@ -348,13 +379,25 @@ jobs:
             "$CONTROL_PLANE_SHA"
           test "$(git rev-parse HEAD)" = "$CONTROL_PLANE_SHA"
 
+      - name: Configure pinned OpenSSH transport
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"
+          chmod 600 "$RUNNER_TEMP/id"
+          printf '%s\n' '169.58.116.102 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPj4eqBtG5Oyx3ulN4rwVBqnM0NL+Sx0TpWqZlp8JsYJ' > "$RUNNER_TEMP/known_hosts"
+          chmod 600 "$RUNNER_TEMP/known_hosts"
+
       - name: Rollback on VPS
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          set -euo pipefail
+          ssh -i "$RUNNER_TEMP/id" \
+            -o UserKnownHostsFile="$RUNNER_TEMP/known_hosts" \
+            -o StrictHostKeyChecking=yes \
+            "deploy@$VPS_HOST" 'bash -euo pipefail -s' <<'REMOTE_SCRIPT'
             cd /home/deploy/nextshift
             target_image="${{ env.ROLLBACK_IMAGE_TAG }}"
             docker image inspect "$target_image" >/dev/null 2>&1
@@ -363,3 +406,8 @@ jobs:
             docker tag "$target_image" nextshift-app:latest
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-build app
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh
+          REMOTE_SCRIPT
+
+      - name: Remove temporary OpenSSH key
+        if: ${{ always() }}
+        run: rm -f "$RUNNER_TEMP/id"
