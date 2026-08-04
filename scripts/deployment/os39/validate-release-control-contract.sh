@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# Static, non-deploying contract checks for the OS 3.9 release control plane.
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+workflow="$repo_root/.github/workflows/deploy.yml"
+manifest="$repo_root/docs/nextshift-os-3/os-3-9/PIPELINE_MANIFEST.json"
+manifest_validator="$repo_root/scripts/os-pipeline/os39/validate-manifest.sh"
+readiness_validator="$repo_root/scripts/deployment/os39/validate-production-readiness-evidence.sh"
+review_validator="$repo_root/scripts/deployment/os39/validate-final-release-review-request.sh"
+request_creator="$repo_root/scripts/deployment/os39/request-final-release-review.sh"
+approval_validator="$repo_root/scripts/deployment/os39/validate-final-release-approval.sh"
+request_validator="$repo_root/scripts/deployment/os39/validate-production-request.sh"
+preflight="$repo_root/scripts/deployment/os39/preflight-migration-image.sh"
+
+fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+count() { grep -Fc -- "$2" "$1" || true; }
+require_count() {
+  local actual
+  actual="$(count "$1" "$3")"
+  [[ "$actual" == "$2" ]] || fail "$4: expected $2 occurrence(s), found $actual"
+}
+
+for path in "$workflow" "$manifest" "$manifest_validator" "$readiness_validator" "$review_validator" "$request_creator" "$approval_validator" "$request_validator" "$preflight"; do
+  [[ -f "$path" && ! -L "$path" ]] || fail "release-control input must be a regular file: $path"
+done
+
+pnpm exec prettier "$workflow" >/dev/null
+"$manifest_validator" --manifest "$manifest" >/dev/null
+
+require_count "$workflow" 1 '  workflow_dispatch:' 'manual-only deployment trigger'
+for forbidden in '  push:' '  pull_request:' '  workflow_run:' '  schedule:'; do
+  require_count "$workflow" 0 "$forbidden" 'automatic production trigger'
+done
+require_count "$workflow" 3 'scripts/deployment/os39/validate-production-request.sh' 'OS 3.9 production request validation'
+require_count "$workflow" 1 'scripts/deployment/os39/validate-production-readiness-evidence.sh' 'OS 3.9 readiness validation'
+require_count "$workflow" 2 'EXPECTED_MIGRATION_IMAGE_DIGEST: ${{ needs.validate-request.outputs.migration_image_digest }}' 'preflight digest propagation'
+require_count "$workflow" 1 'migration image digest preflight mismatch' 'build-time digest equality'
+require_count "$workflow" 1 "assert_equal 'migration artifact digest preflight' \"\$EXPECTED_MIGRATION_IMAGE_DIGEST\" \"\$expected_migration_digest\"" 'deploy-time digest equality'
+require_count "$workflow" 0 'PENDING_STAGE_4' 'obsolete delayed-digest semantics'
+require_count "$workflow" 0 'finalize-production-readiness-stage4.sh' 'obsolete Stage 4 evidence finalizer'
+require_count "$workflow" 1 'ROLLBACK_IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}' 'rollback image tag binding'
+require_count "$workflow" 1 'ROLLBACK_IMAGE_ID: ${{ needs.validate-request.outputs.rollback_image_id }}' 'rollback image ID binding'
+require_count "$workflow" 1 'target_image="${{ env.ROLLBACK_IMAGE_TAG }}"' 'rollback target tag'
+require_count "$workflow" 1 'image_id="$(docker image inspect --format' 'rollback local image ID measurement'
+require_count "$workflow" 1 'test "$image_id" = "${{ env.ROLLBACK_IMAGE_ID }}"' 'rollback local image ID equality'
+require_count "$workflow" 1 'image_revision="$(docker image inspect' 'application OCI revision check only'
+
+require_count "$readiness_validator" 0 'PENDING_STAGE_4' 'OS 3.9 readiness validator rejects deferred state'
+require_count "$readiness_validator" 1 '[[ "$migration_image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]' '64-hex migration digest validator'
+require_count "$request_creator" 1 '"ROLLBACK_IMAGE_TAG=$rollback_tag"' 'request binds rollback tag'
+require_count "$request_creator" 1 '"ROLLBACK_IMAGE_ID=$rollback_id"' 'request binds rollback image ID'
+require_count "$request_creator" 1 '"ROLLBACK_IMAGE_SCOPE=$rollback_scope"' 'request binds rollback image scope'
+require_count "$request_creator" 1 'scripts/os-pipeline/os39/validate-manifest.sh' 'OS 3.9 manifest request validation'
+require_count "$approval_validator" 1 'ENGINE_LOCAL_DOCKER_ID_NO_CROSS_ENGINE_COMPARISON' 'engine-local rollback ID semantics'
+require_count "$approval_validator" 1 'rollback target is not the exact image tag authorized by readiness evidence' 'rollback tag authority'
+require_count "$approval_validator" 2 'ROLLBACK_IMAGE_ID' 'rollback image ID evidence field'
+require_count "$request_validator" 1 'scripts/deployment/os39/validate-final-release-approval.sh' 'OS 3.9 approval gate'
+require_count "$request_validator" 1 "[[ \"\$control_plane_ref\" == 'refs/heads/main' ]]" 'main-only control plane'
+require_count "$preflight" 1 'preflight must run from the exact release SHA checkout' 'exact release preflight checkout'
+require_count "$preflight" 1 'validate-migration-image-runtime.sh' 'preflight migration runtime validation'
+
+printf 'PASS: OS 3.9 release control is manual-only, exact-head reviewed, preflight-digest-bound, and image-tag rollback-bound\n'

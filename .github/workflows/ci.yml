@@ -111,13 +111,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate production readiness contracts
-        run: scripts/deployment/validate-production-readiness-contract.sh
+        run: scripts/deployment/os39/validate-release-control-contract.sh
 
       - name: Validate Final Release review request contract
         run: scripts/deployment/tests/final-release-review.sh
 
       - name: Validate Production Readiness evidence stage contract
         run: scripts/deployment/tests/production-readiness-evidence-stage.sh
+
+      - name: Validate OS 3.9 Production Readiness evidence stage contract
+        run: scripts/deployment/tests/os39/production-readiness-evidence-stage.sh
 
       - name: Generate Prisma Client
         run: npx prisma generate
