@@ -16,16 +16,20 @@
   },
   "final_release_review": {
     "id": "AR-OS3.9-FINAL-RELEASE",
-    "status": "pending",
+    "status": "awaiting_review",
     "reviewer_policy": {
-      "allowed_logins": ["sohoteam88"],
-      "allowed_author_associations": ["OWNER"]
+      "allowed_logins": [
+        "sohoteam88"
+      ],
+      "allowed_author_associations": [
+        "OWNER"
+      ]
     },
     "request_artifact": "docs/nextshift-os-3/os-3-9/releases/OS39_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md",
     "release_sha": "8f8c231b177349436f8a204ded0c7da5cdb80248",
-    "pre_request_main_sha": null,
-    "requested_at": null,
-    "request_artifact_sha256": null,
+    "pre_request_main_sha": "ce31aaf89c3d982b3033627977d9f3606cee65a7",
+    "requested_at": "2026-08-04T13:14:34Z",
+    "request_artifact_sha256": "061b3661554f3a4c03798363f53f4602a6022fc7b35d4c06c77ffe4914dcc924",
     "request_pr_url": null,
     "request_pr_number": null,
     "request_pr_head": null,
@@ -40,7 +44,10 @@
     "status": "blocked",
     "approval_artifact": "docs/nextshift-os-3/os-3-9/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md",
     "readiness_evidence": "docs/nextshift-os-3/os-3-9/releases/OS39_PRODUCTION_READINESS_EVIDENCE.md",
-    "requires": ["AUDIT-OS3.8:PASS", "Steven release approval"],
+    "requires": [
+      "AUDIT-OS3.8:PASS",
+      "Steven release approval"
+    ],
     "auto_tag": false,
     "auto_deploy": false,
     "auto_release": false,
