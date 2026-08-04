@@ -12,7 +12,13 @@ const prismaMocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/prisma', () => ({ default: prismaMocks }));
 
-import { createAccount, listAccounts, setEnabled, updateAccount } from './userAccountService';
+import {
+  createAccount,
+  listAccounts,
+  setEnabled,
+  updateAccount,
+  updateAccountPayloadSchema,
+} from './userAccountService';
 
 const owner = { tenantId: '11111111-1111-4111-8111-111111111111', userId: '22222222-2222-4222-8222-222222222222' };
 const otherOwner = { tenantId: '33333333-3333-4333-8333-333333333333', userId: '44444444-4444-4444-8444-444444444444' };
@@ -77,6 +83,13 @@ describe('userAccountService', () => {
     expect(prismaMocks.userAccount.update).toHaveBeenNthCalledWith(2, {
       where: { id: accountId },
       data: { enabled: false },
+    });
+  });
+
+  it('accepts the edit payload at the route boundary before applying the full update schema', () => {
+    expect(updateAccountPayloadSchema.parse({ name: '更新后的号名', url: null })).toEqual({
+      name: '更新后的号名',
+      url: null,
     });
   });
 

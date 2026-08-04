@@ -28,13 +28,16 @@ export const createAccountInputSchema = accountScopeSchema.extend({
   url: optionalUrlSchema,
 });
 
-export const updateAccountInputSchema = accountScopeSchema.extend({
-  id: z.string().uuid(),
+export const updateAccountPayloadSchema = z.object({
   name: accountNameSchema.optional(),
   url: editableUrlSchema,
 }).refine((input) => input.name !== undefined || input.url !== undefined, {
   message: '请至少更新一个账号资料项目',
 });
+
+export const updateAccountInputSchema = accountScopeSchema.extend({
+  id: z.string().uuid(),
+}).and(updateAccountPayloadSchema);
 
 export const setEnabledInputSchema = accountScopeSchema.extend({
   id: z.string().uuid(),

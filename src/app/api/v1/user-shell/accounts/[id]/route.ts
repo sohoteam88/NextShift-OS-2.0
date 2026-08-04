@@ -6,7 +6,7 @@ import {
   setEnabled,
   setEnabledInputSchema,
   updateAccount,
-  updateAccountInputSchema,
+  updateAccountPayloadSchema,
 } from '@/modules/user-shell/services/userAccountService';
 
 type RouteContext = { params: Promise<{ id: string }> | { id: string } };
@@ -25,7 +25,7 @@ export const PATCH = apiHandler(async (request: NextRequest, context) => {
     return NextResponse.json({ data: account });
   }
 
-  const payload = updateAccountInputSchema.pick({ name: true, url: true }).parse(body);
+  const payload = updateAccountPayloadSchema.parse(body);
   const account = await updateAccount({ ...payload, id, tenantId: user.tenantId, userId: user.id });
   return NextResponse.json({ data: account });
 });
