@@ -1,3 +1,3 @@
-import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
-
-export default createCompatibilityRedirect('/crm?view=dashboard');
+export default function RetiredCrmCenterPage() {
+  return null;
+}

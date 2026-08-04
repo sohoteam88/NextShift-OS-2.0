@@ -1,3 +1,3 @@
-import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
-
-export default createCompatibilityRedirect('/crm?view=leads');
+export default function RetiredLeadsPage() {
+  return null;
+}

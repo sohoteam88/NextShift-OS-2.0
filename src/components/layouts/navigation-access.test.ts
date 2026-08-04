@@ -3,6 +3,7 @@ import {
   MEMBER_DESKTOP_BREAKPOINT_PX,
   isMemberFacingRole,
   memberNavigationProjection,
+  shouldShowMobileTabBar,
 } from './navigation-access';
 
 describe('member navigation access and responsive projection', () => {
@@ -20,5 +21,12 @@ describe('member navigation access and responsive projection', () => {
     expect(memberNavigationProjection(1279)).toBe('mobile');
     expect(memberNavigationProjection(1280)).toBe('desktop');
     expect(memberNavigationProjection(1281)).toBe('desktop');
+  });
+
+  it('hides mobile navigation on the user-shell placeholder routes', () => {
+    for (const pathname of ['/post', '/follow', '/ads']) {
+      expect(shouldShowMobileTabBar('member', pathname)).toBe(false);
+    }
+    expect(shouldShowMobileTabBar('member', '/dashboard')).toBe(true);
   });
 });

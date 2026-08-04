@@ -1,9 +1,31 @@
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 import { isReservedSlug } from '@/modules/tenant/utils/slug';
 import { applySecurityHeaders, createCorsPreflightResponse } from '@/lib/security';
 
+export const RETIRED_USER_SHELL_ROUTES = [
+  '/crm',
+  '/crm-center',
+  '/customers',
+  '/leads',
+  '/sales',
+  '/mission',
+  '/revenue-drivers',
+  '/traffic-engine',
+] as const;
+
+export function isRetiredUserShellRoute(pathname: string) {
+  return RETIRED_USER_SHELL_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
+
 export async function middleware(request: NextRequest) {
+  if (isRetiredUserShellRoute(request.nextUrl.pathname)) {
+    const destination = request.nextUrl.clone();
+    destination.pathname = '/';
+    destination.search = '';
+    return NextResponse.redirect(destination, 302);
+  }
+
   const preflight = createCorsPreflightResponse(request);
   if (preflight) {
     return preflight;

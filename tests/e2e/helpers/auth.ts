@@ -13,7 +13,7 @@ export async function loginAsUser(page: Page) {
   await page.fill('input[name="email"]', TEST_USER_EMAIL);
   await page.fill('input[name="password"]', TEST_USER_PASSWORD);
   await page.click('button[type="submit"]');
-  await page.waitForURL((url) => url.pathname === '/dashboard', { timeout: 15000 });
+  await page.waitForURL((url) => url.pathname === '/', { timeout: 15000 });
   await expect(page.locator('h1')).toBeVisible();
 }
 
