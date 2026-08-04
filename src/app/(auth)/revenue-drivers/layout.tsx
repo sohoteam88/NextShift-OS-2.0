@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
-export default function RetiredRevenueDriversLayout({ children: _children }: { children: ReactNode }) {
-  redirect('/');
+export default function RetiredRevenueDriversLayout({ children }: { children: ReactNode }) {
+  return children;
 }

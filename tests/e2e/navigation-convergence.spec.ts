@@ -109,19 +109,30 @@ test.describe('OS 3.8 member navigation convergence', () => {
     await expect(page).toHaveURL(/\/automation(?:\?|$)/);
   });
 
-  test('retired CRM bookmarks redirect home, discard query, and do not trap browser history', async ({ page }) => {
+  test('every retired user-shell route redirects to a bare home without trapping browser history', async ({ page }) => {
     await loginAsUser(page);
-    await page.goto('/dashboard');
-    await page.goto('/leads?source=bookmark&tag=a&tag=b');
-    await expect(page).toHaveURL(/\/$/);
-    await page.goBack();
-    await expect(page).toHaveURL(/\/dashboard/);
-    await page.goForward();
-    await expect(page).toHaveURL(/\/$/);
 
-    for (const route of ['/crm', '/crm-center', '/leads', '/sales']) {
-      await page.goto(`${route}?source=legacy`);
+    for (const route of [
+      '/crm',
+      '/crm-center',
+      '/crm/customers',
+      '/crm/pipeline',
+      '/crm/e2e-fixture',
+      '/customers',
+      '/leads',
+      '/sales',
+      '/mission',
+      '/mission/e2e-fixture',
+      '/revenue-drivers',
+      '/revenue-drivers/e2e-fixture',
+      '/traffic-engine',
+      '/traffic-engine/e2e-fixture',
+    ]) {
+      await page.goto('/dashboard');
+      await page.goto(`${route}?source=legacy&tag=a&tag=b`);
       await expect(page).toHaveURL(/\/$/);
+      await page.goBack();
+      await expect(page).toHaveURL(/\/dashboard/);
     }
   });
 

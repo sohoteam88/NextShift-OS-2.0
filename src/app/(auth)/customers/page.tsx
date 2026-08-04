@@ -1,3 +1,3 @@
-import { createCompatibilityRedirect } from '@/lib/navigation/compatibility-redirect';
-
-export default createCompatibilityRedirect('/');
+export default function RetiredCustomersPage() {
+  return null;
+}
