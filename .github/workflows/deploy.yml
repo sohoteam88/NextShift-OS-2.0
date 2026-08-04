@@ -11,7 +11,7 @@ on:
           - deploy
           - rollback
       release_sha:
-        description: "Exact 40-character commit SHA already contained in origin/main"
+        description: "Deploy: exact 40-character commit SHA in origin/main. Rollback: exact authorized nextshift-app image tag."
         required: true
         type: string
       confirmation:
@@ -35,6 +35,7 @@ jobs:
     outputs:
       release_sha: ${{ steps.request.outputs.release_sha }}
       control_plane_sha: ${{ steps.request.outputs.control_plane_sha }}
+      rollback_image_id: ${{ steps.request.outputs.rollback_image_id }}
     steps:
       - name: Checkout workflow revision
         uses: actions/checkout@v7
@@ -53,7 +54,7 @@ jobs:
           CONTROL_PLANE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          scripts/deployment/validate-production-request.sh \
+          scripts/deployment/os39/validate-production-request.sh \
             "$ACTION" \
             "$CONFIRMATION" \
             "$RELEASE_SHA" \
@@ -61,6 +62,11 @@ jobs:
             "$CONTROL_PLANE_SHA"
           printf 'release_sha=%s\n' "$RELEASE_SHA" >> "$GITHUB_OUTPUT"
           printf 'control_plane_sha=%s\n' "$CONTROL_PLANE_SHA" >> "$GITHUB_OUTPUT"
+          evidence='docs/nextshift-os-3/os-3-9/releases/OS39_PRODUCTION_READINESS_EVIDENCE.md'
+          if [[ "$ACTION" == rollback ]]; then
+            printf 'rollback_image_id=%s\n' \
+              "$(grep -E '^ROLLBACK_IMAGE_ID=' "$evidence" | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
+          fi
 
   build-migration-artifact:
     name: Build exact migration deployment artifact
@@ -96,6 +102,7 @@ jobs:
             printf 'ERROR: migration build image ID is invalid: actual=%s\n' "$migration_image_digest" >&2
             exit 1
           fi
+          printf 'MIGRATION_RUNNER_IMAGE_ID=%s\n' "$migration_image_digest"
           migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$migration_image")"
           if [[ "$migration_revision" != "$IMAGE_TAG" ]]; then
             printf 'ERROR: migration build OCI revision mismatch: expected=%s actual=%s\n' \
@@ -143,24 +150,21 @@ jobs:
       - name: Revalidate control plane after environment wait
         run: |
           set -euo pipefail
-          scripts/deployment/validate-production-request.sh \
+          scripts/deployment/os39/validate-production-request.sh \
             "$ACTION" \
             "$CONFIRMATION" \
             "$IMAGE_TAG" \
             "$CONTROL_PLANE_REF" \
             "$CONTROL_PLANE_SHA"
           test "$(git rev-parse HEAD)" = "$CONTROL_PLANE_SHA"
-          readiness_evidence='docs/nextshift-os-3/os-3-8/releases/OS38_PRODUCTION_READINESS_EVIDENCE.md'
-          cp "$readiness_evidence" "$RUNNER_TEMP/OS38_PRODUCTION_READINESS_EVIDENCE_PENDING.md"
+          readiness_evidence='docs/nextshift-os-3/os-3-9/releases/OS39_PRODUCTION_READINESS_EVIDENCE.md'
+          cp "$readiness_evidence" "$RUNNER_TEMP/OS39_PRODUCTION_READINESS_EVIDENCE.md"
           install -m 700 \
-            scripts/deployment/validate-production-readiness-evidence.sh \
-            "$RUNNER_TEMP/validate-production-readiness-evidence.sh"
-          install -m 700 \
-            scripts/deployment/finalize-production-readiness-stage4.sh \
-            "$RUNNER_TEMP/finalize-production-readiness-stage4.sh"
-          "$RUNNER_TEMP/validate-production-readiness-evidence.sh" \
+            scripts/deployment/os39/validate-production-readiness-evidence.sh \
+            "$RUNNER_TEMP/validate-os39-production-readiness-evidence.sh"
+          "$RUNNER_TEMP/validate-os39-production-readiness-evidence.sh" \
             stage-1-3 \
-            "$RUNNER_TEMP/OS38_PRODUCTION_READINESS_EVIDENCE_PENDING.md"
+            "$RUNNER_TEMP/OS39_PRODUCTION_READINESS_EVIDENCE.md"
 
       - name: Checkout exact release SHA
         uses: actions/checkout@v7
@@ -268,6 +272,7 @@ jobs:
             migration_tar_config_digest="sha256:$(tar -xzOf migration-image.tar.gz "$migration_tar_config" | sha256sum | awk '{print $1}')"
             assert_sha256 'migration artifact Config digest' "$migration_tar_config_digest"
             assert_equal 'migration artifact config digest' "$expected_migration_digest" "$migration_tar_config_digest"
+            printf 'MIGRATION_VPS_ARTIFACT_CONFIG_DIGEST=%s\n' "$migration_tar_config_digest"
             docker load < migration-image.tar.gz
             migration_image="nextshift-migrations:${{ env.IMAGE_TAG }}"
             require_image 'migration image after archive load' "$migration_image"
@@ -309,30 +314,6 @@ jobs:
             docker image prune -f
             rm image.tar.gz migration-image.tar.gz migration-image.tar.gz.sha256 migration-image-digest.txt
 
-      - name: Finalize and validate Stage 4 Production Readiness evidence
-        run: |
-          set -euo pipefail
-          "$RUNNER_TEMP/finalize-production-readiness-stage4.sh" \
-            "$RUNNER_TEMP/OS38_PRODUCTION_READINESS_EVIDENCE_PENDING.md" \
-            migration-image-digest.txt \
-            "$RUNNER_TEMP/OS38_PRODUCTION_READINESS_EVIDENCE_STAGE4.md" \
-            "$RUNNER_TEMP/validate-production-readiness-evidence.sh"
-          (
-            cd "$RUNNER_TEMP"
-            sha256sum OS38_PRODUCTION_READINESS_EVIDENCE_STAGE4.md \
-              > OS38_PRODUCTION_READINESS_EVIDENCE_STAGE4.md.sha256
-          )
-
-      - name: Upload immutable Stage 4 Production Readiness evidence
-        uses: actions/upload-artifact@v4
-        with:
-          name: nextshift-production-readiness-stage4-${{ env.IMAGE_TAG }}
-          path: |
-            ${{ runner.temp }}/OS38_PRODUCTION_READINESS_EVIDENCE_STAGE4.md
-            ${{ runner.temp }}/OS38_PRODUCTION_READINESS_EVIDENCE_STAGE4.md.sha256
-          if-no-files-found: error
-          retention-days: 90
-
   rollback:
     name: Roll back production to exact release SHA
     if: ${{ inputs.action == 'rollback' && inputs.confirmation == 'ROLLBACK_PRODUCTION' }}
@@ -346,7 +327,8 @@ jobs:
       CONFIRMATION: ${{ inputs.confirmation }}
       CONTROL_PLANE_REF: ${{ github.ref }}
       CONTROL_PLANE_SHA: ${{ needs.validate-request.outputs.control_plane_sha }}
-      RELEASE_SHA: ${{ needs.validate-request.outputs.release_sha }}
+      ROLLBACK_IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}
+      ROLLBACK_IMAGE_ID: ${{ needs.validate-request.outputs.rollback_image_id }}
     steps:
       - name: Checkout exact production control plane
         uses: actions/checkout@v7
@@ -357,22 +339,13 @@ jobs:
       - name: Revalidate control plane after environment wait
         run: |
           set -euo pipefail
-          scripts/deployment/validate-production-request.sh \
+          scripts/deployment/os39/validate-production-request.sh \
             "$ACTION" \
             "$CONFIRMATION" \
-            "$RELEASE_SHA" \
+            "$ROLLBACK_IMAGE_TAG" \
             "$CONTROL_PLANE_REF" \
             "$CONTROL_PLANE_SHA"
           test "$(git rev-parse HEAD)" = "$CONTROL_PLANE_SHA"
-
-      - name: Checkout exact authorized release SHA
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.validate-request.outputs.release_sha }}
-          fetch-depth: 0
-
-      - name: Verify exact rollback checkout
-        run: test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
 
       - name: Rollback on VPS
         uses: appleboy/ssh-action@v1.0.3
@@ -382,11 +355,10 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/deploy/nextshift
-            target_image="nextshift-app:${{ env.RELEASE_SHA }}"
+            target_image="${{ env.ROLLBACK_IMAGE_TAG }}"
             docker image inspect "$target_image" >/dev/null 2>&1
-            image_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$target_image")"
-            test -n "$image_revision"
-            test "$image_revision" = "${{ env.RELEASE_SHA }}"
+            image_id="$(docker image inspect --format '{{.Id}}' "$target_image")"
+            test "$image_id" = "${{ env.ROLLBACK_IMAGE_ID }}"
             docker tag "$target_image" nextshift-app:latest
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d --no-build app
             BASE_URL=http://127.0.0.1:3000 scripts/deploy-smoke.sh

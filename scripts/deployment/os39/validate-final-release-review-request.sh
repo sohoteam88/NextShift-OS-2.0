@@ -1,0 +1,464 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+manifest="$repo_root/docs/nextshift-os-3/os-3-9/PIPELINE_MANIFEST.json"
+mode="${1:---manifest-only}"
+pr_url="${2:-}"
+
+fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+
+sha256_file() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
+  else shasum -a 256 "$1" | awk '{print $1}'; fi
+}
+
+sha256_stdin() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum | awk '{print $1}'
+  else shasum -a 256 | awk '{print $1}'; fi
+}
+
+control_value() {
+  local file="$1" key="$2" count
+  count="$(grep -Ec "^${key}=" "$file" || true)"
+  [[ "$count" == 1 ]] || fail "$key must occur exactly once"
+  grep -E "^${key}=" "$file" | cut -d= -f2-
+}
+
+reject_unknown_controls() {
+  local file="$1" allowed="$2" line key
+  while IFS= read -r line; do
+    [[ "$line" =~ ^([A-Z][A-Z0-9_]*)= ]] || continue
+    key="${BASH_REMATCH[1]}"
+    grep -Fqx "$key" <<<"$allowed" || fail "unexpected request authority field: $key"
+  done <"$file"
+}
+
+parse_review_controls() {
+  local body="$1" release_sha="$2" line lower known_authority_pattern control_key
+  local checkpoint_count=0 verdict_count=0 release_count=0
+  parsed_authority_review=0
+  known_authority_pattern='^[[:space:]]*(checkpoint|verdict|reviewed_release_sha)([[:space:]:=]|$)'
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    lower="$(tr '[:upper:]' '[:lower:]' <<<"$line")"
+    if [[ "$line" =~ ^([A-Z][A-Z0-9_]*)(:|=) ]]; then
+      parsed_authority_review=1
+      control_key="${BASH_REMATCH[1]}"
+      case "$line" in
+        'CHECKPOINT: FINAL-RELEASE') checkpoint_count=$((checkpoint_count + 1)) ;;
+        'VERDICT: PASS') verdict_count=$((verdict_count + 1)) ;;
+        "REVIEWED_RELEASE_SHA=$release_sha") release_count=$((release_count + 1)) ;;
+        CHECKPOINT:* | VERDICT:* | REVIEWED_RELEASE_SHA=*)
+          fail "malformed or conflicting Final Release review authority control: $line"
+          ;;
+        *) fail "unexpected Final Release review authority control: $control_key" ;;
+      esac
+      continue
+    fi
+    [[ "$lower" =~ $known_authority_pattern ]] || continue
+    parsed_authority_review=1
+    fail "malformed or conflicting Final Release review authority control: $line"
+  done <<<"$body"
+  [[ "$parsed_authority_review" == 0 ]] && return 0
+  [[ "$checkpoint_count" == 1 ]] || fail 'CHECKPOINT authority control must occur exactly once'
+  [[ "$verdict_count" == 1 ]] || fail 'VERDICT authority control must occur exactly once'
+  [[ "$release_count" == 1 ]] || fail 'REVIEWED_RELEASE_SHA authority control must occur exactly once'
+}
+
+safe_relative_path() {
+  local path="$1" component
+  [[ -n "$path" && "$path" != /* && "$path" != -* && ! "$path" =~ [[:cntrl:]] ]] || return 1
+  IFS='/' read -r -a components <<<"$path"
+  for component in "${components[@]}"; do
+    [[ -n "$component" && "$component" != . && "$component" != .. ]] || return 1
+  done
+}
+
+canonical_reviewer_policy() {
+  jq -c '.final_release_review.reviewer_policy' "$manifest"
+}
+
+validate_reviewed_post_request_drift() {
+  local evidence pr_number pr_url reviewed_head merge_sha review_id review_commit_id reviewer_login
+  local reviewer_association verdict evidence_release reviewed_at drift_pr_json drift_pr_json_after
+  local drift_files_json drift_reviews_json expected_pr_paths actual_pr_paths valid_review_count=0
+  local review body path expected_sha head_sha merge_file_sha mode
+  evidence="$(jq -c '.final_release_review.reviewed_post_request_drift // null' "$manifest")"
+  [[ "$evidence" != null ]] || return 0
+
+  jq -e '
+    (keys | sort) == ([
+      "evidence_id", "files", "merge_sha", "pr_number", "pr_url", "release_sha",
+      "review_commit_id", "review_id", "reviewed_at", "reviewed_head_sha",
+      "reviewer_author_association", "reviewer_login", "verdict"
+    ] | sort) and
+    .evidence_id == "OS39-PR120-REVIEWED-POST-REQUEST-DRIFT" and
+    .pr_number == 120 and
+    .pr_url == "https://github.com/sohoteam88/NextShift-OS-2.0/pull/120" and
+    (.reviewed_head_sha | type == "string" and test("^[0-9a-f]{40}$")) and
+    (.merge_sha | type == "string" and test("^[0-9a-f]{40}$")) and
+    (.review_id | type == "number" and . > 0 and floor == .) and
+    .review_commit_id == .reviewed_head_sha and
+    .reviewer_login == "sohoteam88" and
+    .reviewer_author_association == "OWNER" and
+    .verdict == "PASS" and
+    (.release_sha | type == "string" and test("^[0-9a-f]{40}$")) and
+    (.reviewed_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$")) and
+    (.files | type == "array" and length > 0) and
+    all(.files[];
+      (keys | sort) == (["path", "sha256"] | sort) and
+      (.path | type == "string" and length > 0) and
+      (.sha256 | type == "string" and test("^[0-9a-f]{64}$"))) and
+    ([.files[].path] | length) == ([.files[].path] | unique | length)
+  ' <<<"$evidence" >/dev/null || fail 'reviewed post-request drift evidence schema is invalid'
+
+  pr_number="$(jq -r '.pr_number' <<<"$evidence")"
+  pr_url="$(jq -r '.pr_url' <<<"$evidence")"
+  reviewed_head="$(jq -r '.reviewed_head_sha' <<<"$evidence")"
+  merge_sha="$(jq -r '.merge_sha' <<<"$evidence")"
+  review_id="$(jq -r '.review_id' <<<"$evidence")"
+  review_commit_id="$(jq -r '.review_commit_id' <<<"$evidence")"
+  reviewer_login="$(jq -r '.reviewer_login' <<<"$evidence")"
+  reviewer_association="$(jq -r '.reviewer_author_association' <<<"$evidence")"
+  verdict="$(jq -r '.verdict' <<<"$evidence")"
+  evidence_release="$(jq -r '.release_sha' <<<"$evidence")"
+  reviewed_at="$(jq -r '.reviewed_at' <<<"$evidence")"
+  [[ "$evidence_release" == "$(jq -r '.final_release_review.release_sha' "$manifest")" ]] || \
+    fail 'reviewed post-request drift release SHA mismatch'
+
+  while IFS= read -r path; do
+    safe_relative_path "$path" || fail "reviewed post-request drift path is unsafe: $path"
+    [[ "$path" != *'*'* && "$path" != *'?'* && "$path" != *'['* && "$path" != *']'* && "$path" != */ ]] || \
+      fail "reviewed post-request drift path must be an exact file path: $path"
+  done < <(jq -r '.files[].path' <<<"$evidence")
+
+  drift_pr_json="$(gh api "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number")"
+  [[ "$(jq -r '.base.repo.full_name' <<<"$drift_pr_json")" == 'sohoteam88/NextShift-OS-2.0' && \
+     "$(jq -r '.head.repo.full_name // .base.repo.full_name' <<<"$drift_pr_json")" == 'sohoteam88/NextShift-OS-2.0' && \
+     "$(jq -r '.base.ref' <<<"$drift_pr_json")" == main && \
+     "$(jq -r '.head.sha' <<<"$drift_pr_json")" == "$reviewed_head" && \
+     "$(jq -r '.merge_commit_sha' <<<"$drift_pr_json")" == "$merge_sha" && \
+     "$(jq -r '.merged' <<<"$drift_pr_json")" == true ]] || \
+    fail 'reviewed post-request drift PR identity mismatch'
+
+  git -C "$repo_root" cat-file -e "$reviewed_head^{commit}" 2>/dev/null || fail 'reviewed post-request drift head is unavailable locally'
+  git -C "$repo_root" merge-base --is-ancestor "$reviewed_head" "$merge_sha" || fail 'reviewed post-request drift head is not in its merge commit'
+  git -C "$repo_root" merge-base --is-ancestor "$merge_sha" refs/remotes/origin/main || fail 'reviewed post-request drift merge is not in current main history'
+  [[ -z "$(git -C "$repo_root" diff --name-only "$reviewed_head..$merge_sha")" ]] || fail 'reviewed post-request drift merge tree differs from reviewed head'
+
+  drift_files_json="$(gh api --paginate "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number/files")"
+  actual_pr_paths="$(jq -r '.[].filename' <<<"$drift_files_json" | LC_ALL=C sort)"
+  expected_pr_paths="$({
+    printf '%s\n' \
+      'docs/nextshift-os-3/os-3-9/PIPELINE_MANIFEST.json' \
+      'docs/nextshift-os-3/os-3-9/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md'
+    jq -r '.files[].path' <<<"$evidence"
+  } | LC_ALL=C sort)"
+  [[ "$actual_pr_paths" == "$expected_pr_paths" ]] || fail 'reviewed post-request drift PR changed-file set mismatch'
+
+  drift_reviews_json="$(gh api --paginate "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number/reviews")"
+  while IFS= read -r review; do
+    [[ -n "$review" ]] || continue
+    [[ "$(jq -r '.commit_id // empty' <<<"$review")" == "$reviewed_head" ]] || continue
+    body="$(jq -r '.body // empty' <<<"$review")"
+    [[ "$(grep -Ec '^VERDICT: ' <<<"$body" || true)" == 1 && "$(grep -Ec '^VERDICT: PASS$' <<<"$body" || true)" == 1 ]] || continue
+    [[ "$(grep -Ec '^REVIEWED_SHA: ' <<<"$body" || true)" == 1 && "$(grep -Ec "^REVIEWED_SHA: $reviewed_head$" <<<"$body" || true)" == 1 ]] || continue
+    [[ "$(grep -Ec '^RELEASE_SHA: ' <<<"$body" || true)" == 1 && "$(grep -Ec "^RELEASE_SHA: $evidence_release$" <<<"$body" || true)" == 1 ]] || continue
+    [[ "$(jq -r '.id' <<<"$review")" == "$review_id" && \
+       "$(jq -r '.user.login // empty' <<<"$review")" == "$reviewer_login" && \
+       "$(jq -r '.author_association // empty' <<<"$review")" == "$reviewer_association" && \
+       "$(jq -r '.submitted_at // empty' <<<"$review")" == "$reviewed_at" && \
+       "$(jq -r '.state // empty' <<<"$review")" =~ ^(APPROVED|COMMENTED)$ && \
+       "$review_commit_id" == "$reviewed_head" && "$verdict" == PASS ]] || \
+      fail 'reviewed post-request drift review identity mismatch'
+    valid_review_count=$((valid_review_count + 1))
+  done < <(jq -c '.[]' <<<"$drift_reviews_json")
+  [[ "$valid_review_count" == 1 ]] || fail 'exactly one reviewed post-request drift PASS review is required'
+
+  while IFS= read -r path; do
+    expected_sha="$(jq -r --arg path "$path" '.files[] | select(.path == $path) | .sha256' <<<"$evidence")"
+    mode="$(git -C "$repo_root" ls-tree "$reviewed_head" -- "$path" | awk 'NR==1 {print $1}')"
+    [[ "$mode" == 100644 || "$mode" == 100755 ]] || fail "reviewed post-request drift path is not a regular Git file: $path"
+    head_sha="$(git -C "$repo_root" show "$reviewed_head:$path" | sha256_stdin)" || fail "cannot hash reviewed post-request drift path: $path"
+    merge_file_sha="$(git -C "$repo_root" show "$merge_sha:$path" | sha256_stdin)" || fail "cannot hash merged post-request drift path: $path"
+    [[ "$head_sha" == "$expected_sha" && "$merge_file_sha" == "$expected_sha" ]] || \
+      fail "reviewed post-request drift digest mismatch: $path"
+  done < <(jq -r '.files[].path' <<<"$evidence")
+
+  drift_pr_json_after="$(gh api "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number")"
+  [[ "$(jq -r '.head.sha' <<<"$drift_pr_json_after")" == "$reviewed_head" && \
+     "$(jq -r '.merge_commit_sha' <<<"$drift_pr_json_after")" == "$merge_sha" && \
+     "$(jq -r '.merged' <<<"$drift_pr_json_after")" == true ]] || \
+    fail 'reviewed post-request drift PR identity changed during verification'
+}
+
+validate_post_request_remediation_schema() {
+  local evidence path
+  evidence="$(jq -c '.final_release_review.reviewed_post_request_remediation // null' "$manifest")"
+  [[ "$evidence" != null ]] || return 0
+  jq -e '
+    (keys | sort) == (["evidence_id", "files", "pr_number", "pr_url"] | sort) and
+    .evidence_id == "OS39-PR121-FINAL-RELEASE-DRIFT-REMEDIATION" and
+    .pr_number == 121 and
+    .pr_url == "https://github.com/sohoteam88/NextShift-OS-2.0/pull/121" and
+    (.files | type == "array" and length == 2) and
+    ([.files[].path] | sort) == ([
+      "scripts/deployment/tests/os39/final-release-review.sh",
+      "scripts/deployment/os39/validate-final-release-review-request.sh"
+    ] | sort) and
+    all(.files[];
+      (keys | sort) == (["path", "sha256"] | sort) and
+      (.path | type == "string" and length > 0) and
+      (.sha256 | type == "string" and test("^[0-9a-f]{64}$"))) and
+    ([.files[].path] | length) == ([.files[].path] | unique | length)
+  ' <<<"$evidence" >/dev/null || fail 'reviewed post-request remediation evidence schema is invalid'
+
+  while IFS= read -r path; do
+    safe_relative_path "$path" || fail "reviewed post-request remediation path is unsafe: $path"
+    [[ "$path" != *'*'* && "$path" != *'?'* && "$path" != *'['* && "$path" != *']'* && "$path" != */ ]] || \
+      fail "reviewed post-request remediation path must be an exact file path: $path"
+  done < <(jq -r '.files[].path' <<<"$evidence")
+}
+
+validate_reviewed_post_request_remediation() {
+  local evidence pr_number remediation_pr_json remediation_pr_json_after reviewed_head merge_sha
+  local remediation_files_json remediation_reviews_json actual_pr_paths expected_pr_paths
+  local reviewer_policy valid_review_count=0 review body review_state reviewer_login reviewer_association
+  local path expected_sha head_sha merge_file_sha current_sha mode
+  evidence="$(jq -c '.final_release_review.reviewed_post_request_remediation' "$manifest")"
+  pr_number="$(jq -r '.pr_number' <<<"$evidence")"
+
+  remediation_pr_json="$(gh api "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number")"
+  reviewed_head="$(jq -r '.head.sha // empty' <<<"$remediation_pr_json")"
+  merge_sha="$(jq -r '.merge_commit_sha // empty' <<<"$remediation_pr_json")"
+  [[ "$(jq -r '.base.repo.full_name' <<<"$remediation_pr_json")" == 'sohoteam88/NextShift-OS-2.0' && \
+     "$(jq -r '.head.repo.full_name // .base.repo.full_name' <<<"$remediation_pr_json")" == 'sohoteam88/NextShift-OS-2.0' && \
+     "$(jq -r '.base.ref' <<<"$remediation_pr_json")" == main && \
+     "$(jq -r '.merged' <<<"$remediation_pr_json")" == true && \
+     "$reviewed_head" =~ ^[0-9a-f]{40}$ && "$merge_sha" =~ ^[0-9a-f]{40}$ ]] || \
+    fail 'reviewed post-request remediation PR identity mismatch'
+
+  git -C "$repo_root" cat-file -e "$reviewed_head^{commit}" 2>/dev/null || fail 'reviewed post-request remediation head is unavailable locally'
+  git -C "$repo_root" merge-base --is-ancestor "$reviewed_head" "$merge_sha" || fail 'reviewed post-request remediation head is not in its merge commit'
+  git -C "$repo_root" merge-base --is-ancestor "$merge_sha" refs/remotes/origin/main || fail 'reviewed post-request remediation merge is not in current main history'
+  [[ -z "$(git -C "$repo_root" diff --name-only "$reviewed_head..$merge_sha")" ]] || fail 'reviewed post-request remediation merge tree differs from reviewed head'
+
+  remediation_files_json="$(gh api --paginate "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number/files")"
+  actual_pr_paths="$(jq -r '.[].filename' <<<"$remediation_files_json" | LC_ALL=C sort)"
+  expected_pr_paths="$({
+    printf '%s\n' 'docs/nextshift-os-3/os-3-9/PIPELINE_MANIFEST.json'
+    jq -r '.files[].path' <<<"$evidence"
+  } | LC_ALL=C sort)"
+  [[ "$actual_pr_paths" == "$expected_pr_paths" ]] || fail 'reviewed post-request remediation PR changed-file set mismatch'
+
+  reviewer_policy="$(canonical_reviewer_policy)"
+  remediation_reviews_json="$(gh api --paginate "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number/reviews")"
+  while IFS= read -r review; do
+    [[ -n "$review" ]] || continue
+    [[ "$(jq -r '.commit_id // empty' <<<"$review")" == "$reviewed_head" ]] || continue
+    body="$(jq -r '.body // empty' <<<"$review")"
+    [[ "$(grep -Ec '^VERDICT: ' <<<"$body" || true)" == 1 && "$(grep -Ec '^VERDICT: PASS$' <<<"$body" || true)" == 1 ]] || continue
+    [[ "$(grep -Ec '^REVIEWED_SHA: ' <<<"$body" || true)" == 1 && "$(grep -Ec "^REVIEWED_SHA: $reviewed_head$" <<<"$body" || true)" == 1 ]] || continue
+    review_state="$(jq -r '.state // empty' <<<"$review")"
+    [[ "$review_state" == APPROVED || "$review_state" == COMMENTED ]] || fail 'reviewed post-request remediation review state is invalid'
+    reviewer_login="$(jq -r '.user.login // empty' <<<"$review")"
+    reviewer_association="$(jq -r '.author_association // empty' <<<"$review")"
+    jq -e --arg login "$reviewer_login" '.allowed_logins | index($login) != null' <<<"$reviewer_policy" >/dev/null || \
+      fail 'reviewed post-request remediation reviewer login is unauthorized'
+    jq -e --arg association "$reviewer_association" '.allowed_author_associations | index($association) != null' <<<"$reviewer_policy" >/dev/null || \
+      fail 'reviewed post-request remediation reviewer association is unauthorized'
+    valid_review_count=$((valid_review_count + 1))
+  done < <(jq -c '.[]' <<<"$remediation_reviews_json")
+  [[ "$valid_review_count" == 1 ]] || fail 'exactly one exact-head reviewed post-request remediation PASS review is required'
+
+  while IFS= read -r path; do
+    expected_sha="$(jq -r --arg path "$path" '.files[] | select(.path == $path) | .sha256' <<<"$evidence")"
+    mode="$(git -C "$repo_root" ls-tree "$reviewed_head" -- "$path" | awk 'NR==1 {print $1}')"
+    [[ "$mode" == 100644 || "$mode" == 100755 ]] || fail "reviewed post-request remediation path is not a regular Git file: $path"
+    head_sha="$(git -C "$repo_root" show "$reviewed_head:$path" | sha256_stdin)" || fail "cannot hash reviewed remediation head path: $path"
+    merge_file_sha="$(git -C "$repo_root" show "$merge_sha:$path" | sha256_stdin)" || fail "cannot hash reviewed remediation merge path: $path"
+    current_sha="$(git -C "$repo_root" show "refs/remotes/origin/main:$path" | sha256_stdin)" || fail "reviewed remediation path is absent from current main: $path"
+    [[ "$head_sha" == "$expected_sha" && "$merge_file_sha" == "$expected_sha" && "$current_sha" == "$expected_sha" ]] || \
+      fail "reviewed post-request remediation digest mismatch: $path"
+  done < <(jq -r '.files[].path' <<<"$evidence")
+
+  remediation_pr_json_after="$(gh api "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number")"
+  [[ "$(jq -r '.head.sha' <<<"$remediation_pr_json_after")" == "$reviewed_head" && \
+     "$(jq -r '.merge_commit_sha' <<<"$remediation_pr_json_after")" == "$merge_sha" && \
+     "$(jq -r '.merged' <<<"$remediation_pr_json_after")" == true ]] || \
+    fail 'reviewed post-request remediation PR identity changed during verification'
+}
+
+validate_request_artifact() {
+  local file="$1" expected_digest="$2" release_sha pre_main request_path readiness_path readiness_sha
+  local verification_id final_audit_path final_audit_sha rollback_tag rollback_id rollback_scope requested_at allowed
+  [[ -f "$file" && ! -L "$file" ]] || fail 'Final Release review request must be a regular, non-symlink file'
+  release_sha="$(jq -r '.final_release_review.release_sha' "$manifest")"
+  pre_main="$(jq -r '.final_release_review.pre_request_main_sha' "$manifest")"
+  request_path="$(jq -r '.final_release_review.request_artifact' "$manifest")"
+  readiness_path="$(jq -r '.release_gate.readiness_evidence' "$manifest")"
+  [[ -f "$repo_root/$readiness_path" && ! -L "$repo_root/$readiness_path" ]] || fail 'Production Readiness evidence is missing or unsafe'
+  readiness_sha="$(sha256_file "$repo_root/$readiness_path")"
+  [[ "$(control_value "$repo_root/$readiness_path" STATUS)" == READY ]] || fail 'Production Readiness evidence is not READY'
+  [[ "$(control_value "$repo_root/$readiness_path" RELEASE_SHA)" == "$release_sha" ]] || fail 'Production Readiness release SHA mismatch'
+  verification_id="$(control_value "$repo_root/$readiness_path" VERIFICATION_ID)"
+  rollback_tag="$(control_value "$repo_root/$readiness_path" ROLLBACK_IMAGE_TAG)"
+  rollback_id="$(control_value "$repo_root/$readiness_path" ROLLBACK_IMAGE_ID)"
+  rollback_scope="$(control_value "$repo_root/$readiness_path" ROLLBACK_IMAGE_SCOPE)"
+  final_audit_path="$(jq -r '.final_audit.report' "$manifest")"
+  final_audit_sha="$(sha256_file "$repo_root/$final_audit_path")"
+  requested_at="$(jq -r '.final_release_review.requested_at' "$manifest")"
+  allowed=$'REQUEST_ID\nRELEASE_SHA\nPRE_REQUEST_MAIN_SHA\nREQUESTED_AT\nPRODUCTION_READINESS_EVIDENCE\nPRODUCTION_READINESS_EVIDENCE_SHA256\nPRODUCTION_READINESS_VERIFICATION_ID\nFINAL_AUDIT_REPORT_SHA256\nROLLBACK_IMAGE_TAG\nROLLBACK_IMAGE_ID\nROLLBACK_IMAGE_SCOPE\nRELEASE_GATE'
+  reject_unknown_controls "$file" "$allowed"
+  [[ "$(control_value "$file" REQUEST_ID)" == 'OS3.9-FINAL-RELEASE-ARCHITECTURE-REVIEW' ]] || fail 'request identity mismatch'
+  [[ "$(control_value "$file" RELEASE_SHA)" == "$release_sha" ]] || fail 'request release SHA mismatch'
+  [[ "$(control_value "$file" PRE_REQUEST_MAIN_SHA)" == "$pre_main" ]] || fail 'request pre-request main SHA mismatch'
+  [[ "$(control_value "$file" REQUESTED_AT)" == "$requested_at" ]] || fail 'request timestamp mismatch'
+  [[ "$requested_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'request timestamp is invalid'
+  [[ "$(control_value "$file" PRODUCTION_READINESS_EVIDENCE)" == "$readiness_path" ]] || fail 'request readiness path mismatch'
+  [[ "$(control_value "$file" PRODUCTION_READINESS_EVIDENCE_SHA256)" == "$readiness_sha" ]] || fail 'request readiness digest mismatch'
+  [[ "$(control_value "$file" PRODUCTION_READINESS_VERIFICATION_ID)" == "$verification_id" ]] || fail 'request readiness verification identity mismatch'
+  [[ "$(control_value "$file" FINAL_AUDIT_REPORT_SHA256)" == "$final_audit_sha" ]] || fail 'request Final Audit report digest mismatch'
+  [[ "$(control_value "$file" ROLLBACK_IMAGE_TAG)" == "$rollback_tag" ]] || fail 'request rollback image tag mismatch'
+  [[ "$(control_value "$file" ROLLBACK_IMAGE_ID)" == "$rollback_id" ]] || fail 'request rollback image ID mismatch'
+  [[ "$(control_value "$file" ROLLBACK_IMAGE_SCOPE)" == "$rollback_scope" ]] || fail 'request rollback image scope mismatch'
+  [[ "$(control_value "$file" RELEASE_GATE)" == 'BLOCKED' ]] || fail 'request must keep the release gate BLOCKED'
+  [[ "$(sha256_file "$file")" == "$expected_digest" ]] || fail 'request artifact digest mismatch'
+  [[ "$request_path" == 'docs/nextshift-os-3/os-3-9/releases/OS39_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md' ]] || fail 'non-canonical request path'
+}
+
+[[ -f "$manifest" && ! -L "$manifest" ]] || fail 'canonical Manifest is missing or unsafe'
+"$repo_root/scripts/os-pipeline/os39/validate-manifest.sh" --manifest "$manifest" >/dev/null
+status="$(jq -r '.final_release_review.status' "$manifest")"
+gate_status="$(jq -r '.release_gate.status' "$manifest")"
+[[ "$gate_status" == blocked ]] || [[ "$status" == passed ]] || fail 'review request state must keep release gate blocked'
+
+case "$mode" in
+  --manifest-only)
+    if [[ "$status" == awaiting_review ]]; then
+      request_path="$(jq -r '.final_release_review.request_artifact' "$manifest")"
+      safe_relative_path "$request_path" || fail 'request path is unsafe'
+      validate_request_artifact "$repo_root/$request_path" "$(jq -r '.final_release_review.request_artifact_sha256' "$manifest")"
+    fi
+    printf 'PASS: Final Release review contract state is %s\n' "$status"
+    ;;
+  --verify-pr)
+    [[ "$status" == awaiting_review || "$status" == passed ]] || fail 'no review request is awaiting verification'
+    [[ "$pr_url" =~ ^https://github\.com/sohoteam88/NextShift-OS-2\.0/pull/([1-9][0-9]*)$ ]] || fail 'request PR URL is invalid'
+    command -v gh >/dev/null 2>&1 || fail 'gh is required for exact PR review verification'
+    pr_number="${BASH_REMATCH[1]}"
+    pr_json="$(gh api "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number")"
+    [[ "$(jq -r '.base.repo.full_name' <<<"$pr_json")" == 'sohoteam88/NextShift-OS-2.0' ]] || fail 'wrong request repository'
+    [[ "$(jq -r '.head.repo.full_name // .base.repo.full_name' <<<"$pr_json")" == 'sohoteam88/NextShift-OS-2.0' ]] || fail 'request head repository mismatch'
+    [[ "$(jq -r '.base.ref' <<<"$pr_json")" == main ]] || fail 'request PR base must be main'
+    pre_main="$(jq -r '.final_release_review.pre_request_main_sha' "$manifest")"
+    [[ "$(jq -r '.base.sha' <<<"$pr_json")" == "$pre_main" ]] || fail 'request PR base SHA mismatch'
+    [[ "$(jq -r '.merged' <<<"$pr_json")" == true ]] || fail 'request PR is not merged'
+    head_sha="$(jq -r '.head.sha' <<<"$pr_json")"
+    merge_sha="$(jq -r '.merge_commit_sha' <<<"$pr_json")"
+    [[ "$head_sha" =~ ^[0-9a-f]{40}$ && "$merge_sha" =~ ^[0-9a-f]{40}$ ]] || fail 'request PR Git identity is invalid'
+    release_sha="$(jq -r '.final_release_review.release_sha' "$manifest")"
+    git -C "$repo_root" cat-file -e "$head_sha^{commit}" 2>/dev/null || fail 'exact request PR head is unavailable locally'
+    [[ "$(git -C "$repo_root" rev-parse "$release_sha^{commit}" 2>/dev/null || true)" == "$release_sha" ]] || fail 'authorized release SHA is unavailable'
+    git -C "$repo_root" merge-base --is-ancestor "$release_sha" "$pre_main" || fail 'authorized release was not contained in the pre-request main state'
+    git -C "$repo_root" merge-base --is-ancestor "$pre_main" "$head_sha" || fail 'request head does not descend from its exact main baseline'
+    git -C "$repo_root" merge-base --is-ancestor "$head_sha" "$merge_sha" || fail 'request head is not contained in request merge commit'
+    git -C "$repo_root" merge-base --is-ancestor "$merge_sha" refs/remotes/origin/main || fail 'request merge is not in current main history'
+
+    request_path="$(jq -r '.final_release_review.request_artifact' "$manifest")"
+    files_json="$(gh api --paginate "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number/files")"
+    [[ "$(jq --arg p "$request_path" '[.[] | select(.filename == $p)] | length' <<<"$files_json")" == 1 ]] || fail 'request artifact is not uniquely present in PR diff'
+    unknown_files="$(jq -r --arg request "$request_path" '.[] | .filename | select(. != $request and . != "docs/nextshift-os-3/os-3-9/PIPELINE_MANIFEST.json")' <<<"$files_json")"
+    [[ -z "$unknown_files" ]] || fail 'request PR contains non-governance files'
+    tmp_artifact="$(mktemp "${TMPDIR:-/tmp}/os39-final-release-request.XXXXXX")"
+    trap 'rm -f "${tmp_artifact:-}"' EXIT
+    git -C "$repo_root" show "$head_sha:$request_path" >"$tmp_artifact" || fail 'request artifact is absent from exact request head'
+    validate_request_artifact "$tmp_artifact" "$(jq -r '.final_release_review.request_artifact_sha256' "$manifest")"
+
+    reviews_json="$(gh api --paginate "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number/reviews")"
+    reviewer_policy="$(canonical_reviewer_policy)"
+    valid_count=0; review_id=''; reviewed_at=''
+    while IFS= read -r review; do
+      [[ -n "$review" ]] || continue
+      [[ "$(jq -r '.commit_id // empty' <<<"$review")" == "$head_sha" ]] || continue
+      body="$(jq -r '.body // empty' <<<"$review")"
+      parse_review_controls "$body" "$release_sha"
+      [[ "$parsed_authority_review" == 1 ]] || continue
+      review_state="$(jq -r '.state // empty' <<<"$review")"
+      [[ "$review_state" == APPROVED || "$review_state" == COMMENTED ]] || fail 'exact-head authority review is dismissed or invalid'
+      reviewer_login="$(jq -r '.user.login // empty' <<<"$review")"
+      author_association="$(jq -r '.author_association // empty' <<<"$review")"
+      [[ -n "$reviewer_login" ]] || fail 'exact-head authority review has no reviewer identity'
+      jq -e --arg login "$reviewer_login" '.allowed_logins | index($login) != null' <<<"$reviewer_policy" >/dev/null || \
+        fail "reviewer login is not authorized by the canonical policy: $reviewer_login"
+      jq -e --arg association "$author_association" '.allowed_author_associations | index($association) != null' <<<"$reviewer_policy" >/dev/null || \
+        fail "reviewer author association is not authorized by the canonical policy: $author_association"
+      valid_count=$((valid_count + 1)); review_id="$(jq -r '.id' <<<"$review")"; reviewed_at="$(jq -r '.submitted_at' <<<"$review")"
+    done < <(jq -c '.[]' <<<"$reviews_json")
+    [[ "$valid_count" == 1 && "$review_id" =~ ^[1-9][0-9]*$ ]] || fail 'exactly one exact-head Final Release PASS review is required'
+    [[ "$reviewed_at" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail 'exact-head review timestamp is invalid'
+
+    pr_json_after="$(gh api "repos/sohoteam88/NextShift-OS-2.0/pulls/$pr_number")"
+    [[ "$(jq -r '.head.sha' <<<"$pr_json_after")" == "$head_sha" && "$(jq -r '.merge_commit_sha' <<<"$pr_json_after")" == "$merge_sha" && "$(jq -r '.base.sha' <<<"$pr_json_after")" == "$pre_main" && "$(jq -r '.merged' <<<"$pr_json_after")" == true ]] || fail 'request PR identity changed during verification'
+
+    allowed_paths=$'docs/nextshift-os-3/os-3-9/PIPELINE_MANIFEST.json\ndocs/nextshift-os-3/os-3-9/releases/OS39_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md\ndocs/nextshift-os-3/os-3-9/approvals/STEVEN_FINAL_RELEASE_APPROVAL.md'
+    post_request_drift="$(git -C "$repo_root" diff --name-only "$pre_main..refs/remotes/origin/main")"
+    reviewed_drift_used=false
+    remediation_drift_used=false
+    validate_post_request_remediation_schema
+    while IFS= read -r changed; do
+      [[ -z "$changed" ]] && continue
+      if grep -Fqx "$changed" <<<"$allowed_paths"; then
+        continue
+      fi
+      original_count="$(jq --arg path "$changed" '[.final_release_review.reviewed_post_request_drift.files[]? | select(.path == $path)] | length' "$manifest")"
+      remediation_count="$(jq --arg path "$changed" '[.final_release_review.reviewed_post_request_remediation.files[]? | select(.path == $path)] | length' "$manifest")"
+      [[ "$original_count" == 1 || "$remediation_count" == 1 ]] || fail "release drift after request baseline: $changed"
+      current_path_sha="$(git -C "$repo_root" show "refs/remotes/origin/main:$changed" | sha256_stdin)" || \
+        fail "reviewed post-request path is absent from current main: $changed"
+      original_expected="$(jq -r --arg path "$changed" '.final_release_review.reviewed_post_request_drift.files[]? | select(.path == $path) | .sha256' "$manifest")"
+      remediation_expected="$(jq -r --arg path "$changed" '.final_release_review.reviewed_post_request_remediation.files[]? | select(.path == $path) | .sha256' "$manifest")"
+      if [[ "$original_count" == 1 && "$current_path_sha" == "$original_expected" ]]; then
+        reviewed_drift_used=true
+      elif [[ "$remediation_count" == 1 && "$current_path_sha" == "$remediation_expected" ]]; then
+        remediation_drift_used=true
+      else
+        fail "reviewed post-request current-main digest mismatch: $changed"
+      fi
+    done <<<"$post_request_drift"
+
+    if [[ "$reviewed_drift_used" == true ]]; then
+      validate_reviewed_post_request_drift
+      while IFS= read -r changed; do
+        [[ -n "$changed" ]] || continue
+        grep -Fqx "$changed" <<<"$post_request_drift" || \
+          fail "reviewed post-request drift evidence path is not present in current drift: $changed"
+      done < <(jq -r '.final_release_review.reviewed_post_request_drift.files[]?.path' "$manifest")
+    fi
+
+    if [[ "$remediation_drift_used" == true ]]; then
+      validate_reviewed_post_request_remediation
+      while IFS= read -r changed; do
+        [[ -n "$changed" ]] || continue
+        grep -Fqx "$changed" <<<"$post_request_drift" || \
+          fail "reviewed remediation evidence path is not present in current drift: $changed"
+      done < <(jq -r '.final_release_review.reviewed_post_request_remediation.files[]?.path' "$manifest")
+    fi
+
+    if [[ "$status" == passed ]]; then
+      [[ "$(jq -r '.final_release_review.request_pr_url' "$manifest")" == "$pr_url" ]] || fail 'persisted request PR URL mismatch'
+      [[ "$(jq -r '.final_release_review.request_pr_number' "$manifest")" == "$pr_number" ]] || fail 'persisted request PR number mismatch'
+      [[ "$(jq -r '.final_release_review.request_pr_head' "$manifest")" == "$head_sha" ]] || fail 'persisted request PR head mismatch'
+      [[ "$(jq -r '.final_release_review.request_merge_sha' "$manifest")" == "$merge_sha" ]] || fail 'persisted request merge SHA mismatch'
+      [[ "$(jq -r '.final_release_review.review_id' "$manifest")" == "$review_id" ]] || fail 'persisted review ID mismatch'
+      [[ "$(jq -r '.final_release_review.review_commit_id' "$manifest")" == "$head_sha" ]] || fail 'persisted review commit mismatch'
+      [[ "$(jq -r '.final_release_review.reviewed_release_sha' "$manifest")" == "$(jq -r '.final_release_review.release_sha' "$manifest")" ]] || fail 'persisted reviewed release mismatch'
+      [[ "$(jq -r '.final_release_review.reviewed_at' "$manifest")" == "$reviewed_at" ]] || fail 'persisted review timestamp mismatch'
+    fi
+    jq -n --argjson pr "$pr_number" --arg url "$pr_url" --arg head "$head_sha" --arg merge "$merge_sha" \
+      --argjson review "$review_id" --arg reviewed_at "$reviewed_at" --arg release "$(jq -r '.final_release_review.release_sha' "$manifest")" \
+      '{request_pr_number:$pr,request_pr_url:$url,request_pr_head:$head,request_merge_sha:$merge,review_id:$review,review_commit_id:$head,reviewed_release_sha:$release,reviewed_at:$reviewed_at}'
+    ;;
+  *) fail 'usage: validate-final-release-review-request.sh [--manifest-only | --verify-pr PR_URL]' ;;
+esac

@@ -4,8 +4,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 validator="$repo_root/scripts/deployment/validate-production-readiness-contract.sh"
 runner="$repo_root/scripts/deployment/run-os38-production-migrations.sh"
-canonical_ci="$repo_root/.github/workflows/ci.yml"
-canonical_deploy="$repo_root/.github/workflows/deploy.yml"
+# OS 3.8 deployment fixtures remain pinned to the final OS 3.8 control-plane
+# revision. The active workflow moved to the independent OS 3.9 plane.
+os38_control_plane_sha='8f8c231b177349436f8a204ded0c7da5cdb80248'
 canonical_migration_dockerfile="$repo_root/scripts/deployment/Dockerfile.migrations"
 fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/nextshift-production-readiness.XXXXXX")"
 pass_count=0
@@ -37,8 +38,10 @@ new_fixture() {
   fixture_deploy="$fixture_directory/deploy.yml"
   fixture_runner="$fixture_directory/run-os38-production-migrations.sh"
   fixture_migration_dockerfile="$fixture_directory/Dockerfile.migrations"
-  cp "$canonical_ci" "$fixture_ci"
-  cp "$canonical_deploy" "$fixture_deploy"
+  git -C "$repo_root" cat-file -e "$os38_control_plane_sha^{commit}" 2>/dev/null || \
+    git -C "$repo_root" fetch --no-tags --depth=1 origin "$os38_control_plane_sha"
+  git -C "$repo_root" show "$os38_control_plane_sha:.github/workflows/ci.yml" >"$fixture_ci"
+  git -C "$repo_root" show "$os38_control_plane_sha:.github/workflows/deploy.yml" >"$fixture_deploy"
   cp "$runner" "$fixture_runner"
   cp "$canonical_migration_dockerfile" "$fixture_migration_dockerfile"
 }
