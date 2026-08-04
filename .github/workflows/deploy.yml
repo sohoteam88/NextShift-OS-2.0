@@ -35,7 +35,6 @@ jobs:
     outputs:
       release_sha: ${{ steps.request.outputs.release_sha }}
       control_plane_sha: ${{ steps.request.outputs.control_plane_sha }}
-      migration_image_digest: ${{ steps.request.outputs.migration_image_digest }}
       rollback_image_id: ${{ steps.request.outputs.rollback_image_id }}
     steps:
       - name: Checkout workflow revision
@@ -64,10 +63,7 @@ jobs:
           printf 'release_sha=%s\n' "$RELEASE_SHA" >> "$GITHUB_OUTPUT"
           printf 'control_plane_sha=%s\n' "$CONTROL_PLANE_SHA" >> "$GITHUB_OUTPUT"
           evidence='docs/nextshift-os-3/os-3-9/releases/OS39_PRODUCTION_READINESS_EVIDENCE.md'
-          if [[ "$ACTION" == deploy ]]; then
-            printf 'migration_image_digest=%s\n' \
-              "$(grep -E '^MIGRATION_IMAGE_DIGEST=' "$evidence" | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
-          else
+          if [[ "$ACTION" == rollback ]]; then
             printf 'rollback_image_id=%s\n' \
               "$(grep -E '^ROLLBACK_IMAGE_ID=' "$evidence" | cut -d= -f2-)" >> "$GITHUB_OUTPUT"
           fi
@@ -80,7 +76,6 @@ jobs:
     timeout-minutes: 20
     env:
       IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}
-      EXPECTED_MIGRATION_IMAGE_DIGEST: ${{ needs.validate-request.outputs.migration_image_digest }}
 
     steps:
       - name: Checkout exact release SHA
@@ -107,11 +102,7 @@ jobs:
             printf 'ERROR: migration build image ID is invalid: actual=%s\n' "$migration_image_digest" >&2
             exit 1
           fi
-          if [[ "$migration_image_digest" != "$EXPECTED_MIGRATION_IMAGE_DIGEST" ]]; then
-            printf 'ERROR: migration image digest preflight mismatch: expected=%s actual=%s\n' \
-              "$EXPECTED_MIGRATION_IMAGE_DIGEST" "$migration_image_digest" >&2
-            exit 1
-          fi
+          printf 'MIGRATION_RUNNER_IMAGE_ID=%s\n' "$migration_image_digest"
           migration_revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$migration_image")"
           if [[ "$migration_revision" != "$IMAGE_TAG" ]]; then
             printf 'ERROR: migration build OCI revision mismatch: expected=%s actual=%s\n' \
@@ -148,7 +139,6 @@ jobs:
       CONTROL_PLANE_REF: ${{ github.ref }}
       CONTROL_PLANE_SHA: ${{ needs.validate-request.outputs.control_plane_sha }}
       IMAGE_TAG: ${{ needs.validate-request.outputs.release_sha }}
-      EXPECTED_MIGRATION_IMAGE_DIGEST: ${{ needs.validate-request.outputs.migration_image_digest }}
 
     steps:
       - name: Checkout exact production control plane
@@ -276,13 +266,13 @@ jobs:
             fi
             expected_migration_digest="$(cat migration-image-digest.txt)"
             assert_sha256 'migration artifact recorded image ID' "$expected_migration_digest"
-            assert_equal 'migration artifact digest preflight' "$EXPECTED_MIGRATION_IMAGE_DIGEST" "$expected_migration_digest"
             migration_tar_config="$(tar -xzOf migration-image.tar.gz manifest.json | jq -r '.[0].Config')"
             [[ "$migration_tar_config" =~ ^blobs/sha256/[0-9a-f]{64}$ ]] || \
               fail_check 'migration artifact Config path' 'blobs/sha256/<64 lowercase hex>' "$migration_tar_config"
             migration_tar_config_digest="sha256:$(tar -xzOf migration-image.tar.gz "$migration_tar_config" | sha256sum | awk '{print $1}')"
             assert_sha256 'migration artifact Config digest' "$migration_tar_config_digest"
             assert_equal 'migration artifact config digest' "$expected_migration_digest" "$migration_tar_config_digest"
+            printf 'MIGRATION_VPS_ARTIFACT_CONFIG_DIGEST=%s\n' "$migration_tar_config_digest"
             docker load < migration-image.tar.gz
             migration_image="nextshift-migrations:${{ env.IMAGE_TAG }}"
             require_image 'migration image after archive load' "$migration_image"

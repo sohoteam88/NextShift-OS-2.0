@@ -15,7 +15,8 @@ write_evidence() {
   printf '%s\n' \
     "MIGRATION_REHEARSAL=$1" \
     "MIGRATION_IMAGE_REHEARSAL=$2" \
-    "MIGRATION_IMAGE_DIGEST=$3" >"$fixture_root/evidence.md"
+    "REHEARSAL_IMAGE_ID=$3" \
+    'REHEARSAL_IMAGE_ID_SCOPE=ENGINE_LOCAL_REHEARSAL_ONLY_NO_CROSS_BUILD_COMPARISON' >"$fixture_root/evidence.md"
 }
 
 expect_accept() {
@@ -33,14 +34,12 @@ expect_reject() {
 valid_digest='sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
 write_evidence PASS PASS "$valid_digest"
 expect_accept stage-1-3 stage_1_3_real_digest_accepted
-expect_accept stage-4 stage_4_real_digest_accepted
 
 write_evidence PENDING_STAGE_4 PENDING_STAGE_4 PENDING_STAGE_4
 expect_reject stage-1-3 pending_stage_semantics_rejected
-expect_reject stage-4 pending_stage_semantics_rejected_stage4
 
 write_evidence PASS PASS 'sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
 expect_reject stage-1-3 short_digest_rejected
 
-[[ "$pass_count" == 5 ]] || fail "expected 5 fixtures, got $pass_count"
+[[ "$pass_count" == 3 ]] || fail "expected 3 fixtures, got $pass_count"
 printf 'PASS: OS 3.9 Production Readiness evidence fixtures (%s)\n' "$pass_count"

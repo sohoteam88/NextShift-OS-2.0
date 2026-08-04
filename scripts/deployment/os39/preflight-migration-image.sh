@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the exact release's migration image locally and print its engine-local ID.
+# Rehearse the exact release's migration image locally; its ID is evidence only.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
@@ -16,7 +16,7 @@ git -C "$repo_root" diff --cached --quiet || fail 'preflight requires a clean in
 
 image="nextshift-migrations:preflight-$release_sha"
 docker image inspect "$image" >/dev/null 2>&1 && \
-  fail 'preflight image tag already exists; remove it deliberately before retrying'
+  fail 'rehearsal image tag already exists; remove it deliberately before retrying'
 cleanup() {
   [[ -n "$image" ]] && docker image rm --force "$image" >/dev/null 2>&1 || true
 }
@@ -30,8 +30,9 @@ docker build \
   "$repo_root" >/dev/null
 
 digest="$(docker image inspect --format '{{.Id}}' "$image")"
-[[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || fail 'preflight migration image ID is invalid'
+[[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || fail 'rehearsal migration image ID is invalid'
 revision="$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image")"
-[[ "$revision" == "$release_sha" ]] || fail 'preflight migration image revision mismatch'
+[[ "$revision" == "$release_sha" ]] || fail 'rehearsal migration image revision mismatch'
 "$repo_root/scripts/deployment/validate-migration-image-runtime.sh" "$image" "$release_sha" >/dev/null
-printf '%s\n' "$digest"
+printf 'REHEARSAL_RELEASE_SHA=%s\nREHEARSAL_IMAGE_ID=%s\nREHEARSAL_IMAGE_ID_SCOPE=ENGINE_LOCAL_REHEARSAL_ONLY_NO_CROSS_BUILD_COMPARISON\n' \
+  "$release_sha" "$digest"

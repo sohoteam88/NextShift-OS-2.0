@@ -38,6 +38,8 @@ new_fixture() {
   fixture_deploy="$fixture_directory/deploy.yml"
   fixture_runner="$fixture_directory/run-os38-production-migrations.sh"
   fixture_migration_dockerfile="$fixture_directory/Dockerfile.migrations"
+  git -C "$repo_root" cat-file -e "$os38_control_plane_sha^{commit}" 2>/dev/null || \
+    git -C "$repo_root" fetch --no-tags --depth=1 origin "$os38_control_plane_sha"
   git -C "$repo_root" show "$os38_control_plane_sha:.github/workflows/ci.yml" >"$fixture_ci"
   git -C "$repo_root" show "$os38_control_plane_sha:.github/workflows/deploy.yml" >"$fixture_deploy"
   cp "$runner" "$fixture_runner"

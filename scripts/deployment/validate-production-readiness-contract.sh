@@ -22,6 +22,26 @@ deploy_smoke="$repo_root/scripts/deploy-smoke.sh"
 feedback_reconciliation_migration="$repo_root/supabase/migrations/20260721074302_feedback_catalog_reconciliation.sql"
 feedback_authority_migration="$repo_root/supabase/migrations/20260721085431_feedback_catalog_authority_hardening.sql"
 
+# The active workflow is OS 3.9. Keep the established CI entrypoint stable:
+# its no-argument form first validates the full OS 3.8 migration-ledger
+# contract against the immutable historical workflow, then validates the active
+# OS 3.9 release-control contract. Legacy fixture calls pass explicit files
+# below and continue directly into the OS 3.8 contract.
+if [[ "$#" == 0 ]] && grep -Fqx '        run: scripts/deployment/validate-production-readiness-contract.sh' "$ci_workflow" && \
+    grep -Fq 'scripts/deployment/os39/validate-production-request.sh' "$deploy_workflow"; then
+  os38_control_plane_sha='8f8c231b177349436f8a204ded0c7da5cdb80248'
+  fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/nextshift-os38-contract.XXXXXX")"
+  cleanup_active_contract() { rm -rf "$fixture_root"; }
+  trap cleanup_active_contract EXIT
+  git -C "$repo_root" cat-file -e "$os38_control_plane_sha^{commit}" 2>/dev/null || \
+    git -C "$repo_root" fetch --no-tags --depth=1 origin "$os38_control_plane_sha"
+  git -C "$repo_root" show "$os38_control_plane_sha:.github/workflows/ci.yml" >"$fixture_root/ci.yml"
+  git -C "$repo_root" show "$os38_control_plane_sha:.github/workflows/deploy.yml" >"$fixture_root/deploy.yml"
+  "$0" "$fixture_root/ci.yml" "$fixture_root/deploy.yml" "$migration_runner" "$migration_dockerfile"
+  "$repo_root/scripts/deployment/os39/validate-release-control-contract.sh"
+  exit 0
+fi
+
 fail() {
   printf 'ERROR: %s\n' "$*" >&2
   exit 1

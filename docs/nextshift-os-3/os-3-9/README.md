@@ -14,15 +14,22 @@ readiness evidence grants authority to this train.
 - Automatic release and deployment remain disabled. Steven performs review,
   approval, dispatch, and any merge of a HUMAN_GATE PR.
 
-## Migration-image preflight
+## Migration rehearsal and transport integrity
 
-`MIGRATION_REHEARSAL=PASS`, `MIGRATION_IMAGE_REHEARSAL=PASS`, and an exact
-`MIGRATION_IMAGE_DIGEST=sha256:<64 lowercase hex>` are required from Stage 1.
-`PENDING_STAGE_4` is not a valid OS 3.9 evidence value. The dispatch workflow
-builds the migration image from the approved release and fails before any VPS
-operation unless its measured Docker image ID equals the preflight digest.
-It checks the same digest again against the transferred artifact before the
-migration runs.
+Stage 1–3 requires `MIGRATION_REHEARSAL=PASS` and
+`MIGRATION_IMAGE_REHEARSAL=PASS`. A local rehearsal records
+`REHEARSAL_IMAGE_ID=sha256:<64 lowercase hex>` plus
+`REHEARSAL_IMAGE_ID_SCOPE=ENGINE_LOCAL_REHEARSAL_ONLY_NO_CROSS_BUILD_COMPARISON`.
+That ID is evidence of the rehearsal only: it is never compared with another
+build and is not a release identity anchor.
+
+Release identity remains the exact Git SHA checkout, OCI revision label, and
+runtime validator. At dispatch, the runner builds one migration image, writes
+its image ID and the compressed tar SHA-256 into the transport artifact, and
+the VPS re-hashes the tar Config blob before migration. The runner-recorded
+digest and VPS Config-blob digest must match byte-for-byte. Archive the
+workflow run URL and the printed runner/VPS digest chain under `releases/`
+after deployment; Actions artifacts expire after 90 days.
 
 ## Rollback anchor
 

@@ -128,7 +128,7 @@ rollback_id="$(control_value "$repo_root/$readiness_path" ROLLBACK_IMAGE_ID)"
 rollback_scope="$(control_value "$repo_root/$readiness_path" ROLLBACK_IMAGE_SCOPE)"
 audit_sha="$(sha256_file "$repo_root/$(jq -r '.final_audit.report' "$manifest")")"
 printf '%s\n' \
-  '# OS 3.8 Final Release Architecture Review Request' '' \
+  '# OS 3.9 Final Release Architecture Review Request' '' \
   'DRAFT GOVERNANCE REQUEST — NO PRODUCTION AUTHORIZATION' '' \
   'REQUEST_ID=OS3.9-FINAL-RELEASE-ARCHITECTURE-REVIEW' \
   "RELEASE_SHA=$release_sha" \
@@ -172,7 +172,7 @@ test_fail_at git_add
 test_fail_at staged_path
 [[ "$(git -C "$repo_root" diff --cached --name-only)" == $'docs/nextshift-os-3/os-3-9/PIPELINE_MANIFEST.json\ndocs/nextshift-os-3/os-3-9/releases/OS39_FINAL_RELEASE_ARCHITECTURE_REVIEW_REQUEST.md' ]] || fail 'request transaction staged an unauthorized path'
 test_fail_at commit
-git -C "$repo_root" commit -m 'docs(release): request OS 3.8 final release architecture review' >/dev/null
+git -C "$repo_root" commit -m 'docs(release): request OS 3.9 final release architecture review' >/dev/null
 commit_sha="$(git -C "$repo_root" rev-parse HEAD)"
 test_fail_at push
 git -C "$repo_root" push -u origin "HEAD:refs/heads/$branch" >/dev/null

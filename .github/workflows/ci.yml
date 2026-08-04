@@ -111,7 +111,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate production readiness contracts
-        run: scripts/deployment/os39/validate-release-control-contract.sh
+        run: scripts/deployment/validate-production-readiness-contract.sh
 
       - name: Validate Final Release review request contract
         run: scripts/deployment/tests/final-release-review.sh
