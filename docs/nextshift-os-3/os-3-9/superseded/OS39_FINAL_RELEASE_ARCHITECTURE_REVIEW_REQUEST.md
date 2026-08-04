@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-08-04 — 原因 = #222 post-approval 控制面修复；未 dispatch，无生产影响。
+
 # OS 3.9 Final Release Architecture Review Request
 
 DRAFT GOVERNANCE REQUEST — NO PRODUCTION AUTHORIZATION
