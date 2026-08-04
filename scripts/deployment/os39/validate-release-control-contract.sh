@@ -48,6 +48,7 @@ require_count "$workflow" 1 'target_image="${{ env.ROLLBACK_IMAGE_TAG }}"' 'roll
 require_count "$workflow" 1 'image_id="$(docker image inspect --format' 'rollback local image ID measurement'
 require_count "$workflow" 1 'test "$image_id" = "${{ env.ROLLBACK_IMAGE_ID }}"' 'rollback local image ID equality'
 require_count "$workflow" 1 'image_revision="$(docker image inspect' 'application OCI revision check only'
+require_count "$workflow" 1 '          overwrite: true' 'SCP artifact replacement is explicit'
 
 require_count "$readiness_validator" 0 'PENDING_STAGE_4' 'OS 3.9 readiness validator rejects deferred state'
 require_count "$readiness_validator" 0 'MIGRATION_IMAGE_DIGEST' 'pre-dispatch migration image digest forbidden'
