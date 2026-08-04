@@ -109,18 +109,23 @@ test.describe('OS 3.8 member navigation convergence', () => {
     await expect(page).toHaveURL(/\/automation(?:\?|$)/);
   });
 
-  test('bookmarks preserve query and browser history through terminal redirects', async ({ page }) => {
+  test('retired CRM bookmarks redirect home while preserving query and browser history', async ({ page }) => {
     await loginAsUser(page);
     await page.goto('/dashboard');
     await page.goto('/leads?source=bookmark&tag=a&tag=b');
-    await expect(page).toHaveURL(/\/crm\?view=leads&source=bookmark&tag=a&tag=b/);
+    await expect(page).toHaveURL(/\/\?source=bookmark&tag=a&tag=b/);
     await page.goBack();
     await expect(page).toHaveURL(/\/dashboard/);
     await page.goForward();
-    await expect(page).toHaveURL(/\/crm\?view=leads&source=bookmark&tag=a&tag=b/);
+    await expect(page).toHaveURL(/\/\?source=bookmark&tag=a&tag=b/);
+
+    for (const route of ['/crm', '/crm-center', '/leads', '/sales']) {
+      await page.goto(`${route}?source=legacy`);
+      await expect(page).toHaveURL(/\/\?source=legacy/);
+    }
   });
 
-  test('all eight merged product capabilities remain discoverable at terminal destinations', async ({ page }) => {
+  test('remaining product capabilities stay discoverable at their terminal destinations', async ({ page }) => {
     await loginAsUser(page);
 
     await page.goto('/analytics?period=7d');
@@ -135,16 +140,6 @@ test.describe('OS 3.8 member navigation convergence', () => {
     await expect(page).toHaveURL(/\/brand-builder\/profile\?view=dna/);
     await expect(page.getByRole('navigation', { name: 'Brand views' }).getByRole('link', { name: 'Brand DNA' })).toHaveAttribute('aria-current', 'page');
 
-    for (const [source, view, label] of [
-      ['/crm-center', 'dashboard', '客户转化'],
-      ['/leads', 'leads', '引流获客'],
-      ['/sales', 'sales', '销售成交'],
-    ] as const) {
-      await page.goto(source);
-      await expect(page).toHaveURL(new RegExp(`/crm\\?view=${view}`));
-      await expect(page.getByRole('navigation', { name: 'CRM views' }).getByRole('link', { name: label })).toHaveAttribute('aria-current', 'page');
-    }
-
     await page.goto('/funnel-context');
     await expect(page).toHaveURL(/\/funnel\?view=context/);
     await expect(page.getByRole('navigation', { name: 'Funnel views' }).getByRole('link', { name: '多漏斗管理' })).toHaveAttribute('aria-current', 'page');
@@ -154,12 +149,11 @@ test.describe('OS 3.8 member navigation convergence', () => {
     await expect(page.getByRole('navigation', { name: 'Video views' }).getByRole('link', { name: '视频制作' })).toHaveAttribute('aria-current', 'page');
   });
 
-  test('terminal destinations retain their original default capabilities', async ({ page }) => {
+  test('active terminal destinations retain their original default capabilities', async ({ page }) => {
     await loginAsUser(page);
     for (const [destination, navigationName, defaultLabel] of [
       ['/analytics-center', 'Analytics views', '洞察中心'],
       ['/brand-builder/profile', 'Brand views', '品牌档案'],
-      ['/crm', 'CRM views', 'Lead Mission'],
       ['/funnel', 'Funnel views', '漏斗建构'],
       ['/video', 'Video views', '视频项目'],
     ] as const) {

@@ -43,9 +43,9 @@ test.describe('Auth Flow', () => {
     await expect(page.getByText('Authentication required', { exact: true })).toHaveCount(0);
   });
 
-  test('login as test user and see dashboard', async ({ page }) => {
+  test('login as test user and see the user shell home', async ({ page }) => {
     await loginAsUser(page);
-    await expect(page).toHaveURL(/dashboard/);
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.locator('h1, h2').first()).toBeVisible();
   });
 
