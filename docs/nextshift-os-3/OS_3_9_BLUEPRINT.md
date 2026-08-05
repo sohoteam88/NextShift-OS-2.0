@@ -45,11 +45,11 @@ Track G 让 AI 真写;Track O 让 AI 有料可写(人)、有规可依(事业包)
 | W4 | 路由占位 + 旧路由下线 | 批 1 | 下一批 | 已完成（PR #216，2026-08-04 合并；完整 CI/E2E 全绿；退役路由统一由 middleware 302 到裸 `/`，显式丢弃 query） |
 | W5 | 「我的账号」管理页 UI | 批 1 | 下一批 | 已完成（PR #217，2026-08-04 合并；账号留空引导、新建/编辑/启用停用、账号名切换器与零轨道词验收完成） |
 | P1 | 用户面热路由串行链优化 | 性能 | 正常圈 | 待办（普通 pipeline 项；规格 `USER_SHELL_PERFORMANCE_WORKORDER_V1.md`；不得改 auth 安全语义、schema、`.env` 或部署 control plane） |
+| SA1 | 超管用户数据重置（F-38 事务超时返修） | U | P1 后、HUMAN_GATE | 待办（原 SA1 已由 PR #182 于 2026-07-28 完成；本返修保留重置原子性，显式 interactive transaction timeout；规格 `SA1_RESET_TRANSACTION_TIMEOUT_WORKORDER_V1.md`；Step 3 后留 open 候 Fable 复审） |
 | U2 | 用户面重建·批2（内容页 /post 发） | U | 重建批2 | 待启动（依赖批1 全部完成；规格 USER_SHELL_REBUILD_SCOPE_V1.md §7 批2） |
 | U3 | 用户面重建·批3（跟进页 /follow 跟） | U | 重建批3 | 待启动（依赖 U2；信号源按修订一降级，webinar 进度事件留接口） |
 | U4 | 用户面重建·批4（admin 归位） | U | 重建批4 | 待启动（依赖批1 全部完成；6.2 八项清单已锁定） |
 | M1 | 双轨隔离贯通验收(F-29 根治) | M | W4/T2（并入模板实例化） | 已撤回（PR #180 / Fable 2026-07-28 决议：不作为独立待办；缺口并入批 1 W4/T2） |
-| SA1 | 超管用户数据重置(走查前置工具) | U | W3.5（走查前置，HUMAN_GATE） | 已完成（PR #182，2026-07-28 合并） |
 
 ---
 

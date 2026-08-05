@@ -303,6 +303,14 @@ Start: 2026-07-22(v3.8.0 生产)
 - 已知债：应用在德国，数据库及用户在东南亚，单次往返约 **350 ms**。这不是本轮阶梯排队的根因，仍是后续体验优化的地理延迟债。
 - 后续：P1「用户面热路由串行链优化」以首页 loopback TTFB ≤ 1 秒为硬验收，处理可并行的 SSR/Prisma 读取及 middleware/SSR 认证重复；仍须走完整正常 pipeline，合并后另走一次发布链才可上产。
 
+### F-38 ⚠️ SA1 重置事务超时：地理延迟成为功能故障（生产日志，2026-08-05）
+
+- 现象：超管「重置业务数据」返回「系统出错了」；日志为 `Transaction API error: Transaction not found`，落点包括 `content.deleteMany`、`funnel.deleteMany` 等删除语句。
+- 根因：SA1 在一个 Prisma interactive transaction 内顺序执行用户数据删除。事故时的操作清单为 **21 条** `deleteMany`；当前源码清单已扩展为 **23 条**。按单次跨洲往返约 **350 ms** 估算，仅事故时的 21 次删除已超过 Prisma interactive transaction 默认 **5,000 ms** timeout，事务被引擎关闭后，后续查询报“Transaction not found”。
+- 定位：这是 F-37「应用在德国、数据库与用户在东南亚」地理延迟债的第一个**功能性受害者**，不是性能抱怨；数据重置失败会直接阻断超管走查。
+- 不变约束：所有用户业务数据删除必须继续在**同一原子事务**内；任何一步失败都整体回滚，绝不为追求速度拆散事务边界或允许半清除。
+- 修复排程：SA1/F-38 在 P1 后进入既有 HUMAN_GATE。重置事务显式使用 `{ timeout: 60000, maxWait: 15000 }`，并对其余超过五次串行操作的 interactive transaction 完成审计；PR 在 Step 3 后留 open 候 Fable 复审。P1 与 SA1/F-38 合并后共用一次完整发布链。
+
 ---
 
 (后续每日追加)
