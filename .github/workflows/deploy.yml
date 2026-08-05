@@ -218,7 +218,7 @@ jobs:
           set -euo pipefail
           printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"
           chmod 600 "$RUNNER_TEMP/id"
-          printf '%s\n' '169.58.116.102 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPj4eqBtG5Oyx3ulN4rwVBqnM0NL+Sx0TpWqZlp8JsYJ' > "$RUNNER_TEMP/known_hosts"
+          printf '%s\n' '185.227.134.164 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKhgmUzZdSo3SCuPWRHs1cyJhRCWsmQyawavkFyQ0hw' > "$RUNNER_TEMP/known_hosts"
           chmod 600 "$RUNNER_TEMP/known_hosts"
 
       - name: Copy exact release artifacts to VPS
@@ -386,7 +386,7 @@ jobs:
           set -euo pipefail
           printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/id"
           chmod 600 "$RUNNER_TEMP/id"
-          printf '%s\n' '169.58.116.102 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPj4eqBtG5Oyx3ulN4rwVBqnM0NL+Sx0TpWqZlp8JsYJ' > "$RUNNER_TEMP/known_hosts"
+          printf '%s\n' '185.227.134.164 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKhgmUzZdSo3SCuPWRHs1cyJhRCWsmQyawavkFyQ0hw' > "$RUNNER_TEMP/known_hosts"
           chmod 600 "$RUNNER_TEMP/known_hosts"
 
       - name: Rollback on VPS
