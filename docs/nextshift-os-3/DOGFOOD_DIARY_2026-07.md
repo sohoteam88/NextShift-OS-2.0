@@ -298,18 +298,19 @@ Start: 2026-07-22(v3.8.0 生产)
 - 现象：`/api/v1/health` 的数据库语句仅为一次 `SELECT 1`；生产 `EXPLAIN (ANALYZE)` 的 SQL 执行时间为 **0.058 ms**，但修复前未认证 health 的 TTFB 三次为 **7.651 s、10.475 s、11.004 s**。SQL 本身不能解释应用端等待。
 - 零成本排除：生产 `pg_stat_activity` T0 快照为实例上限 **60**、连接总数 **8**（active 1、idle 6、未分类 1）、最长 `idle in transaction` 为 **0**；源码 19 个 `$transaction` 调用点未见手写 `BEGIN/COMMIT/ROLLBACK` 或会吞掉 interactive transaction 异常的分支。故没有事务泄漏或未闭合事务的证据。
 - 根因与修复：生产长驻容器沿用了 serverless 形态的 `DATABASE_URL?connection_limit=1`。容器内已实测为 **`connection_limit=5`**，此配置保留；实例上限 60、修复前实占 8，5 为应用保留充足余量。
-- A/B 实测：修复前，五路并发请求呈阶梯式排队，约 **1.03 → 4.83 秒**；修复后，五路请求在 **3.58–3.97 秒**内并行完成。单请求约 **0.9 秒**，但五路并发仍约 **3.9 秒**，存在二级竞争；待 Steven 的 `nproc` 读数确认是否为 CPU 限制，**不阻塞本修复**。
+- A/B 实测：修复前，五路并发请求呈阶梯式排队，约 **1.03 → 4.83 秒**；修复后，五路请求在 **3.58–3.97 秒**内并行完成。单请求约 **0.9 秒**，但五路并发仍约 **3.9 秒**，存在二级竞争。宿主与容器实测 `nproc` 均为 **4**，非核数不足；疑为 Node 单线程 JS 或客户端连接池上限，属开放问题。
 - 操作坑：改 `.env.production` 后必须用 `docker compose ... up --force-recreate` 使容器重建，或进入运行中的容器实测 `DATABASE_URL` 的 `connection_limit`；只改宿主机文件不能证明修复已生效。
 - 已知债：应用在德国，数据库及用户在东南亚，单次往返约 **350 ms**。这不是本轮阶梯排队的根因，仍是后续体验优化的地理延迟债。
-- 后续：P1「用户面热路由串行链优化」以首页 loopback TTFB ≤ 1 秒为硬验收，处理可并行的 SSR/Prisma 读取及 middleware/SSR 认证重复；仍须走完整正常 pipeline，合并后另走一次发布链才可上产。
+- 后续：P1「用户面热路由串行链优化」暂缓至新加坡迁移完成后重测再定；预期跨洲往返 **350ms→10ms** 会使超时与串行成本自动消失。迁移后若仍存在问题，才以首页 loopback TTFB ≤ 1 秒为硬验收，处理可并行的 SSR/Prisma 读取及 middleware/SSR 认证重复。
 
 ### F-38 ⚠️ SA1 重置事务超时：地理延迟成为功能故障（生产日志，2026-08-05）
 
 - 现象：超管「重置业务数据」返回「系统出错了」；日志为 `Transaction API error: Transaction not found`，落点包括 `content.deleteMany`、`funnel.deleteMany` 等删除语句。
 - 根因：SA1 在一个 Prisma interactive transaction 内顺序执行用户数据删除。事故时的操作清单为 **21 条** `deleteMany`；当前源码清单已扩展为 **23 条**。按单次跨洲往返约 **350 ms** 估算，仅事故时的 21 次删除已超过 Prisma interactive transaction 默认 **5,000 ms** timeout，事务被引擎关闭后，后续查询报“Transaction not found”。
 - 定位：这是 F-37「应用在德国、数据库与用户在东南亚」地理延迟债的第一个**功能性受害者**，不是性能抱怨；数据重置失败会直接阻断超管走查。
+- 同一超时风险已波及 `tenant-service.ts:createTenantUsing`：最坏 **23 次**串行操作，按约 **350 ms** 往返约 **8 秒**；新用户注册可能同样失败。不单独立项修复，并入新加坡迁移后重测。
 - 不变约束：所有用户业务数据删除必须继续在**同一原子事务**内；任何一步失败都整体回滚，绝不为追求速度拆散事务边界或允许半清除。
-- 修复排程：SA1/F-38 在 P1 后进入既有 HUMAN_GATE。重置事务显式使用 `{ timeout: 60000, maxWait: 15000 }`，并对其余超过五次串行操作的 interactive transaction 完成审计；PR 在 Step 3 后留 open 候 Fable 复审。P1 与 SA1/F-38 合并后共用一次完整发布链。
+- 修复排程：SA1/F-38 暂缓至新加坡迁移完成后重测再定；不单独立项修复、不改 transaction timeout。若迁移后仍复现，才重新评估原子性约束下的显式 timeout 与完整审计范围。
 
 ---
 
