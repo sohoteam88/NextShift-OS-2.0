@@ -46,6 +46,21 @@ incident record.
 ## Post-cancellation observations
 
 - Public VPS endpoint check: cache-busted `GET /api/version` returned HTTP 404.
+- VPS application container check (2026-08-04): `nextshift-app:latest`
+  remained `8e126f2f9c57`, was `Up 15 hours (healthy)`, and had been created on
+  2026-08-03; it was not replaced by the cancelled run.
+- Rollback anchor check (2026-08-04): both
+  `nextshift-app:pre-batch1-rollback` and `nextshift-app:previous` resolved
+  to `8e126f2f9c57`.
+- Staged but inactive images from the cancelled run were present:
+  `nextshift-app:8f8c231b…` (`aa7482d786a9`) and
+  `nextshift-migrations:8f8c231b…` (`724431efbce4`).
+- Staged artifacts were present on the VPS:
+  `image.tar.gz` (218,251,102 B) and `migration-image.tar.gz`
+  (449,074,933 B). Steven removed both before R4, so the next dispatch starts
+  from a clean stage.
+- `docker ps -a` showed no residual migration container. The site root
+  returned HTTP 307, which is normal for the June snapshot.
 - Production `_prisma_migrations` read-only aggregate:
   - `20260731072936_add_user_accounts_and_business_start_at`: no record and
     not applied.
