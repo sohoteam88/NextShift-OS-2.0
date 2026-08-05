@@ -61,7 +61,7 @@ require_count "$workflow" 1 'image_id="$(docker image inspect --format' 'rollbac
 require_count "$workflow" 1 'test "$image_id" = "${{ env.ROLLBACK_IMAGE_ID }}"' 'rollback local image ID equality'
 require_count "$workflow" 1 'image_revision="$(docker image inspect' 'application OCI revision check only'
 require_count "$workflow" 0 'appleboy/' 'third-party SSH/SCP actions are forbidden'
-require_count "$workflow" 2 '169.58.116.102 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPj4eqBtG5Oyx3ulN4rwVBqnM0NL+Sx0TpWqZlp8JsYJ' 'pinned VPS host key'
+require_count "$workflow" 2 '185.227.134.164 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIKhgmUzZdSo3SCuPWRHs1cyJhRCWsmQyawavkFyQ0hw' 'pinned VPS host key'
 require_count "$workflow" 3 'VPS_HOST: ${{ secrets.VPS_HOST }}' 'deployment host must come from the VPS_HOST secret'
 require_count "$workflow" 3 'UserKnownHostsFile="$RUNNER_TEMP/known_hosts"' 'pinned known_hosts must be used for every native SSH connection'
 require_count "$workflow" 3 'StrictHostKeyChecking=yes' 'native SSH host-key checking must fail closed'
