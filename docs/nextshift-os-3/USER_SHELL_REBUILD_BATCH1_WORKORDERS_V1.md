@@ -12,7 +12,9 @@
 
 - W1 已完成：PR #204 于 2026-07-31 合并；完整 CI 全绿，production-readiness fixtures 为 59 条，包含迁移登记断言。
 - W2 已完成：PR #203 于 2026-07-31 合并；PR 记录的本机 `pnpm lint`、`pnpm type-check`、`pnpm build` 均为 exit code 0。
-- W3、W4、W5 为下一批待办；依赖状态以 `OS_3_9_BLUEPRINT.md` 的 pipeline 索引为准。
+- W3 已完成：PR #213 于 2026-08-04 合并；完整 CI/E2E 全绿，RSC 边界修复后人工收尾。
+- W4 已完成：PR #216 于 2026-08-04 合并；完整 CI/E2E 全绿，退役路由统一由 middleware 302 到裸 `/`。
+- W5 已完成：PR #217 于 2026-08-04 合并；账号留空引导、基础管理 UI 与零轨道词验收完成。后续依赖状态以 `OS_3_9_BLUEPRINT.md` 的 pipeline 索引为准。
 
 ---
 
@@ -354,4 +356,4 @@ W1（`UserAccount` 表落地）。可与 W2/W3/W4 并行起草，但涉及数据
 
 ---
 
-*批 1 工单拆解 v1 — 2026-07-31 定稿，Fable 复审 APPROVE（含两处 schema 修正）——五工单待 Steven 转发 Codex 执行*
+*批 1 工单拆解 v1 — 2026-07-31 定稿，Fable 复审 APPROVE（含两处 schema 修正）；W1–W5 均于 2026-08-04 完成，后续性能项见 `USER_SHELL_PERFORMANCE_WORKORDER_V1.md`。*

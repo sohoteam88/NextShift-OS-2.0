@@ -32,7 +32,7 @@ DISABLE_RC_TAG=true ./scripts/os-pipeline/run-pipeline.sh
 
 ## 当前任务源
 
-Blueprint 任务表 + `USER_SHELL_REBUILD_BATCH1_WORKORDERS_V1.md`(W1-W5)。调度裁决以 Fable 最新指令为准,记录落仓。
+Blueprint 任务表 + `USER_SHELL_REBUILD_BATCH1_WORKORDERS_V1.md`(W1-W5)。`USER_SHELL_PERFORMANCE_WORKORDER_V1.md`(P1) 与 `SA1_RESET_TRANSACTION_TIMEOUT_WORKORDER_V1.md`(SA1/F-38) 现均暂缓，待新加坡迁移完成后重测再定，不进入调度任务源。调度裁决以 Fable 最新指令为准,记录落仓。
 
 ---
 
