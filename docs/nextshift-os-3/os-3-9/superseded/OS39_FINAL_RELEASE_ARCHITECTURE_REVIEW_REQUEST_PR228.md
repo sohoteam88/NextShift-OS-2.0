@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-08-04 — 原因 = #230 timeout budget 控制面修复；run 30933749725 已 dispatch 并在远端迁移/部署步骤被取消，授权已消耗。
+
 # OS 3.9 Final Release Architecture Review Request
 
 DRAFT GOVERNANCE REQUEST — NO PRODUCTION AUTHORIZATION
