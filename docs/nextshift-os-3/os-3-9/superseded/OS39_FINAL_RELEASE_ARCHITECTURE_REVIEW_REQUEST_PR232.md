@@ -1,3 +1,7 @@
+> SUPERSEDED 2026-08-05 — 原因 = #236 控制面切换部署目标至新加坡新机
+> 185.227.134.164;上一轮授权已由 run #163 消耗并成功部署至旧机(生产正常),
+> 本轮为同一发布 SHA 的换机部署,须重走完整发布链。
+
 # OS 3.9 Final Release Architecture Review Request
 
 DRAFT GOVERNANCE REQUEST — NO PRODUCTION AUTHORIZATION
